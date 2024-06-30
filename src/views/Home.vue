@@ -1,16 +1,16 @@
 <template>
     <div class="home">
-      <WeekSelector />
+      <WeeklyReport />
     </div>
   </template>
   
   <script>
-  import WeekSelector from '@/components/WeekSelector.vue'
+  import WeeklyReport from '@/components/WeeklyReport.vue'
   
   export default {
     name: 'HomePage',
     components: {
-      WeekSelector
+      WeeklyReport
     }
   }
   </script>
@@ -18,10 +18,5 @@
   <style scoped>
   .home {
     padding: 20px;
-  }
-  
-  h1 {
-    text-align: center;
-    margin-bottom: 20px;
   }
   </style>
