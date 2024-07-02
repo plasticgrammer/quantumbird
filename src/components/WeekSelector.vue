@@ -1,6 +1,11 @@
 <template>
   <div class="week-selector">
-    <h3>週の選択</h3>
+    <div class="week-selector-header">
+      <h3>週の選択</h3>
+      <div v-if="selectedWeek" class="selected-week-range">
+        {{ formatDateRange(selectedWeek.start, selectedWeek.end) }}
+      </div>
+    </div>
     <div class="calendar">
       <div class="weekdays">
         <div class="week-number-header">週</div>
@@ -99,6 +104,11 @@ export default {
       emit('select-week', null)
     }
 
+    const formatDateRange = (start, end) => {
+      const options = { year: 'numeric', month: 'long', day: 'numeric' }
+      return `${start.toLocaleDateString('ja-JP', options)} - ${end.toLocaleDateString('ja-JP', options)}`
+    }
+
     return {
       calendarWeeks,
       weekdays,
@@ -114,19 +124,33 @@ export default {
       getWeekNumber,
       formatShortMonth,
       shouldShowMonth,
-      resetSelection
+      resetSelection,
+      formatDateRange
     }
   }
 }
 </script>
+
 
 <style scoped>
 .week-selector {
   margin-bottom: 20px;
 }
 
-.week-selector h3 {
+.week-selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 10px;
+}
+
+.week-selector h3 {
+  margin: 0;
+}
+
+.selected-week-range {
+  font-size: 0.9em;
+  color: #666;
 }
 
 .calendar {
@@ -206,5 +230,16 @@ export default {
 
 .reset-button:hover {
   background-color: #e0e0e0;
+}
+
+@media (max-width: 768px) {
+  .week-selector-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .selected-week-range {
+    margin-top: 5px;
+  }
 }
 </style>

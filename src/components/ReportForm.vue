@@ -1,75 +1,92 @@
 <template>
   <div class="report-form">
-    <h2>週次報告: {{ formatDateRange(selectedWeek.start, selectedWeek.end) }}</h2>
     <form @submit.prevent="submitReport">
-    <div v-for="(project, projectIndex) in localReport.projects" :key="projectIndex" class="project-section">
+      <button @click="copyFromPreviousWeek" class="copy-button">前週より作業内容をコピー</button>
+      <div v-for="(project, projectIndex) in localReport.projects" :key="projectIndex" class="project-section">
         <div class="project-header">
-        <div class="form-group project-name">
-            <label :for="`project-${projectIndex}`">プロジェクト:</label>
-            <select :id="`project-${projectIndex}`" v-model="project.name" required>
+          <label :for="`project-${projectIndex}`">プロジェクト:</label>
+          <select 
+            :id="`project-${projectIndex}`" 
+            v-model="project.name" 
+            required
+            @change="onProjectSelect(project)"
+          >
             <option value="">選択してください</option>
             <option v-for="projName in projectNames" :key="projName" :value="projName">
-                {{ projName }}
+              {{ projName }}
             </option>
-            </select>
+          </select>
+          <button 
+            type="button" 
+            @click="removeProject(projectIndex)" 
+            class="icon-button"
+            v-if="localReport.projects.length > 1"
+            aria-label="プロジェクトを削除"
+          >
+            🗑️
+          </button>
         </div>
-        <button type="button" @click="removeProject(projectIndex)" class="remove-button" v-if="localReport.projects.length > 1">
-            プロジェクトを削除
-        </button>
+        <div v-if="project.workItems.length > 0" class="work-items-section">
+          <div class="form-group">
+            <label>作業内容:</label>
+            <div v-for="(item, itemIndex) in project.workItems" :key="itemIndex" class="work-item">
+              <div class="input-wrapper">
+                <input 
+                  type="text" 
+                  v-model="item.content" 
+                  :placeholder="`作業内容 ${itemIndex + 1}`"
+                  required
+                >
+                <button 
+                  v-if="project.workItems.length > 1"
+                  type="button" 
+                  @click="removeWorkItem(project, itemIndex)" 
+                  class="remove-work-item-button"
+                  aria-label="作業内容を削除"
+                >
+                  ✖️
+                </button>
+              </div>
+            </div>
+            <button type="button" @click="addWorkItem(project)" class="add-button">作業を追加</button>
+          </div>
         </div>
-        <div class="form-group">
-        <label>作業内容:</label>
-        <div v-for="(item, itemIndex) in project.workItems" :key="itemIndex" class="work-item">
-            <input 
-            type="text" 
-            v-model="item.content" 
-            :placeholder="`作業内容 ${itemIndex + 1}`"
-            required
-            >
-            <button type="button" @click="removeWorkItem(project, itemIndex)" class="remove-button" aria-label="削除">✖️</button>
-        </div>
-        <button type="button" @click="addWorkItem(project)" class="add-button">作業を追加</button>
-        </div>
-    </div>
-    <button type="button" @click="addProject" class="add-project-button">プロジェクトを追加</button>
-    
-    <div class="form-group overtime-input">
+      </div>
+      <button type="button" @click="addProject" class="add-project-button">プロジェクトを追加</button>
+      
+      <div class="form-group overtime-input">
         <label for="overtimeHours">残業時間:</label>
         <div class="overtime-controls">
-        <div class="overtime-number-input">
-            <input 
+          <input 
             type="number" 
             id="overtimeHours" 
-            v-model="localReport.overtimeHours" 
+            v-model="formattedOvertimeHours" 
+            @input="updateOvertime"
             min="0" 
-            max="999" 
+            max="99" 
             step="0.5" 
             required
-            >
-            <span class="time-unit">時間</span>
+          >
+          <span class="time-unit">時間</span>
+          <button type="button" @click="decreaseOvertime" class="overtime-button">－</button>
+          <button type="button" @click="increaseOvertime" class="overtime-button">＋</button>
         </div>
-        <input 
-            type="range" 
-            v-model="localReport.overtimeHours" 
-            min="0" 
-            max="20" 
-            step="0.5"
-        >
-        </div>
-    </div>
-    <div class="form-group">
+      </div>
+      
+      <div class="form-group">
         <label for="issues">問題点など:</label>
-        <textarea id="issues" v-model="localReport.issues"></textarea>
-    </div>
-    <div class="button-group">
+        <textarea id="issues" v-model="localReport.issues" rows="4"></textarea>
+      </div>
+      
+      <div class="button-group">
         <button type="submit" class="submit-button">報告を提出</button>
-    </div>
+      </div>
     </form>
   </div>
 </template>
 
 <script>
-import { reactive, watch, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useReport } from '../composables/useReport'
 
 export default {
@@ -82,61 +99,113 @@ export default {
     report: {
       type: Object,
       required: true
+    },
+    previousWeekReport: {
+      type: Object,
+      default: () => ({})
     }
   },
   emits: ['update:report', 'submit-report'],
   setup(props, { emit }) {
     const { formatDateRange } = useReport()
 
-    const localReport = reactive({ ...props.report })
-
-    onMounted(() => {
-      Object.assign(localReport, props.report)
+    const localReport = ref({
+      ...props.report,
+      projects: props.report.projects.map(project => ({
+        ...project,
+        workItems: project.workItems.length > 0 ? project.workItems : [{ content: '' }]
+      }))
     })
 
-    watch(() => props.report, (newReport) => {
-      Object.assign(localReport, newReport)
-    }, { deep: true })
+    const projectNames = ['プロジェクト1', 'プロジェクト2', 'プロジェクト3']
 
-    const updateReport = () => {
-      emit('update:report', { ...localReport })
+    const formattedOvertimeHours = computed({
+      get: () => localReport.value.overtimeHours.toFixed(1),
+      set: (value) => {
+        localReport.value.overtimeHours = parseFloat(value)
+      }
+    })
+
+    const updateOvertime = (event) => {
+      let value = parseFloat(event.target.value)
+      if (isNaN(value)) value = 0
+      value = Math.max(0, Math.min(99, value))
+      localReport.value.overtimeHours = parseFloat(value.toFixed(1))
+      emit('update:report', { ...localReport.value })
+    }
+
+    const increaseOvertime = () => {
+      if (localReport.value.overtimeHours < 99) {
+        localReport.value.overtimeHours = parseFloat((localReport.value.overtimeHours + 0.5).toFixed(1))
+        emit('update:report', { ...localReport.value })
+      }
+    }
+
+    const decreaseOvertime = () => {
+      if (localReport.value.overtimeHours > 0) {
+        localReport.value.overtimeHours = parseFloat((localReport.value.overtimeHours - 0.5).toFixed(1))
+        emit('update:report', { ...localReport.value })
+      }
     }
 
     const addProject = () => {
-      localReport.projects.push({ name: '', workItems: [{ content: '' }] })
-      updateReport()
+      localReport.value.projects.push({ name: '', workItems: [] })
+      emit('update:report', { ...localReport.value })
     }
 
     const removeProject = (index) => {
-      localReport.projects.splice(index, 1)
-      updateReport()
+      localReport.value.projects.splice(index, 1)
+      emit('update:report', { ...localReport.value })
     }
 
     const addWorkItem = (project) => {
       project.workItems.push({ content: '' })
-      updateReport()
+      emit('update:report', { ...localReport.value })
     }
 
     const removeWorkItem = (project, index) => {
-      project.workItems.splice(index, 1)
-      if (project.workItems.length === 0) {
-        addWorkItem(project)
+      if (project.workItems.length > 1) {
+        project.workItems.splice(index, 1)
+        emit('update:report', { ...localReport.value })
       }
-      updateReport()
+    }
+
+    const copyFromPreviousWeek = () => {
+      if (props.previousWeekReport && props.previousWeekReport.projects) {
+        localReport.value.projects = props.previousWeekReport.projects.map(project => ({
+          ...project,
+          workItems: project.workItems.map(item => ({ ...item }))
+        }))
+        emit('update:report', { ...localReport.value })
+      }
+    }
+
+    const onProjectSelect = (project) => {
+      if (project.workItems.length === 0) {
+        project.workItems.push({ content: '' })
+      }
+      emit('update:report', { ...localReport.value })
     }
 
     const submitReport = () => {
-      emit('submit-report', { ...localReport })
+      emit('submit-report', { ...localReport.value })
     }
 
     return {
       localReport,
+      projectNames,
       formatDateRange,
+      formattedOvertimeHours,
+      updateOvertime,
+      increaseOvertime,
+      decreaseOvertime,
       addProject,
       removeProject,
       addWorkItem,
       removeWorkItem,
-      submitReport
+      onProjectSelect,
+      submitReport,
+      copyFromPreviousWeek
     }
   }
 }
@@ -150,11 +219,6 @@ export default {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-h2 {
-  margin-bottom: 20px;
-  color: #333;
-}
-
 .project-section {
   background-color: #fff;
   border: 1px solid #e0e0e0;
@@ -165,9 +229,62 @@ h2 {
 
 .project-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 10px;
   margin-bottom: 15px;
+}
+
+.project-header label {
+  white-space: nowrap;
+}
+
+.project-header select {
+  flex-grow: 1;
+}
+
+.icon-button {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 5px 10px;
+  transition: background-color 0.2s;
+}
+
+.icon-button:hover {
+  background-color: #e0e0e0;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 8px;
+  padding-right: 30px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.remove-work-item-button {
+  position: absolute;
+  right: 5px;
+  background: none;
+  border: none;
+  font-size: 1em;
+  cursor: pointer;
+  padding: 5px;
+  color: #999;
+}
+
+.remove-work-item-button:hover {
+  color: #333;
 }
 
 .form-group {
@@ -189,14 +306,13 @@ select, input[type="text"], input[type="number"], textarea {
   font-size: 14px;
 }
 
-.work-item {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
+textarea {
+  resize: vertical;
+  min-height: 100px;
 }
 
-.work-item input {
-  flex-grow: 1;
+.work-item {
+  margin-bottom: 10px;
 }
 
 .overtime-input {
@@ -211,18 +327,32 @@ select, input[type="text"], input[type="number"], textarea {
   gap: 10px;
 }
 
-.overtime-number-input {
-  display: flex;
-  align-items: center;
+.overtime-button {
+  width: 30px;
+  height: 30px;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  background-color: #e0e0e0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #333;
 }
 
-.overtime-number-input input[type="number"] {
+.overtime-button:hover {
+  background-color: #d0d0d0;
+}
+
+.overtime-controls input[type="number"] {
   width: 60px;
-  text-align: right;
+  text-align: center;
+  font-size: 16px;
 }
 
 .time-unit {
-  margin-left: 5px;
+  font-size: 14px;
+  color: #666;
 }
 
 button {
@@ -230,32 +360,44 @@ button {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, opacity 0.2s;
 }
 
-.add-button, .submit-button {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.remove-button {
-  background-color: #f44336;
-  color: white;
+.add-button {
+  background-color: #81c784;
+  color: #333;
 }
 
 .add-project-button {
-  background-color: #2196F3;
-  color: white;
+  background-color: #90caf9;
+  color: #333;
   margin-bottom: 20px;
+}
+
+.submit-button {
+  background-color: #4CAF50;
+  color: white;
+  font-size: 16px;
+  padding: 10px 20px;
+  margin-top: 20px;
 }
 
 button:hover {
   opacity: 0.8;
 }
 
-.submit-button {
-  font-size: 16px;
-  padding: 10px 20px;
-  margin-top: 20px;
+.copy-button {
+  background-color: #90caf9;
+  color: #333;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.copy-button:hover {
+  opacity: 0.8;
 }
 </style>
