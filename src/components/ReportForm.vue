@@ -1,87 +1,94 @@
 <template>
-  <div class="report-form">
-    <form @submit.prevent="submitReport">
-      <button @click="copyFromPreviousWeek" class="copy-button">前週より作業内容をコピー</button>
-      <div v-for="(project, projectIndex) in localReport.projects" :key="projectIndex" class="project-section">
-        <div class="project-header">
-          <label :for="`project-${projectIndex}`">プロジェクト:</label>
-          <select 
-            :id="`project-${projectIndex}`" 
-            v-model="project.name" 
-            required
-            @change="onProjectSelect(project)"
-          >
-            <option value="">選択してください</option>
-            <option v-for="projName in projectNames" :key="projName" :value="projName">
-              {{ projName }}
-            </option>
-          </select>
-          <button 
-            type="button" 
-            @click="removeProject(projectIndex)" 
-            class="icon-button"
-            v-if="localReport.projects.length > 1"
-            aria-label="プロジェクトを削除"
-          >
-            🗑️
-          </button>
-        </div>
-        <div v-if="project.workItems.length > 0" class="work-items-section">
-          <div class="form-group">
-            <label>作業内容:</label>
-            <div v-for="(item, itemIndex) in project.workItems" :key="itemIndex" class="work-item">
-              <div class="input-wrapper">
-                <input 
-                  type="text" 
-                  v-model="item.content" 
-                  :placeholder="`作業内容 ${itemIndex + 1}`"
-                  required
-                >
-                <button 
-                  v-if="project.workItems.length > 1"
-                  type="button" 
-                  @click="removeWorkItem(project, itemIndex)" 
-                  class="remove-work-item-button"
-                  aria-label="作業内容を削除"
-                >
-                  ✖️
-                </button>
+  <div class="report-form-container">
+    <button @click="copyFromPreviousWeek" class="copy-button">前週より作業内容をコピー</button>
+    <div class="report-form">
+      <form @submit.prevent="submitReport">
+        <div v-for="(project, projectIndex) in localReport.projects" :key="projectIndex" class="project-section">
+          <div class="project-header">
+            <div class="form-group project-name">
+              <label :for="`project-${projectIndex}`">プロジェクト:</label>
+              <select 
+                :id="`project-${projectIndex}`" 
+                v-model="project.name" 
+                required
+                @change="onProjectSelect(project)"
+              >
+                <option value="">選択してください</option>
+                <option v-for="projName in projectNames" :key="projName" :value="projName">
+                  {{ projName }}
+                </option>
+              </select>
+            </div>
+            <button 
+              type="button" 
+              @click="removeProject(projectIndex)" 
+              class="remove-button"
+              v-if="localReport.projects.length > 1"
+              aria-label="プロジェクトを削除"
+            >
+              ×
+            </button>
+          </div>
+          <div v-if="project.workItems.length > 0" class="work-items-section">
+            <div class="form-group">
+              <label>作業内容:</label>
+              <div v-for="(item, itemIndex) in project.workItems" :key="itemIndex" class="work-item">
+                <div class="input-wrapper">
+                  <input 
+                    type="text" 
+                    v-model="item.content" 
+                    :placeholder="`作業内容 ${itemIndex + 1}`"
+                    required
+                  >
+                  <button 
+                    type="button" 
+                    @click="removeWorkItem(project, itemIndex)" 
+                    class="remove-work-item-button"
+                    aria-label="作業内容を削除"
+                  >
+                    ✖️
+                  </button>
+                </div>
+              </div>
+              <div class="button-container">
+                <button type="button" @click="addWorkItem(project)" class="action-button">作業を追加</button>
               </div>
             </div>
-            <button type="button" @click="addWorkItem(project)" class="add-button">作業を追加</button>
           </div>
         </div>
-      </div>
-      <button type="button" @click="addProject" class="add-project-button">プロジェクトを追加</button>
-      
-      <div class="form-group overtime-input">
-        <label for="overtimeHours">残業時間:</label>
-        <div class="overtime-controls">
-          <input 
-            type="number" 
-            id="overtimeHours" 
-            v-model="formattedOvertimeHours" 
-            @input="updateOvertime"
-            min="0" 
-            max="99" 
-            step="0.5" 
-            required
-          >
-          <span class="time-unit">時間</span>
-          <button type="button" @click="decreaseOvertime" class="overtime-button">－</button>
-          <button type="button" @click="increaseOvertime" class="overtime-button">＋</button>
+        <div class="button-container">
+          <button type="button" @click="addProject" class="action-button">プロジェクトを追加</button>
         </div>
-      </div>
-      
-      <div class="form-group">
-        <label for="issues">問題点など:</label>
-        <textarea id="issues" v-model="localReport.issues" rows="4"></textarea>
-      </div>
-      
-      <div class="button-group">
-        <button type="submit" class="submit-button">報告を提出</button>
-      </div>
-    </form>
+        
+        <div class="form-group overtime-input">
+          <label for="overtimeHours">残業時間:</label>
+          <div class="overtime-controls">
+            <input 
+              type="number" 
+              id="overtimeHours" 
+              v-model="formattedOvertimeHours" 
+              @input="updateOvertime"
+              min="0" 
+              max="99" 
+              step="0.5" 
+              required
+            >
+            <span class="time-unit">時間</span>
+            <button type="button" @click="decreaseOvertime" class="overtime-button">－</button>
+            <button type="button" @click="increaseOvertime" class="overtime-button">＋</button>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="issues">報告事項（成果、問題点など）:</label>
+          <textarea id="issues" v-model="localReport.issues"></textarea>
+        </div>
+        
+        <div class="button-group">
+          <button type="submit" class="submit-button">報告を提出</button>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -212,41 +219,70 @@ export default {
 </script>
 
 <style scoped>
+.report-form-container {
+  margin-bottom: 20px;
+}
+
+.copy-button {
+  background-color: #90caf9;
+  color: #333;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.copy-button:hover {
+  opacity: 0.8;
+}
+
 .report-form {
-  background-color: #ffffff;
-  padding: 25px;
+  background-color: #f9f9f9;
+  padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .project-section {
-  background-color: #f9f9f9;
-  border: 1px solid #d0d0d0;
-  border-radius: 6px;
-  padding: 20px;
-  margin-bottom: 25px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 20px;
 }
 
 .project-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 15px;
 }
 
-.project-header label {
-  white-space: nowrap;
-  color: #333;
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #555;
 }
 
-.project-header select {
-  flex-grow: 1;
+select, input[type="text"], input[type="number"], textarea {
+  width: 100%;
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 14px;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 6em;
+  line-height: 1.5;
+}
+
+.project-name {
+  flex-grow: 1;
+  margin-right: 10px;
 }
 
 .icon-button {
@@ -263,21 +299,23 @@ export default {
   background-color: #e0e0e0;
 }
 
+.work-items-section {
+  margin-top: 10px;
+}
+
+.work-item {
+  margin-bottom: 10px;
+}
+
 .input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  width: 100%;
-  margin-bottom: 10px;
 }
 
 .input-wrapper input {
-  width: 100%;
-  padding: 10px;
+  flex-grow: 1;
   padding-right: 30px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
 }
 
 .remove-work-item-button {
@@ -295,54 +333,20 @@ export default {
   color: #666;
 }
 
-.form-group {
-  margin-bottom: 20px;
-}
-
-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #444;
-}
-
-select, input[type="text"], input[type="number"], textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
-  transition: border-color 0.2s;
-}
-
-select:focus, input:focus, textarea:focus {
-  outline: none;
-  border-color: #4a90e2;
-}
-
-textarea {
-  resize: vertical;
-  min-height: 100px;
-}
-
-.overtime-input {
+.button-container {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
 
-.overtime-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
+.action-button,
+.remove-button,
 .overtime-button {
-  width: 30px;
-  height: 30px;
-  font-size: 18px;
+  width: auto;
+  height: auto;
+  font-size: 14px;
   line-height: 1;
-  padding: 0;
+  padding: 8px 12px;
   background-color: #f0f0f0;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -351,8 +355,28 @@ textarea {
   transition: background-color 0.2s;
 }
 
+.action-button:hover,
+.remove-button:hover,
 .overtime-button:hover {
   background-color: #e0e0e0;
+}
+
+.remove-button {
+  font-size: 18px;
+  padding: 4px 8px;
+}
+
+.overtime-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.overtime-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .overtime-controls input[type="number"] {
@@ -366,60 +390,24 @@ textarea {
   color: #666;
 }
 
-button {
-  padding: 10px 15px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s, opacity 0.2s;
-  font-weight: 600;
-}
-
-.add-button {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #a5d6a7;
-}
-
-.add-button:hover {
-  background-color: #c8e6c9;
-}
-
-.add-project-button {
-  background-color: #e3f2fd;
-  color: #1565c0;
-  border: 1px solid #90caf9;
-  margin-bottom: 20px;
-}
-
-.add-project-button:hover {
-  background-color: #bbdefb;
-}
-
-.copy-button {
-  background-color: #fff3e0;
-  color: #e65100;
-  border: 1px solid #ffcc80;
-  margin-bottom: 20px;
-}
-
-.copy-button:hover {
-  background-color: #ffe0b2;
+textarea {
+  resize: vertical;
+  min-height: 100px;
 }
 
 .submit-button {
-  background-color: #4caf50;
+  background-color: #4CAF50;
   color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
   font-size: 16px;
-  padding: 12px 24px;
+  cursor: pointer;
+  transition: background-color 0.2s;
   margin-top: 20px;
 }
 
 .submit-button:hover {
   background-color: #45a049;
-}
-
-button:hover {
-  opacity: 0.9;
 }
 </style>
