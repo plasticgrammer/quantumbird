@@ -1,136 +1,191 @@
 <template>
   <div class="week-selector">
     <div class="week-selector-header">
-      <h3>週の選択</h3>
-      <div v-if="selectedWeek" class="selected-week-range">
-        {{ formatDateRange(selectedWeek.start, selectedWeek.end) }}
-      </div>
+      <h3>{{ selectedWeekRange }}</h3>
+      <button v-if="isLocked" @click="resetSelection" class="reset-button">
+        選択をリセット
+      </button>
     </div>
     <div class="calendar">
       <div class="weekdays">
         <div class="week-number-header">週</div>
         <div v-for="day in weekdays" :key="day.label" :class="day.class">{{ day.label }}</div>
       </div>
-      <div class="days">
-        <template v-for="(week, weekIndex) in calendarWeeks" :key="weekIndex">
-          <div class="week-number">
-            {{ getWeekNumber(week[0].date) }}
-          </div>
+      <transition-group name="week-fade" tag="div" class="weeks">
+        <div 
+          v-for="(week, weekIndex) in visibleWeeks" 
+          :key="getWeekKey(week)" 
+          class="week-row"
+          :class="{ 
+            'selected': isSelected(week), 
+            'hovered': isHovered(week) 
+          }"
+          @click="selectWeek(week)"
+          @mouseenter="setHoverWeek(week)"
+          @mouseleave="clearHoverWeek"
+        >
+          <div class="week-number">{{ getWeekNumber(week[0]) }}</div>
           <div
             v-for="(day, dayIndex) in week"
-            :key="day.date.toISOString()"
+            :key="day.toISOString()"
             :class="[
               'day',
-              { 'selected': isSelected(day.date) },
-              { 'hovered': isHovered(day.date) },
-              { 'today': isToday(day.date) },
-              { 'saturday': isSaturday(day.date) },
-              { 'sunday': isSunday(day.date) }
+              { 'today': isToday(day) },
+              { 'saturday': isSaturday(day) },
+              { 'sunday': isSunday(day) }
             ]"
-            @click="selectDate(day.date)"
-            @mouseenter="setHoverWeek(day.date)"
-            @mouseleave="clearHoverWeek"
           >
-            <span v-if="shouldShowMonth(day.date, weekIndex, dayIndex)" class="month">
-              {{ formatShortMonth(day.date) }}
+            <span v-if="shouldShowMonth(day, weekIndex, dayIndex)" class="month">
+              {{ formatShortMonth(day) }}
             </span>
-            <span class="date">{{ day.date.getDate() }}</span>
+            <span class="date">{{ day.getDate() }}</span>
           </div>
-        </template>
-      </div>
+        </div>
+      </transition-group>
     </div>
-    <button v-if="selectedWeek" @click="resetSelection" class="reset-button">選択をリセット</button>
   </div>
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useCalendar } from '../composables/useCalendar'
 
 export default {
   name: 'WeekSelector',
   emits: ['select-week'],
   setup(props, { emit }) {
-    const { 
-      calendarWeeks,
-      weekdays,
-      selectedWeek,
-      selectWeek,
-      getWeekNumber,
-      formatShortMonth,
-      isToday,
-      isSaturday,
-      isSunday,
-      shouldShowMonth
-    } = useCalendar()
+    const { formatShortMonth, isToday, isSaturday, isSunday } = useCalendar()
 
+    const selectedWeek = ref(null)
     const hoveredWeek = ref(null)
+    const isLocked = ref(false)
 
-    const selectDate = (date) => {
-      const weekStart = new Date(date)
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1)
-      const weekEnd = new Date(weekStart)
-      weekEnd.setDate(weekEnd.getDate() + 6)
-      
-      const week = { start: weekStart, end: weekEnd }
-      selectWeek(week)
-      emit('select-week', week)
+    const weekdays = [
+      { label: '日', class: 'sunday' },
+      { label: '月', class: '' },
+      { label: '火', class: '' },
+      { label: '水', class: '' },
+      { label: '木', class: '' },
+      { label: '金', class: '' },
+      { label: '土', class: 'saturday' }
+    ]
+
+    const calendarWeeks = computed(() => {
+      const weeks = []
+      const today = new Date()
+      let currentDate = new Date(today)
+
+      // 今日の日付を含む週の日曜日まで戻る
+      while (currentDate.getDay() !== 0) {
+        currentDate.setDate(currentDate.getDate() - 1)
+      }
+
+      // さらに3週間前に戻る
+      currentDate.setDate(currentDate.getDate() - 21)
+
+      for (let i = 0; i < 4; i++) {
+        const week = []
+        for (let j = 0; j < 7; j++) {
+          week.push(new Date(currentDate))
+          currentDate.setDate(currentDate.getDate() + 1)
+        }
+        weeks.push(week)
+      }
+      return weeks
+    })
+
+    const visibleWeeks = computed(() => {
+      if (!selectedWeek.value) return calendarWeeks.value
+      return calendarWeeks.value.filter(week => 
+        week[0].getTime() === selectedWeek.value[0].getTime()
+      )
+    })
+
+    const getWeekKey = (week) => week[0].toISOString().split('T')[0]
+
+    // selectedWeek の変更を監視し、isLocked を更新
+    watch(selectedWeek, (newValue) => {
+      isLocked.value = newValue !== null && visibleWeeks.value.length === 1
+    })
+
+    const selectWeek = (week) => {
+      if (isLocked.value) return
+      selectedWeek.value = selectedWeek.value && 
+        selectedWeek.value[0].getTime() === week[0].getTime() ? null : week
+      emit('select-week', selectedWeek.value)
     }
 
-    const isSelected = (date) => {
-      if (!selectedWeek.value) return false
-      return date >= selectedWeek.value.start && date <= selectedWeek.value.end
+    const resetSelection = () => {
+      selectedWeek.value = null
+      isLocked.value = false
+      emit('select-week', null)
     }
 
-    const setHoverWeek = (date) => {
-      const weekStart = new Date(date)
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1)
-      const weekEnd = new Date(weekStart)
-      weekEnd.setDate(weekEnd.getDate() + 6)
-      hoveredWeek.value = { start: weekStart, end: weekEnd }
+    const isSelected = (week) => {
+      return !isLocked.value && selectedWeek.value && week[0].getTime() === selectedWeek.value[0].getTime()
+    }
+
+    const setHoverWeek = (week) => {
+      hoveredWeek.value = week
     }
 
     const clearHoverWeek = () => {
       hoveredWeek.value = null
     }
 
-    const isHovered = (date) => {
-      if (!hoveredWeek.value) return false
-      return date >= hoveredWeek.value.start && date <= hoveredWeek.value.end
+    const isHovered = (week) => {
+      return hoveredWeek.value && week[0].getTime() === hoveredWeek.value[0].getTime()
     }
 
-    const resetSelection = () => {
-      selectWeek(null)
-      emit('select-week', null)
-    }
-
-    const formatDateRange = (start, end) => {
+    const formatDateRange = (week) => {
+      if (!week) return ''
+      const start = week[0]
+      const end = week[6]
       const options = { year: 'numeric', month: 'long', day: 'numeric' }
       return `${start.toLocaleDateString('ja-JP', options)} - ${end.toLocaleDateString('ja-JP', options)}`
     }
 
+    const selectedWeekRange = computed(() => {
+      return selectedWeek.value
+        ? formatDateRange(selectedWeek.value)
+        : '週の選択'
+    })
+
+    const shouldShowMonth = (date, weekIndex, dayIndex) => {
+      return date.getDate() === 1 || (weekIndex === 0 && dayIndex === 0)
+    }
+
+    const getWeekNumber = (date) => {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+      return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+    }
+
     return {
-      calendarWeeks,
+      visibleWeeks,
       weekdays,
       selectedWeek,
-      selectDate,
+      selectWeek,
       isSelected,
-      isHovered,
       setHoverWeek,
       clearHoverWeek,
+      isHovered,
+      resetSelection,
+      getWeekNumber,
+      formatShortMonth,
       isToday,
       isSaturday,
       isSunday,
-      getWeekNumber,
-      formatShortMonth,
       shouldShowMonth,
-      resetSelection,
-      formatDateRange
+      selectedWeekRange,
+      getWeekKey,
+      isLocked
     }
   }
 }
 </script>
-
 
 <style scoped>
 .week-selector {
@@ -141,57 +196,83 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 .week-selector h3 {
   margin: 0;
+  font-size: 1.2em;
+  color: #333;
 }
 
-.selected-week-range {
+.reset-button {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 5px 10px;
   font-size: 0.9em;
-  color: #666;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.reset-button:hover {
+  background-color: #e0e0e0;
 }
 
 .calendar {
   border: 1px solid #ddd;
   border-radius: 5px;
-}
-
-.weekdays, .days {
-  display: grid;
-  grid-template-columns: 40px repeat(7, 1fr);
+  overflow: hidden;
 }
 
 .weekdays {
+  display: grid;
+  grid-template-columns: 40px repeat(7, 1fr);
   background-color: #f0f0f0;
   font-weight: bold;
 }
 
-.weekdays > div, .week-number, .day {
+.weekdays > div {
   padding: 10px;
   text-align: center;
 }
 
-.week-number-header, .week-number {
+.week-number-header,
+.week-number {
   background-color: #f8f9fa;
   color: #6c757d;
   font-size: 0.8em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.weeks {
+  display: flex;
+  flex-direction: column;
+}
+
+.week-row {
+  display: grid;
+  grid-template-columns: 40px repeat(7, 1fr);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.week-row.selected,
+.week-row.hovered {
+  background-color: rgba(179, 215, 255, 0.5);
+}
+
+.week-row.selected .week-number,
+.week-row.hovered .week-number {
+  background-color: rgba(179, 215, 255, 0.7);
 }
 
 .day {
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+  padding: 10px;
+  text-align: center;
   position: relative;
-}
-
-.day.hovered {
-  background-color: #e6f2ff;
-}
-
-.day.selected {
-  background-color: #b3d7ff;
-  color: #333;
 }
 
 .day.today {
@@ -219,27 +300,14 @@ export default {
   color: #666;
 }
 
-.reset-button {
-  margin-top: 10px;
-  padding: 5px 10px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
+.week-fade-enter-active,
+.week-fade-leave-active {
+  transition: all 0.5s ease-out;
 }
 
-.reset-button:hover {
-  background-color: #e0e0e0;
-}
-
-@media (max-width: 768px) {
-  .week-selector-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .selected-week-range {
-    margin-top: 5px;
-  }
+.week-fade-enter-from,
+.week-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
 }
 </style>

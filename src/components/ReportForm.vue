@@ -213,18 +213,20 @@ export default {
 
 <style scoped>
 .report-form {
-  background-color: #f9f9f9;
-  padding: 20px;
+  background-color: #ffffff;
+  padding: 25px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e0e0e0;
 }
 
 .project-section {
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 5px;
-  padding: 15px;
-  margin-bottom: 20px;
+  background-color: #f9f9f9;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .project-header {
@@ -236,10 +238,15 @@ export default {
 
 .project-header label {
   white-space: nowrap;
+  color: #333;
 }
 
 .project-header select {
   flex-grow: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
 }
 
 .icon-button {
@@ -261,11 +268,12 @@ export default {
   display: flex;
   align-items: center;
   width: 100%;
+  margin-bottom: 10px;
 }
 
 .input-wrapper input {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   padding-right: 30px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -284,35 +292,37 @@ export default {
 }
 
 .remove-work-item-button:hover {
-  color: #333;
+  color: #666;
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 label {
   display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #555;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #444;
 }
 
 select, input[type="text"], input[type="number"], textarea {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+select:focus, input:focus, textarea:focus {
+  outline: none;
+  border-color: #4a90e2;
 }
 
 textarea {
   resize: vertical;
   min-height: 100px;
-}
-
-.work-item {
-  margin-bottom: 10px;
 }
 
 .overtime-input {
@@ -333,15 +343,16 @@ textarea {
   font-size: 18px;
   line-height: 1;
   padding: 0;
-  background-color: #e0e0e0;
+  background-color: #f0f0f0;
   border: 1px solid #ccc;
   border-radius: 4px;
   cursor: pointer;
   color: #333;
+  transition: background-color 0.2s;
 }
 
 .overtime-button:hover {
-  background-color: #d0d0d0;
+  background-color: #e0e0e0;
 }
 
 .overtime-controls input[type="number"] {
@@ -356,48 +367,59 @@ textarea {
 }
 
 button {
-  padding: 8px 15px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s, opacity 0.2s;
-}
-
-.add-button {
-  background-color: #81c784;
-  color: #333;
-}
-
-.add-project-button {
-  background-color: #90caf9;
-  color: #333;
-  margin-bottom: 20px;
-}
-
-.submit-button {
-  background-color: #4CAF50;
-  color: white;
-  font-size: 16px;
-  padding: 10px 20px;
-  margin-top: 20px;
-}
-
-button:hover {
-  opacity: 0.8;
-}
-
-.copy-button {
-  background-color: #90caf9;
-  color: #333;
   padding: 10px 15px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin-bottom: 20px;
   transition: background-color 0.2s, opacity 0.2s;
+  font-weight: 600;
+}
+
+.add-button {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.add-button:hover {
+  background-color: #c8e6c9;
+}
+
+.add-project-button {
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+  margin-bottom: 20px;
+}
+
+.add-project-button:hover {
+  background-color: #bbdefb;
+}
+
+.copy-button {
+  background-color: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ffcc80;
+  margin-bottom: 20px;
 }
 
 .copy-button:hover {
-  opacity: 0.8;
+  background-color: #ffe0b2;
+}
+
+.submit-button {
+  background-color: #4caf50;
+  color: white;
+  font-size: 16px;
+  padding: 12px 24px;
+  margin-top: 20px;
+}
+
+.submit-button:hover {
+  background-color: #45a049;
+}
+
+button:hover {
+  opacity: 0.9;
 }
 </style>
