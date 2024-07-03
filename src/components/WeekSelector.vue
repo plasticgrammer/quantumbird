@@ -266,7 +266,7 @@ export default {
 
 .week-row.selected .week-number,
 .week-row.hovered .week-number {
-  background-color: rgba(179, 215, 255, 0.7);
+  background-color: transparent;
 }
 
 .day {
@@ -276,8 +276,12 @@ export default {
 }
 
 .day.today {
+  background: linear-gradient(135deg, #f3f9ff 0%, #e1f1ff 100%);
+  border: 1px solid #a5d3ff;
+  border-radius: 8px;
   font-weight: bold;
-  color: #007bff;
+  color: #3b82c4;
+  overflow: hidden;
 }
 
 .day.saturday {

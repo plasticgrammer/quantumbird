@@ -1,6 +1,6 @@
 <template>
   <div class="report-form-container">
-    <button @click="copyFromPreviousWeek" class="copy-button">前週より作業内容をコピー</button>
+    <button @click="copyFromPreviousWeek" class="copy-button">前週よりコピー</button>
     <div class="report-form">
       <form @submit.prevent="submitReport">
         <div v-for="(project, projectIndex) in localReport.projects" :key="projectIndex" class="project-section">
@@ -224,10 +224,10 @@ export default {
 }
 
 .copy-button {
-  background-color: #90caf9;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
   color: #333;
   padding: 10px 15px;
-  border: none;
   border-radius: 4px;
   cursor: pointer;
   margin-bottom: 10px;
@@ -246,6 +246,7 @@ export default {
 }
 
 .project-section {
+  position: relative;
   background-color: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 5px;
@@ -254,9 +255,7 @@ export default {
 }
 
 .project-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  margin-bottom: 15px;
 }
 
 label {
@@ -340,7 +339,6 @@ textarea {
 }
 
 .action-button,
-.remove-button,
 .overtime-button {
   width: auto;
   height: auto;
@@ -356,14 +354,26 @@ textarea {
 }
 
 .action-button:hover,
-.remove-button:hover,
 .overtime-button:hover {
   background-color: #e0e0e0;
 }
 
 .remove-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
   font-size: 18px;
   padding: 4px 8px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #333;
+  transition: background-color 0.2s;
+}
+
+.remove-button:hover {
+  background-color: #e0e0e0;
 }
 
 .overtime-input {
