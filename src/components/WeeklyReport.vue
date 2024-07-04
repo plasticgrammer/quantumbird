@@ -1,5 +1,5 @@
 <template>
-  <div class="weekly-report-container" :style="containerStyle">
+  <div class="weekly-report-container">
     <WeekSelector 
       :calendarWeeks="calendarWeeks"
       :selectedWeek="selectedWeek"
@@ -38,49 +38,28 @@ export default {
     const selectedWeek = ref(null)
     const report = reactive(initialReport())
     const showReportForm = ref(false)
-    const containerHeight = ref('auto')
 
     const isLocked = computed(() => selectedWeek.value !== null && showReportForm.value)
-
-    const containerStyle = computed(() => ({
-      height: containerHeight.value,
-      overflow: 'hidden'
-    }))
 
     const selectWeek = (week) => {
       selectedWeek.value = week
       if (week) {
-        // コンテナの高さを固定
-        containerHeight.value = `${document.querySelector('.weekly-report-container').offsetHeight}px`
+        // WeekSelectorのアニメーション完了後にReportFormを表示
         setTimeout(() => {
           showReportForm.value = true
-          // アニメーション完了後、高さを自動に戻す
-          setTimeout(() => {
-            containerHeight.value = 'auto'
-          }, 300)
-        }, 800) // WeekSelectorのアニメーション時間に合わせて調整
+        }, 700) // アニメーション時間に合わせて調整
       } else {
         showReportForm.value = false
       }
     }
 
-    const handleReset = async () => {
-      // コンテナの高さを固定
-      containerHeight.value = `${document.querySelector('.weekly-report-container').offsetHeight}px`
-      
-      // ReportForm を非表示にする
+    const handleReset = () => {
+      // まずReportFormを非表示にする
       showReportForm.value = false
-      
-      // ReportForm のフェードアウトアニメーションが完了するのを待つ
-      await new Promise(resolve => setTimeout(resolve, 300))
-      
-      // 週選択をリセット
-      selectedWeek.value = null
-      
-      // アニメーション完了後、高さを自動に戻す
+      // 少し遅延を入れてから週選択をリセット
       setTimeout(() => {
-        containerHeight.value = 'auto'
-      }, 500) // 週選択のアニメーション時間に合わせて調整
+        selectedWeek.value = null
+      }, 100)
     }
 
     const updateReport = (newReport) => {
@@ -90,7 +69,6 @@ export default {
     const handleSubmit = () => {
       console.log('Submitted report:', report)
       submitReport(report)
-      // ここで追加の送信処理を実装できます
     }
 
     return {
@@ -102,8 +80,7 @@ export default {
       handleSubmit,
       showReportForm,
       isLocked,
-      handleReset,
-      containerStyle
+      handleReset
     }
   }
 }
@@ -114,16 +91,5 @@ export default {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
-  transition: height 0.5s ease-out;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 </style>
