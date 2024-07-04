@@ -19,7 +19,8 @@
 </template>
 
 <script>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import WeekSelector from './WeekSelector.vue'
 import ReportForm from './ReportForm.vue'
 import { useReport } from '../composables/useReport'
@@ -31,9 +32,17 @@ export default {
     WeekSelector,
     ReportForm
   },
-  setup() {
+  props: {
+    weekParam: {
+      type: String,
+      default: null
+    }
+  },
+  setup(props) {
     const { initialReport, submitReport } = useReport()
-    const { calendarWeeks } = useCalendar()
+    const { calendarWeeks, getWeekFromString, getStringFromWeek } = useCalendar()
+    const router = useRouter()
+    const route = useRoute()
 
     const selectedWeek = ref(null)
     const report = reactive(initialReport())
@@ -44,23 +53,49 @@ export default {
     const selectWeek = (week) => {
       selectedWeek.value = week
       if (week) {
-        // WeekSelectorのアニメーション完了後にReportFormを表示
+        const weekString = getStringFromWeek(week)
+        router.push({ query: { week: weekString } })
         setTimeout(() => {
           showReportForm.value = true
-        }, 700) // アニメーション時間に合わせて調整
+        }, 500)
       } else {
+        router.push({ query: {} })
         showReportForm.value = false
       }
     }
 
     const handleReset = () => {
-      // まずReportFormを非表示にする
       showReportForm.value = false
-      // 少し遅延を入れてから週選択をリセット
       setTimeout(() => {
         selectedWeek.value = null
+        router.push({ query: {} })
       }, 100)
     }
+
+    // URLパラメータが変更されたときの処理
+    watch(() => route.query.week, (newWeek) => {
+      if (newWeek) {
+        const week = getWeekFromString(newWeek)
+        if (week) {
+          selectedWeek.value = week
+          showReportForm.value = true
+        }
+      } else {
+        selectedWeek.value = null
+        showReportForm.value = false
+      }
+    })
+
+    // コンポーネントのマウント時にURLパラメータを確認
+    onMounted(() => {
+      if (props.weekParam) {
+        const week = getWeekFromString(props.weekParam)
+        if (week) {
+          selectedWeek.value = week
+          showReportForm.value = true
+        }
+      }
+    })
 
     const updateReport = (newReport) => {
       Object.assign(report, newReport)

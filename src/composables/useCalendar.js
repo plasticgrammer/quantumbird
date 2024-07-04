@@ -74,6 +74,23 @@ export function useCalendar() {
     return date.getDay() === 0
   }
 
+  const getStringFromWeek = (week) => {
+    const year = week[0].getFullYear()
+    const weekNumber = getWeekNumber(week[0])
+    return `${year}-W${weekNumber.toString().padStart(2, '0')}`
+  }
+
+  const getWeekFromString = (weekString) => {
+    const [year, weekNumber] = weekString.split('-W')
+    const date = new Date(year, 0, 1 + (weekNumber - 1) * 7)
+    const day = date.getDay()
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1)
+    const weekStart = new Date(date.setDate(diff))
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekEnd.getDate() + 6)
+    return [weekStart, weekEnd]
+  }
+
   return {
     weekdays,
     calendarWeeks: visibleWeeks, // calendarWeeks を visibleWeeks に置き換え
@@ -84,6 +101,8 @@ export function useCalendar() {
     isToday,
     isSaturday,
     isSunday,
-    shouldShowMonth
+    shouldShowMonth,
+    getStringFromWeek,
+    getWeekFromString
   }
 }

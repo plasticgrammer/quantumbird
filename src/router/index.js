@@ -1,16 +1,13 @@
+// router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import WeeklyReport from '../components/WeeklyReport.vue'
+import WeeklyReport from '@/components/WeeklyReport.vue'
 
 const routes = [
   {
     path: '/',
-    name: 'Home',
-    component: WeeklyReport
-  },
-  {
-    path: '/report/:startDate',
     name: 'WeeklyReport',
-    component: WeeklyReport
+    component: WeeklyReport,
+    props: (route) => ({ weekParam: route.query.week })
   }
 ]
 
