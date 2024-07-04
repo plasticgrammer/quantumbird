@@ -1,25 +1,25 @@
 <template>
-  <div class="weekly-report-container">
+  <div class="weekly-report-container" :style="containerStyle">
     <WeekSelector 
       :calendarWeeks="calendarWeeks"
       :selectedWeek="selectedWeek"
+      :isLocked="isLocked"
       @select-week="selectWeek"
+      @reset="handleReset"
     />
 
-    <transition name="fade">
-      <ReportForm 
-        v-if="showReportForm" 
-        :selectedWeek="selectedWeek"
-        :report="report"
-        @update:report="updateReport"
-        @submit-report="handleSubmit"
-      />
-    </transition>
+    <ReportForm 
+      v-if="showReportForm" 
+      :selectedWeek="selectedWeek"
+      :report="report"
+      @update:report="updateReport"
+      @submit-report="handleSubmit"
+    />
   </div>
 </template>
 
 <script>
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import WeekSelector from './WeekSelector.vue'
 import ReportForm from './ReportForm.vue'
 import { useReport } from '../composables/useReport'
@@ -38,16 +38,49 @@ export default {
     const selectedWeek = ref(null)
     const report = reactive(initialReport())
     const showReportForm = ref(false)
+    const containerHeight = ref('auto')
+
+    const isLocked = computed(() => selectedWeek.value !== null && showReportForm.value)
+
+    const containerStyle = computed(() => ({
+      height: containerHeight.value,
+      overflow: 'hidden'
+    }))
 
     const selectWeek = (week) => {
       selectedWeek.value = week
       if (week) {
+        // コンテナの高さを固定
+        containerHeight.value = `${document.querySelector('.weekly-report-container').offsetHeight}px`
         setTimeout(() => {
           showReportForm.value = true
+          // アニメーション完了後、高さを自動に戻す
+          setTimeout(() => {
+            containerHeight.value = 'auto'
+          }, 300)
         }, 800) // WeekSelectorのアニメーション時間に合わせて調整
       } else {
         showReportForm.value = false
       }
+    }
+
+    const handleReset = async () => {
+      // コンテナの高さを固定
+      containerHeight.value = `${document.querySelector('.weekly-report-container').offsetHeight}px`
+      
+      // ReportForm を非表示にする
+      showReportForm.value = false
+      
+      // ReportForm のフェードアウトアニメーションが完了するのを待つ
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      // 週選択をリセット
+      selectedWeek.value = null
+      
+      // アニメーション完了後、高さを自動に戻す
+      setTimeout(() => {
+        containerHeight.value = 'auto'
+      }, 500) // 週選択のアニメーション時間に合わせて調整
     }
 
     const updateReport = (newReport) => {
@@ -60,12 +93,6 @@ export default {
       // ここで追加の送信処理を実装できます
     }
 
-    watch(selectedWeek, (newValue) => {
-      if (!newValue) {
-        showReportForm.value = false
-      }
-    })
-
     return {
       calendarWeeks,
       selectedWeek,
@@ -73,7 +100,10 @@ export default {
       report,
       updateReport,
       handleSubmit,
-      showReportForm
+      showReportForm,
+      isLocked,
+      handleReset,
+      containerStyle
     }
   }
 }
@@ -84,6 +114,7 @@ export default {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+  transition: height 0.5s ease-out;
 }
 
 .fade-enter-active,

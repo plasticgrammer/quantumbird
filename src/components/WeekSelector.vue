@@ -52,7 +52,13 @@ import { useCalendar } from '../composables/useCalendar'
 
 export default {
   name: 'WeekSelector',
-  emits: ['select-week'],
+  props: {
+    isLocked: {
+      type: Boolean,
+      default: false
+    }
+  },
+  emits: ['select-week', 'reset'],
   setup(props, { emit }) {
     const { formatShortMonth, isToday, isSaturday, isSunday } = useCalendar()
 
@@ -109,7 +115,7 @@ export default {
     })
 
     const selectWeek = (week) => {
-      if (isLocked.value) return
+      if (props.isLocked) return
       selectedWeek.value = selectedWeek.value && 
         selectedWeek.value[0].getTime() === week[0].getTime() ? null : week
       emit('select-week', selectedWeek.value)
@@ -117,8 +123,7 @@ export default {
 
     const resetSelection = () => {
       selectedWeek.value = null
-      isLocked.value = false
-      emit('select-week', null)
+      emit('reset')
     }
 
     const isSelected = (week) => {
@@ -180,8 +185,7 @@ export default {
       isSunday,
       shouldShowMonth,
       selectedWeekRange,
-      getWeekKey,
-      isLocked
+      getWeekKey
     }
   }
 }
@@ -200,7 +204,7 @@ export default {
 }
 
 .week-selector h3 {
-  margin: 0;
+  margin: 5px 0;
   font-size: 1.2em;
   color: #333;
 }

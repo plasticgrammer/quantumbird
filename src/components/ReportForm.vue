@@ -401,8 +401,9 @@ textarea {
 }
 
 textarea {
+  box-sizing: border-box;
   resize: vertical;
-  min-height: 100px;
+  min-height: 80px;
 }
 
 .submit-button {
