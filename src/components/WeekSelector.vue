@@ -264,11 +264,6 @@ export default {
   background-color: rgba(179, 215, 255, 0.5);
 }
 
-.week-row.selected .week-number,
-.week-row.hovered .week-number {
-  background-color: transparent;
-}
-
 .day {
   padding: 10px;
   text-align: center;
@@ -276,10 +271,10 @@ export default {
 }
 
 .day.today {
-  background: linear-gradient(135deg, #f3f9ff 0%, #e1f1ff 100%);
+  background-color: #f3f9ff;
   border: 1px solid #a5d3ff;
-  border-radius: 8px;
-  font-weight: bold;
+  border-radius: 10px;
+  font-weight: 600;
   color: #3b82c4;
   overflow: hidden;
 }
@@ -293,14 +288,14 @@ export default {
 }
 
 .date {
-  font-size: 1em;
+  font-size: 1.1em;
 }
 
 .month {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  font-size: 0.6em;
+  top: 4px;
+  left: 6px;
+  font-size: 0.7em;
   color: #666;
 }
 

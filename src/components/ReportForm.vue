@@ -267,6 +267,7 @@ export default {
 .report-form {
   background-color: #f9f9f9;
   padding: 20px;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
