@@ -9,7 +9,7 @@
     />
 
     <div v-if="!isValidWeek" class="error-message">
-      指定された週は有効な範囲外です。
+      指定された週は有効範囲外です。
     </div>
 
     <ReportForm 
@@ -73,7 +73,9 @@ export default {
         const weekString = getStringFromWeek(week);
         if (weekString) {
           router.push(`/${weekString}`);
-          showReportForm.value = true;
+          setTimeout(() => {
+            showReportForm.value = true;
+          }, 700) // WeekSelectorのアニメーション時間に合わせて調整
           isValidWeek.value = true;
         } else {
           console.error('Failed to generate week string');
@@ -111,7 +113,9 @@ export default {
         const week = getWeekFromString(newWeekParam);
         if (week && isWeekInRange(week)) {
           selectedWeek.value = week;
-          showReportForm.value = true;
+          setTimeout(() => {
+            showReportForm.value = true;
+          }, 700) // WeekSelectorのアニメーション時間に合わせて調整
           isValidWeek.value = true;
         } else {
           console.error('Invalid or out of range week parameter:', newWeekParam);

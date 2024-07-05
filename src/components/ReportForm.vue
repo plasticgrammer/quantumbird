@@ -38,13 +38,16 @@
                     type="text" 
                     v-model="item.content" 
                     :placeholder="`作業内容 ${itemIndex + 1}`"
+                    :ref="el => setWorkItemRef(el, projectIndex, itemIndex)"
                     required
+                    @keydown="handleKeyDown($event, project, itemIndex)"
                   >
                   <button 
                     type="button" 
                     @click="removeWorkItem(project, itemIndex)" 
                     class="remove-work-item-button"
                     aria-label="作業内容を削除"
+                    tabindex="-1"
                   >
                     ✖️
                   </button>
@@ -93,7 +96,7 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick, reactive } from 'vue'
 import { useReport } from '../composables/useReport'
 
 export default {
@@ -116,14 +119,8 @@ export default {
   setup(props, { emit }) {
     const { formatDateRange } = useReport()
 
-    const localReport = ref({
-      ...props.report,
-      projects: props.report.projects.map(project => ({
-        ...project,
-        workItems: project.workItems.length > 0 ? project.workItems : [{ content: '' }]
-      }))
-    })
-
+    const localReport = ref({ ...props.report })
+    const workItemRefs = reactive({})
     const projectNames = ['プロジェクト1', 'プロジェクト2', 'プロジェクト3']
 
     const formattedOvertimeHours = computed({
@@ -164,18 +161,45 @@ export default {
       localReport.value.projects.splice(index, 1)
       emit('update:report', { ...localReport.value })
     }
-
-    const addWorkItem = (project) => {
-      project.workItems.push({ content: '' })
-      emit('update:report', { ...localReport.value })
+    const setWorkItemRef = (el, projectIndex, itemIndex) => {
+      if (!workItemRefs[projectIndex]) {
+        workItemRefs[projectIndex] = {}
+      }
+      workItemRefs[projectIndex][itemIndex] = el
     }
+
+    const handleKeyDown = async (event, project, itemIndex) => {
+      if (event.key === 'Enter' && !event.isComposing) {
+        event.preventDefault();
+        if (project.workItems[itemIndex].content.trim() !== '') {
+          await addWorkItem(project);
+          focusNewWorkItem(project, itemIndex + 1);
+        }
+      }
+    };
+
+    const addWorkItem = async (project) => {
+      project.workItems.push({ content: '' });
+      emit('update:report', { ...localReport.value });
+      await nextTick();
+    };
+
+    const focusNewWorkItem = (project, newIndex) => {
+      const projectIndex = localReport.value.projects.indexOf(project);
+      nextTick(() => {
+        if (workItemRefs[projectIndex] && workItemRefs[projectIndex][newIndex]) {
+          workItemRefs[projectIndex][newIndex].focus();
+        }
+      });
+    };
 
     const removeWorkItem = (project, index) => {
-      if (project.workItems.length > 1) {
-        project.workItems.splice(index, 1)
-        emit('update:report', { ...localReport.value })
+      project.workItems.splice(index, 1);
+      if (project.workItems.length === 0) {
+        addWorkItem(project);
       }
-    }
+      emit('update:report', { ...localReport.value });
+    };
 
     const copyFromPreviousWeek = () => {
       if (props.previousWeekReport && props.previousWeekReport.projects) {
@@ -208,6 +232,8 @@ export default {
       decreaseOvertime,
       addProject,
       removeProject,
+      setWorkItemRef,
+      handleKeyDown,
       addWorkItem,
       removeWorkItem,
       onProjectSelect,

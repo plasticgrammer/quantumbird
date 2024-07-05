@@ -105,7 +105,6 @@ export default {
     }, { immediate: true });
 
     const selectWeek = (week) => {
-      console.log('selectWeek called with:', week);
       if (props.isLocked) return;
       const newSelectedWeek = internalSelectedWeek.value && 
         internalSelectedWeek.value[0].getTime() === week[0].getTime() ? null : [week[0], new Date(week[0].getTime() + 6 * 24 * 60 * 60 * 1000)];
@@ -149,7 +148,6 @@ export default {
     });
 
     const getWeekKey = (week) => {
-      console.log('getWeekKey called with:', week);
       if (!Array.isArray(week) || week.length === 0) {
         console.error('Invalid week in getWeekKey:', week);
         return 'invalid-week';
