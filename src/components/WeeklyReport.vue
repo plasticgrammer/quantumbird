@@ -8,8 +8,12 @@
       @reset="handleReset"
     />
 
+    <div v-if="!isValidWeek" class="error-message">
+      指定された週は有効な範囲外です。
+    </div>
+
     <ReportForm 
-      v-if="showReportForm" 
+      v-if="showReportForm && isValidWeek" 
       :selectedWeek="selectedWeek"
       :report="report"
       @update:report="updateReport"
@@ -19,8 +23,8 @@
 </template>
 
 <script>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, reactive, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import WeekSelector from './WeekSelector.vue'
 import ReportForm from './ReportForm.vue'
 import { useReport } from '../composables/useReport'
@@ -39,72 +43,88 @@ export default {
     }
   },
   setup(props) {
-    const { initialReport, submitReport } = useReport()
+    const { initialReport } = useReport()
     const { calendarWeeks, getWeekFromString, getStringFromWeek } = useCalendar()
     const router = useRouter()
-    const route = useRoute()
 
     const selectedWeek = ref(null)
     const report = reactive(initialReport())
     const showReportForm = ref(false)
+    const isValidWeek = ref(true)
 
-    const isLocked = computed(() => selectedWeek.value !== null && showReportForm.value)
+    const isLocked = computed(() => !!selectedWeek.value)
+
+    const calendarDateRange = computed(() => {
+      if (calendarWeeks.value.length === 0) return { start: null, end: null };
+      const start = calendarWeeks.value[0][0];
+      const end = calendarWeeks.value[calendarWeeks.value.length - 1][6];
+      return { start, end };
+    });
+
+    const isWeekInRange = (week) => {
+      if (!week || !calendarDateRange.value.start || !calendarDateRange.value.end) return false;
+      return week[0] >= calendarDateRange.value.start && week[1] <= calendarDateRange.value.end;
+    };
 
     const selectWeek = (week) => {
-      selectedWeek.value = week
-      if (week) {
-        const weekString = getStringFromWeek(week)
-        router.push({ query: { week: weekString } })
-        setTimeout(() => {
-          showReportForm.value = true
-        }, 500)
+      console.log('selectWeek called with:', week);
+      selectedWeek.value = week;
+      if (week && isWeekInRange(week)) {
+        const weekString = getStringFromWeek(week);
+        if (weekString) {
+          router.push(`/${weekString}`);
+          showReportForm.value = true;
+          isValidWeek.value = true;
+        } else {
+          console.error('Failed to generate week string');
+          showReportForm.value = false;
+          isValidWeek.value = false;
+        }
       } else {
-        router.push({ query: {} })
-        showReportForm.value = false
+        router.push('/');
+        showReportForm.value = false;
+        isValidWeek.value = true;
       }
     }
 
     const handleReset = () => {
-      showReportForm.value = false
-      setTimeout(() => {
-        selectedWeek.value = null
-        router.push({ query: {} })
-      }, 100)
+      console.log('Handling reset');
+      showReportForm.value = false;
+      selectedWeek.value = null;
+      isValidWeek.value = true;
+      router.push('/');
     }
 
-    // URLパラメータが変更されたときの処理
-    watch(() => route.query.week, (newWeek) => {
-      if (newWeek) {
-        const week = getWeekFromString(newWeek)
-        if (week) {
-          selectedWeek.value = week
-          showReportForm.value = true
-        }
-      } else {
-        selectedWeek.value = null
-        showReportForm.value = false
-      }
-    })
-
-    // コンポーネントのマウント時にURLパラメータを確認
-    onMounted(() => {
-      if (props.weekParam) {
-        const week = getWeekFromString(props.weekParam)
-        if (week) {
-          selectedWeek.value = week
-          showReportForm.value = true
-        }
-      }
-    })
-
     const updateReport = (newReport) => {
-      Object.assign(report, newReport)
+      Object.assign(report, newReport);
     }
 
     const handleSubmit = () => {
-      console.log('Submitted report:', report)
-      submitReport(report)
+      console.log('Report submitted:', report);
+      // ここで報告の送信処理を実装します
+      // 例: submitReport(report);
     }
+
+    watch(() => props.weekParam, (newWeekParam) => {
+      console.log('Week param changed:', newWeekParam);
+      if (newWeekParam) {
+        const week = getWeekFromString(newWeekParam);
+        if (week && isWeekInRange(week)) {
+          selectedWeek.value = week;
+          showReportForm.value = true;
+          isValidWeek.value = true;
+        } else {
+          console.error('Invalid or out of range week parameter:', newWeekParam);
+          selectedWeek.value = null;
+          showReportForm.value = false;
+          isValidWeek.value = false;
+        }
+      } else {
+        selectedWeek.value = null;
+        showReportForm.value = false;
+        isValidWeek.value = true;
+      }
+    }, { immediate: true })
 
     return {
       calendarWeeks,
@@ -114,8 +134,9 @@ export default {
       updateReport,
       handleSubmit,
       showReportForm,
-      isLocked,
-      handleReset
+      handleReset,
+      isValidWeek,
+      isLocked
     }
   }
 }
@@ -126,5 +147,10 @@ export default {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+}
+
+.error-message {
+  color: red;
+  margin-top: 10px;
 }
 </style>

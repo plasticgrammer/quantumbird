@@ -53,6 +53,10 @@ import { useCalendar } from '../composables/useCalendar'
 export default {
   name: 'WeekSelector',
   props: {
+    selectedWeek: {
+      type: Array,
+      default: () => null
+    },
     isLocked: {
       type: Boolean,
       default: false
@@ -60,11 +64,30 @@ export default {
   },
   emits: ['select-week', 'reset'],
   setup(props, { emit }) {
-    const { formatShortMonth, isToday, isSaturday, isSunday } = useCalendar()
+    const { 
+      formatShortMonth, 
+      isToday, 
+      isSaturday, 
+      isSunday, 
+      shouldShowMonth,
+      getWeekNumber,
+      calendarWeeks
+    } = useCalendar()
 
-    const selectedWeek = ref(null)
-    const hoveredWeek = ref(null)
-    const isLocked = ref(false)
+    const internalSelectedWeek = ref(props.selectedWeek)
+
+    const visibleWeeks = computed(() => {
+      console.log('Computing visibleWeeks, internalSelectedWeek:', internalSelectedWeek.value);
+      if (!internalSelectedWeek.value) return calendarWeeks.value;
+      return calendarWeeks.value.filter(week => {
+        if (!Array.isArray(week) || week.length === 0 || !(week[0] instanceof Date)) {
+          console.error('Invalid week in calendarWeeks:', week);
+          return false;
+        }
+        const weekStart = week[0];
+        return weekStart >= internalSelectedWeek.value[0] && weekStart <= internalSelectedWeek.value[1];
+      });
+    });
 
     const weekdays = [
       { label: '日', class: 'sunday' },
@@ -76,102 +99,77 @@ export default {
       { label: '土', class: 'saturday' }
     ]
 
-    const calendarWeeks = computed(() => {
-      const weeks = []
-      const today = new Date()
-      let currentDate = new Date(today)
-
-      // 今日の日付を含む週の日曜日まで戻る
-      while (currentDate.getDay() !== 0) {
-        currentDate.setDate(currentDate.getDate() - 1)
-      }
-
-      // さらに3週間前に戻る
-      currentDate.setDate(currentDate.getDate() - 21)
-
-      for (let i = 0; i < 4; i++) {
-        const week = []
-        for (let j = 0; j < 7; j++) {
-          week.push(new Date(currentDate))
-          currentDate.setDate(currentDate.getDate() + 1)
-        }
-        weeks.push(week)
-      }
-      return weeks
-    })
-
-    const visibleWeeks = computed(() => {
-      if (!selectedWeek.value) return calendarWeeks.value
-      return calendarWeeks.value.filter(week => 
-        week[0].getTime() === selectedWeek.value[0].getTime()
-      )
-    })
-
-    const getWeekKey = (week) => week[0].toISOString().split('T')[0]
-
-    // selectedWeek の変更を監視し、isLocked を更新
-    watch(selectedWeek, (newValue) => {
-      isLocked.value = newValue !== null && visibleWeeks.value.length === 1
-    })
+    watch(() => props.selectedWeek, (newSelectedWeek) => {
+      console.log('props.selectedWeek changed:', newSelectedWeek);
+      internalSelectedWeek.value = newSelectedWeek;
+    }, { immediate: true });
 
     const selectWeek = (week) => {
-      if (props.isLocked) return
-      selectedWeek.value = selectedWeek.value && 
-        selectedWeek.value[0].getTime() === week[0].getTime() ? null : week
-      emit('select-week', selectedWeek.value)
-    }
+      console.log('selectWeek called with:', week);
+      if (props.isLocked) return;
+      const newSelectedWeek = internalSelectedWeek.value && 
+        internalSelectedWeek.value[0].getTime() === week[0].getTime() ? null : [week[0], new Date(week[0].getTime() + 6 * 24 * 60 * 60 * 1000)];
+      internalSelectedWeek.value = newSelectedWeek;
+      emit('select-week', newSelectedWeek);
+    };
 
     const resetSelection = () => {
-      selectedWeek.value = null
-      emit('reset')
+      internalSelectedWeek.value = null;
+      emit('reset');
     }
 
     const isSelected = (week) => {
-      return !isLocked.value && selectedWeek.value && week[0].getTime() === selectedWeek.value[0].getTime()
+      return internalSelectedWeek.value && week[0].getTime() === internalSelectedWeek.value[0].getTime();
     }
 
+    const hoveredWeek = ref(null);
+
     const setHoverWeek = (week) => {
-      hoveredWeek.value = week
+      hoveredWeek.value = week;
     }
 
     const clearHoverWeek = () => {
-      hoveredWeek.value = null
+      hoveredWeek.value = null;
     }
 
     const isHovered = (week) => {
-      return hoveredWeek.value && week[0].getTime() === hoveredWeek.value[0].getTime()
+      return hoveredWeek.value && week[0].getTime() === hoveredWeek.value[0].getTime();
     }
 
     const formatDateRange = (week) => {
-      if (!week) return ''
-      const start = week[0]
-      const end = week[6]
-      const options = { year: 'numeric', month: 'long', day: 'numeric' }
-      return `${start.toLocaleDateString('ja-JP', options)} - ${end.toLocaleDateString('ja-JP', options)}`
+      if (!week || week.length < 2) return '週の選択';
+      const start = week[0];
+      const end = week[1];
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      return `${start.toLocaleDateString('ja-JP', options)} - ${end.toLocaleDateString('ja-JP', options)}`;
     }
 
     const selectedWeekRange = computed(() => {
-      return selectedWeek.value
-        ? formatDateRange(selectedWeek.value)
-        : '週の選択'
-    })
+      return internalSelectedWeek.value ? formatDateRange(internalSelectedWeek.value) : '週の選択';
+    });
 
-    const shouldShowMonth = (date, weekIndex, dayIndex) => {
-      return date.getDate() === 1 || (weekIndex === 0 && dayIndex === 0)
-    }
-
-    const getWeekNumber = (date) => {
-      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-      const dayNum = d.getUTCDay() || 7;
-      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-      const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-      return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+    const getWeekKey = (week) => {
+      console.log('getWeekKey called with:', week);
+      if (!Array.isArray(week) || week.length === 0) {
+        console.error('Invalid week in getWeekKey:', week);
+        return 'invalid-week';
+      }
+      if (!(week[0] instanceof Date)) {
+        console.error('First element of week is not a Date:', week[0]);
+        return 'invalid-date';
+      }
+      try {
+        return week[0].toISOString().split('T')[0];
+      } catch (error) {
+        console.error('Error in getWeekKey:', error);
+        return 'error-week';
+      }
     }
 
     return {
       visibleWeeks,
       weekdays,
-      selectedWeek,
+      internalSelectedWeek,
       selectWeek,
       isSelected,
       setHoverWeek,

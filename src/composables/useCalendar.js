@@ -15,21 +15,24 @@ export function useCalendar() {
   ]
 
   const calendarWeeks = computed(() => {
-    const weeks = []
-    const today = new Date()
-    const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 28)
-    startDate.setDate(startDate.getDate() - startDate.getDay() + 1) // 月曜日から開始
+    const weeks = [];
+    const today = new Date();
+    let currentDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 28);
+
+    // 最初の月曜日まで移動
+    while (currentDate.getDay() !== 1) {
+      currentDate.setDate(currentDate.getDate() - 1);
+    }
 
     for (let i = 0; i < 5; i++) {
-      const week = []
+      const week = [];
       for (let j = 0; j < 7; j++) {
-        const date = new Date(startDate)
-        week.push({ date })
-        startDate.setDate(startDate.getDate() + 1)
+        week.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
       }
-      weeks.push(week)
+      weeks.push(week);
     }
-    return weeks
+    return weeks;
   })
 
   const visibleWeeks = computed(() => {
