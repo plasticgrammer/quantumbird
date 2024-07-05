@@ -4,23 +4,13 @@ import { ref, computed } from 'vue'
 export function useCalendar() {
   const selectedWeek = ref(null)
 
-  const weekdays = [
-    { label: '月', class: '' },
-    { label: '火', class: '' },
-    { label: '水', class: '' },
-    { label: '木', class: '' },
-    { label: '金', class: '' },
-    { label: '土', class: 'saturday' },
-    { label: '日', class: 'sunday' }
-  ]
-
   const calendarWeeks = computed(() => {
     const weeks = [];
     const today = new Date();
     let currentDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 28);
 
     // 最初の月曜日まで移動
-    while (currentDate.getDay() !== 1) {
+    while (currentDate.getDay() !== 0) {
       currentDate.setDate(currentDate.getDate() - 1);
     }
 
@@ -95,7 +85,6 @@ export function useCalendar() {
   }
 
   return {
-    weekdays,
     calendarWeeks: visibleWeeks, // calendarWeeks を visibleWeeks に置き換え
     selectedWeek,
     selectWeek,

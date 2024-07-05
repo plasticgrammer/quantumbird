@@ -302,6 +302,7 @@ select, input[type="text"], input[type="number"], textarea {
 
 textarea {
   resize: vertical;
+  box-sizing: border-box;
   min-height: 6em;
   line-height: 1.5;
 }
@@ -425,12 +426,6 @@ textarea {
 .time-unit {
   font-size: 14px;
   color: #666;
-}
-
-textarea {
-  box-sizing: border-box;
-  resize: vertical;
-  min-height: 80px;
 }
 
 .submit-button {
