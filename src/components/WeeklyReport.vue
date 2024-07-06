@@ -44,7 +44,7 @@ export default {
   },
   setup(props) {
     const { initialReport } = useReport()
-    const { calendarWeeks, getWeekFromString, getStringFromWeek } = useCalendar()
+    const { calendarWeeks, getWeekFromString, getStringFromWeek, getWeekNumber } = useCalendar()
     const router = useRouter()
 
     const selectedWeek = ref(null)
@@ -63,7 +63,7 @@ export default {
 
     const isWeekInRange = (week) => {
       if (!week || !calendarDateRange.value.start || !calendarDateRange.value.end) return false;
-      return week[0] >= calendarDateRange.value.start && week[1] <= calendarDateRange.value.end;
+      return getWeekNumber(week[0]) == getWeekNumber(calendarDateRange.value.start);
     };
 
     const selectWeek = (week) => {
