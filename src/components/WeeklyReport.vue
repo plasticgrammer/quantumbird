@@ -63,7 +63,8 @@ export default {
 
     const isWeekInRange = (week) => {
       if (!week || !calendarDateRange.value.start || !calendarDateRange.value.end) return false;
-      return getWeekNumber(week[0]) == getWeekNumber(calendarDateRange.value.start);
+      return getWeekNumber(week[0]) >= getWeekNumber(calendarDateRange.value.start) 
+        && getWeekNumber(week[1]) <= getWeekNumber(calendarDateRange.value.end);
     };
 
     const selectWeek = (week) => {
