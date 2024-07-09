@@ -1,108 +1,122 @@
 <template>
-  <div class="report-form-container">
-    <button @click="copyFromPreviousWeek" class="copy-button">前週よりコピー</button>
-    <div class="report-form">
-      <form @submit.prevent="submitReport">
-        <div v-for="(project, projectIndex) in localReport.projects" :key="projectIndex" class="project-section">
-          <div class="project-header">
-            <div class="form-group project-name">
-              <label :for="`project-${projectIndex}`">プロジェクト:</label>
-              <select 
-                :id="`project-${projectIndex}`" 
-                v-model="project.name" 
+  <v-container class="report-form-container">
+    <v-btn @click="copyFromPreviousWeek" color="secondary" class="mb-4">前週よりコピー</v-btn>
+    <v-form @submit.prevent="submitReport" class="report-form">
+      <v-card v-for="(project, projectIndex) in localReport.projects" :key="projectIndex" class="mb-4">
+        <v-card-text>
+          <v-row align="center">
+            <v-col cols="10">
+              <v-combobox
+                v-model="project.name"
+                :items="projectNames"
+                label="プロジェクト"
+                @update:model-value="onProjectSelect(project)"
                 required
-                @change="onProjectSelect(project)"
+                dense
+                outlined
+              ></v-combobox>
+            </v-col>
+            <v-col cols="2" class="d-flex justify-end">
+              <v-btn
+                icon
+                x-small
+                @click="removeProject(projectIndex)"
+                v-if="localReport.projects.length > 1"
+                class="project-delete-btn"
               >
-                <option value="">選択してください</option>
-                <option v-for="projName in projectNames" :key="projName" :value="projName">
-                  {{ projName }}
-                </option>
-              </select>
-            </div>
-            <button 
-              type="button" 
-              @click="removeProject(projectIndex)" 
-              class="remove-button"
-              v-if="localReport.projects.length > 1"
-              aria-label="プロジェクトを削除"
-            >
-              ×
-            </button>
-          </div>
-          <div v-if="project.workItems.length > 0" class="work-items-section">
-            <div class="form-group">
-              <label>作業内容:</label>
-              <div v-for="(item, itemIndex) in project.workItems" :key="itemIndex" class="work-item">
-                <div class="input-wrapper">
-                  <input 
-                    type="text" 
-                    v-model="item.content" 
-                    :placeholder="`作業内容 ${itemIndex + 1}`"
-                    :ref="el => setWorkItemRef(el, projectIndex, itemIndex)"
-                    required
-                    @keydown="handleKeyDown($event, project, itemIndex)"
-                  >
-                  <button 
-                    type="button" 
-                    @click="removeWorkItem(project, itemIndex)" 
-                    class="remove-work-item-button"
-                    aria-label="作業内容を削除"
-                    tabindex="-1"
-                  >
-                    ✖️
-                  </button>
-                </div>
+                <v-icon small>mdi-delete-outline</v-icon>
+              </v-btn>
+            </v-col>
+          </v-row>
+          <v-row v-if="project.workItems.length > 0">
+            <v-col cols="12">
+              <div v-for="(item, itemIndex) in project.workItems" :key="itemIndex" class="mb-2">
+                <v-text-field
+                  v-model="item.content"
+                  :label="`作業内容 ${itemIndex + 1}`"
+                  dense
+                  outlined
+                  clearable
+                  hide-details="auto"
+                  :ref="el => setWorkItemRef(el, projectIndex, itemIndex)"
+                  required
+                  @keydown="handleKeyDown($event, project, itemIndex)"
+                  @click:clear="removeWorkItem(project, itemIndex)"
+                ></v-text-field>
               </div>
-              <div class="button-container">
-                <button type="button" @click="addWorkItem(project)" class="action-button">作業を追加</button>
+              <div class="d-flex justify-end">
+                <v-btn
+                  color="primary"
+                  text
+                  @click="addWorkItem(project)"
+                  class="mt-2"
+                >
+                  作業を追加
+                </v-btn>
               </div>
-            </div>
-          </div>
-        </div>
-        <div class="button-container">
-          <button type="button" @click="addProject" class="action-button">プロジェクトを追加</button>
-        </div>
-        
-        <div class="form-group overtime-input">
-          <label for="overtimeHours">残業時間:</label>
-          <div class="overtime-controls">
-            <input 
-              type="number" 
-              id="overtimeHours" 
-              v-model="formattedOvertimeHours" 
-              @input="updateOvertime"
-              min="0" 
-              max="99" 
-              step="0.5" 
-              required
-            >
-            <span class="time-unit">時間</span>
-            <button type="button" @click="decreaseOvertime" class="overtime-button">－</button>
-            <button type="button" @click="increaseOvertime" class="overtime-button">＋</button>
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="issues">報告事項（問題点など）:</label>
-          <textarea id="issues" v-model="localReport.issues" required rows="4" class="textarea-large"></textarea>
-        </div>
-        
-        <div class="form-group mt-2">
-          <label for="achievements">成果:</label>
-          <input type="text" id="achievements" v-model="localReport.achievements" >
-        </div>
-        
-        <div class="form-group mt-2">
-          <label for="improvements">改善点:</label>
-          <input type="text" id="improvements" v-model="localReport.improvements" >
-        </div>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+      
+      <div class="d-flex justify-end mb-4">
+        <v-btn color="primary" @click="addProject">プロジェクトを追加</v-btn>
+      </div>
+      
+      <v-row>
+        <v-col cols="12" sm="6">
+          <v-text-field
+            v-model="formattedOvertimeHours"
+            label="残業時間"
+            type="number"
+            min="0"
+            max="99"
+            step="0.5"
+            @input="updateOvertime"
+            required
+            outlined
+            dense
+          >
+            <template v-slot:append>
+              <v-btn icon small @click="decreaseOvertime"><v-icon>mdi-minus</v-icon></v-btn>
+              <v-btn icon small @click="increaseOvertime"><v-icon>mdi-plus</v-icon></v-btn>
+            </template>
+          </v-text-field>
+        </v-col>
+      </v-row>
+      
+      <v-textarea
+        v-model="localReport.issues"
+        label="報告事項（問題点など）"
+        required
+        rows="4"
+        auto-grow
+        outlined
+        clear-icon="mdi-close-circle"
+        clearable 
+      ></v-textarea>
+      
+      <v-text-field
+        v-model="localReport.achievements"
+        label="成果"
+        outlined
+        dense
+        clear-icon="mdi-close-circle"
+        clearable 
+      ></v-text-field>
+      
+      <v-text-field
+        v-model="localReport.improvements"
+        label="改善点"
+        outlined
+        dense
+        clear-icon="mdi-close-circle"
+        clearable 
+      ></v-text-field>
 
-        <div class="button-group">
-          <button type="submit" class="submit-button">報告を提出</button>
-        </div>
-      </form>
-    </div>
-  </div>
+      <v-btn color="success" type="submit" class="mt-4">報告を提出</v-btn>
+    </v-form>
+  </v-container>
 </template>
 
 <script>
@@ -136,7 +150,7 @@ export default {
       improvements: props.report.improvements || ''
     })
     const workItemRefs = reactive({})
-    const projectNames = ['プロジェクト1', 'プロジェクト2', 'プロジェクト3']
+    const projectNames = ref(['プロジェクト1', 'プロジェクト2', 'プロジェクト3'])
 
     const formattedOvertimeHours = computed({
       get: () => localReport.value.overtimeHours.toFixed(1),
@@ -176,6 +190,7 @@ export default {
       localReport.value.projects.splice(index, 1)
       emit('update:report', { ...localReport.value })
     }
+    
     const setWorkItemRef = (el, projectIndex, itemIndex) => {
       if (!workItemRefs[projectIndex]) {
         workItemRefs[projectIndex] = {}
@@ -233,6 +248,9 @@ export default {
     }
 
     const onProjectSelect = (project) => {
+      if (!projectNames.value.includes(project.name)) {
+        projectNames.value.push(project.name)
+      }
       if (project.workItems.length === 0) {
         project.workItems.push({ content: '' })
       }
@@ -267,201 +285,27 @@ export default {
 
 <style scoped>
 .report-form-container {
-  margin-bottom: 20px;
-}
-
-.copy-button {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  color: #333;
-  padding: 10px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-bottom: 10px;
-  transition: background-color 0.2s, opacity 0.2s;
-}
-
-.copy-button:hover {
-  opacity: 0.8;
+  max-width: 960px;
+  margin: 0 auto;
 }
 
 .report-form {
   background-color: #f9f9f9;
   padding: 20px;
-  border: 1px solid #e0e0e0;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.project-section {
-  position: relative;
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 5px;
-  padding: 15px;
-  margin-bottom: 15px;
+.project-delete-btn {
+  opacity: 0.6;
+  transition: opacity 0.2s;
 }
 
-.project-header {
-  margin-bottom: 15px;
+.project-delete-btn:hover {
+  opacity: 1;
 }
 
-label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #555;
-}
-
-select, input[type="text"], input[type="number"], textarea {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-#issues {
-  min-height: 6em;
-  resize: vertical;
-  line-height: 1.5;
-  box-sizing: border-box;
-}
-
-.project-name {
-  flex-grow: 1;
-  margin-right: 10px;
-}
-
-.icon-button {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1.2em;
-  cursor: pointer;
-  padding: 5px 10px;
-  transition: background-color 0.2s;
-}
-
-.icon-button:hover {
-  background-color: #e0e0e0;
-}
-
-.work-items-section {
-  margin-top: 10px;
-}
-
-.work-item {
-  margin-bottom: 10px;
-}
-
-.input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.input-wrapper input {
-  flex-grow: 1;
-  padding-right: 30px;
-}
-
-.remove-work-item-button {
-  position: absolute;
-  right: 5px;
-  background: none;
-  border: none;
-  font-size: 1em;
-  cursor: pointer;
-  padding: 5px;
-  color: #999;
-}
-
-.remove-work-item-button:hover {
-  color: #666;
-}
-
-.button-container {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 10px;
-}
-
-.action-button,
-.overtime-button {
-  width: auto;
-  height: auto;
-  font-size: 14px;
-  line-height: 1;
-  padding: 8px 12px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-  color: #333;
-  transition: background-color 0.2s;
-}
-
-.action-button:hover,
-.overtime-button:hover {
-  background-color: #e0e0e0;
-}
-
-.remove-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
+.project-delete-btn .v-icon {
   font-size: 18px;
-  padding: 4px 8px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-  color: #333;
-  transition: background-color 0.2s;
-}
-
-.remove-button:hover {
-  background-color: #e0e0e0;
-}
-
-.overtime-input {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.overtime-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.overtime-controls input[type="number"] {
-  width: 80px;
-  text-align: center;
-  font-size: 16px;
-}
-
-.time-unit {
-  font-size: 14px;
-  color: #666;
-}
-
-.submit-button {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin-top: 20px;
-}
-
-.submit-button:hover {
-  background-color: #45a049;
+  color: #757575;
 }
 </style>
