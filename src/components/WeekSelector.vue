@@ -1,20 +1,29 @@
 <template>
-  <div class="week-selector">
-    <div class="week-selector-header">
-      <h3>{{ selectedWeekRange }}</h3>
-      <button v-if="isLocked" @click="resetSelection" class="reset-button">
-        選択をリセット
-      </button>
-    </div>
-    <div class="calendar">
-      <div class="weekdays">
-        <div class="week-number-header">週</div>
-        <div v-for="day in weekdays" :key="day.label" :class="day.class">{{ day.label }}</div>
-      </div>
-      <transition-group name="week-fade" tag="div" class="weeks">
-        <div 
-          v-for="(week, weekIndex) in visibleWeeks" 
-          :key="getWeekKey(week)" 
+  <v-container class="week-selector">
+    <v-row align="center" justify="space-between" class="mb-1">
+      <v-col>
+        <h3>{{ selectedWeekRange }}</h3>
+      </v-col>
+      <v-col class="text-right">
+        <v-btn
+          v-if="isLocked"
+          @click="resetSelection"
+          color="secondary"
+          small
+        >
+          選択をリセット
+        </v-btn>
+      </v-col>
+    </v-row>
+    <v-card>
+      <v-card-text class="pa-0">
+        <v-row class="weekdays" no-gutters>
+          <v-col cols="1" class="week-number-header">週</v-col>
+          <v-col v-for="day in weekdays" :key="day.label" :class="['weekday', day.class]">
+            {{ day.label }}
+          </v-col>
+        </v-row>
+        <v-row v-for="(week, weekIndex) in visibleWeeks" :key="getWeekKey(week)" no-gutters
           class="week-row"
           :class="{ 
             'selected': isSelected(week), 
@@ -24,10 +33,8 @@
           @mouseenter="setHoverWeek(week)"
           @mouseleave="clearHoverWeek"
         >
-          <div class="week-number">{{ getWeekNumber(week[0]) }}</div>
-          <div
-            v-for="(day, dayIndex) in week"
-            :key="day.toISOString()"
+          <v-col cols="1" class="week-number">{{ getWeekNumber(week[0]) }}</v-col>
+          <v-col v-for="(day, dayIndex) in week" :key="day.toISOString()"
             :class="[
               'day',
               { 'today': isToday(day) },
@@ -39,11 +46,11 @@
               {{ formatShortMonth(day) }}
             </span>
             <span class="date">{{ day.getDate() }}</span>
-          </div>
-        </div>
-      </transition-group>
-    </div>
-  </div>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+  </v-container>
 </template>
 
 <script>
@@ -192,69 +199,32 @@ export default {
   margin-bottom: 20px;
 }
 
-.week-selector-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.week-selector h3 {
-  margin: 5px 0;
-  font-size: 1.2em;
-  color: #333;
-}
-
-.reset-button {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 5px 10px;
-  font-size: 0.9em;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.reset-button:hover {
-  background-color: #e0e0e0;
-}
-
-.calendar {
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  overflow: hidden;
-}
-
 .weekdays {
-  display: grid;
-  grid-template-columns: 40px repeat(7, 1fr);
   background-color: #f0f0f0;
   font-weight: bold;
 }
 
-.weekdays > div {
-  padding: 10px;
-  text-align: center;
-}
-
+.weekday,
 .week-number-header,
-.week-number {
-  background-color: #f8f9fa;
-  color: #6c757d;
-  font-size: 0.8em;
+.week-number,
+.day {
+  height: 3em;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.weeks {
-  display: flex;
-  flex-direction: column;
+.weekday {
+  text-align: center;
+}
+
+.week-number-header,
+.week-number {
+  color: #6c757d;
+  font-size: 0.8em;
 }
 
 .week-row {
-  display: grid;
-  grid-template-columns: 40px repeat(7, 1fr);
   transition: all 0.3s ease;
   cursor: pointer;
 }
@@ -265,7 +235,6 @@ export default {
 }
 
 .day {
-  padding: 10px;
   text-align: center;
   position: relative;
 }
@@ -288,25 +257,14 @@ export default {
 }
 
 .date {
-  font-size: 1.1em;
+  font-size: 1.2em;
 }
 
 .month {
   position: absolute;
-  top: 4px;
-  left: 6px;
+  top: 2px;
+  left: 4px;
   font-size: 0.7em;
   color: #666;
-}
-
-.week-fade-enter-active,
-.week-fade-leave-active {
-  transition: all 0.5s ease-out;
-}
-
-.week-fade-enter-from,
-.week-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-15px);
 }
 </style>
