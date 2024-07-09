@@ -195,10 +195,6 @@ export default {
 </script>
 
 <style scoped>
-.week-selector {
-  margin-bottom: 20px;
-}
-
 .weekdays {
   background-color: #f0f0f0;
   font-weight: bold;

@@ -151,7 +151,7 @@ export default {
 .weekly-report-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 10px 0;
 }
 
 .error-message {

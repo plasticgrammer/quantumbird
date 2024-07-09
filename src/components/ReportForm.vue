@@ -1,6 +1,9 @@
 <template>
   <v-container class="report-form-container">
-    <v-btn @click="copyFromPreviousWeek" color="secondary" class="mb-4">前週よりコピー</v-btn>
+    <v-btn @click="copyFromPreviousWeek" color="secondary" class="mb-4">
+      <v-icon class="mr-1" left>mdi-content-copy</v-icon>
+      前週よりコピー
+    </v-btn>
     <v-form @submit.prevent="submitReport" class="report-form">
       <v-card v-for="(project, projectIndex) in localReport.projects" :key="projectIndex" class="mb-4">
         <v-card-text>
@@ -51,6 +54,7 @@
                   @click="addWorkItem(project)"
                   class="mt-2"
                 >
+                  <v-icon class="mr-1" left>mdi-plus</v-icon>
                   作業を追加
                 </v-btn>
               </div>
@@ -60,7 +64,10 @@
       </v-card>
       
       <div class="d-flex justify-end mb-4">
-        <v-btn color="primary" @click="addProject">プロジェクトを追加</v-btn>
+        <v-btn color="primary" @click="addProject">
+          <v-icon class="mr-1" left>mdi-plus</v-icon>
+          プロジェクトを追加
+        </v-btn>
       </div>
       
       <v-row>
@@ -76,6 +83,7 @@
             required
             outlined
             dense
+            class="overtime-input"
           >
             <template v-slot:append>
               <v-btn icon small @click="decreaseOvertime"><v-icon>mdi-minus</v-icon></v-btn>
@@ -87,7 +95,7 @@
       
       <v-textarea
         v-model="localReport.issues"
-        label="報告事項（問題点など）"
+        label="現状・問題点"
         required
         rows="4"
         auto-grow
@@ -114,7 +122,10 @@
         clearable 
       ></v-text-field>
 
-      <v-btn color="success" type="submit" class="mt-4">報告を提出</v-btn>
+      <v-btn color="success" type="submit" class="mt-4">
+        <v-icon class="mr-1" left>mdi-check</v-icon>
+        報告を提出
+      </v-btn>
     </v-form>
   </v-container>
 </template>
@@ -285,7 +296,6 @@ export default {
 
 <style scoped>
 .report-form-container {
-  max-width: 960px;
   margin: 0 auto;
 }
 
@@ -307,5 +317,14 @@ export default {
 .project-delete-btn .v-icon {
   font-size: 18px;
   color: #757575;
+}
+
+.overtime-input >>> input {
+  text-align: right !important;
+}
+
+.overtime-input >>> input::-webkit-outer-spin-button,
+.overtime-input >>> input::-webkit-inner-spin-button {
+  margin-left: 10px;
 }
 </style>

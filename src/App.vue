@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <v-app id="app">
     <v-main>
       <router-view/>
     </v-main>
@@ -7,7 +7,6 @@
 </template>
 
 <script>
-
 export default {
   name: 'App',
 
@@ -16,3 +15,10 @@ export default {
   }),
 }
 </script>
+
+<style scoped>
+#app {
+  max-width: 960px;
+  margin: auto;
+}
+</style>

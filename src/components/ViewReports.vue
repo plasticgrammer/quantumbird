@@ -1,91 +1,132 @@
 <template>
-  <v-container>
-    <h1 class="text-h4 font-weight-bold mb-4">週次報告確認</h1>
+  <v-container class="report-review-container">
+    <h2 class="text-h5 mb-4">週次報告確認</h2>
     <v-row>
-      <v-col v-for="report in reports" :key="report.id" cols="12" md="6">
+      <v-col v-for="report in reports" :key="report.id" cols="12">
         <v-card
           :class="{ 'approved-card': report.status === 'approved' }"
-          :elevation="2"
+          outlined
+          class="mb-4"
         >
-          <v-card-title class="d-flex justify-space-between align-center">
-            <span class="text-h5 font-weight-bold blue--text">{{ report.name }}</span>
-            <v-chip small>
-              <v-icon left small>mdi-clock-outline</v-icon>
-              残業: {{ report.overtime }}時間
+          <v-card-title class="d-flex justify-space-between align-center py-2">
+            <span class="text-h6 font-weight-bold">{{ report.name }}</span>
+            <v-chip
+              :color="getStatusColor(report.status)"
+              outlined
+              x-small
+              class="ml-2"
+            >
+              {{ getStatusText(report.status) }}
             </v-chip>
           </v-card-title>
 
-          <v-card-text>
+          <v-card-text class="pa-4">
             <v-row>
-              <v-col cols="6">
-                <h3 class="font-weight-bold mb-2">プロジェクト:</h3>
-                <div v-for="(project, index) in report.projects" :key="index" class="mb-2">
-                  <div class="d-flex align-center">
-                    <v-icon small class="mr-1">mdi-briefcase</v-icon>
-                    <span class="font-weight-medium">{{ project.name }}</span>
-                  </div>
-                  <p class="ml-4 text-caption">{{ project.tasks }}</p>
-                </div>
+              <v-col cols="12" md="6">
+                <div class="text-subtitle-2 font-weight-medium mb-1">プロジェクト</div>
+                <v-list dense class="pa-0 mb-2">
+                  <v-list-item v-for="(project, index) in report.projects" :key="index" class="px-2 py-2">
+                    <v-list-item-content>
+                      <v-list-item-title class="text-body-2">
+                        <v-icon small>mdi-briefcase</v-icon>
+                        {{ project.name }}
+                      </v-list-item-title>
+                      <v-list-item-subtitle class="ml-2 my-2">{{ project.tasks }}</v-list-item-subtitle>
+                    </v-list-item-content>
+                  </v-list-item>
+                </v-list>
+                <v-chip color="secondary" x-small>
+                  <v-icon class="mr-1" x-small>mdi-clock-outline</v-icon>
+                  残業: {{ report.overtime }}時間
+                </v-chip>
               </v-col>
-              <v-col cols="6">
-                <div class="mb-3">
-                  <h3 class="font-weight-bold mb-1 d-flex align-center">
-                    <v-icon small class="mr-1">mdi-trophy</v-icon>
-                    成果:
-                  </h3>
-                  <p class="text-caption">{{ report.achievements }}</p>
-                </div>
-                <div>
-                  <h3 class="font-weight-bold mb-1 d-flex align-center">
-                    <v-icon small class="mr-1">mdi-alert</v-icon>
-                    問題点:
-                  </h3>
-                  <p class="text-caption">{{ report.issues }}</p>
-                </div>
+              <v-col cols="12" md="6">
+                <div class="text-subtitle-2 font-weight-medium mb-1">現状・問題点</div>
+                <v-textarea
+                  v-model="report.issues"
+                  outlined
+                  readonly
+                  dense
+                  auto-grow
+                  rows="2"
+                  hide-details
+                  class="small-text-area mb-2"
+                ></v-textarea>
+
+                <div class="text-subtitle-2 font-weight-medium mb-1">成果</div>
+                <v-textarea
+                  v-model="report.achievements"
+                  outlined
+                  readonly
+                  dense
+                  auto-grow
+                  rows="1"
+                  hide-details
+                  class="small-text-area mb-2"
+                ></v-textarea>
+
+                <div class="text-subtitle-2 font-weight-medium mb-1">改善点</div>
+                <v-textarea
+                  v-model="report.improvements"
+                  outlined
+                  readonly
+                  dense
+                  auto-grow
+                  rows="1"
+                  hide-details
+                  class="small-text-area"
+                ></v-textarea>
               </v-col>
             </v-row>
 
-            <v-textarea
-              v-if="report.status !== 'approved'"
-              v-model="report.feedback"
-              label="フィードバックを入力..."
-              rows="2"
-              class="mt-3"
-            ></v-textarea>
+            <v-row class="mt-2">
+              <v-col cols="12">
+                <v-textarea
+                  v-if="report.status !== 'approved'"
+                  v-model="report.feedback"
+                  label="フィードバックを入力..."
+                  outlined
+                  dense
+                  rows="2"
+                  class="small-text-area"
+                ></v-textarea>
 
-            <v-alert
-              v-if="report.status === 'approved'"
-              type="success"
-              dense
-              text
-              class="mt-3"
-            >
-              <div class="d-flex align-center">
-                承認済み: {{ report.approvedAt }}
-              </div>
-            </v-alert>
+                <v-alert
+                  v-if="report.status === 'approved'"
+                  type="success"
+                  outlined
+                  dense
+                  class="mb-0"
+                >
+                  <div class="d-flex align-center">
+                    承認済み: {{ report.approvedAt }}
+                  </div>
+                </v-alert>
 
-            <v-alert
-              v-if="report.status === 'feedback'"
-              type="warning"
-              dense
-              text
-              class="mt-3"
-            >
-              <div class="font-weight-bold">フィードバック:</div>
-              <p>{{ report.feedback }}</p>
-            </v-alert>
+                <v-alert
+                  v-if="report.status === 'feedback'"
+                  type="warning"
+                  outlined
+                  dense
+                  class="mb-0"
+                >
+                  <div class="font-weight-bold">フィードバック:</div>
+                  <p>{{ report.feedback }}</p>
+                </v-alert>
+              </v-col>
+            </v-row>
           </v-card-text>
 
-          <v-card-actions>
+          <v-card-actions class="py-1">
             <v-spacer></v-spacer>
             <v-btn
               v-if="report.status !== 'approved'"
               color="primary"
               @click="handleApprove(report.id)"
-              small
+              outlined
+              x-small
             >
-              <v-icon left small>mdi-thumb-up</v-icon>
+              <v-icon left x-small>mdi-check-bold</v-icon>
               承認
             </v-btn>
             <v-btn
@@ -94,14 +135,12 @@
               @click="submitFeedback(report.id)"
               :disabled="!report.feedback.trim()"
               class="ml-2"
-              small
+              outlined
+              x-small
             >
-              <v-icon left small>mdi-message</v-icon>
+              <v-icon left x-small>mdi-message</v-icon>
               フィードバック送信
             </v-btn>
-            <v-chip small>
-              {{ getStatusText(report.status) }}
-            </v-chip>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -184,14 +223,43 @@ export default {
         default:
           return "";
       }
+    },
+    getStatusColor(status) {
+      switch (status) {
+        case "pending":
+          return "grey";
+        case "approved":
+          return "success";
+        case "feedback":
+          return "warning";
+        default:
+          return "";
+      }
     }
   }
 };
 </script>
 
 <style scoped>
+.report-review-container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
 .approved-card {
   background-color: #e8f6f3 !important;
-  border: 1px solid #2ecc71;
+}
+
+.small-text-area ::v-deep .v-text-field__slot textarea {
+  font-size: 0.875rem;
+  line-height: 1.25;
+}
+
+.v-list-item__title {
+  font-size: 0.875rem !important;
+}
+
+.v-list-item__subtitle {
+  font-size: 0.75rem !important;
 }
 </style>
