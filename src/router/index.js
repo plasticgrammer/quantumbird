@@ -1,21 +1,21 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import WeeklyReport from '../components/WeeklyReport.vue'
 import ViewReports from '../components/ViewReports.vue'
-import OrganizationManagementSystem from '../components/OrganizationManagementSystem.vue'
+import OrganizationManagement from '../components/OrganizationManagement.vue'
 
 const routes = [
   {
     path: '/',
     name: 'OrganizationManagement',
-    component: OrganizationManagementSystem
+    component: OrganizationManagement
   },
   {
-    path: '/reports',
+    path: '/report',
     name: 'WeekSelector',
     component: WeeklyReport
   },
   {
-    path: '/reports/:weekParam',
+    path: '/report/:weekParam',
     name: 'WeeklyReport',
     component: WeeklyReport,
     props: true

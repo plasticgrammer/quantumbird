@@ -83,10 +83,20 @@
         </div>
         
         <div class="form-group">
-          <label for="issues">報告事項（成果、問題点など）:</label>
-          <textarea id="issues" v-model="localReport.issues"></textarea>
+          <label for="issues">報告事項（問題点など）:</label>
+          <textarea id="issues" v-model="localReport.issues" required rows="4" class="textarea-large"></textarea>
         </div>
         
+        <div class="form-group mt-2">
+          <label for="achievements">成果:</label>
+          <input type="text" id="achievements" v-model="localReport.achievements" >
+        </div>
+        
+        <div class="form-group mt-2">
+          <label for="improvements">改善点:</label>
+          <input type="text" id="improvements" v-model="localReport.improvements" >
+        </div>
+
         <div class="button-group">
           <button type="submit" class="submit-button">報告を提出</button>
         </div>
@@ -119,7 +129,12 @@ export default {
   setup(props, { emit }) {
     const { formatDateRange } = useReport()
 
-    const localReport = ref({ ...props.report })
+    const localReport = ref({
+      ...props.report,
+      issues: props.report.issues || '',
+      achievements: props.report.achievements || '',
+      improvements: props.report.improvements || ''
+    })
     const workItemRefs = reactive({})
     const projectNames = ['プロジェクト1', 'プロジェクト2', 'プロジェクト3']
 
@@ -202,11 +217,17 @@ export default {
     };
 
     const copyFromPreviousWeek = () => {
-      if (props.previousWeekReport && props.previousWeekReport.projects) {
-        localReport.value.projects = props.previousWeekReport.projects.map(project => ({
-          ...project,
-          workItems: project.workItems.map(item => ({ ...item }))
-        }))
+      if (props.previousWeekReport) {
+        localReport.value = {
+          ...localReport.value,
+          projects: props.previousWeekReport.projects?.map(project => ({
+            ...project,
+            workItems: project.workItems.map(item => ({ ...item }))
+          })) || [],
+          issues: props.previousWeekReport.issues || '',
+          achievements: props.previousWeekReport.achievements || '',
+          improvements: props.previousWeekReport.improvements || ''
+        }
         emit('update:report', { ...localReport.value })
       }
     }
@@ -278,7 +299,7 @@ export default {
   border: 1px solid #e0e0e0;
   border-radius: 5px;
   padding: 15px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .project-header {
@@ -300,11 +321,11 @@ select, input[type="text"], input[type="number"], textarea {
   font-size: 14px;
 }
 
-textarea {
-  resize: vertical;
-  box-sizing: border-box;
+#issues {
   min-height: 6em;
+  resize: vertical;
   line-height: 1.5;
+  box-sizing: border-box;
 }
 
 .project-name {
@@ -418,7 +439,7 @@ textarea {
 }
 
 .overtime-controls input[type="number"] {
-  width: 60px;
+  width: 80px;
   text-align: center;
   font-size: 16px;
 }

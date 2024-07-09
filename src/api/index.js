@@ -11,10 +11,10 @@ const api = axios.create({
 
 export default {
   getReports() {
-    return api.get('/reports')
+    return api.get('/report')
   },
   createReport(data) {
-    return api.post('/reports', data)
+    return api.post('/report', data)
   }
   // Add more API methods as needed
 }

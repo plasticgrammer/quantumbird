@@ -73,7 +73,7 @@ export default {
       if (week && isWeekInRange(week)) {
         const weekString = getStringFromWeek(week);
         if (weekString) {
-          router.push(`/reports/${weekString}`);
+          router.push(`/report/${weekString}`);
           setTimeout(() => {
             showReportForm.value = true;
           }, 700) // WeekSelectorのアニメーション時間に合わせて調整
@@ -84,7 +84,7 @@ export default {
           isValidWeek.value = false;
         }
       } else {
-        router.push('/reports');
+        router.push('/report');
         showReportForm.value = false;
         isValidWeek.value = true;
       }
@@ -95,7 +95,7 @@ export default {
       showReportForm.value = false;
       selectedWeek.value = null;
       isValidWeek.value = true;
-      router.push('/reports');
+      router.push('/report');
     }
 
     const updateReport = (newReport) => {
