@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import WeeklyReport from '../components/WeeklyReport.vue'
-import ViewReports from '../components/ViewReports.vue'
+import WeeklyReview from '../components/WeeklyReview.vue'
 import OrganizationManagement from '../components/OrganizationManagement.vue'
 
 const routes = [
@@ -21,9 +21,9 @@ const routes = [
     props: true
   },
   {
-    path: '/view',
-    name: 'ViewReports',
-    component: ViewReports
+    path: '/review',
+    name: 'WeeklyReview',
+    component: WeeklyReview
   },
 ]
 

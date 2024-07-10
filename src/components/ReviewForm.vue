@@ -1,10 +1,11 @@
 <template>
   <v-container class="report-review-container">
-    <h2 class="text-h5 mb-4">週次報告確認</h2>
     <v-row>
       <v-col v-for="report in reports" :key="report.id" cols="12">
         <v-card
           :class="{ 'approved-card': report.status === 'approved' }"
+          elevation="4"
+          hover
           outlined
           class="mb-4"
         >
@@ -16,6 +17,7 @@
               x-small
               class="ml-2"
             >
+              <v-icon v-if="report.status === 'approved'" class="mr-1" x-small>mdi-check-circle-outline</v-icon>
               {{ getStatusText(report.status) }}
             </v-chip>
           </v-card-title>
@@ -23,8 +25,8 @@
           <v-card-text class="pa-4">
             <v-row>
               <v-col cols="12" md="6">
-                <div class="text-subtitle-2 font-weight-medium mb-1">プロジェクト</div>
-                <v-list dense class="pa-0 mb-2">
+                <div class="text-subtitle-2 font-weight-medium mb-1">作業内容</div>
+                <v-list dense class="pa-0 mb-3">
                   <v-list-item v-for="(project, index) in report.projects" :key="index" class="px-2 py-2">
                     <v-list-item-content>
                       <v-list-item-title class="text-body-2">
@@ -35,7 +37,7 @@
                     </v-list-item-content>
                   </v-list-item>
                 </v-list>
-                <v-chip color="secondary" x-small>
+                <v-chip color="primary" x-small>
                   <v-icon class="mr-1" x-small>mdi-clock-outline</v-icon>
                   残業: {{ report.overtime }}時間
                 </v-chip>
@@ -87,21 +89,11 @@
                   label="フィードバックを入力..."
                   outlined
                   dense
+                  clear-icon="mdi-close-circle"
+                  clearable 
                   rows="2"
                   class="small-text-area"
                 ></v-textarea>
-
-                <v-alert
-                  v-if="report.status === 'approved'"
-                  type="success"
-                  outlined
-                  dense
-                  class="mb-0"
-                >
-                  <div class="d-flex align-center">
-                    承認済み: {{ report.approvedAt }}
-                  </div>
-                </v-alert>
 
                 <v-alert
                   v-if="report.status === 'feedback'"
@@ -117,20 +109,18 @@
             </v-row>
           </v-card-text>
 
-          <v-card-actions class="py-1">
+          <v-card-actions class="py-1" v-if="report.status !== 'approved'">
             <v-spacer></v-spacer>
             <v-btn
-              v-if="report.status !== 'approved'"
-              color="primary"
+              color="success"
               @click="handleApprove(report.id)"
               outlined
               x-small
             >
               <v-icon left x-small>mdi-check-bold</v-icon>
-              承認
+              確認
             </v-btn>
             <v-btn
-              v-if="report.status !== 'approved'"
               color="warning"
               @click="submitFeedback(report.id)"
               :disabled="!report.feedback.trim()"
@@ -217,7 +207,7 @@ export default {
         case "pending":
           return "保留中";
         case "approved":
-          return "承認済み";
+          return "確認済み";
         case "feedback":
           return "フィードバック済み";
         default:
@@ -250,7 +240,7 @@ export default {
   background-color: #e8f6f3 !important;
 }
 
-.small-text-area ::v-deep .v-text-field__slot textarea {
+.small-text-area >>> textarea {
   font-size: 0.875rem;
   line-height: 1.25;
 }
