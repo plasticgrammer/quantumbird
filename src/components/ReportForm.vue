@@ -4,8 +4,11 @@
       <v-icon class="mr-1" left>mdi-content-copy</v-icon>
       前週よりコピー
     </v-btn>
-    <v-form @submit.prevent="submitReport" class="report-form">
-      <v-card v-for="(project, projectIndex) in localReport.projects" :key="projectIndex" class="mb-4">
+    <v-form @submit.prevent="submitReport" class="report-form elevation-4">
+      <v-card v-for="(project, projectIndex) in localReport.projects" :key="projectIndex" 
+        elevation="2"
+        class="mb-4"
+      >
         <v-card-text>
           <v-row align="center">
             <v-col cols="10">
@@ -17,6 +20,7 @@
                 required
                 dense
                 outlined
+                hide-details="auto"
               ></v-combobox>
             </v-col>
             <v-col cols="2" class="d-flex justify-end">
@@ -39,14 +43,22 @@
                   :label="`作業内容 ${itemIndex + 1}`"
                   dense
                   outlined
-                  clearable
                   hide-details="auto"
                   :ref="el => setWorkItemRef(el, projectIndex, itemIndex)"
                   required
                   @keydown="handleKeyDown($event, project, itemIndex)"
-                  @click:clear="removeWorkItem(project, itemIndex)"
-                ></v-text-field>
+                  class="work-item-input pl-5"
+                >
+                  <template v-slot:append>
+                    <v-icon 
+                      :color="item.content ? 'grey darken-2' : 'grey lighten-1'"
+                      @click="removeWorkItem(project, itemIndex)"
+                      small
+                    >mdi-close-circle-outline</v-icon>
+                  </template>
+                </v-text-field>
               </div>
+              <!--
               <div class="d-flex justify-end">
                 <v-btn
                   color="primary"
@@ -58,6 +70,7 @@
                   作業を追加
                 </v-btn>
               </div>
+              -->
             </v-col>
           </v-row>
         </v-card-text>
@@ -318,13 +331,17 @@ export default {
   font-size: 18px;
   color: #757575;
 }
+.work-item-input :deep() .v-input__append {
+  padding: 0;
+  margin-right: 8px;
+}
 
-.overtime-input >>> input {
+.overtime-input :deep() input {
   text-align: right !important;
 }
 
-.overtime-input >>> input::-webkit-outer-spin-button,
-.overtime-input >>> input::-webkit-inner-spin-button {
+.overtime-input :deep() input::-webkit-outer-spin-button,
+.overtime-input :deep() input::-webkit-inner-spin-button {
   margin-left: 10px;
 }
 </style>

@@ -15,7 +15,7 @@
         </v-btn>
       </v-col>
     </v-row>
-    <v-card>
+    <v-card elevation="4">
       <v-card-text class="pa-0">
         <v-row class="weekdays" no-gutters>
           <v-col cols="1" class="week-number-header">週</v-col>

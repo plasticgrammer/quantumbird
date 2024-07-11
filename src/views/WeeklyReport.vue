@@ -25,8 +25,8 @@
 <script>
 import { ref, reactive, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import WeekSelector from './WeekSelector.vue'
-import ReportForm from './ReportForm.vue'
+import WeekSelector from '../components/WeekSelector.vue'
+import ReportForm from '../components/ReportForm.vue'
 import { useReport } from '../composables/useReport'
 import { useCalendar } from '../composables/useCalendar'
 

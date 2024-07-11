@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import WeeklyReport from '../components/WeeklyReport.vue'
-import WeeklyReview from '../components/WeeklyReview.vue'
-import OrganizationManagement from '../components/OrganizationManagement.vue'
+import WeeklyReport from '../views/WeeklyReport.vue'
+import WeeklyTeamReview from '../views/WeeklyTeamReview.vue'
+import TeamManagement from '../views/TeamManagement.vue'
 
 const routes = [
   {
     path: '/',
-    name: 'OrganizationManagement',
-    component: OrganizationManagement
+    name: 'TeamManagement',
+    component: TeamManagement
   },
   {
     path: '/report',
@@ -22,8 +22,8 @@ const routes = [
   },
   {
     path: '/review',
-    name: 'WeeklyReview',
-    component: WeeklyReview
+    name: 'WeeklyTeamReview',
+    component: WeeklyTeamReview
   },
 ]
 

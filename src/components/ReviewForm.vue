@@ -10,7 +10,10 @@
           class="mb-4"
         >
           <v-card-title class="d-flex justify-space-between align-center py-2">
-            <span class="text-h6 font-weight-bold">{{ report.name }}</span>
+            <span class="text-h6 font-weight-bold">
+              <v-icon size="x-large" class="mr-1">mdi-account-box</v-icon>
+              {{ report.name }}
+            </span>
             <v-chip
               :color="getStatusColor(report.status)"
               outlined
@@ -26,11 +29,11 @@
             <v-row>
               <v-col cols="12" md="6">
                 <div class="text-subtitle-2 font-weight-medium mb-1">作業内容</div>
-                <v-list dense class="pa-0 mb-3">
+                <v-list dense class="tasks pa-0 mb-3">
                   <v-list-item v-for="(project, index) in report.projects" :key="index" class="px-2 py-2">
                     <v-list-item-content>
                       <v-list-item-title class="text-body-2">
-                        <v-icon small>mdi-briefcase</v-icon>
+                        <v-icon small>mdi-clipboard-check-outline</v-icon>
                         {{ project.name }}
                       </v-list-item-title>
                       <v-list-item-subtitle class="ml-2 my-2">{{ project.tasks }}</v-list-item-subtitle>
@@ -240,7 +243,11 @@ export default {
   background-color: #e8f6f3 !important;
 }
 
-.small-text-area >>> textarea {
+.tasks {
+  background-color: transparent;
+}
+
+.small-text-area :deep() textarea {
   font-size: 0.875rem;
   line-height: 1.25;
 }

@@ -20,8 +20,8 @@
   
   <script>
   import { ref, computed } from 'vue';
-  import WeekSelector from './WeekSelector.vue';
-  import ReviewForm from './ReviewForm.vue';
+  import WeekSelector from '../components/WeekSelector.vue';
+  import ReviewForm from '../components/ReviewForm.vue';
   
   export default {
     name: 'WeeklyReview',
