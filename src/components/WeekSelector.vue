@@ -85,6 +85,7 @@ export default {
     } = useCalendar()
 
     const internalSelectedWeek = ref(props.selectedWeek)
+    const hoveredWeek = ref(null);
 
     const visibleWeeks = computed(() => {
       console.log('Computing visibleWeeks, internalSelectedWeek:', internalSelectedWeek.value);
@@ -130,8 +131,6 @@ export default {
     const isSelected = (week) => {
       return internalSelectedWeek.value && week[0].getTime() === internalSelectedWeek.value[0].getTime();
     }
-
-    const hoveredWeek = ref(null);
 
     const setHoverWeek = (week) => {
       hoveredWeek.value = week;
