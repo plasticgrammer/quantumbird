@@ -26,38 +26,41 @@
             {{ day.label }}
           </v-col>
         </v-row>
-        <v-row v-for="(week, weekIndex) in visibleWeeks" :key="getWeekKey(week)" no-gutters
-          class="week-row"
-          :class="{ 
-            'selected': isSelected(week), 
-            'hovered': isHovered(week) 
-          }"
-          @click="selectWeek(week)"
-          @mouseenter="setHoverWeek(week)"
-          @mouseleave="clearHoverWeek"
-        >
-          <v-col cols="1" class="week-number">{{ getWeekNumber(week[0]) }}</v-col>
-          <v-col v-for="(day, dayIndex) in week" :key="day.toISOString()"
-            :class="[
-              'day',
-              { 'today': isToday(day) },
-              { 'saturday': isSaturday(day) },
-              { 'sunday': isSunday(day) }
-            ]"
+        <transition-group name="week-transition" tag="div">
+          <v-row v-for="(week, weekIndex) in visibleWeeks" :key="getWeekKey(week)" no-gutters
+            class="week-row"
+            :class="{ 
+              'selected': isSelected(week), 
+              'hovered': isHovered(week),
+              'fade-out': internalSelectedWeek && !isSelected(week)
+            }"
+            @click="selectWeek(week)"
+            @mouseenter="setHoverWeek(week)"
+            @mouseleave="clearHoverWeek"
           >
-            <span v-if="shouldShowMonth(day, weekIndex, dayIndex)" class="month">
-              {{ formatShortMonth(day) }}
-            </span>
-            <span class="date">{{ day.getDate() }}</span>
-          </v-col>
-        </v-row>
+            <v-col cols="1" class="week-number">{{ getWeekNumber(week[0]) }}</v-col>
+            <v-col v-for="(day, dayIndex) in week" :key="day.toISOString()"
+              :class="[
+                'day',
+                { 'today': isToday(day) },
+                { 'saturday': isSaturday(day) },
+                { 'sunday': isSunday(day) }
+              ]"
+            >
+              <span v-if="shouldShowMonth(day, weekIndex, dayIndex)" class="month">
+                {{ formatShortMonth(day) }}
+              </span>
+              <span class="date">{{ day.getDate() }}</span>
+            </v-col>
+          </v-row>
+        </transition-group>
       </v-card-text>
     </v-card>
   </v-container>
 </template>
 
 <script>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useCalendar } from '../composables/useCalendar'
 
 export default {
@@ -88,7 +91,6 @@ export default {
     const hoveredWeek = ref(null);
 
     const visibleWeeks = computed(() => {
-      console.log('Computing visibleWeeks, internalSelectedWeek:', internalSelectedWeek.value);
       if (!internalSelectedWeek.value) return calendarWeeks.value;
       return calendarWeeks.value.filter(week => {
         if (!Array.isArray(week) || week.length === 0 || !(week[0] instanceof Date)) {
@@ -110,18 +112,11 @@ export default {
       { label: '土', class: 'saturday' }
     ]
 
-    watch(() => props.selectedWeek, (newSelectedWeek) => {
-      console.log('props.selectedWeek changed:', newSelectedWeek);
-      internalSelectedWeek.value = newSelectedWeek;
-    }, { immediate: true });
-
     const selectWeek = (week) => {
       if (props.isLocked) return;
-      const newSelectedWeek = internalSelectedWeek.value && 
-        internalSelectedWeek.value[0].getTime() === week[0].getTime() ? null : [week[0], new Date(week[0].getTime() + 6 * 24 * 60 * 60 * 1000)];
-      internalSelectedWeek.value = newSelectedWeek;
-      emit('select-week', newSelectedWeek);
-    };
+      internalSelectedWeek.value = [week[0], new Date(week[0].getTime() + 6 * 24 * 60 * 60 * 1000)];
+      emit('select-week', internalSelectedWeek.value);
+    }
 
     const resetSelection = () => {
       internalSelectedWeek.value = null;
@@ -199,6 +194,33 @@ export default {
 <style scoped>
 .week-selector {
   max-width: 800px;
+}
+
+.week-transition-move {
+  transition: transform 0.5s;
+}
+
+.week-transition-enter-active,
+.week-transition-leave-active {
+  transition: all 0.5s;
+}
+
+.week-transition-enter-from,
+.week-transition-leave-to {
+  opacity: 0;
+  transform: translateY(-15px);
+}
+
+.week-row.fade-out {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all 0.7s ease-out;
+}
+
+.week-row.selected {
+  opacity: 1 !important;
+  transform: scale(1) !important;
+  transition: all 0.7s ease-out;
 }
 
 .weekdays {

@@ -11,8 +11,7 @@
       指定された週は有効範囲外です。
     </v-alert>
 
-    <ReportForm 
-      v-if="showReportForm && isValidWeek" 
+    <ReportForm v-if="selectedWeek && isValidWeek" 
       :selectedWeek="selectedWeek"
       :report="report"
       @update:report="updateReport"
@@ -46,9 +45,8 @@ export default {
     const { getWeekFromString, getStringFromWeek, isWeekInRange } = useCalendar()
     const router = useRouter()
 
-    const selectedWeek = ref(null)
     const report = reactive(initialReport())
-    const showReportForm = ref(false)
+    const selectedWeek = ref(null)
     const isValidWeek = ref(true)
 
     const handleWeekSelection = (week) => {
@@ -57,23 +55,17 @@ export default {
         const weekString = getStringFromWeek(week);
         if (weekString) {
           router.push(`/report/${weekString}`);
-          setTimeout(() => {
-            showReportForm.value = true;
-          }, 700) // WeekSelectorのアニメーション時間に合わせて調整
           isValidWeek.value = true;
         } else {
-          showReportForm.value = false;
           isValidWeek.value = false;
         }
       } else {
         router.push('/report');
-        showReportForm.value = false;
         isValidWeek.value = true;
       }
     }
 
     const handleReset = () => {
-      showReportForm.value = false;
       selectedWeek.value = null;
       isValidWeek.value = true;
       router.push('/report');
@@ -94,31 +86,25 @@ export default {
         const week = getWeekFromString(newWeekParam);
         if (week && isWeekInRange(week)) {
           selectedWeek.value = week;
-          setTimeout(() => {
-            showReportForm.value = true;
-          }, 700) // WeekSelectorのアニメーション時間に合わせて調整
           isValidWeek.value = true;
         } else {
           selectedWeek.value = null;
-          showReportForm.value = false;
           isValidWeek.value = false;
         }
       } else {
         selectedWeek.value = null;
-        showReportForm.value = false;
         isValidWeek.value = true;
       }
     }, { immediate: true })
 
     return {
-      selectedWeek,
-      handleWeekSelection,
       report,
+      selectedWeek,
+      isValidWeek,
+      handleWeekSelection,
       updateReport,
       handleSubmit,
       handleReset,
-      showReportForm,
-      isValidWeek
     }
   }
 }

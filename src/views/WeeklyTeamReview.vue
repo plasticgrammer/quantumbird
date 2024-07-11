@@ -86,7 +86,7 @@ export default {
       isValidWeek,
       handleWeekSelection,
       handleReset
-    };
+    }
   }
 };
 </script>
