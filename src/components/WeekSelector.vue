@@ -2,7 +2,10 @@
   <v-container class="week-selector">
     <v-row align="center" justify="space-between" class="mb-1">
       <v-col class="py-4">
-        <h3>{{ selectedWeekRange }}</h3>
+        <h3>
+          <v-icon size="x-large" class="mr-1">mdi-bird</v-icon>
+          {{ selectedWeekRange }}
+        </h3>
       </v-col>
       <v-col class="text-right">
         <v-btn
