@@ -25,6 +25,19 @@ export function useCalendar() {
     return weeks;
   })
 
+  const calendarDateRange = computed(() => {
+    if (calendarWeeks.value.length === 0) return { start: null, end: null };
+    const start = calendarWeeks.value[0][0];
+    const end = calendarWeeks.value[calendarWeeks.value.length - 1][6];
+    return { start, end };
+  })
+
+  const isWeekInRange = (week) => {
+    if (!week || !calendarDateRange.value.start || !calendarDateRange.value.end) return false;
+    return getWeekNumber(week[0]) >= getWeekNumber(calendarDateRange.value.start) 
+      && getWeekNumber(week[1]) <= getWeekNumber(calendarDateRange.value.end);
+  }
+
   const visibleWeeks = computed(() => {
     if (!selectedWeek.value) return calendarWeeks.value
     return calendarWeeks.value.filter(week => 
@@ -88,6 +101,8 @@ export function useCalendar() {
     calendarWeeks: visibleWeeks, // calendarWeeks を visibleWeeks に置き換え
     selectedWeek,
     selectWeek,
+    calendarDateRange,
+    isWeekInRange,
     getWeekNumber,
     formatShortMonth,
     isToday,

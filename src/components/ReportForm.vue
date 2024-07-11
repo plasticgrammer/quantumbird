@@ -336,8 +336,13 @@ export default {
   margin-right: 8px;
 }
 
+.overtime-input {
+  max-width: 300px;
+}
+
 .overtime-input :deep() input {
   text-align: right !important;
+  font-size: 1.2em;
 }
 
 .overtime-input :deep() input::-webkit-outer-spin-button,

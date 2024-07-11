@@ -7,7 +7,7 @@
           elevation="4"
           hover
           outlined
-          class="mb-4"
+          class="mt-2"
         >
           <v-card-title class="d-flex justify-space-between align-center py-2">
             <span class="text-h6 font-weight-bold">
@@ -143,6 +143,12 @@
 
 <script>
 export default {
+  props: {
+    selectedWeek: {
+      type: Object,
+      required: true
+    }
+  },
   data() {
     return {
       reports: [

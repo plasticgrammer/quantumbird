@@ -1,16 +1,15 @@
 <template>
   <v-container>
     <WeekSelector 
-      :calendarWeeks="calendarWeeks"
       :selectedWeek="selectedWeek"
-      :isLocked="isLocked"
-      @select-week="selectWeek"
+      :isLocked="!!selectedWeek"
+      @select-week="handleWeekSelection"
       @reset="handleReset"
     />
 
-    <div v-if="!isValidWeek" class="error-message">
+    <v-alert v-if="!isValidWeek" type="error" class="mt-5" outlined>
       指定された週は有効範囲外です。
-    </div>
+    </v-alert>
 
     <ReportForm 
       v-if="showReportForm && isValidWeek" 
@@ -23,7 +22,7 @@
 </template>
 
 <script>
-import { ref, reactive, watch, computed } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import WeekSelector from '../components/WeekSelector.vue'
 import ReportForm from '../components/ReportForm.vue'
@@ -44,7 +43,7 @@ export default {
   },
   setup(props) {
     const { initialReport } = useReport()
-    const { calendarWeeks, getWeekFromString, getStringFromWeek, getWeekNumber } = useCalendar()
+    const { getWeekFromString, getStringFromWeek, isWeekInRange } = useCalendar()
     const router = useRouter()
 
     const selectedWeek = ref(null)
@@ -52,23 +51,7 @@ export default {
     const showReportForm = ref(false)
     const isValidWeek = ref(true)
 
-    const isLocked = computed(() => !!selectedWeek.value)
-
-    const calendarDateRange = computed(() => {
-      if (calendarWeeks.value.length === 0) return { start: null, end: null };
-      const start = calendarWeeks.value[0][0];
-      const end = calendarWeeks.value[calendarWeeks.value.length - 1][6];
-      return { start, end };
-    });
-
-    const isWeekInRange = (week) => {
-      if (!week || !calendarDateRange.value.start || !calendarDateRange.value.end) return false;
-      return getWeekNumber(week[0]) >= getWeekNumber(calendarDateRange.value.start) 
-        && getWeekNumber(week[1]) <= getWeekNumber(calendarDateRange.value.end);
-    };
-
-    const selectWeek = (week) => {
-      console.log('selectWeek called with:', week);
+    const handleWeekSelection = (week) => {
       selectedWeek.value = week;
       if (week && isWeekInRange(week)) {
         const weekString = getStringFromWeek(week);
@@ -79,7 +62,6 @@ export default {
           }, 700) // WeekSelectorのアニメーション時間に合わせて調整
           isValidWeek.value = true;
         } else {
-          console.error('Failed to generate week string');
           showReportForm.value = false;
           isValidWeek.value = false;
         }
@@ -91,7 +73,6 @@ export default {
     }
 
     const handleReset = () => {
-      console.log('Handling reset');
       showReportForm.value = false;
       selectedWeek.value = null;
       isValidWeek.value = true;
@@ -109,7 +90,6 @@ export default {
     }
 
     watch(() => props.weekParam, (newWeekParam) => {
-      console.log('Week param changed:', newWeekParam);
       if (newWeekParam) {
         const week = getWeekFromString(newWeekParam);
         if (week && isWeekInRange(week)) {
@@ -119,7 +99,6 @@ export default {
           }, 700) // WeekSelectorのアニメーション時間に合わせて調整
           isValidWeek.value = true;
         } else {
-          console.error('Invalid or out of range week parameter:', newWeekParam);
           selectedWeek.value = null;
           showReportForm.value = false;
           isValidWeek.value = false;
@@ -132,24 +111,15 @@ export default {
     }, { immediate: true })
 
     return {
-      calendarWeeks,
       selectedWeek,
-      selectWeek,
+      handleWeekSelection,
       report,
       updateReport,
       handleSubmit,
-      showReportForm,
       handleReset,
-      isValidWeek,
-      isLocked
+      showReportForm,
+      isValidWeek
     }
   }
 }
 </script>
-
-<style scoped>
-.error-message {
-  color: red;
-  margin-top: 10px;
-}
-</style>

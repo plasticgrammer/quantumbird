@@ -11,7 +11,7 @@ const routes = [
   },
   {
     path: '/report',
-    name: 'WeekSelector',
+    name: 'WeekReportSelector',
     component: WeeklyReport
   },
   {
@@ -22,6 +22,11 @@ const routes = [
   },
   {
     path: '/review',
+    name: 'WeeklyTeamReviewSelector',
+    component: WeeklyTeamReview
+  },
+  {
+    path: '/review/:weekParam',
     name: 'WeeklyTeamReview',
     component: WeeklyTeamReview
   },

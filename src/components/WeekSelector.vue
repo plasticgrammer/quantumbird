@@ -265,9 +265,9 @@ export default {
 
 .month {
   position: absolute;
-  top: 2px;
-  left: 4px;
-  font-size: 0.7em;
+  top: 3px;
+  left: 5px;
+  font-size: 0.75em;
   color: #666;
 }
 </style>

@@ -1,27 +1,28 @@
 <template>
   <v-container>
     <WeekSelector
-      :selected-week="selectedWeek"
-      :is-locked="!!selectedWeek"
+      :selectedWeek="selectedWeek"
+      :isLocked="!!selectedWeek"
       @select-week="handleWeekSelection"
       @reset="handleReset"
     />
 
-    <v-divider class="my-6"></v-divider>
-
-    <template v-if="selectedWeek">
-      <ReviewForm :reports="filteredReports" />
-    </template>
-    <v-alert v-else type="info" outlined>
-      週を選択してレポートを表示してください。
+    <v-alert v-if="!isValidWeek" type="error" class="mt-5" outlined>
+      指定された週は有効範囲外です。
     </v-alert>
+
+    <ReviewForm v-if="selectedWeek && isValidWeek"
+      :selectedWeek="selectedWeek"/>
+
   </v-container>
 </template>
 
 <script>
-import { ref, computed } from 'vue';
-import WeekSelector from '../components/WeekSelector.vue';
-import ReviewForm from '../components/ReviewForm.vue';
+import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import WeekSelector from '../components/WeekSelector.vue'
+import ReviewForm from '../components/ReviewForm.vue'
+import { useCalendar } from '../composables/useCalendar'
 
 export default {
   name: 'WeeklyReview',
@@ -29,61 +30,63 @@ export default {
     WeekSelector,
     ReviewForm
   },
-  setup() {
-    const selectedWeek = ref(null);
-    const allReports = ref([
-      // ここに全てのレポートデータを入れます。
-      // 例:
-      {
-        id: 1,
-        name: "田中太郎",
-        projects: [{ name: "プロジェクトA", tasks: "設計完了" }],
-        overtime: 5,
-        achievements: "設計完了",
-        issues: "なし",
-        improvements: "進捗を早める",
-        status: "pending",
-        weekStart: new Date('2024-07-08'),
-      },
-      // 他のレポートも同様に追加...
-    ]);
+  props: {
+    weekParam: {
+      type: String,
+      default: null
+    }
+  },
+  setup(props) {
+    const { getWeekFromString, getStringFromWeek, isWeekInRange } = useCalendar()
+    const router = useRouter()
 
-    const filteredReports = computed(() => {
-      if (!selectedWeek.value) return [];
-      const startDate = selectedWeek.value[0];
-      const endDate = selectedWeek.value[1];
-      return allReports.value.filter(report => 
-        report.weekStart >= startDate && report.weekStart <= endDate
-      );
-    });
+    const selectedWeek = ref(null)
+    const isValidWeek = ref(true)
 
     const handleWeekSelection = (week) => {
       selectedWeek.value = week;
-    };
+      if (week && isWeekInRange(week)) {
+        const weekString = getStringFromWeek(week);
+        if (weekString) {
+          router.push(`/review/${weekString}`);
+          isValidWeek.value = true;
+        } else {
+          isValidWeek.value = false;
+        }
+      } else {
+        router.push('/review');
+        isValidWeek.value = true;
+      }
+    }
 
     const handleReset = () => {
       selectedWeek.value = null;
-    };
+      isValidWeek.value = true;
+      router.push('/review');
+    }
 
-    const formatDateRange = (week) => {
-      if (!week || week.length < 2) return '';
-      const start = week[0];
-      const end = week[1];
-      const options = { year: 'numeric', month: 'long', day: 'numeric' };
-      return `${start.toLocaleDateString('ja-JP', options)} - ${end.toLocaleDateString('ja-JP', options)}`;
-    };
+    watch(() => props.weekParam, (newWeekParam) => {
+      if (newWeekParam) {
+        const week = getWeekFromString(newWeekParam);
+        if (week && isWeekInRange(week)) {
+          selectedWeek.value = week;
+          isValidWeek.value = true;
+        } else {
+          selectedWeek.value = null;
+          isValidWeek.value = false;
+        }
+      } else {
+        selectedWeek.value = null;
+        isValidWeek.value = true;
+      }
+    }, { immediate: true })
 
     return {
       selectedWeek,
-      filteredReports,
+      isValidWeek,
       handleWeekSelection,
-      handleReset,
-      formatDateRange
+      handleReset
     };
   }
 };
 </script>
-
-<style scoped>
-/* 必要に応じてスタイルを追加 */
-</style>
