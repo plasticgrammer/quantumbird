@@ -1,7 +1,7 @@
 <template>
   <v-container class="week-selector">
     <v-row align="center" justify="space-between" class="mb-1">
-      <v-col>
+      <v-col class="py-4">
         <h3>{{ selectedWeekRange }}</h3>
       </v-col>
       <v-col class="text-right">
@@ -195,6 +195,10 @@ export default {
 </script>
 
 <style scoped>
+.week-selector {
+  max-width: 800px;
+}
+
 .weekdays {
   background-color: #f0f0f0;
   font-weight: bold;

@@ -309,7 +309,7 @@ export default {
 
 <style scoped>
 .report-form-container {
-  margin: 0 auto;
+  max-width: 800px;
 }
 
 .report-form {

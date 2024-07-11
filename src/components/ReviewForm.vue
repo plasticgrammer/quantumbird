@@ -1,5 +1,5 @@
 <template>
-  <v-container class="report-review-container">
+  <v-container>
     <v-row>
       <v-col v-for="report in reports" :key="report.id" cols="12">
         <v-card
@@ -11,7 +11,7 @@
         >
           <v-card-title class="d-flex justify-space-between align-center py-2">
             <span class="text-h6 font-weight-bold">
-              <v-icon size="x-large" class="mr-1">mdi-account-box</v-icon>
+              <v-icon size="x-large" class="mr-1" color="grey">mdi-account-box</v-icon>
               {{ report.name }}
             </span>
             <v-chip
@@ -234,13 +234,8 @@ export default {
 </script>
 
 <style scoped>
-.report-review-container {
-  max-width: 960px;
-  margin: 0 auto;
-}
-
 .approved-card {
-  background-color: #e8f6f3 !important;
+  background-color: mintcream !important;
 }
 
 .tasks {

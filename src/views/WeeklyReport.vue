@@ -1,5 +1,5 @@
 <template>
-  <div class="weekly-report-container">
+  <v-container>
     <WeekSelector 
       :calendarWeeks="calendarWeeks"
       :selectedWeek="selectedWeek"
@@ -19,7 +19,7 @@
       @update:report="updateReport"
       @submit-report="handleSubmit"
     />
-  </div>
+  </v-container>
 </template>
 
 <script>
@@ -148,12 +148,6 @@ export default {
 </script>
 
 <style scoped>
-.weekly-report-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 10px 0;
-}
-
 .error-message {
   color: red;
   margin-top: 10px;
