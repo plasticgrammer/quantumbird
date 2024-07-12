@@ -27,13 +27,15 @@
           </v-col>
         </v-row>
         <transition-group name="week-transition" tag="div">
-          <v-row v-for="(week, weekIndex) in visibleWeeks" :key="getWeekKey(week)" no-gutters
+          <v-row v-for="(week, weekIndex) in visibleWeeks" :key="getWeekKey(week)" 
+            no-gutters
             class="week-row"
             :class="{ 
               'selected': isSelected(week), 
               'hovered': isHovered(week),
               'fade-out': internalSelectedWeek && !isSelected(week)
             }"
+            :style="{ 'transition-delay': `${weekIndex * .1}s` }"
             @click="selectWeek(week)"
             @mouseenter="setHoverWeek(week)"
             @mouseleave="clearHoverWeek"
@@ -84,6 +86,7 @@ export default {
       isSunday, 
       shouldShowMonth,
       getWeekNumber,
+      getStringFromWeek,
       calendarWeeks
     } = useCalendar()
 
@@ -111,7 +114,11 @@ export default {
     const selectWeek = (week) => {
       if (props.isLocked) return;
       internalSelectedWeek.value = [week[0], new Date(week[0].getTime() + 6 * 24 * 60 * 60 * 1000)];
-      emit('select-week', internalSelectedWeek.value);
+      
+      // アニメーションのタイミングを調整
+      setTimeout(() => {
+        emit('select-week', internalSelectedWeek.value);
+      }, 1000); // 全ての週のフェードアウトが完了する時間
     }
 
     const resetSelection = () => {
@@ -146,24 +153,7 @@ export default {
     const selectedWeekRange = computed(() => {
       return internalSelectedWeek.value ? formatDateRange(internalSelectedWeek.value) : '週の選択';
     });
-
-    const getWeekKey = (week) => {
-      if (!Array.isArray(week) || week.length === 0) {
-        console.error('Invalid week in getWeekKey:', week);
-        return 'invalid-week';
-      }
-      if (!(week[0] instanceof Date)) {
-        console.error('First element of week is not a Date:', week[0]);
-        return 'invalid-date';
-      }
-      try {
-        return week[0].toISOString().split('T')[0];
-      } catch (error) {
-        console.error('Error in getWeekKey:', error);
-        return 'error-week';
-      }
-    }
-
+    
     return {
       visibleWeeks,
       weekdays,
@@ -181,7 +171,7 @@ export default {
       isSunday,
       shouldShowMonth,
       selectedWeekRange,
-      getWeekKey
+      getWeekKey: getStringFromWeek
     }
   }
 }
@@ -192,31 +182,27 @@ export default {
   max-width: 800px;
 }
 
-.week-transition-move {
-  transition: transform 0.5s;
-}
-
+/* 要素が追加される時（enter）と削除される時（leave） */
 .week-transition-enter-active,
 .week-transition-leave-active {
-  transition: all 0.5s;
-}
+  height: 3em;
+  transition: all 0.4s ease-out;
+} 
 
+/* 要素が追加される直前の状態（enter-from）と、削除される直後の状態（leave-to） */
 .week-transition-enter-from,
 .week-transition-leave-to {
+  height: 0;
   opacity: 0;
-  transform: translateY(-15px);
 }
 
-.week-row.fade-out {
-  opacity: 0;
-  transform: scale(0.9);
-  transition: all 0.7s ease-out;
+.week-row {
+  cursor: pointer;
 }
 
-.week-row.selected {
-  opacity: 1 !important;
-  transform: scale(1) !important;
-  transition: all 0.7s ease-out;
+.week-row.selected,
+.week-row.hovered {
+  background-color: rgba(179, 215, 255, 0.5);
 }
 
 .weekdays {
@@ -242,16 +228,6 @@ export default {
 .week-number {
   color: #6c757d;
   font-size: 0.8em;
-}
-
-.week-row {
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.week-row.selected,
-.week-row.hovered {
-  background-color: rgba(179, 215, 255, 0.5);
 }
 
 .day {
