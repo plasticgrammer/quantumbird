@@ -35,7 +35,7 @@
               'hovered': isHovered(week),
               'fade-out': internalSelectedWeek && !isSelected(week)
             }"
-            :style="{ 'transition-delay': `${weekIndex * .1}s` }"
+            :style="{ '--fade-delay': `${weekIndex * .15}s` }"
             @click="selectWeek(week)"
             @mouseenter="setHoverWeek(week)"
             @mouseleave="clearHoverWeek"
@@ -187,6 +187,7 @@ export default {
 .week-transition-leave-active {
   height: 3em;
   transition: all 0.4s ease-out;
+  transition-delay: var(--fade-delay, 0s);
 } 
 
 /* 要素が追加される直前の状態（enter-from）と、削除される直後の状態（leave-to） */
