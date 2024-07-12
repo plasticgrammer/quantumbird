@@ -10,7 +10,7 @@ export function useCalendar() {
     let currentDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 28);
 
     // 最初の月曜日まで移動
-    while (currentDate.getDay() !== 0) {
+    while (currentDate.getDay() !== 1) {
       currentDate.setDate(currentDate.getDate() - 1);
     }
 
@@ -37,13 +37,6 @@ export function useCalendar() {
     return getWeekNumber(week[0]) >= getWeekNumber(calendarDateRange.value.start) 
       && getWeekNumber(week[1]) <= getWeekNumber(calendarDateRange.value.end);
   }
-
-  const visibleWeeks = computed(() => {
-    if (!selectedWeek.value) return calendarWeeks.value
-    return calendarWeeks.value.filter(week => 
-      week[0].date >= selectedWeek.value.start && week[0].date <= selectedWeek.value.end
-    )
-  })
 
   const selectWeek = (week) => {
     selectedWeek.value = week
@@ -81,24 +74,28 @@ export function useCalendar() {
   }
 
   const getStringFromWeek = (week) => {
-    const year = week[0].getFullYear()
-    const weekNumber = getWeekNumber(week[0])
-    return `${year}-W${weekNumber.toString().padStart(2, '0')}`
+    const date = new Date(week[0]);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 3);  // 木曜日に移動（ISO 8601準拠）
+    const year = date.getFullYear();
+    const firstThursday = new Date(year, 0, 4);  // その年の最初の木曜日
+    const weekNumber = Math.floor(1 + (date - firstThursday) / (7 * 24 * 60 * 60 * 1000));
+    return `${year}-W${weekNumber.toString().padStart(2, '0')}`;
   }
-
+  
   const getWeekFromString = (weekString) => {
-    const [year, weekNumber] = weekString.split('-W')
-    const date = new Date(year, 0, 1 + (weekNumber - 1) * 7)
-    const day = date.getDay()
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1)
-    const weekStart = new Date(date.setDate(diff))
-    const weekEnd = new Date(weekStart)
-    weekEnd.setDate(weekEnd.getDate() + 6)
-    return [weekStart, weekEnd]
+    const [year, weekNumber] = weekString.split('-W').map(Number);
+    const firstThursday = new Date(year, 0, 4);
+    const targetThursday = new Date(firstThursday.getTime() + (weekNumber - 1) * 7 * 24 * 60 * 60 * 1000);
+    const weekStart = new Date(targetThursday.getTime() - 3 * 24 * 60 * 60 * 1000);
+    const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+    weekStart.setHours(0, 0, 0, 0);
+    weekEnd.setHours(23, 59, 59, 999);
+    return [weekStart, weekEnd];
   }
 
   return {
-    calendarWeeks: visibleWeeks, // calendarWeeks を visibleWeeks に置き換え
+    calendarWeeks,
     selectedWeek,
     selectWeek,
     calendarDateRange,

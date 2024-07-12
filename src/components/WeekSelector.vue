@@ -93,23 +93,19 @@ export default {
     const visibleWeeks = computed(() => {
       if (!internalSelectedWeek.value) return calendarWeeks.value;
       return calendarWeeks.value.filter(week => {
-        if (!Array.isArray(week) || week.length === 0 || !(week[0] instanceof Date)) {
-          console.error('Invalid week in calendarWeeks:', week);
-          return false;
-        }
         const weekStart = week[0];
         return weekStart >= internalSelectedWeek.value[0] && weekStart <= internalSelectedWeek.value[1];
       });
     });
 
     const weekdays = [
-      { label: '日', class: 'sunday' },
       { label: '月', class: '' },
       { label: '火', class: '' },
       { label: '水', class: '' },
       { label: '木', class: '' },
       { label: '金', class: '' },
-      { label: '土', class: 'saturday' }
+      { label: '土', class: 'saturday' },
+      { label: '日', class: 'sunday' },
     ]
 
     const selectWeek = (week) => {
