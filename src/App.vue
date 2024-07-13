@@ -19,6 +19,6 @@ export default {
 <style scoped>
 #main {
   max-width: 960px;
-  margin: auto;
+  margin: 0 auto;
 }
 </style>

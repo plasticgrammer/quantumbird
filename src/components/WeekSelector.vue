@@ -1,21 +1,15 @@
 <template>
-  <v-container class="week-selector">
+  <v-container 
+    class="week-selector"
+    @mouseenter="startHoverTimer"
+    @mouseleave="handleMouseLeave"
+  >
     <v-row align="center" justify="space-between" class="mb-1">
       <v-col class="py-4">
         <h3>
           <v-icon size="x-large" class="mr-1">mdi-bird</v-icon>
           {{ selectedWeekRange }}
         </h3>
-      </v-col>
-      <v-col class="text-right">
-        <v-btn
-          v-if="isLocked"
-          @click="resetSelection"
-          color="secondary"
-          small
-        >
-          選択をリセット
-        </v-btn>
       </v-col>
     </v-row>
     <v-card elevation="4">
@@ -33,9 +27,8 @@
             :class="{ 
               'selected': isSelected(week), 
               'hovered': isHovered(week),
-              'fade-out': internalSelectedWeek && !isSelected(week)
             }"
-            :style="{ '--fade-delay': `${weekIndex * .15}s` }"
+            :style="{ '--fade-delay': `${weekIndex * .10}s` }"
             @click="selectWeek(week)"
             @mouseenter="setHoverWeek(week)"
             @mouseleave="clearHoverWeek"
@@ -62,7 +55,7 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useCalendar } from '../composables/useCalendar'
 
 export default {
@@ -72,12 +65,8 @@ export default {
       type: Array,
       default: () => null
     },
-    isLocked: {
-      type: Boolean,
-      default: false
-    }
   },
-  emits: ['select-week', 'reset'],
+  emits: ['select-week'],
   setup(props, { emit }) {
     const { 
       formatShortMonth, 
@@ -92,9 +81,11 @@ export default {
 
     const internalSelectedWeek = ref(props.selectedWeek)
     const hoveredWeek = ref(null);
+    const showAllWeeks = ref(false);
+    let hoverTimer = null;
 
     const visibleWeeks = computed(() => {
-      if (!internalSelectedWeek.value) return calendarWeeks.value;
+      if (!internalSelectedWeek.value || showAllWeeks.value) return calendarWeeks.value;
       return calendarWeeks.value.filter(week => {
         const weekStart = week[0];
         return weekStart >= internalSelectedWeek.value[0] && weekStart <= internalSelectedWeek.value[1];
@@ -112,18 +103,9 @@ export default {
     ]
 
     const selectWeek = (week) => {
-      if (props.isLocked) return;
       internalSelectedWeek.value = [week[0], new Date(week[0].getTime() + 6 * 24 * 60 * 60 * 1000)];
-      
-      // アニメーションのタイミングを調整
-      setTimeout(() => {
-        emit('select-week', internalSelectedWeek.value);
-      }, 1000); // 全ての週のフェードアウトが完了する時間
-    }
-
-    const resetSelection = () => {
-      internalSelectedWeek.value = null;
-      emit('reset');
+      showAllWeeks.value = false;
+      emit('select-week', internalSelectedWeek.value);
     }
 
     const isSelected = (week) => {
@@ -153,6 +135,24 @@ export default {
     const selectedWeekRange = computed(() => {
       return internalSelectedWeek.value ? formatDateRange(internalSelectedWeek.value) : '週の選択';
     });
+
+    const startHoverTimer = () => {
+      if (internalSelectedWeek.value && !showAllWeeks.value) {
+        hoverTimer = setTimeout(() => {
+          showAllWeeks.value = true;
+        }, 300);
+      }
+    }
+
+    const handleMouseLeave = () => {
+      clearTimeout(hoverTimer);
+      showAllWeeks.value = false;
+    }
+
+    watch(() => props.selectedWeek, (newValue) => {
+      internalSelectedWeek.value = newValue;
+      showAllWeeks.value = false;
+    });
     
     return {
       visibleWeeks,
@@ -163,7 +163,6 @@ export default {
       setHoverWeek,
       clearHoverWeek,
       isHovered,
-      resetSelection,
       getWeekNumber,
       formatShortMonth,
       isToday,
@@ -171,7 +170,9 @@ export default {
       isSunday,
       shouldShowMonth,
       selectedWeekRange,
-      getWeekKey: getStringFromWeek
+      getWeekKey: getStringFromWeek,
+      startHoverTimer,
+      handleMouseLeave
     }
   }
 }
