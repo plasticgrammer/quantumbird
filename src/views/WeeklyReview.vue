@@ -48,13 +48,16 @@ export default {
       if (week && isWeekInRange(week)) {
         const weekString = getStringFromWeek(week);
         if (weekString) {
-          router.push(`/review/${weekString}`);
+          router.push({
+            name: 'WeeklyReview',
+            params: { weekParam: weekString }
+          });
           isValidWeek.value = true;
         } else {
           isValidWeek.value = false;
         }
       } else {
-        router.push('/review');
+        router.push({ name: 'WeeklyReviewSelector' });
         isValidWeek.value = true;
       }
     }
@@ -62,7 +65,7 @@ export default {
     const handleReset = () => {
       selectedWeek.value = null;
       isValidWeek.value = true;
-      router.push('/review');
+      router.push({ name: 'WeeklyReviewSelector' });
     }
 
     watch(() => props.weekParam, (newWeekParam) => {

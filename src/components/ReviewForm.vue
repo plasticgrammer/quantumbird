@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container class="review-form-container">
     <v-row>
       <v-col v-for="report in reports" :key="report.id" cols="12">
         <v-card
@@ -11,7 +11,7 @@
         >
           <v-card-title class="d-flex justify-space-between align-center py-2">
             <span class="text-h6 font-weight-bold">
-              <v-icon size="x-large" class="mr-1" color="grey">mdi-account-box</v-icon>
+              <v-icon size="x-large" class="mr-1" color="black">mdi-account-box-outline</v-icon>
               {{ report.name }}
             </span>
             <v-chip
@@ -250,6 +250,10 @@ export default {
 </script>
 
 <style scoped>
+.review-form-container {
+  max-width: 800px;
+}
+
 .approved-card {
   background-color: azure;
 }

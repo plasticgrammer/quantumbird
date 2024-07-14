@@ -212,7 +212,7 @@ export default {
 .week-transition-enter-active,
 .week-transition-leave-active {
   height: 3em;
-  transition: all 0.4s ease-out;
+  transition: all 0.3s ease-out;
   transition-delay: var(--fade-delay, 0s);
 } 
 

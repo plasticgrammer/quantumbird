@@ -54,13 +54,16 @@ export default {
       if (week && isWeekInRange(week)) {
         const weekString = getStringFromWeek(week);
         if (weekString) {
-          router.push(`/report/${weekString}`);
+          router.push({
+            name: 'WeekReportSelector',
+            params: { weekParam: weekString }
+          });
           isValidWeek.value = true;
         } else {
           isValidWeek.value = false;
         }
       } else {
-        router.push('/report');
+        router.push({ name: 'WeekReportSelector' });
         isValidWeek.value = true;
       }
     }
@@ -68,7 +71,7 @@ export default {
     const handleReset = () => {
       selectedWeek.value = null;
       isValidWeek.value = true;
-      router.push('/report');
+      router.push({ name: 'WeekReportSelector' });
     }
 
     const updateReport = (newReport) => {

@@ -1,7 +1,9 @@
 <template>
   <v-app>
     <v-container class="organization-management-container">
-      <v-card class="organization-card">
+      <v-card class="organization-card"
+        elevation="4"
+      >
         <v-form>
           <v-text-field
             v-model="organization.name"
