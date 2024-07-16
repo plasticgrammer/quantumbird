@@ -7,18 +7,13 @@
           {{ selectedWeekRange }}
         </h3>
       </v-col>
-      <v-col class="text-right">
-        <v-btn
-          v-if="isLocked"
-          @click="resetSelection"
-          color="secondary"
-          small
-        >
-          選択をリセット
-        </v-btn>
-      </v-col>
     </v-row>
-    <v-card elevation="4">
+    <v-card 
+      elevation="4"
+      @mouseenter="startHoverTimer"
+      @mouseleave="handleMouseLeave"
+      :class="{ 'hover-effect': isHovering, 'leave-effect': !isHovering, 'show-all-weeks': showAllWeeks }"
+    >
       <v-card-text class="pa-0">
         <v-row class="weekdays" no-gutters>
           <v-col cols="1" class="week-number-header">週</v-col>
@@ -33,9 +28,8 @@
             :class="{ 
               'selected': isSelected(week), 
               'hovered': isHovered(week),
-              'fade-out': internalSelectedWeek && !isSelected(week)
             }"
-            :style="{ '--fade-delay': `${weekIndex * .15}s` }"
+            :style="{ '--fade-delay': `${weekIndex * .10}s` }"
             @click="selectWeek(week)"
             @mouseenter="setHoverWeek(week)"
             @mouseleave="clearHoverWeek"
@@ -62,7 +56,7 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useCalendar } from '../composables/useCalendar'
 
 export default {
@@ -72,12 +66,8 @@ export default {
       type: Array,
       default: () => null
     },
-    isLocked: {
-      type: Boolean,
-      default: false
-    }
   },
-  emits: ['select-week', 'reset'],
+  emits: ['select-week'],
   setup(props, { emit }) {
     const { 
       formatShortMonth, 
@@ -92,9 +82,12 @@ export default {
 
     const internalSelectedWeek = ref(props.selectedWeek)
     const hoveredWeek = ref(null);
+    const isHovering = ref(false);
+    const showAllWeeks = ref(false);
+    let hoverTimer = null;
 
     const visibleWeeks = computed(() => {
-      if (!internalSelectedWeek.value) return calendarWeeks.value;
+      if (!internalSelectedWeek.value || showAllWeeks.value) return calendarWeeks.value;
       return calendarWeeks.value.filter(week => {
         const weekStart = week[0];
         return weekStart >= internalSelectedWeek.value[0] && weekStart <= internalSelectedWeek.value[1];
@@ -112,18 +105,11 @@ export default {
     ]
 
     const selectWeek = (week) => {
-      if (props.isLocked) return;
       internalSelectedWeek.value = [week[0], new Date(week[0].getTime() + 6 * 24 * 60 * 60 * 1000)];
-      
-      // アニメーションのタイミングを調整
       setTimeout(() => {
+        showAllWeeks.value = false;
         emit('select-week', internalSelectedWeek.value);
-      }, 1000); // 全ての週のフェードアウトが完了する時間
-    }
-
-    const resetSelection = () => {
-      internalSelectedWeek.value = null;
-      emit('reset');
+      }, 300);
     }
 
     const isSelected = (week) => {
@@ -153,6 +139,27 @@ export default {
     const selectedWeekRange = computed(() => {
       return internalSelectedWeek.value ? formatDateRange(internalSelectedWeek.value) : '週の選択';
     });
+
+    const startHoverTimer = () => {
+      if (internalSelectedWeek.value && !showAllWeeks.value) {
+        isHovering.value = true;
+        hoverTimer = setTimeout(() => {
+          showAllWeeks.value = true;
+          isHovering.value = false;
+        }, 400);
+      }
+    }
+
+    const handleMouseLeave = () => {
+      clearTimeout(hoverTimer);
+      showAllWeeks.value = false;
+      isHovering.value = false;
+    }
+
+    watch(() => props.selectedWeek, (newValue) => {
+      internalSelectedWeek.value = newValue;
+      showAllWeeks.value = false;
+    });
     
     return {
       visibleWeeks,
@@ -163,7 +170,6 @@ export default {
       setHoverWeek,
       clearHoverWeek,
       isHovered,
-      resetSelection,
       getWeekNumber,
       formatShortMonth,
       isToday,
@@ -171,7 +177,11 @@ export default {
       isSunday,
       shouldShowMonth,
       selectedWeekRange,
-      getWeekKey: getStringFromWeek
+      getWeekKey: getStringFromWeek,
+      startHoverTimer,
+      isHovering,
+      showAllWeeks,
+      handleMouseLeave
     }
   }
 }
@@ -182,11 +192,27 @@ export default {
   max-width: 800px;
 }
 
+.hover-effect {
+  transition: all 0.5s ease;
+  box-shadow: 0 0 15px rgba(100, 149, 237, 0.7) !important;
+  transform: scale(1.03);
+}
+
+.leave-effect {
+  transition: all 0.5s ease;
+  transform: scale(1);
+}
+
+.show-all-weeks {
+  transition: all 0.5s ease;
+  transform: scale(1.03);
+}
+
 /* 要素が追加される時（enter）と削除される時（leave） */
 .week-transition-enter-active,
 .week-transition-leave-active {
   height: 3em;
-  transition: all 0.4s ease-out;
+  transition: all 0.3s ease-out;
   transition-delay: var(--fade-delay, 0s);
 } 
 
@@ -201,9 +227,12 @@ export default {
   cursor: pointer;
 }
 
-.week-row.selected,
+.week-row.selected {
+  background-color: rgba(179, 215, 255, 0.6) !important;
+}
+
 .week-row.hovered {
-  background-color: rgba(179, 215, 255, 0.5);
+  background-color: rgba(179, 215, 255, 0.3);
 }
 
 .weekdays {
