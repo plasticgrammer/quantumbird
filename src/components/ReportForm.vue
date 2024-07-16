@@ -137,7 +137,7 @@
 
       <v-btn color="success" type="submit" class="mt-4">
         <v-icon class="mr-1" left>mdi-check</v-icon>
-        報告を提出
+        報告を提出する
       </v-btn>
     </v-form>
   </v-container>

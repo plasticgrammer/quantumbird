@@ -1,142 +1,161 @@
 <template>
-  <v-app>
-    <v-container class="organization-management-container">
-      <v-card class="organization-card">
-        <v-form>
-          <v-text-field
-            v-model="organization.name"
-            label="組織名"
-            variant="outlined"
-            class="organization-name-input"
-            @input="handleOrganizationNameChange"
-          ></v-text-field>
-        </v-form>
+  <v-container class="organization-management-container">
+    <v-card 
+      class="organization-card"
+      elevation="4"
+      outlined
+    >
+      <v-form>
+        <v-text-field
+          v-model="organization.name"
+          label="組織名"
+          outlined
+          dense
+          class="organization-name-input"
+          @input="handleOrganizationNameChange"
+        ></v-text-field>
+      </v-form>
 
-        <div class="members-table-container">
-          <v-simple-table class="members-table">
-            <thead class="members-table-header">
-              <tr>
-                <th class="members-table-header-cell">ID</th>
-                <th class="members-table-header-cell">名前</th>
-                <th class="members-table-header-cell">メールアドレス</th>
-                <th class="members-table-header-cell" style="width: 260px;"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="member in organization.members" :key="member.id" class="members-table-row">
-                <td class="members-table-cell">
-                  <v-text-field
-                    v-model="member.id"
-                    :maxlength="8"
-                    variant="outlined"
-                    class="member-id-input"
-                    readonly="true"
-                    hide-details="auto"
-                  ></v-text-field>
-                </td>
-                <td class="members-table-cell">
-                  <v-text-field
-                    v-model="member.name"
-                    variant="outlined"
-                    class="member-name-input"
-                    :readonly="editingMember?.id !== member.id"
-                    hide-details="auto"
-                  ></v-text-field>
-                </td>
-                <td class="members-table-cell">
-                  <v-text-field
-                    v-model="member.email"
-                    variant="outlined"
-                    class="member-email-input"
-                    :readonly="editingMember?.id !== member.id"
-                    hide-details="auto"
-                  ></v-text-field>
-                </td>
-                <td class="members-table-cell">
-                  <v-simple-table class="action-table">
-                    <tr>
-                      <td v-if="editingMember?.id === member.id" class="action-cell">
-                        <v-btn
-                          class="save-button"
-                          @click="handleUpdateMember(member)"
-                        >
-                          保存
-                        </v-btn>
-                      </td>
-                      <td v-if="editingMember?.id === member.id" class="action-cell">
-                        <v-btn
-                          class="cancel-button"
-                          @click="setEditingMember(null)"
-                        >
-                          キャンセル
-                        </v-btn>
-                      </td>
-                      <td v-else class="action-cell">
-                        <v-btn
-                          class="edit-button"
-                          @click="setEditingMember(member)"
-                        >
-                          編集
-                        </v-btn>
-                      </td>
-                      <td v-if="editingMember?.id !== member.id" class="action-cell">
-                        <v-btn
-                          class="delete-button"
-                          @click="handleDeleteMember(member.id)"
-                        >
-                          削除
-                        </v-btn>
-                      </td>
-                    </tr>
-                  </v-simple-table>
-                </td>
-              </tr>
-            </tbody>
-          </v-simple-table>
-        </div>
+      <v-table class="members-table">
+        <thead>
+          <tr>
+            <th class="text-left">ID</th>
+            <th class="text-left">名前</th>
+            <th class="text-left">メールアドレス</th>
+            <th class="text-left" style="width: 260px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="member in organization.members" :key="member.id">
+            <td>
+              <v-text-field
+                v-model="member.id"
+                :maxlength="8"
+                outlined
+                dense
+                readonly
+                hide-details
+                class="member-id-input"
+              ></v-text-field>
+            </td>
+            <td>
+              <v-text-field
+                v-model="member.name"
+                outlined
+                dense
+                :readonly="editingMember?.id !== member.id"
+                hide-details
+                class="member-name-input"
+              ></v-text-field>
+            </td>
+            <td>
+              <v-text-field
+                v-model="member.email"
+                outlined
+                dense
+                :readonly="editingMember?.id !== member.id"
+                hide-details
+                class="member-email-input"
+              ></v-text-field>
+            </td>
+            <td>
+              <v-row no-gutters>
+                <v-col v-if="editingMember?.id === member.id">
+                  <v-btn
+                    small
+                    color="primary"
+                    @click="handleUpdateMember(member)"
+                    class="mr-2"
+                  >
+                    保存
+                  </v-btn>
+                  <v-btn
+                    small
+                    @click="setEditingMember(null)"
+                  >
+                    キャンセル
+                  </v-btn>
+                </v-col>
+                <v-col v-else>
+                  <v-btn
+                    small
+                    @click="setEditingMember(member)"
+                    class="mr-2"
+                  >
+                    編集
+                  </v-btn>
+                  <v-btn
+                    small
+                    color="error"
+                    @click="handleDeleteMember(member.id)"
+                  >
+                    削除
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </td>
+          </tr>
+          <tr class="newMember">
+            <td>
+              <v-text-field
+                v-model="newMember.id"
+                label="ID"
+                :maxlength="8"
+                outlined
+                dense
+                hide-details
+                class="member-id-input mr-2"
+              ></v-text-field>
+            </td>
+            <td>
+              <v-text-field
+                v-model="newMember.name"
+                label="メンバー名"
+                outlined
+                dense
+                hide-details
+                class="member-name-input mr-2"
+              ></v-text-field>
+            </td>
+            <td>
+              <v-text-field
+                v-model="newMember.email"
+                label="メールアドレス"
+                outlined
+                dense
+                hide-details
+                class="member-email-input mr-2"
+              ></v-text-field>
+            </td>
+            <td>
+              <v-btn
+                color="primary"
+                @click="handleAddMember"
+              >
+                メンバーを追加
+              </v-btn>
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
 
-        <div class="new-member-container">
-          <div class="new-member-row">
-            <v-text-field
-              v-model="newMember.id"
-              label="ID"
-              :maxlength="8"
-              variant="outlined"
-              class="new-member-id-input"
-            ></v-text-field>
-            <v-text-field
-              v-model="newMember.name"
-              label="メンバー名"
-              variant="outlined"
-              class="new-member-name-input"
-            ></v-text-field>
-            <v-text-field
-              v-model="newMember.email"
-              label="メールアドレス"
-              variant="outlined"
-              class="new-member-email-input"
-            ></v-text-field>
-            <v-btn
-              class="add-member-button"
-              @click="handleAddMember"
-            >
-              メンバーを追加
-            </v-btn>
-          </div>
-        </div>
-      </v-card>
-    </v-container>
-  </v-app>
+      <v-btn color="success" type="submit" class="mt-4">
+        <v-icon class="mr-1" left>mdi-check</v-icon>
+        更新する
+      </v-btn>
+
+    </v-card>
+  </v-container>
 </template>
 
 <script>
 import { ref } from 'vue'
 
 export default {
-  name: 'OrganizationManagementSystem',
+  name: 'OrganizationManagement',
   setup() {
     const organization = ref({
-      name: 'Example Organization',
+      name: 'ジェイエスピー 開発３グループ',
       members: [
         { id: '0000001', name: '田中 太郎', email: 'tanaka.taro@example.com' },
         { id: '0000002', name: '鈴木 次郎', email: 'suzuki.jiro@example.com' },
@@ -201,94 +220,38 @@ export default {
 </script>
 
 <style scoped>
-.organization-management-container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
 .organization-card {
   background-color: white;
   border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   padding: 2rem;
 }
 
 .organization-name-input {
   font-size: 1.5rem;
-  font-weight: bold;
 }
 
-.members-table-container {
-  overflow-x: auto;
-}
-
-.members-table-header-cell {
-  padding: .75rem;
-  text-align: left;
-}
-
-.members-table-row {
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.members-table-cell {
-  padding: .75rem;
-  vertical-align: middle;
-}
-
-.members-table-cell input:read-only {
-  border-style: none;
-}
-
-.new-member-container {
-  margin-top: 1.5rem;
-}
-
-.new-member-row {
-  display: flex;
-  align-items: center;
-}
-
-.new-member-row .v-input {
-  margin: .75rem;
-  flex: none;
-}
-
-.member-id-input,
-.new-member-id-input {
+.member-id-input {
   width: 100px;
 }
 
-.member-name-input,
-.new-member-name-input {
+.member-name-input {
   width: 160px;
 }
 
-.member-email-input,
-.new-member-email-input {
+.member-email-input {
   width: 300px;
 }
 
-.save-button {
-  background-color: #1a73e8 !important;
+.v-table th {
+  font-weight: bold !important;
+  color: rgba(0, 0, 0, 0.6) !important;
 }
 
-.cancel-button {
-  background-color: #f2f2f2 !important;
-  color: #4b5563 !important;
+.v-table td {
+  padding: 10px 10px !important;
 }
 
-.edit-button {
-  background-color: #f2f2f2 !important;
-  color: #4b5563 !important;
-}
-
-.delete-button {
-  background-color: #e53e3e !important;
-}
-
-.add-member-button {
-  background-color: #1a73e8 !important;
+.v-table .newMember td {
+  padding: 30px 10px 10px !important;
 }
 </style>
