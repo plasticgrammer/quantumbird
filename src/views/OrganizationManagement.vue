@@ -19,6 +19,7 @@
       <v-table class="members-table">
         <thead>
           <tr>
+            <th class="text-left"></th>
             <th class="text-left">ID</th>
             <th class="text-left">名前</th>
             <th class="text-left">メールアドレス</th>
@@ -28,12 +29,14 @@
         <tbody>
           <tr v-for="member in organization.members" :key="member.id">
             <td>
+              <v-icon size="x-large">mdi-account-circle</v-icon>
+            </td>
+            <td>
               <v-text-field
                 v-model="member.id"
-                :maxlength="8"
-                outlined
                 dense
                 readonly
+                variant=""
                 hide-details
                 class="member-id-input"
               ></v-text-field>
@@ -44,6 +47,7 @@
                 outlined
                 dense
                 :readonly="editingMember?.id !== member.id"
+                :variant="editingMember?.id !== member.id ? '' : 'filled'"
                 hide-details
                 class="member-name-input"
               ></v-text-field>
@@ -54,6 +58,7 @@
                 outlined
                 dense
                 :readonly="editingMember?.id !== member.id"
+                :variant="editingMember?.id !== member.id ? '' : 'filled'"
                 hide-details
                 class="member-email-input"
               ></v-text-field>
@@ -68,12 +73,6 @@
                     class="mr-2"
                   >
                     保存
-                  </v-btn>
-                  <v-btn
-                    small
-                    @click="setEditingMember(null)"
-                  >
-                    キャンセル
                   </v-btn>
                 </v-col>
                 <v-col v-else>
@@ -96,6 +95,8 @@
             </td>
           </tr>
           <tr class="newMember">
+            <td>
+            </td>
             <td>
               <v-text-field
                 v-model="newMember.id"
@@ -142,6 +143,11 @@
       <v-btn color="success" type="submit" class="mt-4">
         <v-icon class="mr-1" left>mdi-check</v-icon>
         更新する
+      </v-btn>
+      <span class="px-3"></span>
+      <v-btn color="grey lighten-1" type="submit" class="mt-4">
+        <v-icon class="mr-1" left>mdi-cancel</v-icon>
+        更新しない
       </v-btn>
 
     </v-card>

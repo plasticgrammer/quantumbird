@@ -53,15 +53,17 @@ const routes = [
   {
     path: '/admin/reports/:weekParam',
     name: 'WeeklyReview',
-    component: WeeklyReview
+    component: WeeklyReview,
+    props: true
   },
   {
     path: '/reports/:organizationId/:memberUuid',
     name: 'WeekReportSelector',
-    component: WeeklyReport
+    component: WeeklyReport,
+    props: true
   },
   {
-    path: '/reports/:organizationId/:memberUuid/:weekParam',
+    path: '/reports/:organizationId/:memberUuid/:weekString',
     name: 'WeeklyReport',
     component: WeeklyReport,
     props: true
