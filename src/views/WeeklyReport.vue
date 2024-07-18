@@ -54,7 +54,7 @@ export default {
     const { getWeekFromString, getStringFromWeek, isWeekInRange } = useCalendar()
     const router = useRouter()
 
-    const report = reactive(initialReport())
+    const report = reactive(initialReport(props.organizationId, props.memberUuid, props.weekString))
     const selectedWeek = ref(null)
     const isValidWeek = ref(true)
 

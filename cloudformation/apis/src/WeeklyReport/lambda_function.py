@@ -3,6 +3,7 @@ import logging
 import boto3
 from boto3.dynamodb.conditions import Key
 import os
+from decimal import Decimal
 
 print('Loading function')
 
@@ -15,31 +16,44 @@ stage = os.environ.get('STAGE', 'dev')
 table_name = f'{stage}-WeeklyReports'
 table = dynamodb.Table(table_name)
 
+def float_to_decimal(obj):
+    if isinstance(obj, float):
+        return Decimal(str(obj))
+    elif isinstance(obj, dict):
+        return {k: float_to_decimal(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [float_to_decimal(v) for v in obj]
+    return obj
+
 def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
     try:
         # Check if the event has a 'body' key (API Gateway) or is the body itself (direct invocation)
         if 'body' in event:
-            report_data = json.loads(event['body'])
+            report_data = json.loads(event['body'], parse_float=Decimal)
         else:
-            report_data = event
+            report_data = float_to_decimal(event)
 
         # Extract report details
         member_uuid = report_data.get('memberUuid')
         week_string = report_data.get('weekString')
         organization_id = report_data.get('organizationId')
-        accomplishments = report_data.get('accomplishments')
-        next_week_plans = report_data.get('nextWeekPlans')
-        blockers = report_data.get('blockers')
-        
+        projects = report_data.get('projects')
+        overtimeHours = report_data.get('overtimeHours')
+        issues = report_data.get('issues')
+        achievements = report_data.get('achievements')
+        improvements = report_data.get('improvements')
+
         # Prepare the item to be inserted
         item = {
             'memberUuid': member_uuid,
             'weekString': week_string,
             'organizationId': organization_id,
-            'accomplishments': accomplishments,
-            'nextWeekPlans': next_week_plans,
-            'blockers': blockers
+            'projects': projects,
+            'overtimeHours': overtimeHours,
+            'issues': issues,
+            'achievements': achievements,
+            'improvements': improvements
         }
         
         # Insert or update the item in DynamoDB
@@ -75,7 +89,7 @@ def get_reports_by_organization(organization_id, week_string):
         )
         return response['Items']
     except Exception as e:
-        print(f"Error querying reports: {str(e)}")
+        logger.error(f"Error querying reports: {str(e)}", exc_info=True)
         raise e
 
 def get_report(member_uuid, week_string):
@@ -88,5 +102,5 @@ def get_report(member_uuid, week_string):
         )
         return response.get('Item')
     except Exception as e:
-        print(f"Error getting report: {str(e)}")
+        logger.error(f"Error getting report: {str(e)}", exc_info=True)
         raise e

@@ -1,14 +1,15 @@
 // src/composables/useReport.js
-import { ref } from 'vue'
-
 export function useReport() {
-  const initialReport = () => ({
+  const initialReport = (organizationId, memberUuid, weekString) => ({
+    organizationId,
+    memberUuid,
+    weekString,
     projects: [{ name: '', workItems: [{ content: '' }] }],
     overtimeHours: 0,
-    issues: ''
+    issues: '',
+    achievements: '',
+    improvements: ''
   })
-
-  const report = ref(initialReport())
 
   const formatDateRange = (start, end) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' }
@@ -23,7 +24,6 @@ export function useReport() {
 
   return {
     initialReport,
-    report,
     formatDateRange,
     submitReport
   }

@@ -58,19 +58,6 @@
                   </template>
                 </v-text-field>
               </div>
-              <!--
-              <div class="d-flex justify-end">
-                <v-btn
-                  color="primary"
-                  text
-                  @click="addWorkItem(project)"
-                  class="mt-2"
-                >
-                  <v-icon class="mr-1" left>mdi-plus</v-icon>
-                  作業を追加
-                </v-btn>
-              </div>
-              -->
             </v-col>
           </v-row>
         </v-card-text>
