@@ -10,7 +10,7 @@
     </v-row>
     <v-card 
       elevation="4"
-      @mouseenter="startHoverTimer"
+      @mouseenter="handleMouseEnter"
       @mouseleave="handleMouseLeave"
       :class="{ 'hover-effect': isHovering, 'leave-effect': !isHovering, 'show-all-weeks': showAllWeeks }"
     >
@@ -84,7 +84,6 @@ export default {
     const hoveredWeek = ref(null);
     const isHovering = ref(false);
     const showAllWeeks = ref(false);
-    let hoverTimer = null;
 
     const visibleWeeks = computed(() => {
       if (!internalSelectedWeek.value || showAllWeeks.value) return calendarWeeks.value;
@@ -105,11 +104,16 @@ export default {
     ]
 
     const selectWeek = (week) => {
-      internalSelectedWeek.value = [week[0], new Date(week[0].getTime() + 6 * 24 * 60 * 60 * 1000)];
-      setTimeout(() => {
-        showAllWeeks.value = false;
-        emit('select-week', internalSelectedWeek.value);
-      }, 300);
+      isHovering.value = false;
+      if (internalSelectedWeek.value && !showAllWeeks.value) {
+        showAllWeeks.value = true;
+      } else {
+        internalSelectedWeek.value = [week[0], new Date(week[0].getTime() + 6 * 24 * 60 * 60 * 1000)];
+        setTimeout(() => {
+          showAllWeeks.value = false;
+          emit('select-week', internalSelectedWeek.value);
+        }, 300);
+      }
     }
 
     const isSelected = (week) => {
@@ -140,19 +144,13 @@ export default {
       return internalSelectedWeek.value ? formatDateRange(internalSelectedWeek.value) : '週の選択';
     });
 
-    const startHoverTimer = () => {
+    const handleMouseEnter = () => {
       if (internalSelectedWeek.value && !showAllWeeks.value) {
         isHovering.value = true;
-        hoverTimer = setTimeout(() => {
-          showAllWeeks.value = true;
-          isHovering.value = false;
-        }, 400);
       }
     }
 
     const handleMouseLeave = () => {
-      clearTimeout(hoverTimer);
-      showAllWeeks.value = false;
       isHovering.value = false;
     }
 
@@ -178,9 +176,9 @@ export default {
       shouldShowMonth,
       selectedWeekRange,
       getWeekKey: getStringFromWeek,
-      startHoverTimer,
       isHovering,
       showAllWeeks,
+      handleMouseEnter,
       handleMouseLeave
     }
   }
@@ -200,7 +198,7 @@ export default {
 
 .leave-effect {
   transition: all 0.5s ease;
-  transform: scale(1);
+  transform: scale(1) !important;
 }
 
 .show-all-weeks {
