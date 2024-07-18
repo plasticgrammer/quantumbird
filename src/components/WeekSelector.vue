@@ -67,7 +67,7 @@ export default {
       default: () => null
     },
   },
-  emits: ['select-week'],
+  emits: ['select-week', 'reset'],
   setup(props, { emit }) {
     const { 
       formatShortMonth, 
@@ -104,15 +104,15 @@ export default {
     ]
 
     const selectWeek = (week) => {
-      isHovering.value = false;
       if (internalSelectedWeek.value && !showAllWeeks.value) {
         showAllWeeks.value = true;
+        emit('reset');
       } else {
         internalSelectedWeek.value = [week[0], new Date(week[0].getTime() + 6 * 24 * 60 * 60 * 1000)];
         setTimeout(() => {
           showAllWeeks.value = false;
           emit('select-week', internalSelectedWeek.value);
-        }, 300);
+        }, 700);
       }
     }
 
@@ -145,9 +145,7 @@ export default {
     });
 
     const handleMouseEnter = () => {
-      if (internalSelectedWeek.value && !showAllWeeks.value) {
-        isHovering.value = true;
-      }
+      isHovering.value = true;
     }
 
     const handleMouseLeave = () => {
@@ -192,13 +190,13 @@ export default {
 
 .hover-effect {
   transition: all 0.5s ease;
-  box-shadow: 0 0 15px rgba(100, 149, 237, 0.7) !important;
-  transform: scale(1.03);
+  box-shadow: 0 0 15px rgba(100, 149, 237, 0.6) !important;
+  transform: scale(1.02);
 }
 
 .leave-effect {
   transition: all 0.5s ease;
-  transform: scale(1) !important;
+  transform: scale(1);
 }
 
 .show-all-weeks {
