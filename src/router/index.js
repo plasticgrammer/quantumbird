@@ -6,7 +6,7 @@ import OrganizationManagement from '../views/OrganizationManagement.vue'
 
 const routes = [
   {
-    path: '/dashboard',
+    path: '/',
     name: 'Dashboard',
     component: Dashboard
   },

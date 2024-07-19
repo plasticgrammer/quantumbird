@@ -70,11 +70,11 @@ export default {
   emits: ['select-week', 'reset'],
   setup(props, { emit }) {
     const { 
+      shouldShowMonth,
       formatShortMonth, 
       isToday, 
       isSaturday, 
       isSunday, 
-      shouldShowMonth,
       getWeekNumber,
       getStringFromWeek,
       calendarWeeks

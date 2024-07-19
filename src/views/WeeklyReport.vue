@@ -12,16 +12,14 @@
     </v-alert>
 
     <ReportForm v-if="selectedWeek && isValidWeek" 
-      :selectedWeek="selectedWeek"
       :report="report"
-      @update:report="updateReport"
       @submit-report="handleSubmit"
     />
   </v-container>
 </template>
 
 <script>
-import { ref, reactive, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import WeekSelector from '../components/WeekSelector.vue'
 import ReportForm from '../components/ReportForm.vue'
@@ -54,7 +52,7 @@ export default {
     const { getWeekFromString, getStringFromWeek, isWeekInRange } = useCalendar()
     const router = useRouter()
 
-    const report = reactive(initialReport(props.organizationId, props.memberUuid, props.weekString))
+    const report = ref(initialReport(props.organizationId, props.memberUuid, props.weekString))
     const selectedWeek = ref(null)
     const isValidWeek = ref(true)
 
@@ -63,6 +61,7 @@ export default {
       if (week && isWeekInRange(week)) {
         const weekString = getStringFromWeek(week);
         if (weekString) {
+          Object.assign(report, initialReport(props.organizationId, props.memberUuid, weekString));
           router.push({
             name: 'WeeklyReport',
             params: { organizationId: props.organizationId, memberUuid: props.memberUuid, weekString }

@@ -54,6 +54,7 @@
                       :color="item.content ? 'grey darken-2' : 'grey lighten-1'"
                       @click="removeWorkItem(project, itemIndex)"
                       small
+                      tabindex="-1"
                     >mdi-close-circle-outline</v-icon>
                   </template>
                 </v-text-field>
@@ -132,15 +133,10 @@
 
 <script>
 import { ref, computed, nextTick, reactive } from 'vue'
-import { useReport } from '../composables/useReport'
 
 export default {
   name: 'ReportForm',
   props: {
-    selectedWeek: {
-      type: Object,
-      required: true
-    },
     report: {
       type: Object,
       required: true
@@ -150,10 +146,8 @@ export default {
       default: () => ({})
     }
   },
-  emits: ['update:report', 'submit-report'],
+  emits: ['submit-report'],
   setup(props, { emit }) {
-    const { formatDateRange } = useReport()
-
     const localReport = ref({
       ...props.report,
       issues: props.report.issues || '',
@@ -175,31 +169,26 @@ export default {
       if (isNaN(value)) value = 0
       value = Math.max(0, Math.min(99, value))
       localReport.value.overtimeHours = parseFloat(value.toFixed(1))
-      emit('update:report', { ...localReport.value })
     }
 
     const increaseOvertime = () => {
       if (localReport.value.overtimeHours < 99) {
         localReport.value.overtimeHours = parseFloat((localReport.value.overtimeHours + 0.5).toFixed(1))
-        emit('update:report', { ...localReport.value })
       }
     }
 
     const decreaseOvertime = () => {
       if (localReport.value.overtimeHours > 0) {
         localReport.value.overtimeHours = parseFloat((localReport.value.overtimeHours - 0.5).toFixed(1))
-        emit('update:report', { ...localReport.value })
       }
     }
 
     const addProject = () => {
       localReport.value.projects.push({ name: '', workItems: [] })
-      emit('update:report', { ...localReport.value })
     }
 
     const removeProject = (index) => {
       localReport.value.projects.splice(index, 1)
-      emit('update:report', { ...localReport.value })
     }
     
     const setWorkItemRef = (el, projectIndex, itemIndex) => {
@@ -221,7 +210,6 @@ export default {
 
     const addWorkItem = async (project) => {
       project.workItems.push({ content: '' });
-      emit('update:report', { ...localReport.value });
       await nextTick();
     };
 
@@ -239,7 +227,6 @@ export default {
       if (project.workItems.length === 0) {
         addWorkItem(project);
       }
-      emit('update:report', { ...localReport.value });
     };
 
     const copyFromPreviousWeek = () => {
@@ -254,7 +241,6 @@ export default {
           achievements: props.previousWeekReport.achievements || '',
           improvements: props.previousWeekReport.improvements || ''
         }
-        emit('update:report', { ...localReport.value })
       }
     }
 
@@ -265,7 +251,6 @@ export default {
       if (project.workItems.length === 0) {
         project.workItems.push({ content: '' })
       }
-      emit('update:report', { ...localReport.value })
     }
 
     const submitReport = () => {
@@ -275,7 +260,6 @@ export default {
     return {
       localReport,
       projectNames,
-      formatDateRange,
       formattedOvertimeHours,
       updateOvertime,
       increaseOvertime,

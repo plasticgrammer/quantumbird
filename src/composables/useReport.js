@@ -11,11 +11,6 @@ export function useReport() {
     improvements: ''
   })
 
-  const formatDateRange = (start, end) => {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' }
-    return `${start.toLocaleDateString('ja-JP', options)} - ${end.toLocaleDateString('ja-JP', options)}`
-  }
-
   const submitReport = (submittedReport) => {
     // ここでレポートの送信処理を実装
     console.log('Report submitted:', submittedReport)
@@ -24,7 +19,6 @@ export function useReport() {
 
   return {
     initialReport,
-    formatDateRange,
     submitReport
   }
 }

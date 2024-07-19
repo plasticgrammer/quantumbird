@@ -7,14 +7,16 @@ export function useCalendar() {
   const calendarWeeks = computed(() => {
     const weeks = [];
     const today = new Date();
-    let currentDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 28);
+    const weekCount = 6;
+
+    let currentDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7 * (weekCount - 1));
 
     // 最初の月曜日まで移動
     while (currentDate.getDay() !== 1) {
       currentDate.setDate(currentDate.getDate() - 1);
     }
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < weekCount; i++) {
       const week = [];
       for (let j = 0; j < 7; j++) {
         week.push(new Date(currentDate));
