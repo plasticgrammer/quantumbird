@@ -27,7 +27,7 @@
 
           <v-card-text class="pa-4">
             <v-row>
-              <v-col cols="12" md="6">
+              <v-col cols="12" sm="6" md="5">
                 <div class="text-subtitle-2 font-weight-medium mb-1">作業内容</div>
                 <v-list dense class="tasks pa-0 mb-3">
                   <v-list-item v-for="(project, index) in report.projects" :key="index" class="px-2 py-2">
@@ -45,7 +45,7 @@
                   残業: {{ report.overtime }}時間
                 </v-chip>
               </v-col>
-              <v-col cols="12" md="6">
+              <v-col cols="12" sm="6" md="7">
                 <div class="text-subtitle-2 font-weight-medium mb-1">現状・問題点</div>
                 <v-textarea
                   v-model="report.issues"
