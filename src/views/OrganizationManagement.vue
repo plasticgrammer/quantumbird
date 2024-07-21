@@ -47,7 +47,7 @@
                 outlined
                 dense
                 :readonly="editingMember?.id !== member.id"
-                :variant="editingMember?.id !== member.id ? '' : 'filled'"
+                :variant="editingMember?.id !== member.id ? 'solo' : 'filled'"
                 hide-details
                 class="member-name-input"
               ></v-text-field>
@@ -58,7 +58,7 @@
                 outlined
                 dense
                 :readonly="editingMember?.id !== member.id"
-                :variant="editingMember?.id !== member.id ? '' : 'filled'"
+                :variant="editingMember?.id !== member.id ? 'solo' : 'filled'"
                 hide-details
                 class="member-email-input"
               ></v-text-field>
@@ -226,6 +226,10 @@ export default {
 </script>
 
 <style scoped>
+.organization-management-container {
+  min-width: 960px;
+}
+
 .organization-card {
   background-color: white;
   border-radius: 0.5rem;
