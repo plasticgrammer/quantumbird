@@ -31,13 +31,11 @@
                 <div class="text-subtitle-2 font-weight-medium mb-1">作業内容</div>
                 <v-list dense class="tasks pa-0 mb-3">
                   <v-list-item v-for="(project, index) in report.projects" :key="index" class="px-2 py-2">
-                    <v-list-item-content>
-                      <v-list-item-title class="text-body-2">
-                        <v-icon small>mdi-clipboard-check-outline</v-icon>
-                        {{ project.name }}
-                      </v-list-item-title>
-                      <v-list-item-subtitle class="ml-2 my-2">{{ project.tasks }}</v-list-item-subtitle>
-                    </v-list-item-content>
+                    <v-list-item-title class="text-body-2">
+                      <v-icon small>mdi-clipboard-check-outline</v-icon>
+                      {{ project.name }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle class="ml-2 my-2">{{ project.tasks }}</v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
                 <v-chip color="primary" x-small>
