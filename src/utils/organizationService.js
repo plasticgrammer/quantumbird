@@ -2,7 +2,7 @@ import { lambda } from './awsConfig'
 
 const invokeLambda = async (operation, payload) => {
   const params = {
-    FunctionName: 'Organizations',
+    FunctionName: 'Organization',
     Payload: JSON.stringify({ operation, payload })
   }
 

@@ -147,6 +147,7 @@
 </template>
 
 <script>
+import { useStore } from 'vuex'
 import { 
   signIn, 
   signUp, 
@@ -252,6 +253,8 @@ export default {
         const user = await getCurrentUser()
         console.log('認証済みユーザー:', user)
         // ここで必要な処理を行う（例：ユーザー情報の保存など）
+        const store = useStore()
+        await store.dispatch('user/fetchUser')
       } catch (error) {
         console.error('認証状態の確認に失敗:', error)
         throw new Error('認証に失敗しました。再度サインインしてください。')

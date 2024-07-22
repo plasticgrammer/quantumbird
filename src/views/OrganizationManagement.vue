@@ -7,6 +7,12 @@
     >
       <v-form @submit.prevent="handleSubmit">
         <v-text-field
+          v-model="organization.organizationId"
+          label="組織ID"
+          outlined
+          dense
+        ></v-text-field>
+        <v-text-field
           v-model="organization.name"
           label="組織名"
           outlined
@@ -158,15 +164,15 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { submitOrganization, updateOrganization, getOrganization } from '../utils/organizationManagementService'
+import { useStore } from 'vuex'
+import { submitOrganization, updateOrganization, getOrganization } from '../utils/organizationService'
 
 export default {
   name: 'OrganizationManagement',
   setup() {
-    const route = useRoute()
+    const store = useStore()
     const organization = ref({
-      organizationId: '',
+      organizationId: store.state.user.organizationId,
       name: '',
       members: []
     })
@@ -237,11 +243,7 @@ export default {
 
     const resetForm = () => {
       // フォームをリセットする処理
-      organization.value = {
-        organizationId: '',
-        name: '',
-        members: []
-      }
+      organization.value.members = []
       newMember.value = { id: '', name: '', email: '' }
       editingMember.value = null
     }
@@ -253,7 +255,7 @@ export default {
     }
 
     onMounted(async () => {
-      const organizationId = route.params.organizationId
+      const organizationId = store.state.user.organizationId
       if (organizationId) {
         try {
           const result = await getOrganization(organizationId)
