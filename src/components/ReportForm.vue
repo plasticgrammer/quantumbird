@@ -200,34 +200,34 @@ export default {
 
     const handleKeyDown = async (event, project, itemIndex) => {
       if (event.key === 'Enter' && !event.isComposing) {
-        event.preventDefault();
+        event.preventDefault()
         if (project.workItems[itemIndex].content.trim() !== '') {
-          await addWorkItem(project);
-          focusNewWorkItem(project, itemIndex + 1);
+          await addWorkItem(project)
+          focusNewWorkItem(project, itemIndex + 1)
         }
       }
-    };
+    }
 
     const addWorkItem = async (project) => {
-      project.workItems.push({ content: '' });
-      await nextTick();
-    };
+      project.workItems.push({ content: '' })
+      await nextTick()
+    }
 
     const focusNewWorkItem = (project, newIndex) => {
-      const projectIndex = localReport.value.projects.indexOf(project);
+      const projectIndex = localReport.value.projects.indexOf(project)
       nextTick(() => {
         if (workItemRefs[projectIndex] && workItemRefs[projectIndex][newIndex]) {
-          workItemRefs[projectIndex][newIndex].focus();
+          workItemRefs[projectIndex][newIndex].focus()
         }
-      });
-    };
+      })
+    }
 
     const removeWorkItem = (project, index) => {
-      project.workItems.splice(index, 1);
+      project.workItems.splice(index, 1)
       if (project.workItems.length === 0) {
-        addWorkItem(project);
+        addWorkItem(project)
       }
-    };
+    }
 
     const copyFromPreviousWeek = () => {
       if (props.previousWeekReport) {

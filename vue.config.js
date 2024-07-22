@@ -2,6 +2,16 @@ const { defineConfig } = require('@vue/cli-service')
 const webpack = require('webpack')
 
 module.exports = defineConfig({
+  pages: {
+    index: {
+      entry: 'src/main.js',
+      title: 'sixweeks'
+    }
+  },
+  publicPath: '/',
+  devServer: {
+    port: 3000,
+  },
   transpileDependencies: true,
   configureWebpack: {
     plugins: [

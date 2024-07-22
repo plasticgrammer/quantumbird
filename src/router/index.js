@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getCurrentUser } from '@aws-amplify/auth';
+import { getCurrentUser } from '@aws-amplify/auth'
 import Dashboard from '../views/Dashboard.vue'
 import SignIn from '../views/SignIn.vue'
 import WeeklyReport from '../views/WeeklyReport.vue'
@@ -8,15 +8,15 @@ import OrganizationManagement from '../views/OrganizationManagement.vue'
 
 const routes = [
   {
+    path: '/signin',
+    name: 'SignIn',
+    component: SignIn
+  },
+  {
     path: '/admin',
     name: 'Dashboard',
     component: Dashboard,
     meta: { requiresAuth: true }
-  },
-  {
-    path: '/signin',
-    name: 'SignIn',
-    component: SignIn
   },
   {
     path: '/admin/organization',

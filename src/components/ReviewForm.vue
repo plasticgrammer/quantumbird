@@ -140,7 +140,7 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref } from 'vue'
 
 export default {
   props: {
@@ -153,88 +153,88 @@ export default {
     const reports = ref([
       {
         id: 1,
-        name: "田中太郎",
+        name: '田中太郎',
         projects: [
-          { name: "プロジェクトA", tasks: "設計完了、実装着手" },
-          { name: "プロジェクトB", tasks: "テスト計画作成" }
+          { name: 'プロジェクトA', tasks: '設計完了、実装着手' },
+          { name: 'プロジェクトB', tasks: 'テスト計画作成' }
         ],
         overtime: 5,
-        achievements: "プロジェクトAの設計を予定通り完了",
-        issues: "プロジェクトBのリソース不足",
-        status: "approved",
-        feedback: "",
-        approvedAt: "2024-07-08 14:30"
+        achievements: 'プロジェクトAの設計を予定通り完了',
+        issues: 'プロジェクトBのリソース不足',
+        status: 'approved',
+        feedback: '',
+        approvedAt: '2024-07-08 14:30'
       },
       {
         id: 2,
-        name: "佐藤花子",
+        name: '佐藤花子',
         projects: [
-          { name: "プロジェクトC", tasks: "要件定義更新、クライアントミーティング" }
+          { name: 'プロジェクトC', tasks: '要件定義更新、クライアントミーティング' }
         ],
         overtime: 3,
-        achievements: "クライアントから新要件の承認を得た",
-        issues: "スケジュールの遅れが懸念される",
-        status: "pending",
-        feedback: ""
+        achievements: 'クライアントから新要件の承認を得た',
+        issues: 'スケジュールの遅れが懸念される',
+        status: 'pending',
+        feedback: ''
       },
       {
         id: 3,
-        name: "鈴木一郎",
+        name: '鈴木一郎',
         projects: [
-          { name: "プロジェクトD", tasks: "コードレビュー、バグ修正" },
-          { name: "プロジェクトE", tasks: "新機能の設計" }
+          { name: 'プロジェクトD', tasks: 'コードレビュー、バグ修正' },
+          { name: 'プロジェクトE', tasks: '新機能の設計' }
         ],
         overtime: 2,
-        achievements: "重要なバグを修正し、顧客満足度が向上",
-        issues: "新機能の設計に予想以上に時間がかかっている",
-        status: "feedback",
-        feedback: "新機能の設計遅延について、具体的な原因と対策を教えてください。"
+        achievements: '重要なバグを修正し、顧客満足度が向上',
+        issues: '新機能の設計に予想以上に時間がかかっている',
+        status: 'feedback',
+        feedback: '新機能の設計遅延について、具体的な原因と対策を教えてください。'
       }
-    ]);
+    ])
 
     const handleApprove = (id) => {
-      const now = new Date();
+      const now = new Date()
       reports.value = reports.value.map(report =>
         report.id === id
-          ? { ...report, status: "approved", feedback: "", approvedAt: now.toLocaleString() }
+          ? { ...report, status: 'approved', feedback: '', approvedAt: now.toLocaleString() }
           : report
-      );
-    };
+      )
+    }
 
     const submitFeedback = (id) => {
-      const report = reports.value.find(r => r.id === id);
-      if (report && report.feedback.trim() !== "") {
+      const report = reports.value.find(r => r.id === id)
+      if (report && report.feedback.trim() !== '') {
         reports.value = reports.value.map(r =>
-          r.id === id ? { ...r, status: "feedback" } : r
-        );
+          r.id === id ? { ...r, status: 'feedback' } : r
+        )
       }
-    };
+    }
 
     const getStatusText = (status) => {
       switch (status) {
-        case "pending":
-          return "保留中";
-        case "approved":
-          return "確認済み";
-        case "feedback":
-          return "フィードバック済み";
-        default:
-          return "";
+      case 'pending':
+        return '保留中'
+      case 'approved':
+        return '確認済み'
+      case 'feedback':
+        return 'フィードバック済み'
+      default:
+        return ''
       }
-    };
+    }
 
     const getStatusColor = (status) => {
       switch (status) {
-        case "pending":
-          return "grey";
-        case "approved":
-          return "success";
-        case "feedback":
-          return "warning";
-        default:
-          return "";
+      case 'pending':
+        return 'grey'
+      case 'approved':
+        return 'success'
+      case 'feedback':
+        return 'warning'
+      default:
+        return ''
       }
-    };
+    }
 
     return {
       reports,
@@ -242,9 +242,9 @@ export default {
       submitFeedback,
       getStatusText,
       getStatusColor
-    };
+    }
   }
-};
+}
 </script>
 
 <style scoped>

@@ -155,10 +155,7 @@ import {
   signInWithRedirect, 
   signOut, 
   getCurrentUser,
-  // currentSession,
-  // currentAuthenticatedUser
-} from '@aws-amplify/auth';
-// import { API } from '@aws-amplify/api';
+} from '@aws-amplify/auth'
 
 export default {
   data() {
@@ -175,134 +172,106 @@ export default {
       loading: false,
       successMessage: '',
       errorMessage: '',
-    };
+    }
   },
   computed: {
     isSignIn() {
-      return this.currentView === 'signIn';
+      return this.currentView === 'signIn'
     },
     isSignUp() {
-      return this.currentView === 'signUp';
+      return this.currentView === 'signUp'
     },
     getTitle() {
       switch (this.currentView) {
-        case 'signIn': return 'サインイン';
-        case 'signUp': return 'サインアップ';
-        case 'confirm': return '確認コードの入力';
-        default: return '';
+      case 'signIn': return 'サインイン'
+      case 'signUp': return 'サインアップ'
+      case 'confirm': return '確認コードの入力'
+      default: return ''
       }
     },
     getToggleButtonText() {
       switch (this.currentView) {
-        case 'signIn': return 'アカウントを作成';
-        case 'signUp': return 'サインインに戻る';
-        case 'confirm': return 'サインインに戻る';
-        default: return '';
+      case 'signIn': return 'アカウントを作成'
+      case 'signUp': return 'サインインに戻る'
+      case 'confirm': return 'サインインに戻る'
+      default: return ''
       }
     },
   },
   methods: {
     async handleSignIn() {
-      this.loading = true;
-      this.errorMessage = '';
-      this.successMessage = '';
+      this.loading = true
+      this.errorMessage = ''
+      this.successMessage = ''
       try {
         // 現在の認証状態をチェック
         const currentUser = await getCurrentUser()
           .catch(() => null)
         if (currentUser) {
           // 既存のセッションがある場合、サインアウトしてから再度サインイン
-          await signOut();
-          this.successMessage = '既存のセッションからサインアウトしました。再度サインインしてください。';
+          await signOut()
+          this.successMessage = '既存のセッションからサインアウトしました。再度サインインしてください。'
         } else {
           // 新規サインイン
-          await this.signIn();
+          await this.signIn()
         }
       } catch (error) {
         if (error.name === 'UserAlreadyAuthenticatedException') {
-          this.errorMessage = '既にサインインしています。一度サインアウトしてから再試行してください。';
+          this.errorMessage = '既にサインインしています。一度サインアウトしてから再試行してください。'
+        } else if (error.name === 'UserNotConfirmedException') {
+          this.errorMessage = 'ユーザーアカウントが確認されていません。確認コードを入力してください。'
+          this.currentView = 'confirm'
+        } else if (error.name === 'NotAuthorizedException') {
+          this.errorMessage = 'メールアドレスまたはパスワードが正しくありません。'
+        } else if (error.name === 'UserNotFoundException') {
+          this.errorMessage = 'このメールアドレスに対応するアカウントが見つかりません。'
         } else {
-          this.errorMessage = 'サインインに失敗しました: \n' + error.message;
+          this.errorMessage = 'サインインに失敗しました: \n' + error.message
         }
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
     async signIn() {
-      this.loading = true;
-      this.errorMessage = '';
-      const user = await signIn({ username: this.signInEmail, password: this.signInPassword });
+      this.loading = true
+      this.errorMessage = ''
+      const user = await signIn({ username: this.signInEmail, password: this.signInPassword })
       try {
-        console.log('サインイン成功:', user);        
+        console.log('サインイン成功:', user)
         
         // サインイン成功後、認証状態を確認
-        await this.checkAuthState();
+        await this.checkAuthState()
 
-        this.$router.push('/admin');
-      } catch (error) {
-        console.error('サインインエラー:', error);
-        if (error.name === 'UserNotConfirmedException') {
-          this.errorMessage = 'ユーザーアカウントが確認されていません。確認コードを入力してください。';
-          this.currentView = 'confirm';
-        } else if (error.name === 'NotAuthorizedException') {
-          this.errorMessage = 'メールアドレスまたはパスワードが正しくありません。';
-        } else if (error.name === 'UserNotFoundException') {
-          this.errorMessage = 'このメールアドレスに対応するアカウントが見つかりません。';
-        } else {
-          this.errorMessage = 'サインインに失敗しました: \n' + error.message;
-        }
+        this.$router.push('/admin')
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
     async checkAuthState() {
       try {
-        const user = await getCurrentUser();
-        console.log('認証済みユーザー:', user);
+        const user = await getCurrentUser()
+        console.log('認証済みユーザー:', user)
         // ここで必要な処理を行う（例：ユーザー情報の保存など）
       } catch (error) {
-        console.error('認証状態の確認に失敗:', error);
-        throw new Error('認証に失敗しました。再度サインインしてください。');
+        console.error('認証状態の確認に失敗:', error)
+        throw new Error('認証に失敗しました。再度サインインしてください。')
       }
     },
-    // async callProtectedAPI() {
-    //   try {
-    //     const session = await currentSession();
-    //     const token = session.getIdToken().getJwtToken();
-        
-    //     const apiResponse = await API.get('yourApiName', '/your-endpoint', {
-    //       headers: {
-    //         Authorization: `Bearer ${token}`
-    //       }
-    //     });
-    //     console.log('API レスポンス:', apiResponse);
-    //   } catch (error) {
-    //     console.error('API 呼び出しエラー:', error);
-    //     if (error.message === 'User needs to be authenticated to call this API.') {
-    //       // 再認証が必要な場合の処理
-    //       this.errorMessage = '認証の有効期限が切れています。再度サインインしてください。';
-    //       // サインインページへリダイレクト
-    //       this.$router.push('/signin');
-    //     } else {
-    //       this.errorMessage = 'APIの呼び出しに失敗しました: ' + error.message;
-    //     }
-    //   }
-    // },
     async signInWithGoogle() {
-      this.loading = true;
-      this.errorMessage = '';
+      this.loading = true
+      this.errorMessage = ''
       try {
-        await signInWithRedirect({ provider: 'Google' });
+        await signInWithRedirect({ provider: 'Google' })
         // リダイレクト後の処理はここでは行われません
       } catch (error) {
-        console.error('Googleサインインエラー:', error);
-        this.errorMessage = 'Googleサインインに失敗しました。再度お試しください。';
-        this.loading = false;
+        console.error('Googleサインインエラー:', error)
+        this.errorMessage = 'Googleサインインに失敗しました。再度お試しください。'
+        this.loading = false
       }
     },
     async signUp() {
-      this.loading = true;
-      this.errorMessage = '';
+      this.loading = true
+      this.errorMessage = ''
       try {
         const { user } = await signUp({
           username: this.signUpEmail,
@@ -314,56 +283,56 @@ export default {
               'custom:organizationId': this.organizationId
             }
           }
-        });
-        console.log('サインアップ成功:', user);
-        this.confirmEmail = this.signUpEmail;
-        this.currentView = 'confirm';
+        })
+        console.log('サインアップ成功:', user)
+        this.confirmEmail = this.signUpEmail
+        this.currentView = 'confirm'
       } catch (error) {
-        console.error('サインアップエラー:', error);
-        this.errorMessage = 'サインアップに失敗しました。入力内容を確認してください。';
+        console.error('サインアップエラー:', error)
+        this.errorMessage = 'サインアップに失敗しました。入力内容を確認してください。'
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
     async confirmSignUp() {
-      this.loading = true;
-      this.errorMessage = '';
+      this.loading = true
+      this.errorMessage = ''
       try {
-        await confirmSignUp({ username: this.confirmEmail, confirmationCode: this.confirmCode });
-        console.log('確認成功');
-        this.currentView = 'signIn';
-        this.successMessage = '確認が完了しました。サインインしてください。';
+        await confirmSignUp({ username: this.confirmEmail, confirmationCode: this.confirmCode })
+        console.log('確認成功')
+        this.currentView = 'signIn'
+        this.successMessage = '確認が完了しました。サインインしてください。'
       } catch (error) {
-        console.error('確認エラー:', error);
-        this.errorMessage = '確認に失敗しました。コードを確認してください。';
+        console.error('確認エラー:', error)
+        this.errorMessage = '確認に失敗しました。コードを確認してください。'
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
     async resendConfirmationCode() {
-      this.loading = true;
-      this.errorMessage = '';
+      this.loading = true
+      this.errorMessage = ''
       try {
-        await resendSignUpCode({ username: this.confirmEmail });
-        console.log('確認コードが再送信されました');
-        this.successMessage = '確認コードが再送信されました。メールをご確認ください。';
+        await resendSignUpCode({ username: this.confirmEmail })
+        console.log('確認コードが再送信されました')
+        this.successMessage = '確認コードが再送信されました。メールをご確認ください。'
       } catch (error) {
-        console.error('再送信エラー:', error);
-        this.errorMessage = '確認コードの再送信に失敗しました。';
+        console.error('再送信エラー:', error)
+        this.errorMessage = '確認コードの再送信に失敗しました。'
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
     toggleView() {
       if (this.currentView === 'signIn') {
-        this.currentView = 'signUp';
+        this.currentView = 'signUp'
       } else {
-        this.currentView = 'signIn';
+        this.currentView = 'signIn'
       }
-      this.errorMessage = '';
+      this.errorMessage = ''
     },
   },
-};
+}
 </script>
 
 <style>

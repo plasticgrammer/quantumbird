@@ -44,43 +44,43 @@ export default {
     const isValidWeek = ref(true)
 
     const handleWeekSelection = (week) => {
-      selectedWeek.value = week;
+      selectedWeek.value = week
       if (week && isWeekInRange(week)) {
-        const weekString = getStringFromWeek(week);
+        const weekString = getStringFromWeek(week)
         if (weekString) {
           router.push({
             name: 'WeeklyReview',
             params: { weekParam: weekString }
-          });
-          isValidWeek.value = true;
+          })
+          isValidWeek.value = true
         } else {
-          isValidWeek.value = false;
+          isValidWeek.value = false
         }
       } else {
-        router.push({ name: 'WeeklyReviewSelector' });
-        isValidWeek.value = true;
+        router.push({ name: 'WeeklyReviewSelector' })
+        isValidWeek.value = true
       }
     }
 
     const handleReset = () => {
-      selectedWeek.value = null;
-      isValidWeek.value = true;
-      router.push({ name: 'WeeklyReviewSelector' });
+      selectedWeek.value = null
+      isValidWeek.value = true
+      router.push({ name: 'WeeklyReviewSelector' })
     }
 
     watch(() => props.weekParam, (newWeekParam) => {
       if (newWeekParam) {
-        const week = getWeekFromString(newWeekParam);
+        const week = getWeekFromString(newWeekParam)
         if (week && isWeekInRange(week)) {
-          selectedWeek.value = week;
-          isValidWeek.value = true;
+          selectedWeek.value = week
+          isValidWeek.value = true
         } else {
-          selectedWeek.value = null;
-          isValidWeek.value = false;
+          selectedWeek.value = null
+          isValidWeek.value = false
         }
       } else {
-        selectedWeek.value = null;
-        isValidWeek.value = true;
+        selectedWeek.value = null
+        isValidWeek.value = true
       }
     }, { immediate: true })
 
@@ -91,5 +91,5 @@ export default {
       handleReset
     }
   }
-};
+}
 </script>

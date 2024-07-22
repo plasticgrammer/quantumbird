@@ -57,65 +57,65 @@ export default {
     const isValidWeek = ref(true)
 
     const handleWeekSelection = (week) => {
-      selectedWeek.value = week;
+      selectedWeek.value = week
       if (week && isWeekInRange(week)) {
-        const weekString = getStringFromWeek(week);
+        const weekString = getStringFromWeek(week)
         if (weekString) {
-          Object.assign(report, initialReport(props.organizationId, props.memberUuid, weekString));
+          Object.assign(report, initialReport(props.organizationId, props.memberUuid, weekString))
           router.push({
             name: 'WeeklyReport',
             params: { organizationId: props.organizationId, memberUuid: props.memberUuid, weekString }
-          });
-          isValidWeek.value = true;
+          })
+          isValidWeek.value = true
         } else {
-          isValidWeek.value = false;
+          isValidWeek.value = false
         }
       } else {
         router.push({ 
           name: 'WeeklyReportSelector',
           params: { organizationId: props.organizationId, memberUuid: props.memberUuid }
-         });
-        isValidWeek.value = true;
+        })
+        isValidWeek.value = true
       }
     }
 
     const handleReset = () => {
-      selectedWeek.value = null;
-      isValidWeek.value = true;
+      selectedWeek.value = null
+      isValidWeek.value = true
       router.push({ 
         name: 'WeeklyReportSelector',
         params: { organizationId: props.organizationId, memberUuid: props.memberUuid }
-      });
+      })
     }
 
     const updateReport = (newReport) => {
-      Object.assign(report, newReport);
+      Object.assign(report, newReport)
     }
 
     const handleSubmit = async () => {
       try {
-        const result = await submitReport(report);
-        console.log('Report submitted successfully:', result);
+        const result = await submitReport(report)
+        console.log('Report submitted successfully:', result)
         // 成功メッセージを表示するなどの処理を追加
       } catch (error) {
-        console.error('Failed to submit report:', error);
+        console.error('Failed to submit report:', error)
         // エラーメッセージを表示するなどの処理を追加
       }
     }
 
     watch(() => props.weekString, (newWeekParam) => {
       if (newWeekParam) {
-        const week = getWeekFromString(newWeekParam);
+        const week = getWeekFromString(newWeekParam)
         if (week && isWeekInRange(week)) {
-          selectedWeek.value = week;
-          isValidWeek.value = true;
+          selectedWeek.value = week
+          isValidWeek.value = true
         } else {
-          selectedWeek.value = null;
-          isValidWeek.value = false;
+          selectedWeek.value = null
+          isValidWeek.value = false
         }
       } else {
-        selectedWeek.value = null;
-        isValidWeek.value = true;
+        selectedWeek.value = null
+        isValidWeek.value = true
       }
     }, { immediate: true })
 
