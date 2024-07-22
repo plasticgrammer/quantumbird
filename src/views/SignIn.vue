@@ -10,7 +10,7 @@
         <v-alert
           v-if="successMessage"
           type="success"
-          class="mb-4"
+          class="resultMessage mb-4"
           dismissible
         >
           {{ successMessage }}
@@ -18,7 +18,7 @@
         <v-alert 
           v-if="errorMessage" 
           type="error" 
-          class="mb-4"
+          class="resultMessage mb-4"
           dismissible
         >
           {{ errorMessage }}
@@ -222,7 +222,7 @@ export default {
         if (error.name === 'UserAlreadyAuthenticatedException') {
           this.errorMessage = '既にサインインしています。一度サインアウトしてから再試行してください。';
         } else {
-          this.errorMessage = 'サインインに失敗しました: ' + error.message;
+          this.errorMessage = 'サインインに失敗しました: \n' + error.message;
         }
       } finally {
         this.loading = false;
@@ -249,7 +249,7 @@ export default {
         } else if (error.name === 'UserNotFoundException') {
           this.errorMessage = 'このメールアドレスに対応するアカウントが見つかりません。';
         } else {
-          this.errorMessage = 'サインインに失敗しました: ' + error.message;
+          this.errorMessage = 'サインインに失敗しました: \n' + error.message;
         }
       } finally {
         this.loading = false;
@@ -365,3 +365,9 @@ export default {
   },
 };
 </script>
+
+<style>
+.resultMessage {
+  white-space: pre-line;
+}
+</style>
