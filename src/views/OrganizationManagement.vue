@@ -18,7 +18,6 @@
           outlined
           dense
           class="organization-name-input"
-          @input="handleOrganizationNameChange"
         ></v-text-field>
 
         <v-table class="members-table">
@@ -169,7 +168,7 @@
 </template>
 
 <script setup>
-import { reactive, toRefs, onMounted, watch } from 'vue'
+import { reactive, toRefs, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { submitOrganization, updateOrganization, getOrganization } from '../utils/organizationService'
 
@@ -184,24 +183,13 @@ const state = reactive({
   newMember: { id: '', name: '', email: '' },
   editingMember: null,
   loading: false,
+  isNew: true,
   snackbar: false,
   snackbarText: '',
   snackbarColor: 'success'
 })
 
-const { organization, newMember, editingMember, loading, snackbar, snackbarText, snackbarColor } = toRefs(state)
-
-console.log('Initial organization state:', organization.value)
-
-// organizationの変更を監視
-watch(organization, (newVal, oldVal) => {
-  console.log('Organization changed:', newVal, 'Old value:', oldVal)
-}, { deep: true })
-
-const handleOrganizationNameChange = (e) => {
-  organization.value.name = e.target.value
-  console.log('Organization name changed:', organization.value.name)
-}
+const { organization, newMember, editingMember, loading, isNew, snackbar, snackbarText, snackbarColor } = toRefs(state)
 
 const handleAddMember = () => {
   if (
@@ -246,13 +234,12 @@ const handleDeleteMember = (memberId) => {
 const handleSubmit = async () => {
   loading.value = true
   try {
-    if (organization.value.organizationId) {
+    if (isNew.value) {
+      await submitOrganization(organization.value)
+      showSnackbar('新しい組織を作成しました', 'success')
+    } else {
       await updateOrganization(organization.value)
       showSnackbar('組織情報を更新しました', 'success')
-    } else {
-      const result = await submitOrganization(organization.value)
-      organization.value = { ...organization.value, organizationId: result.organizationId }
-      showSnackbar('新しい組織を作成しました', 'success')
     }
     console.log('Organization submitted:', organization.value)
   } catch (error) {
@@ -287,11 +274,12 @@ onMounted(async () => {
     loading.value = true
     try {
       const result = await getOrganization(organizationId)
-      console.log('Organization data received:', result)
-      organization.value.name = result.name
-      organization.value.organizationId = result.organizationId
-      organization.value.members = result.members
-      console.log('Organization state updated:', JSON.parse(JSON.stringify(organization.value)))
+      if (result && Object.keys(result).length > 0) {
+        organization.value = result
+        isNew.value = false
+      } else {
+        isNew.value = true
+      }
     } catch (error) {
       console.error('組織情報の取得に失敗しました:', error)
       showSnackbar('組織情報の取得に失敗しました', 'error')

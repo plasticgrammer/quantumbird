@@ -117,6 +117,11 @@ def list_organizations():
         logger.error(f"Error listing organizations: {str(e)}", exc_info=True)
         raise e
 
+def decimal_default_proc(obj):
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError
+
 def create_response(status_code, body):
     return {
         'statusCode': status_code,
@@ -125,5 +130,5 @@ def create_response(status_code, body):
             'Access-Control-Allow-Headers': 'Content-Type',
             'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
         },
-        'body': body
+        'body': json.dumps(body, default=decimal_default_proc)
     }
