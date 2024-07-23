@@ -1,5 +1,5 @@
 
-import { getCurrentUser, signOut } from 'aws-amplify/auth'
+import { fetchUserAttributes, signOut } from 'aws-amplify/auth'
 
 export default {
   namespaced: true,
@@ -14,11 +14,11 @@ export default {
   actions: {
     async fetchUser({ commit }) {
       try {
-        const user = await getCurrentUser()
+        const attributes = await fetchUserAttributes()
         const userInfo = {
-          organizationId: user.attributes['custom:organizationId'],
-          username: user.username,
-          email: user.attributes.email,
+          organizationId: attributes['custom:organizationId'],
+          username: attributes.name,
+          email: attributes.email,
         }
         commit('setUser', userInfo)
       } catch (error) {
@@ -36,9 +36,7 @@ export default {
     }
   },
   getters: {
-    organizationId: (state) => {
-      return state.user.organizationId
-    },
+    organizationId: (state) => state.user?.organizationId,
     isAuthenticated: state => !!state.user
   }
 }

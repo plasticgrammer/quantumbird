@@ -63,7 +63,7 @@
         </template>
 
         <template v-else-if="isSignUp">
-          <v-form @submit.prevent="signUp">
+          <v-form @submit.prevent="signUpUser">
             <v-text-field
               v-model="signUpEmail"
               label="メールアドレス"
@@ -99,7 +99,7 @@
         </template>
 
         <template v-else>
-          <v-form @submit.prevent="confirmSignUp">
+          <v-form @submit.prevent="confirmSignUpUser">
             <v-text-field
               v-model="confirmEmail"
               label="メールアドレス"
@@ -146,7 +146,9 @@
   </v-container>
 </template>
 
-<script>
+<script setup>
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { 
   signIn, 
@@ -158,183 +160,175 @@ import {
   getCurrentUser,
 } from '@aws-amplify/auth'
 
-export default {
-  data() {
-    return {
-      currentView: 'signIn', // 'signIn', 'signUp', 'confirm'
-      signInEmail: '',
-      signInPassword: '',
-      signUpName: '',
-      signUpEmail: '',
-      signUpPassword: '',
-      organizationId: '',
-      confirmEmail: '',
-      confirmCode: '',
-      loading: false,
-      successMessage: '',
-      errorMessage: '',
-    }
-  },
-  computed: {
-    isSignIn() {
-      return this.currentView === 'signIn'
-    },
-    isSignUp() {
-      return this.currentView === 'signUp'
-    },
-    getTitle() {
-      switch (this.currentView) {
-      case 'signIn': return 'サインイン'
-      case 'signUp': return 'サインアップ'
-      case 'confirm': return '確認コードの入力'
-      default: return ''
-      }
-    },
-    getToggleButtonText() {
-      switch (this.currentView) {
-      case 'signIn': return 'アカウントを作成'
-      case 'signUp': return 'サインインに戻る'
-      case 'confirm': return 'サインインに戻る'
-      default: return ''
-      }
-    },
-  },
-  methods: {
-    async handleSignIn() {
-      this.loading = true
-      this.errorMessage = ''
-      this.successMessage = ''
-      try {
-        // 現在の認証状態をチェック
-        const currentUser = await getCurrentUser()
-          .catch(() => null)
-        if (currentUser) {
-          // 既存のセッションがある場合、サインアウトしてから再度サインイン
-          await signOut()
-          this.successMessage = '既存のセッションからサインアウトしました。再度サインインしてください。'
-        } else {
-          // 新規サインイン
-          await this.signIn()
-        }
-      } catch (error) {
-        if (error.name === 'UserAlreadyAuthenticatedException') {
-          this.errorMessage = '既にサインインしています。一度サインアウトしてから再試行してください。'
-        } else if (error.name === 'UserNotConfirmedException') {
-          this.errorMessage = 'ユーザーアカウントが確認されていません。確認コードを入力してください。'
-          this.currentView = 'confirm'
-        } else if (error.name === 'NotAuthorizedException') {
-          this.errorMessage = 'メールアドレスまたはパスワードが正しくありません。'
-        } else if (error.name === 'UserNotFoundException') {
-          this.errorMessage = 'このメールアドレスに対応するアカウントが見つかりません。'
-        } else {
-          this.errorMessage = 'サインインに失敗しました: \n' + error.message
-        }
-      } finally {
-        this.loading = false
-      }
-    },
-    async signIn() {
-      this.loading = true
-      this.errorMessage = ''
-      const user = await signIn({ username: this.signInEmail, password: this.signInPassword })
-      try {
-        console.log('サインイン成功:', user)
-        
-        // サインイン成功後、認証状態を確認
-        await this.checkAuthState()
+const router = useRouter()
+const store = useStore()
 
-        this.$router.push('/admin')
-      } finally {
-        this.loading = false
+// State
+const currentView = ref('signIn')
+const signInEmail = ref('')
+const signInPassword = ref('')
+const signUpName = ref('')
+const signUpEmail = ref('')
+const signUpPassword = ref('')
+const organizationId = ref('')
+const confirmEmail = ref('')
+const confirmCode = ref('')
+const loading = ref(false)
+const successMessage = ref('')
+const errorMessage = ref('')
+
+// Computed properties
+const isSignIn = computed(() => currentView.value === 'signIn')
+const isSignUp = computed(() => currentView.value === 'signUp')
+const getTitle = computed(() => {
+  switch (currentView.value) {
+  case 'signIn': return 'サインイン'
+  case 'signUp': return 'サインアップ'
+  case 'confirm': return '確認コードの入力'
+  default: return ''
+  }
+})
+const getToggleButtonText = computed(() => {
+  switch (currentView.value) {
+  case 'signIn': return 'アカウントを作成'
+  case 'signUp': return 'サインインに戻る'
+  case 'confirm': return 'サインインに戻る'
+  default: return ''
+  }
+})
+
+// Methods
+const handleSignIn = async () => {
+  loading.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+  try {
+    const currentUser = await getCurrentUser().catch(() => null)
+    if (currentUser) {
+      await signOut()
+      successMessage.value = '既存のセッションからサインアウトしました。再度サインインしてください。'
+    } else {
+      await signInUser()
+    }
+  } catch (error) {
+    handleSignInError(error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const signInUser = async () => {
+  try {
+    const user = await signIn({ username: signInEmail.value, password: signInPassword.value })
+    console.log('サインイン成功:', user)
+    await checkAuthState()
+    router.push('/admin')
+  } catch (error) {
+    console.error('サインインエラー:', error)
+    errorMessage.value = 'サインインに失敗しました: ' + error.message
+  }
+}
+
+const checkAuthState = async () => {
+  try {
+    const user = await getCurrentUser()
+    console.log('認証済みユーザー:', user)
+    await store.dispatch('user/fetchUser')
+    console.log('User state after fetchUser:', store.state.user)
+  } catch (error) {
+    console.error('認証状態の確認に失敗:', error)
+    throw new Error('認証に失敗しました。再度サインインしてください。')
+  }
+}
+
+const handleSignInError = (error) => {
+  if (error.name === 'UserAlreadyAuthenticatedException') {
+    errorMessage.value = '既にサインインしています。一度サインアウトしてから再試行してください。'
+  } else if (error.name === 'UserNotConfirmedException') {
+    errorMessage.value = 'ユーザーアカウントが確認されていません。確認コードを入力してください。'
+    currentView.value = 'confirm'
+  } else if (error.name === 'NotAuthorizedException') {
+    errorMessage.value = 'メールアドレスまたはパスワードが正しくありません。'
+  } else if (error.name === 'UserNotFoundException') {
+    errorMessage.value = 'このメールアドレスに対応するアカウントが見つかりません。'
+  } else {
+    errorMessage.value = 'サインインに失敗しました: \n' + error.message
+  }
+}
+
+const signInWithGoogle = async () => {
+  loading.value = true
+  errorMessage.value = ''
+  try {
+    await signInWithRedirect({ provider: 'Google' })
+  } catch (error) {
+    console.error('Googleサインインエラー:', error)
+    errorMessage.value = 'Googleサインインに失敗しました。再度お試しください。'
+  } finally {
+    loading.value = false
+  }
+}
+
+const signUpUser = async () => {
+  loading.value = true
+  errorMessage.value = ''
+  try {
+    const { user } = await signUp({
+      username: signUpEmail.value,
+      password: signUpPassword.value,
+      options: {
+        userAttributes: {
+          email: signUpEmail.value,
+          name: signUpName.value,
+          'custom:organizationId': organizationId.value
+        }
       }
-    },
-    async checkAuthState() {
-      try {
-        const user = await getCurrentUser()
-        console.log('認証済みユーザー:', user)
-        // ここで必要な処理を行う（例：ユーザー情報の保存など）
-        const store = useStore()
-        await store.dispatch('user/fetchUser')
-      } catch (error) {
-        console.error('認証状態の確認に失敗:', error)
-        throw new Error('認証に失敗しました。再度サインインしてください。')
-      }
-    },
-    async signInWithGoogle() {
-      this.loading = true
-      this.errorMessage = ''
-      try {
-        await signInWithRedirect({ provider: 'Google' })
-        // リダイレクト後の処理はここでは行われません
-      } catch (error) {
-        console.error('Googleサインインエラー:', error)
-        this.errorMessage = 'Googleサインインに失敗しました。再度お試しください。'
-        this.loading = false
-      }
-    },
-    async signUp() {
-      this.loading = true
-      this.errorMessage = ''
-      try {
-        const { user } = await signUp({
-          username: this.signUpEmail,
-          password: this.signUpPassword,
-          options: {
-            userAttributes: {
-              email: this.signUpEmail,
-              name: this.signUpName,
-              'custom:organizationId': this.organizationId
-            }
-          }
-        })
-        console.log('サインアップ成功:', user)
-        this.confirmEmail = this.signUpEmail
-        this.currentView = 'confirm'
-      } catch (error) {
-        console.error('サインアップエラー:', error)
-        this.errorMessage = 'サインアップに失敗しました。入力内容を確認してください。'
-      } finally {
-        this.loading = false
-      }
-    },
-    async confirmSignUp() {
-      this.loading = true
-      this.errorMessage = ''
-      try {
-        await confirmSignUp({ username: this.confirmEmail, confirmationCode: this.confirmCode })
-        console.log('確認成功')
-        this.currentView = 'signIn'
-        this.successMessage = '確認が完了しました。サインインしてください。'
-      } catch (error) {
-        console.error('確認エラー:', error)
-        this.errorMessage = '確認に失敗しました。コードを確認してください。'
-      } finally {
-        this.loading = false
-      }
-    },
-    async resendConfirmationCode() {
-      this.loading = true
-      this.errorMessage = ''
-      try {
-        await resendSignUpCode({ username: this.confirmEmail })
-        console.log('確認コードが再送信されました')
-        this.successMessage = '確認コードが再送信されました。メールをご確認ください。'
-      } catch (error) {
-        console.error('再送信エラー:', error)
-        this.errorMessage = '確認コードの再送信に失敗しました。'
-      } finally {
-        this.loading = false
-      }
-    },
-    toggleView() {
-      if (this.currentView === 'signIn') {
-        this.currentView = 'signUp'
-      } else {
-        this.currentView = 'signIn'
-      }
-      this.errorMessage = ''
-    },
-  },
+    })
+    console.log('サインアップ成功:', user)
+    confirmEmail.value = signUpEmail.value
+    currentView.value = 'confirm'
+  } catch (error) {
+    console.error('サインアップエラー:', error)
+    errorMessage.value = 'サインアップに失敗しました。入力内容を確認してください。'
+  } finally {
+    loading.value = false
+  }
+}
+
+const confirmSignUpUser = async () => {
+  loading.value = true
+  errorMessage.value = ''
+  try {
+    await confirmSignUp({ username: confirmEmail.value, confirmationCode: confirmCode.value })
+    console.log('確認成功')
+    currentView.value = 'signIn'
+    successMessage.value = '確認が完了しました。サインインしてください。'
+  } catch (error) {
+    console.error('確認エラー:', error)
+    errorMessage.value = '確認に失敗しました。コードを確認してください。'
+  } finally {
+    loading.value = false
+  }
+}
+
+const resendConfirmationCode = async () => {
+  loading.value = true
+  errorMessage.value = ''
+  try {
+    await resendSignUpCode({ username: confirmEmail.value })
+    console.log('確認コードが再送信されました')
+    successMessage.value = '確認コードが再送信されました。メールをご確認ください。'
+  } catch (error) {
+    console.error('再送信エラー:', error)
+    errorMessage.value = '確認コードの再送信に失敗しました。'
+  } finally {
+    loading.value = false
+  }
+}
+
+const toggleView = () => {
+  currentView.value = currentView.value === 'signIn' ? 'signUp' : 'signIn'
+  errorMessage.value = ''
 }
 </script>
 

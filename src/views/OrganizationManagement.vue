@@ -159,132 +159,147 @@
     <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
       {{ snackbarText }}
     </v-snackbar>
+    
+    <div v-if="true" class="debug-info">
+      <h3>Debug Info:</h3>
+      <pre>{{ JSON.stringify(organization, null, 2) }}</pre>
+    </div>
+
   </v-container>
 </template>
 
-<script>
-import { ref, onMounted } from 'vue'
+<script setup>
+import { reactive, toRefs, onMounted, watch } from 'vue'
 import { useStore } from 'vuex'
 import { submitOrganization, updateOrganization, getOrganization } from '../utils/organizationService'
 
-export default {
-  name: 'OrganizationManagement',
-  setup() {
-    const store = useStore()
-    const organization = ref({
-      organizationId: store.state.user.organizationId,
-      name: '',
-      members: []
+const store = useStore()
+
+const state = reactive({
+  organization: {
+    organizationId: store.getters['user/organizationId'],
+    name: '',
+    members: []
+  },
+  newMember: { id: '', name: '', email: '' },
+  editingMember: null,
+  loading: false,
+  snackbar: false,
+  snackbarText: '',
+  snackbarColor: 'success'
+})
+
+const { organization, newMember, editingMember, loading, snackbar, snackbarText, snackbarColor } = toRefs(state)
+
+console.log('Initial organization state:', organization.value)
+
+// organizationの変更を監視
+watch(organization, (newVal, oldVal) => {
+  console.log('Organization changed:', newVal, 'Old value:', oldVal)
+}, { deep: true })
+
+const handleOrganizationNameChange = (e) => {
+  organization.value.name = e.target.value
+  console.log('Organization name changed:', organization.value.name)
+}
+
+const handleAddMember = () => {
+  if (
+    newMember.value.id.trim() !== '' &&
+    newMember.value.name.trim() !== '' &&
+    newMember.value.email.trim() !== ''
+  ) {
+    organization.value.members.push({
+      id: newMember.value.id,
+      name: newMember.value.name,
+      email: newMember.value.email
     })
-    const newMember = ref({ id: '', name: '', email: '' })
-    const editingMember = ref(null)
-    const loading = ref(false)
-    const snackbar = ref(false)
-    const snackbarText = ref('')
-    const snackbarColor = ref('success')
-
-    const handleOrganizationNameChange = (e) => {
-      organization.value.name = e.target.value
-    }
-
-    const handleAddMember = () => {
-      if (
-        newMember.value.id.trim() !== '' &&
-        newMember.value.name.trim() !== '' &&
-        newMember.value.email.trim() !== ''
-      ) {
-        organization.value.members.push({
-          id: newMember.value.id,
-          name: newMember.value.name,
-          email: newMember.value.email
-        })
-        newMember.value = { id: '', name: '', email: '' }
-      }
-    }
-
-    const setEditingMember = (member) => {
-      editingMember.value = member ? { ...member } : null
-    }
-
-    const handleUpdateMember = (member) => {
-      if (
-        member.name.trim() !== '' &&
-        member.email.trim() !== ''
-      ) {
-        organization.value.members = organization.value.members.map((m) =>
-          m.id === member.id ? member : m
-        )
-        editingMember.value = null
-      }
-    }
-
-    const handleDeleteMember = (memberId) => {
-      organization.value.members = organization.value.members.filter((member) => member.id !== memberId)
-    }
-
-    const handleSubmit = async () => {
-      loading.value = true
-      try {
-        if (organization.value.organizationId) {
-          await updateOrganization(organization.value)
-          showSnackbar('組織情報を更新しました', 'success')
-        } else {
-          const result = await submitOrganization(organization.value)
-          organization.value.organizationId = result.organizationId
-          showSnackbar('新しい組織を作成しました', 'success')
-        }
-      } catch (error) {
-        console.error('組織の保存に失敗しました:', error)
-        showSnackbar('組織の保存に失敗しました', 'error')
-      } finally {
-        loading.value = false
-      }
-    }
-
-    const resetForm = () => {
-      // フォームをリセットする処理
-      organization.value.members = []
-      newMember.value = { id: '', name: '', email: '' }
-      editingMember.value = null
-    }
-
-    const showSnackbar = (text, color) => {
-      snackbarText.value = text
-      snackbarColor.value = color
-      snackbar.value = true
-    }
-
-    onMounted(async () => {
-      const organizationId = store.state.user.organizationId
-      if (organizationId) {
-        try {
-          const result = await getOrganization(organizationId)
-          organization.value = result
-        } catch (error) {
-          console.error('組織情報の取得に失敗しました:', error)
-          showSnackbar('組織情報の取得に失敗しました', 'error')
-        }
-      }
-    })
-
-    return {
-      organization,
-      newMember,
-      editingMember,
-      loading,
-      snackbar,
-      snackbarText,
-      snackbarColor,
-      handleOrganizationNameChange,
-      handleAddMember,
-      setEditingMember,
-      handleUpdateMember,
-      handleDeleteMember,
-      handleSubmit,
-      resetForm
-    }
+    console.log('Member added:', newMember.value)
+    console.log('Updated members:', organization.value.members)
+    newMember.value = { id: '', name: '', email: '' }
   }
 }
+
+const setEditingMember = (member) => {
+  editingMember.value = member ? { ...member } : null
+  console.log('Editing member:', editingMember.value)
+}
+
+const handleUpdateMember = (member) => {
+  if (member.name.trim() !== '' && member.email.trim() !== '') {
+    const index = organization.value.members.findIndex(m => m.id === member.id)
+    if (index !== -1) {
+      organization.value.members[index] = { ...member }
+      console.log('Member updated:', member)
+      console.log('Updated members:', organization.value.members)
+    }
+    editingMember.value = null
+  }
+}
+
+const handleDeleteMember = (memberId) => {
+  organization.value.members = organization.value.members.filter((member) => member.id !== memberId)
+  console.log('Member deleted:', memberId)
+  console.log('Updated members:', organization.value.members)
+}
+
+const handleSubmit = async () => {
+  loading.value = true
+  try {
+    if (organization.value.organizationId) {
+      await updateOrganization(organization.value)
+      showSnackbar('組織情報を更新しました', 'success')
+    } else {
+      const result = await submitOrganization(organization.value)
+      organization.value = { ...organization.value, organizationId: result.organizationId }
+      showSnackbar('新しい組織を作成しました', 'success')
+    }
+    console.log('Organization submitted:', organization.value)
+  } catch (error) {
+    console.error('組織の保存に失敗しました:', error)
+    showSnackbar('組織の保存に失敗しました', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+const resetForm = () => {
+  organization.value = {
+    organizationId: store.getters['user/organizationId'],
+    name: '',
+    members: []
+  }
+  newMember.value = { id: '', name: '', email: '' }
+  editingMember.value = null
+  console.log('Form reset, new organization state:', organization.value)
+}
+
+const showSnackbar = (text, color) => {
+  snackbarText.value = text
+  snackbarColor.value = color
+  snackbar.value = true
+}
+
+onMounted(async () => {
+  const organizationId = store.getters['user/organizationId']
+  console.log('Mounted, organizationId:', organizationId)
+  if (organizationId) {
+    loading.value = true
+    try {
+      const result = await getOrganization(organizationId)
+      console.log('Organization data received:', result)
+      organization.value.name = result.name
+      organization.value.organizationId = result.organizationId
+      organization.value.members = result.members
+      console.log('Organization state updated:', JSON.parse(JSON.stringify(organization.value)))
+    } catch (error) {
+      console.error('組織情報の取得に失敗しました:', error)
+      showSnackbar('組織情報の取得に失敗しました', 'error')
+    } finally {
+      loading.value = false
+    }
+  }
+})
 </script>
 
 <style scoped>
@@ -325,5 +340,13 @@ export default {
 
 .v-table .newMember td {
   padding: 30px 10px 10px !important;
+}
+
+.debug-info {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 </style>

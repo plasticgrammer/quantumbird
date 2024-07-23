@@ -19,22 +19,22 @@ const invokeLambda = async (operation, payload) => {
   }
 }
 
-export const submitOrganization = async (report) => {
-  return invokeLambda('create', report)
+export const submitOrganization = async (organization) => {
+  return invokeLambda('create', organization)
 }
 
-export const updateOrganization = async (report) => {
-  return invokeLambda('update', report)
+export const updateOrganization = async (organization) => {
+  return invokeLambda('update', organization)
 }
 
-export const deleteOrganization = async (memberUuid, weekString) => {
-  return invokeLambda('delete', { memberUuid, weekString })
+export const deleteOrganization = async (organizationId) => {
+  return invokeLambda('delete', { organizationId })
 }
 
-export const getOrganization = async (memberUuid, weekString) => {
-  return invokeLambda('get', { memberUuid, weekString })
+export const getOrganization = async (organizationId) => {
+  return invokeLambda('get', { organizationId })
 }
 
-export const listOrganizations = async (organizationId, weekString) => {
-  return invokeLambda('get', { organizationId, weekString })
+export const listOrganizations = async () => {
+  return invokeLambda('get', {})
 }
