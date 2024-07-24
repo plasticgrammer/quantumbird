@@ -20,6 +20,7 @@ export default {
           username: attributes.name,
           email: attributes.email,
         }
+        console.info('fetchUser:', userInfo)
         commit('setUser', userInfo)
       } catch (error) {
         console.error('Error fetching user:', error)

@@ -2,7 +2,6 @@
   <v-container>
     <WeekSelector 
       :selectedWeek="selectedWeek"
-      :isLocked="!!selectedWeek"
       @select-week="handleWeekSelection"
       @reset="handleReset"
     />

@@ -53,7 +53,7 @@
             color="red"
             dark
             block
-            class="mb-2"
+            class="mb-2 d-none"
             @click="signInWithGoogle"
             :loading="loading"
           >
