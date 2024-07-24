@@ -4,8 +4,8 @@
       <v-icon class="mr-1" left>mdi-content-copy</v-icon>
       前週よりコピー
     </v-btn>
-    <v-form @submit.prevent="submitReport" class="report-form elevation-4">
-      <v-card v-for="(project, projectIndex) in localReport.projects" :key="projectIndex" 
+    <v-form @submit.prevent="handleSubmit" class="report-form elevation-4">
+      <v-card v-for="(project, projectIndex) in report.projects" :key="projectIndex" 
         elevation="2"
         class="mb-4"
       >
@@ -28,7 +28,7 @@
                 icon
                 x-small
                 @click="removeProject(projectIndex)"
-                v-if="localReport.projects.length > 1"
+                v-if="report.projects.length > 1"
                 class="project-delete-btn"
               >
                 <v-icon small>mdi-delete-outline</v-icon>
@@ -95,7 +95,7 @@
       </v-row>
       
       <v-textarea
-        v-model="localReport.issues"
+        v-model="report.issues"
         label="現状・問題点"
         required
         rows="4"
@@ -106,7 +106,7 @@
       ></v-textarea>
       
       <v-text-field
-        v-model="localReport.achievements"
+        v-model="report.achievements"
         label="成果"
         outlined
         dense
@@ -115,7 +115,7 @@
       ></v-text-field>
       
       <v-text-field
-        v-model="localReport.improvements"
+        v-model="report.improvements"
         label="改善点"
         outlined
         dense
@@ -131,149 +131,166 @@
   </v-container>
 </template>
 
-<script>
-import { ref, computed, nextTick, reactive } from 'vue'
+<script setup>
+import { ref, computed, nextTick, reactive, defineProps, onMounted } from 'vue'
+import { getReport, submitReport } from '../services/reportService'
 
-export default {
-  name: 'ReportForm',
-  props: {
-    report: {
-      type: Object,
-      required: true
-    },
-    previousWeekReport: {
-      type: Object,
-      default: () => ({})
-    }
+const props = defineProps({
+  organizationId: {
+    type: String,
+    required: true
   },
-  emits: ['submit-report'],
-  setup(props, { emit }) {
-    const localReport = ref({
-      ...props.report,
-      issues: props.report.issues || '',
-      achievements: props.report.achievements || '',
-      improvements: props.report.improvements || ''
-    })
-    const workItemRefs = reactive({})
-    const projectNames = ref(['プロジェクト1', 'プロジェクト2', 'プロジェクト3'])
+  memberUuid: {
+    type: String,
+    required: true
+  },
+  weekString: {
+    type: String,
+    required: true
+  }
+})
 
-    const formattedOvertimeHours = computed({
-      get: () => localReport.value.overtimeHours.toFixed(1),
-      set: (value) => {
-        localReport.value.overtimeHours = parseFloat(value)
+const initialReport = (organizationId, memberUuid, weekString) => ({
+  organizationId,
+  memberUuid,
+  weekString,
+  projects: [{ name: '', workItems: [{ content: '' }] }],
+  overtimeHours: 0,
+  issues: '',
+  achievements: '',
+  improvements: ''
+})
+const report = ref(initialReport(props.organizationId, props.memberUuid, props.weekString))
+const workItemRefs = reactive({})
+const projectNames = ref(['プロジェクト1', 'プロジェクト2', 'プロジェクト3'])
+const isLoading = ref(false)
+const error = ref(null)
+
+const formattedOvertimeHours = computed({
+  get: () => report.value.overtimeHours.toFixed(1),
+  set: (value) => {
+    report.value.overtimeHours = parseFloat(value)
+  }
+})
+
+const updateOvertime = (event) => {
+  let value = parseFloat(event.target.value)
+  if (isNaN(value)) value = 0
+  value = Math.max(0, Math.min(99, value))
+  report.value.overtimeHours = parseFloat(value.toFixed(1))
+}
+
+const increaseOvertime = () => {
+  if (report.value.overtimeHours < 99) {
+    report.value.overtimeHours = parseFloat((report.value.overtimeHours + 0.5).toFixed(1))
+  }
+}
+
+const decreaseOvertime = () => {
+  if (report.value.overtimeHours > 0) {
+    report.value.overtimeHours = parseFloat((report.value.overtimeHours - 0.5).toFixed(1))
+  }
+}
+
+const addProject = () => {
+  report.value.projects.push({ name: '', workItems: [] })
+}
+
+const removeProject = (index) => {
+  report.value.projects.splice(index, 1)
+}
+
+const setWorkItemRef = (el, projectIndex, itemIndex) => {
+  if (!workItemRefs[projectIndex]) {
+    workItemRefs[projectIndex] = {}
+  }
+  workItemRefs[projectIndex][itemIndex] = el
+}
+
+const handleKeyDown = async (event, project, itemIndex) => {
+  if (event.key === 'Enter' && !event.isComposing) {
+    event.preventDefault()
+    if (project.workItems[itemIndex].content.trim() !== '') {
+      await addWorkItem(project)
+      focusNewWorkItem(project, itemIndex + 1)
+    }
+  }
+}
+
+const addWorkItem = async (project) => {
+  project.workItems.push({ content: '' })
+  await nextTick()
+}
+
+const focusNewWorkItem = (project, newIndex) => {
+  const projectIndex = report.value.projects.indexOf(project)
+  nextTick(() => {
+    if (workItemRefs[projectIndex] && workItemRefs[projectIndex][newIndex]) {
+      workItemRefs[projectIndex][newIndex].focus()
+    }
+  })
+}
+
+const removeWorkItem = (project, index) => {
+  project.workItems.splice(index, 1)
+  if (project.workItems.length === 0) {
+    addWorkItem(project)
+  }
+}
+
+const copyFromPreviousWeek = () => {
+  if (props.previousWeekReport) {
+    report.value = {
+      ...report.value,
+      projects: props.previousWeekReport.projects?.map(project => ({
+        ...project,
+        workItems: project.workItems.map(item => ({ ...item }))
+      })) || [],
+      issues: props.previousWeekReport.issues || '',
+      achievements: props.previousWeekReport.achievements || '',
+      improvements: props.previousWeekReport.improvements || ''
+    }
+  }
+}
+
+const onProjectSelect = (project) => {
+  if (!projectNames.value.includes(project.name)) {
+    projectNames.value.push(project.name)
+  }
+  if (project.workItems.length === 0) {
+    project.workItems.push({ content: '' })
+  }
+}
+
+const fetchReport = async () => {
+  isLoading.value = true
+  error.value = null
+  try {
+    const fetchedReport = await getReport(props.memberUuid, props.weekString)
+    if (fetchedReport) {
+      report.value = {
+        ...fetchedReport,
+        issues: fetchedReport.issues || '',
+        achievements: fetchedReport.achievements || '',
+        improvements: fetchedReport.improvements || ''
       }
-    })
+    }
+  } catch (err) {
+    console.error('Failed to fetch report:', err)
+    error.value = '報告書の取得に失敗しました。'
+  } finally {
+    isLoading.value = false
+  }
+}
 
-    const updateOvertime = (event) => {
-      let value = parseFloat(event.target.value)
-      if (isNaN(value)) value = 0
-      value = Math.max(0, Math.min(99, value))
-      localReport.value.overtimeHours = parseFloat(value.toFixed(1))
-    }
+onMounted(fetchReport)
 
-    const increaseOvertime = () => {
-      if (localReport.value.overtimeHours < 99) {
-        localReport.value.overtimeHours = parseFloat((localReport.value.overtimeHours + 0.5).toFixed(1))
-      }
-    }
-
-    const decreaseOvertime = () => {
-      if (localReport.value.overtimeHours > 0) {
-        localReport.value.overtimeHours = parseFloat((localReport.value.overtimeHours - 0.5).toFixed(1))
-      }
-    }
-
-    const addProject = () => {
-      localReport.value.projects.push({ name: '', workItems: [] })
-    }
-
-    const removeProject = (index) => {
-      localReport.value.projects.splice(index, 1)
-    }
-    
-    const setWorkItemRef = (el, projectIndex, itemIndex) => {
-      if (!workItemRefs[projectIndex]) {
-        workItemRefs[projectIndex] = {}
-      }
-      workItemRefs[projectIndex][itemIndex] = el
-    }
-
-    const handleKeyDown = async (event, project, itemIndex) => {
-      if (event.key === 'Enter' && !event.isComposing) {
-        event.preventDefault()
-        if (project.workItems[itemIndex].content.trim() !== '') {
-          await addWorkItem(project)
-          focusNewWorkItem(project, itemIndex + 1)
-        }
-      }
-    }
-
-    const addWorkItem = async (project) => {
-      project.workItems.push({ content: '' })
-      await nextTick()
-    }
-
-    const focusNewWorkItem = (project, newIndex) => {
-      const projectIndex = localReport.value.projects.indexOf(project)
-      nextTick(() => {
-        if (workItemRefs[projectIndex] && workItemRefs[projectIndex][newIndex]) {
-          workItemRefs[projectIndex][newIndex].focus()
-        }
-      })
-    }
-
-    const removeWorkItem = (project, index) => {
-      project.workItems.splice(index, 1)
-      if (project.workItems.length === 0) {
-        addWorkItem(project)
-      }
-    }
-
-    const copyFromPreviousWeek = () => {
-      if (props.previousWeekReport) {
-        localReport.value = {
-          ...localReport.value,
-          projects: props.previousWeekReport.projects?.map(project => ({
-            ...project,
-            workItems: project.workItems.map(item => ({ ...item }))
-          })) || [],
-          issues: props.previousWeekReport.issues || '',
-          achievements: props.previousWeekReport.achievements || '',
-          improvements: props.previousWeekReport.improvements || ''
-        }
-      }
-    }
-
-    const onProjectSelect = (project) => {
-      if (!projectNames.value.includes(project.name)) {
-        projectNames.value.push(project.name)
-      }
-      if (project.workItems.length === 0) {
-        project.workItems.push({ content: '' })
-      }
-    }
-
-    const submitReport = () => {
-      emit('submit-report', { ...localReport.value })
-    }
-
-    return {
-      localReport,
-      projectNames,
-      formattedOvertimeHours,
-      updateOvertime,
-      increaseOvertime,
-      decreaseOvertime,
-      addProject,
-      removeProject,
-      setWorkItemRef,
-      handleKeyDown,
-      addWorkItem,
-      removeWorkItem,
-      onProjectSelect,
-      submitReport,
-      copyFromPreviousWeek
-    }
+const handleSubmit = async () => {
+  try {
+    const result = await submitReport(report.value)
+    console.log('Report submitted successfully:', result)
+  } catch (error) {
+    console.error('Failed to submit report:', error)
   }
 }
 </script>

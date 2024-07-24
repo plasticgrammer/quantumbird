@@ -12,122 +12,86 @@
     </v-alert>
 
     <ReportForm v-if="selectedWeek && isValidWeek" 
-      :report="report"
-      @submit-report="handleSubmit"
+      :organizationId="organizationId"
+      :memberUuid="memberUuid"
+      :weekString="getStringFromWeek(selectedWeek)"
     />
   </v-container>
 </template>
 
-<script>
-import { ref, watch } from 'vue'
+<script setup>
+import { ref, watch, defineProps } from 'vue'
 import { useRouter } from 'vue-router'
 import WeekSelector from '../components/WeekSelector.vue'
 import ReportForm from '../components/ReportForm.vue'
-import { useReport } from '../composables/useReport'
 import { useCalendar } from '../composables/useCalendar'
-import { submitReport } from '../utils/reportService'
 
-export default {
-  name: 'WeeklyReport',
-  components: {
-    WeekSelector,
-    ReportForm
+// Props definition
+const props = defineProps({
+  organizationId: {
+    type: String,
+    default: null
   },
-  props: {
-    organizationId: {
-      type: String,
-      default: null
-    },
-    memberUuid: {
-      type: String,
-      default: null
-    },
-    weekString: {
-      type: String,
-      default: null
-    }
+  memberUuid: {
+    type: String,
+    default: null
   },
-  setup(props) {
-    const { initialReport } = useReport()
-    const { getWeekFromString, getStringFromWeek, isWeekInRange } = useCalendar()
-    const router = useRouter()
+  weekString: {
+    type: String,
+    default: null
+  }
+})
 
-    const report = ref(initialReport(props.organizationId, props.memberUuid, props.weekString))
-    const selectedWeek = ref(null)
-    const isValidWeek = ref(true)
+const { getWeekFromString, getStringFromWeek, isWeekInRange } = useCalendar()
+const router = useRouter()
 
-    const handleWeekSelection = (week) => {
-      selectedWeek.value = week
-      if (week && isWeekInRange(week)) {
-        const weekString = getStringFromWeek(week)
-        if (weekString) {
-          Object.assign(report, initialReport(props.organizationId, props.memberUuid, weekString))
-          router.push({
-            name: 'WeeklyReport',
-            params: { organizationId: props.organizationId, memberUuid: props.memberUuid, weekString }
-          })
-          isValidWeek.value = true
-        } else {
-          isValidWeek.value = false
-        }
-      } else {
-        router.push({ 
-          name: 'WeeklyReportSelector',
-          params: { organizationId: props.organizationId, memberUuid: props.memberUuid }
-        })
-        isValidWeek.value = true
-      }
-    }
+const selectedWeek = ref(null)
+const isValidWeek = ref(true)
 
-    const handleReset = () => {
-      selectedWeek.value = null
-      isValidWeek.value = true
-      router.push({ 
-        name: 'WeeklyReportSelector',
-        params: { organizationId: props.organizationId, memberUuid: props.memberUuid }
+const handleWeekSelection = (week) => {
+  selectedWeek.value = week
+  if (week && isWeekInRange(week)) {
+    const weekString = getStringFromWeek(week)
+    if (weekString) {
+      router.push({
+        name: 'WeeklyReport',
+        params: { organizationId: props.organizationId, memberUuid: props.memberUuid, weekString }
       })
+      isValidWeek.value = true
+    } else {
+      isValidWeek.value = false
     }
-
-    const updateReport = (newReport) => {
-      Object.assign(report, newReport)
-    }
-
-    const handleSubmit = async () => {
-      try {
-        const result = await submitReport(report)
-        console.log('Report submitted successfully:', result)
-        // 成功メッセージを表示するなどの処理を追加
-      } catch (error) {
-        console.error('Failed to submit report:', error)
-        // エラーメッセージを表示するなどの処理を追加
-      }
-    }
-
-    watch(() => props.weekString, (newWeekParam) => {
-      if (newWeekParam) {
-        const week = getWeekFromString(newWeekParam)
-        if (week && isWeekInRange(week)) {
-          selectedWeek.value = week
-          isValidWeek.value = true
-        } else {
-          selectedWeek.value = null
-          isValidWeek.value = false
-        }
-      } else {
-        selectedWeek.value = null
-        isValidWeek.value = true
-      }
-    }, { immediate: true })
-
-    return {
-      report,
-      selectedWeek,
-      isValidWeek,
-      handleWeekSelection,
-      updateReport,
-      handleSubmit,
-      handleReset,
-    }
+  } else {
+    router.push({ 
+      name: 'WeeklyReportSelector',
+      params: { organizationId: props.organizationId, memberUuid: props.memberUuid }
+    })
+    isValidWeek.value = true
   }
 }
+
+const handleReset = () => {
+  selectedWeek.value = null
+  isValidWeek.value = true
+  router.push({ 
+    name: 'WeeklyReportSelector',
+    params: { organizationId: props.organizationId, memberUuid: props.memberUuid }
+  })
+}
+
+watch(() => props.weekString, (newWeekParam) => {
+  if (newWeekParam) {
+    const week = getWeekFromString(newWeekParam)
+    if (week && isWeekInRange(week)) {
+      selectedWeek.value = week
+      isValidWeek.value = true
+    } else {
+      selectedWeek.value = null
+      isValidWeek.value = false
+    }
+  } else {
+    selectedWeek.value = null
+    isValidWeek.value = true
+  }
+}, { immediate: true })
 </script>

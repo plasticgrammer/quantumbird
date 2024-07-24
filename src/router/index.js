@@ -31,7 +31,7 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/admin/reports/:weekParam',
+    path: '/admin/reports/:weekString',
     name: 'WeeklyReview',
     component: WeeklyReview,
     props: true,

@@ -61,10 +61,10 @@ def handle_get(event):
 
     if 'memberUuid' in params and 'weekString' in params:
         item = get_report(params['memberUuid'], params['weekString'])
-        return create_response(200, json.dumps(item))
+        return create_response(200, item)
     elif 'organizationId' in params and 'weekString' in params:
         items = get_reports_by_organization(params['organizationId'], params['weekString'])
-        return create_response(200, json.dumps(items))
+        return create_response(200, items)
     else:
         return create_response(400, 'Invalid query parameters')
 
@@ -150,9 +150,11 @@ def create_response(status_code, body):
     return {
         'statusCode': status_code,
         'headers': {
+            "content-type":"application/json",
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Headers': 'Content-Type',
             'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
         },
-        'body': json.dumps(body, default=decimal_default_proc)
+#        'body': json.dumps(body, default=decimal_default_proc)
+        'body': body
     }

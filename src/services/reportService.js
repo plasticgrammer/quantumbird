@@ -12,7 +12,7 @@ const invokeLambda = async (operation, payload) => {
     if (result.statusCode >= 400) {
       throw new Error(result.body)
     }
-    return JSON.parse(result.body)
+    return result.body
   } catch (error) {
     console.error(`Error in Lambda operation ${operation}:`, error)
     throw error

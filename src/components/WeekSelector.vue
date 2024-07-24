@@ -55,132 +55,110 @@
   </v-container>
 </template>
 
-<script>
-import { ref, computed, watch } from 'vue'
+">
+<script setup>
+import { ref, computed, watch, defineProps, defineEmits } from 'vue'
 import { useCalendar } from '../composables/useCalendar'
 
-export default {
-  name: 'WeekSelector',
-  props: {
-    selectedWeek: {
-      type: Array,
-      default: () => null
-    },
+const props = defineProps({
+  selectedWeek: {
+    type: Array,
+    default: () => null
   },
-  emits: ['select-week', 'reset'],
-  setup(props, { emit }) {
-    const { 
-      shouldShowMonth,
-      formatShortMonth, 
-      isToday, 
-      isSaturday, 
-      isSunday, 
-      getWeekNumber,
-      getStringFromWeek,
-      calendarWeeks
-    } = useCalendar()
+})
 
-    const internalSelectedWeek = ref(props.selectedWeek)
-    const hoveredWeek = ref(null)
-    const isHovering = ref(false)
-    const showAllWeeks = ref(false)
+const emit = defineEmits(['select-week', 'reset'])
 
-    const visibleWeeks = computed(() => {
-      if (!internalSelectedWeek.value || showAllWeeks.value) return calendarWeeks.value
-      return calendarWeeks.value.filter(week => {
-        const weekStart = week[0]
-        return weekStart >= internalSelectedWeek.value[0] && weekStart <= internalSelectedWeek.value[1]
-      })
-    })
+const { 
+  shouldShowMonth,
+  formatShortMonth, 
+  isToday, 
+  isSaturday, 
+  isSunday, 
+  getWeekNumber,
+  getStringFromWeek,
+  calendarWeeks
+} = useCalendar()
 
-    const weekdays = [
-      { label: '月', class: '' },
-      { label: '火', class: '' },
-      { label: '水', class: '' },
-      { label: '木', class: '' },
-      { label: '金', class: '' },
-      { label: '土', class: 'saturday' },
-      { label: '日', class: 'sunday' },
-    ]
+const internalSelectedWeek = ref(props.selectedWeek)
+const hoveredWeek = ref(null)
+const isHovering = ref(false)
+const showAllWeeks = ref(false)
 
-    const selectWeek = (week) => {
-      if (internalSelectedWeek.value && !showAllWeeks.value) {
-        showAllWeeks.value = true
-        emit('reset')
-      } else {
-        internalSelectedWeek.value = [week[0], new Date(week[0].getTime() + 6 * 24 * 60 * 60 * 1000)]
-        setTimeout(() => {
-          showAllWeeks.value = false
-          emit('select-week', internalSelectedWeek.value)
-        }, 700)
-      }
-    }
+const visibleWeeks = computed(() => {
+  if (!internalSelectedWeek.value || showAllWeeks.value) return calendarWeeks.value
+  return calendarWeeks.value.filter(week => {
+    const weekStart = week[0]
+    return weekStart >= internalSelectedWeek.value[0] && weekStart <= internalSelectedWeek.value[1]
+  })
+})
 
-    const isSelected = (week) => {
-      return internalSelectedWeek.value && week[0].getTime() === internalSelectedWeek.value[0].getTime()
-    }
+const weekdays = [
+  { label: '月', class: '' },
+  { label: '火', class: '' },
+  { label: '水', class: '' },
+  { label: '木', class: '' },
+  { label: '金', class: '' },
+  { label: '土', class: 'saturday' },
+  { label: '日', class: 'sunday' },
+]
 
-    const setHoverWeek = (week) => {
-      hoveredWeek.value = week
-    }
-
-    const clearHoverWeek = () => {
-      hoveredWeek.value = null
-    }
-
-    const isHovered = (week) => {
-      return hoveredWeek.value && week[0].getTime() === hoveredWeek.value[0].getTime()
-    }
-
-    const formatDateRange = (week) => {
-      if (!week || week.length < 2) return '週の選択'
-      const start = week[0]
-      const end = week[1]
-      const options = { year: 'numeric', month: 'long', day: 'numeric' }
-      return `${start.toLocaleDateString('ja-JP', options)} - ${end.toLocaleDateString('ja-JP', options)}`
-    }
-
-    const selectedWeekRange = computed(() => {
-      return internalSelectedWeek.value ? formatDateRange(internalSelectedWeek.value) : '週の選択'
-    })
-
-    const handleMouseEnter = () => {
-      isHovering.value = true
-    }
-
-    const handleMouseLeave = () => {
-      isHovering.value = false
-    }
-
-    watch(() => props.selectedWeek, (newValue) => {
-      internalSelectedWeek.value = newValue
+const selectWeek = (week) => {
+  if (internalSelectedWeek.value && !showAllWeeks.value) {
+    showAllWeeks.value = true
+    emit('reset')
+  } else {
+    internalSelectedWeek.value = [week[0], new Date(week[0].getTime() + 6 * 24 * 60 * 60 * 1000)]
+    setTimeout(() => {
       showAllWeeks.value = false
-    })
-    
-    return {
-      visibleWeeks,
-      weekdays,
-      internalSelectedWeek,
-      selectWeek,
-      isSelected,
-      setHoverWeek,
-      clearHoverWeek,
-      isHovered,
-      getWeekNumber,
-      formatShortMonth,
-      isToday,
-      isSaturday,
-      isSunday,
-      shouldShowMonth,
-      selectedWeekRange,
-      getWeekKey: getStringFromWeek,
-      isHovering,
-      showAllWeeks,
-      handleMouseEnter,
-      handleMouseLeave
-    }
+      emit('select-week', internalSelectedWeek.value)
+    }, 700)
   }
 }
+
+const isSelected = (week) => {
+  return internalSelectedWeek.value && week[0].getTime() === internalSelectedWeek.value[0].getTime()
+}
+
+const setHoverWeek = (week) => {
+  hoveredWeek.value = week
+}
+
+const clearHoverWeek = () => {
+  hoveredWeek.value = null
+}
+
+const isHovered = (week) => {
+  return hoveredWeek.value && week[0].getTime() === hoveredWeek.value[0].getTime()
+}
+
+const formatDateRange = (week) => {
+  if (!week || week.length < 2) return '週の選択'
+  const start = week[0]
+  const end = week[1]
+  const options = { year: 'numeric', month: 'long', day: 'numeric' }
+  return `${start.toLocaleDateString('ja-JP', options)} - ${end.toLocaleDateString('ja-JP', options)}`
+}
+
+const selectedWeekRange = computed(() => {
+  return internalSelectedWeek.value ? formatDateRange(internalSelectedWeek.value) : '週の選択'
+})
+
+const handleMouseEnter = () => {
+  isHovering.value = true
+}
+
+const handleMouseLeave = () => {
+  isHovering.value = false
+}
+
+watch(() => props.selectedWeek, (newValue) => {
+  internalSelectedWeek.value = newValue
+  showAllWeeks.value = false
+})
+
+// getWeekKey is an alias for getStringFromWeek
+const getWeekKey = getStringFromWeek
 </script>
 
 <style scoped>

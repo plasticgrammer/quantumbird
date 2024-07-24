@@ -2,6 +2,7 @@ import json
 import logging
 import boto3
 from boto3.dynamodb.conditions import Key
+from decimal import Decimal
 import os
 
 print('Loading function')
@@ -50,10 +51,10 @@ def handle_get(event):
 
     if 'organizationId' in params:
         item = get_organization(params['organizationId'])
-        return create_response(200, json.dumps(item))
+        return create_response(200, item)
     else:
         items = list_organizations()
-        return create_response(200, json.dumps(items))
+        return create_response(200, items)
 
 def handle_post(event):
     org_data = parse_body(event)
@@ -116,7 +117,7 @@ def list_organizations():
     except Exception as e:
         logger.error(f"Error listing organizations: {str(e)}", exc_info=True)
         raise e
-
+        
 def decimal_default_proc(obj):
     if isinstance(obj, Decimal):
         return float(obj)
@@ -130,5 +131,5 @@ def create_response(status_code, body):
             'Access-Control-Allow-Headers': 'Content-Type',
             'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
         },
-        'body': json.dumps(body, default=decimal_default_proc)
+        'body': body
     }

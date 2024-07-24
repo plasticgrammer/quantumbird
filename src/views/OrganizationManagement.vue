@@ -158,11 +158,6 @@
     <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
       {{ snackbarText }}
     </v-snackbar>
-    
-    <div v-if="true" class="debug-info">
-      <h3>Debug Info:</h3>
-      <pre>{{ JSON.stringify(organization, null, 2) }}</pre>
-    </div>
 
   </v-container>
 </template>
@@ -170,7 +165,7 @@
 <script setup>
 import { reactive, toRefs, onMounted } from 'vue'
 import { useStore } from 'vuex'
-import { submitOrganization, updateOrganization, getOrganization } from '../utils/organizationService'
+import { submitOrganization, updateOrganization, getOrganization } from '../services/organizationService'
 
 const store = useStore()
 
@@ -210,7 +205,6 @@ const handleAddMember = () => {
 
 const setEditingMember = (member) => {
   editingMember.value = member ? { ...member } : null
-  console.log('Editing member:', editingMember.value)
 }
 
 const handleUpdateMember = (member) => {
@@ -218,8 +212,6 @@ const handleUpdateMember = (member) => {
     const index = organization.value.members.findIndex(m => m.id === member.id)
     if (index !== -1) {
       organization.value.members[index] = { ...member }
-      console.log('Member updated:', member)
-      console.log('Updated members:', organization.value.members)
     }
     editingMember.value = null
   }
@@ -227,8 +219,6 @@ const handleUpdateMember = (member) => {
 
 const handleDeleteMember = (memberId) => {
   organization.value.members = organization.value.members.filter((member) => member.id !== memberId)
-  console.log('Member deleted:', memberId)
-  console.log('Updated members:', organization.value.members)
 }
 
 const handleSubmit = async () => {
@@ -236,7 +226,7 @@ const handleSubmit = async () => {
   try {
     if (isNew.value) {
       await submitOrganization(organization.value)
-      showSnackbar('新しい組織を作成しました', 'success')
+      showSnackbar('組織情報を登録しました', 'success')
     } else {
       await updateOrganization(organization.value)
       showSnackbar('組織情報を更新しました', 'success')
@@ -328,13 +318,5 @@ onMounted(async () => {
 
 .v-table .newMember td {
   padding: 30px 10px 10px !important;
-}
-
-.debug-info {
-  margin-top: 20px;
-  padding: 10px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
 }
 </style>
