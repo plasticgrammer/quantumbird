@@ -6,19 +6,27 @@
       outlined
     >
       <v-form @submit.prevent="handleSubmit">
-        <v-text-field
-          v-model="organization.organizationId"
-          label="組織ID"
-          outlined
-          dense
-        ></v-text-field>
-        <v-text-field
-          v-model="organization.name"
-          label="組織名"
-          outlined
-          dense
-          class="organization-name-input"
-        ></v-text-field>
+        <v-row class="mt-2">
+          <v-col cols="3">
+            <v-text-field
+              v-model="organization.organizationId"
+              label="組織ID"
+              variant="plain"
+              outlined
+              dense
+              readonly
+            ></v-text-field>
+          </v-col>
+          <v-col cols="9">
+            <v-text-field
+              v-model="organization.name"
+              label="組織名"
+              outlined
+              dense
+              class="organization-name-input"
+            ></v-text-field>
+          </v-col>
+        </v-row>
 
         <v-table class="members-table">
           <thead>
@@ -27,7 +35,7 @@
               <th class="text-left">ID</th>
               <th class="text-left">名前</th>
               <th class="text-left">メールアドレス</th>
-              <th class="text-left" style="width: 260px;"></th>
+              <th class="text-left" style="width: 100px;"></th>
             </tr>
           </thead>
           <tbody>
@@ -68,31 +76,33 @@
                 ></v-text-field>
               </td>
               <td>
-                <v-row no-gutters>
+                <v-row no-gutters justify="end">
                   <v-col v-if="editingMember?.id === member.id">
                     <v-btn
                       small
                       color="primary"
                       @click="handleUpdateMember(member)"
-                      class="mr-2"
+                      class="mr-1 action-btn"
                     >
-                      保存
+                      <v-icon small>mdi-check</v-icon>
                     </v-btn>
                   </v-col>
                   <v-col v-else>
                     <v-btn
                       small
+                      color="primary"
                       @click="setEditingMember(member)"
-                      class="mr-2"
+                      class="mr-1 action-btn"
                     >
-                      編集
+                      <v-icon small>mdi-pencil</v-icon>
                     </v-btn>
                     <v-btn
                       small
                       color="error"
                       @click="handleDeleteMember(member.id)"
+                      class="action-btn"
                     >
-                      削除
+                      <v-icon small>mdi-delete</v-icon>
                     </v-btn>
                   </v-col>
                 </v-row>
@@ -143,15 +153,25 @@
           </tbody>
         </v-table>
 
-        <v-btn color="success" type="submit" class="mt-4" :loading="loading">
-          <v-icon class="mr-1" left>mdi-check</v-icon>
-          更新する
-        </v-btn>
-        <span class="px-3"></span>
-        <v-btn color="grey lighten-1" @click="resetForm" class="mt-4" :disabled="loading">
-          <v-icon class="mr-1" left>mdi-cancel</v-icon>
-          更新しない
-        </v-btn>
+        <div class="mt-5">
+          <v-btn 
+            color="success" 
+            type="submit" 
+            :loading="loading"
+          >
+            <v-icon class="mr-1" left>mdi-check</v-icon>
+            更新する
+          </v-btn>
+          <span class="px-3"></span>
+          <v-btn 
+            color="grey lighten-1" 
+            :to="{ name: 'Dashboard' }"
+            :disabled="loading"
+          >
+            <v-icon class="mr-1" left>mdi-cancel</v-icon>
+            更新せずに戻る
+          </v-btn>
+        </div>
       </v-form>
     </v-card>
 
@@ -238,17 +258,6 @@ const handleSubmit = async () => {
   } finally {
     loading.value = false
   }
-}
-
-const resetForm = () => {
-  organization.value = {
-    organizationId: store.getters['user/organizationId'],
-    name: '',
-    members: []
-  }
-  newMember.value = { id: '', name: '', email: '' }
-  editingMember.value = null
-  console.log('Form reset, new organization state:', organization.value)
 }
 
 const showSnackbar = (text, color) => {

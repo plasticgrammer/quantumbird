@@ -4,6 +4,7 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from decimal import Decimal
 import os
+import uuid
 
 print('Loading function')
 
@@ -13,8 +14,10 @@ logger.setLevel(logging.INFO)
 # Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb')
 stage = os.environ.get('STAGE', 'dev')
-table_name = f'{stage}-Organizations'
-table = dynamodb.Table(table_name)
+organizations_table_name = f'{stage}-Organizations'
+members_table_name = f'{stage}-Members'
+organizations_table = dynamodb.Table(organizations_table_name)
+members_table = dynamodb.Table(members_table_name)
 
 def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
@@ -50,38 +53,63 @@ def handle_get(event):
         return create_response(400, 'Missing query parameters')
 
     if 'organizationId' in params:
-        item = get_organization(params['organizationId'])
-        return create_response(200, item)
+        org = get_organization(params['organizationId'])
+        members = list_members(params['organizationId'])
+        org['members'] = sorted(members, key=lambda x: x.get('id', ''))  # IDでソート
+        return create_response(200, org)
+    elif 'memberUuid' in params:
+        member = get_member(params['memberUuid'])
+        return create_response(200, member)
     else:
-        items = list_organizations()
-        return create_response(200, items)
+        orgs = list_organizations()
+        return create_response(200, orgs)
 
 def handle_post(event):
-    org_data = parse_body(event)
-    item = prepare_item(org_data)
-    response = table.put_item(Item=item)
-    logger.info(f"DynamoDB response: {response}")
-    return create_response(201, 'Organization created successfully')
+    data = parse_body(event)
+    if 'organizationId' in data:
+        item = prepare_organization_item(data)
+        response = organizations_table.put_item(Item=item)
+        logger.info(f"DynamoDB response: {response}")
+        return create_response(201, 'Organization created successfully')
+    elif 'memberUuid' in data:
+        item = prepare_member_item(data)
+        response = members_table.put_item(Item=item)
+        logger.info(f"DynamoDB response: {response}")
+        return create_response(201, 'Member created successfully')
+    else:
+        return create_response(400, 'Invalid data structure')
 
 def handle_put(event):
-    org_data = parse_body(event)
-    item = prepare_item(org_data)
-    response = table.put_item(Item=item)
-    logger.info(f"DynamoDB response: {response}")
-    return create_response(200, 'Organization updated successfully')
+    data = parse_body(event)
+    if 'organizationId' in data:
+        # 組織情報の更新
+        org_item = prepare_organization_item(data)
+        response = organizations_table.put_item(Item=org_item)
+        logger.info(f"Organization update response: {response}")
+
+        # メンバー情報の更新
+        if 'members' in data:
+            update_members(data['organizationId'], data['members'])
+
+        return create_response(200, 'Organization and members updated successfully')
+    elif 'memberUuid' in data:
+        item = prepare_member_item(data)
+        response = members_table.put_item(Item=item)
+        logger.info(f"Member update response: {response}")
+        return create_response(200, 'Member updated successfully')
+    else:
+        return create_response(400, 'Invalid data structure')
 
 def handle_delete(event):
     params = event.get('queryStringParameters') or event.get('payload') or {}
-    if 'organizationId' not in params:
+    if 'organizationId' in params:
+        delete_organization_and_members(params['organizationId'])
+        return create_response(200, 'Organization and its members deleted successfully')
+    elif 'memberUuid' in params:
+        delete_member(params['memberUuid'])
+        return create_response(200, 'Member deleted successfully')
+    else:
         return create_response(400, 'Missing required parameters')
-
-    response = table.delete_item(
-        Key={
-            'organizationId': params['organizationId']
-        }
-    )
-    logger.info(f"DynamoDB response: {response}")
-    return create_response(200, 'Organization deleted successfully')
 
 def parse_body(event):
     if 'body' in event:
@@ -91,16 +119,24 @@ def parse_body(event):
     else:
         return event
 
-def prepare_item(org_data):
+def prepare_organization_item(org_data):
     return {
         'organizationId': org_data.get('organizationId'),
-        'name': org_data.get('name'),
-        'members': org_data.get('members', [])
+        'name': org_data.get('name')
+    }
+
+def prepare_member_item(member_data):
+    return {
+        'memberUuid': member_data.get('memberUuid', str(uuid.uuid4())),
+        'id': member_data.get('id'),
+        'organizationId': member_data['organizationId'],
+        'name': member_data.get('name'),
+        'email': member_data.get('email')
     }
 
 def get_organization(organization_id):
     try:
-        response = table.get_item(
+        response = organizations_table.get_item(
             Key={
                 'organizationId': organization_id
             }
@@ -110,18 +146,107 @@ def get_organization(organization_id):
         logger.error(f"Error getting organization: {str(e)}", exc_info=True)
         raise e
 
+def get_member(member_uuid):
+    try:
+        response = members_table.get_item(
+            Key={
+                'memberUuid': member_uuid
+            }
+        )
+        return response.get('Item')
+    except Exception as e:
+        logger.error(f"Error getting member: {str(e)}", exc_info=True)
+        raise e
+
 def list_organizations():
     try:
-        response = table.scan()
+        response = organizations_table.scan()
         return response['Items']
     except Exception as e:
         logger.error(f"Error listing organizations: {str(e)}", exc_info=True)
         raise e
+
+def list_members(organization_id):
+    try:
+        response = members_table.query(
+            IndexName='OrganizationIndex',
+            KeyConditionExpression=Key('organizationId').eq(organization_id)
+        )
+        members = response['Items']
+        # IDの昇順でソート
+        sorted_members = sorted(members, key=lambda x: x.get('id', ''))
+        return sorted_members
+    except Exception as e:
+        logger.error(f"Error listing members: {str(e)}", exc_info=True)
+        raise e
+
+def update_members(organization_id, members):
+    # 既存のメンバーを取得
+    existing_members = list_members(organization_id)
+    existing_member_ids = {m['id'] for m in existing_members if 'id' in m}
+
+    # メンバーの更新と追加
+    for member in members:
+        member_item = prepare_member_item({
+            'memberUuid': member.get('memberUuid', str(uuid.uuid4())),
+            'id': member.get('id'),
+            'organizationId': organization_id,
+            'name': member.get('name'),
+            'email': member.get('email')
+        })
+        members_table.put_item(Item=member_item)
+        if member_item['id'] in existing_member_ids:
+            existing_member_ids.remove(member_item['id'])
+
+    # 削除されたメンバーの処理
+    for member_id in existing_member_ids:
+        delete_member_by_id(organization_id, member_id)
+
+def delete_organization_and_members(organization_id):
+    try:
+        # Delete organization
+        organizations_table.delete_item(
+            Key={
+                'organizationId': organization_id
+            }
+        )
         
-def decimal_default_proc(obj):
-    if isinstance(obj, Decimal):
-        return float(obj)
-    raise TypeError
+        # Delete all members of the organization
+        members = list_members(organization_id)
+        with members_table.batch_writer() as batch:
+            for member in members:
+                batch.delete_item(
+                    Key={
+                        'memberUuid': member['memberUuid']
+                    }
+                )
+    except Exception as e:
+        logger.error(f"Error deleting organization and members: {str(e)}", exc_info=True)
+        raise e
+
+def delete_member(member_uuid):
+    try:
+        members_table.delete_item(
+            Key={
+                'memberUuid': member_uuid
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error deleting member: {str(e)}", exc_info=True)
+        raise e
+
+def delete_member_by_id(organization_id, member_id):
+    # IDとorganizationIdを使用してmemberUuidを検索
+    response = members_table.query(
+        IndexName='OrganizationIndex',
+        KeyConditionExpression=Key('organizationId').eq(organization_id),
+        FilterExpression=Key('id').eq(member_id)
+    )
+    
+    items = response.get('Items', [])
+    if items:
+        member_uuid = items[0]['memberUuid']
+        members_table.delete_item(Key={'memberUuid': member_uuid})
 
 def create_response(status_code, body):
     return {
