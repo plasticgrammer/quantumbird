@@ -206,13 +206,15 @@
 </template>
 
 <script setup>
-import { reactive, toRefs, ref, onMounted } from 'vue'
+import { reactive, toRefs, ref, onMounted, inject } from 'vue'
 import { useStore } from 'vuex'
 import { submitOrganization, updateOrganization, getOrganization } from '../services/organizationService'
 
 const store = useStore()
 
 const form = ref(null)
+const showConfirmDialog = inject('showConfirmDialog')
+
 const state = reactive({
   organization: {
     organizationId: store.getters['user/organizationId'],
@@ -313,8 +315,11 @@ const handleUpdateMember = (member) => {
   }
 }
 
-const handleDeleteMember = (memberId) => {
-  organization.value.members = organization.value.members.filter((member) => member.id !== memberId)
+const handleDeleteMember = async (memberId) => {
+  const confirmed = await showConfirmDialog('確認', '本当にこの項目を削除しますか？')
+  if (confirmed) {
+    organization.value.members = organization.value.members.filter((member) => member.id !== memberId)
+  }
 }
 
 const showNotification = (message, error) => {

@@ -3,17 +3,23 @@
     <v-main>
       <router-view/>
     </v-main>
+    <ConfirmationDialog ref="confirmDialog" />
   </v-app>
 </template>
 
-<script>
-export default {
-  name: 'App',
+<script setup>
+import { ref, provide } from 'vue'
+import ConfirmationDialog from './components/ConfirmationDialog.vue'
 
-  data: () => ({
-    //
-  }),
+const confirmDialog = ref(null)
+
+// グローバルな確認ダイアログ関数を提供
+const showConfirmDialog = (title, message) => {
+  return confirmDialog.value.open(title, message)
 }
+
+// 確認ダイアログ関数を子コンポーネントに提供
+provide('showConfirmDialog', showConfirmDialog)
 </script>
 
 <style scoped>
