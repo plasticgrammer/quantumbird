@@ -45,7 +45,10 @@
           </v-col>
         </v-row>
 
-        <v-card elevation="4" class="px-1">
+        <v-skeleton-loader elevation="4" type="table-thead, table-tbody" v-if="loading">
+        </v-skeleton-loader>
+
+        <v-card elevation="4" class="px-1" v-else>
           <v-table class="members-table">
             <thead>
               <tr>
