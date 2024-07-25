@@ -1,11 +1,14 @@
 <template>
   <v-container>
     <v-card 
-      max-width="400" 
+      max-width="500" 
       class="mx-auto mt-5"
       elevation="4"
     >
-      <v-card-title>{{ getTitle }}</v-card-title>
+      <v-card-title>
+        <v-icon size="large" class="mr-1">mdi-bird</v-icon>
+        {{ getTitle }}
+      </v-card-title>
       <v-card-text>
         <v-alert
           v-if="successMessage"
@@ -206,10 +209,9 @@ const handleSignIn = async () => {
     const currentUser = await getCurrentUser().catch(() => null)
     if (currentUser) {
       await signOut()
-      successMessage.value = '既存のセッションからサインアウトしました。再度サインインしてください。'
-    } else {
-      await signInUser()
+      console.info('既存のセッションからサインアウトしました。')
     }
+    await signInUser()
   } catch (error) {
     handleSignInError(error)
   } finally {
@@ -218,30 +220,16 @@ const handleSignIn = async () => {
 }
 
 const signInUser = async () => {
-  try {
-    const user = await signIn({ username: signInEmail.value, password: signInPassword.value })
-    console.log('サインイン成功:', user)
-    await checkAuthState()
-    router.push('/admin')
-  } catch (error) {
-    console.error('サインインエラー:', error)
-    errorMessage.value = 'サインインに失敗しました: ' + error.message
-  }
-}
-
-const checkAuthState = async () => {
-  try {
-    const user = await getCurrentUser()
-    console.log('認証済みユーザー:', user)
-    await store.dispatch('user/fetchUser')
-    console.log('User state after fetchUser:', store.state.user)
-  } catch (error) {
-    console.error('認証状態の確認に失敗:', error)
-    throw new Error('認証に失敗しました。再度サインインしてください。')
-  }
+  const user = await signIn({ username: signInEmail.value, password: signInPassword.value })
+  console.log('サインイン成功:', user)
+  await store.dispatch('user/fetchUser')
+  console.log('User state after fetchUser:', store.state.user)
+  
+  router.push('/admin')
 }
 
 const handleSignInError = (error) => {
+  console.info(error.name)
   if (error.name === 'UserAlreadyAuthenticatedException') {
     errorMessage.value = '既にサインインしています。一度サインアウトしてから再試行してください。'
   } else if (error.name === 'UserNotConfirmedException') {
@@ -300,7 +288,6 @@ const confirmSignUpUser = async () => {
   errorMessage.value = ''
   try {
     await confirmSignUp({ username: confirmEmail.value, confirmationCode: confirmCode.value })
-    console.log('確認成功')
     currentView.value = 'signIn'
     successMessage.value = '確認が完了しました。サインインしてください。'
   } catch (error) {
@@ -316,7 +303,6 @@ const resendConfirmationCode = async () => {
   errorMessage.value = ''
   try {
     await resendSignUpCode({ username: confirmEmail.value })
-    console.log('確認コードが再送信されました')
     successMessage.value = '確認コードが再送信されました。メールをご確認ください。'
   } catch (error) {
     console.error('再送信エラー:', error)

@@ -57,7 +57,6 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-  // const moveToSignIn = to.name == 'Login' && Object.keys(to.query).length == 0
   if (to.matched.some(record => record.meta.requiresAuth)) {
     try {
       const user = await getCurrentUser()

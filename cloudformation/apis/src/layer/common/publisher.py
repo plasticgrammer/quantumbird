@@ -44,25 +44,6 @@ def send_mail(sendFrom, to, subject, body, corporationId, userId):
         print(e.response['Error']['Message'])
         raise e
 
-def send_sns(senderId, phoneNumber, body, corporationId, userId):
-    sns = boto3.client("sns")
-    response = sns.publish(
-        PhoneNumber="+81"+phoneNumber, 
-        Message=body,
-        MessageAttributes={
-            'AWS.SNS.SMS.SenderID': {
-                'DataType': 'String',
-                'StringValue': senderId 
-            },
-            'AWS.SNS.SMS.SMSType': {
-                'DataType': 'String',
-                'StringValue': 'Transactional'
-            }
-        }
-    )
-    
-    return response
-
 def get_from_address(corp):
     # メール差出人名 <差出人アドレス>
     return '%s <%s>'%(Header(corp['mail_from_name'].encode('iso-2022-jp'),'iso-2022-jp').encode(), corp['mail_address'])

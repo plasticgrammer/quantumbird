@@ -48,7 +48,7 @@
                   v-model="member.id"
                   dense
                   readonly
-                  variant="plain"
+                  density="compact"
                   hide-details
                   class="member-id-input"
                 ></v-text-field>
@@ -58,8 +58,8 @@
                   v-model="member.name"
                   outlined
                   dense
+                  density="compact"
                   :readonly="editingMember?.id !== member.id"
-                  :variant="editingMember?.id !== member.id ? 'plain' : 'outlined'"
                   hide-details
                   class="member-name-input"
                 ></v-text-field>
@@ -69,8 +69,8 @@
                   v-model="member.email"
                   outlined
                   dense
+                  density="compact"
                   :readonly="editingMember?.id !== member.id"
-                  :variant="editingMember?.id !== member.id ? 'plain' : 'outlined'"
                   hide-details
                   class="member-email-input"
                 ></v-text-field>
@@ -79,26 +79,26 @@
                 <v-row no-gutters justify="end">
                   <v-col v-if="editingMember?.id === member.id">
                     <v-btn
+                      icon
                       small
-                      color="primary"
                       @click="handleUpdateMember(member)"
-                      class="mr-1 action-btn"
+                      class="action-btn"
                     >
                       <v-icon small>mdi-check</v-icon>
                     </v-btn>
                   </v-col>
                   <v-col v-else>
                     <v-btn
+                      icon
                       small
-                      color="primary"
                       @click="setEditingMember(member)"
                       class="mr-1 action-btn"
                     >
                       <v-icon small>mdi-pencil</v-icon>
                     </v-btn>
                     <v-btn
+                      icon
                       small
-                      color="error"
                       @click="handleDeleteMember(member.id)"
                       class="action-btn"
                     >
@@ -117,7 +117,8 @@
                   :maxlength="8"
                   outlined
                   dense
-                  hide-details
+                  color="primary"
+                  :error-messages="validationErrors.id"
                   class="member-id-input mr-2"
                 ></v-text-field>
               </td>
@@ -127,7 +128,8 @@
                   label="メンバー名"
                   outlined
                   dense
-                  hide-details
+                  color="primary"
+                  :error-messages="validationErrors.name"
                   class="member-name-input mr-2"
                 ></v-text-field>
               </td>
@@ -137,7 +139,8 @@
                   label="メールアドレス"
                   outlined
                   dense
-                  hide-details
+                  color="primary"
+                  :error-messages="validationErrors.email"
                   class="member-email-input mr-2"
                 ></v-text-field>
               </td>
@@ -150,7 +153,7 @@
                 </v-btn>
               </td>
             </tr>
-          </tbody>
+            </tbody>
         </v-table>
 
         <div class="mt-5">
@@ -201,17 +204,47 @@ const state = reactive({
   isNew: true,
   snackbar: false,
   snackbarText: '',
-  snackbarColor: 'success'
+  snackbarColor: 'success',
+  validationErrors: {
+    id: '',
+    name: '',
+    email: ''
+  }
 })
 
-const { organization, newMember, editingMember, loading, isNew, snackbar, snackbarText, snackbarColor } = toRefs(state)
+const { organization, newMember, editingMember, loading, isNew, snackbar, snackbarText, snackbarColor, validationErrors } = toRefs(state)
+const validateEmail = (email) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return re.test(email)
+}
+
+const validateNewMember = () => {
+  let isValid = true
+  validationErrors.value = { id: '', name: '', email: '' }
+
+  if (!newMember.value.id.trim()) {
+    validationErrors.value.id = 'IDは必須です'
+    isValid = false
+  }
+
+  if (!newMember.value.name.trim()) {
+    validationErrors.value.name = 'メンバー名は必須です'
+    isValid = false
+  }
+
+  if (!newMember.value.email.trim()) {
+    validationErrors.value.email = 'メールアドレスは必須です'
+    isValid = false
+  } else if (!validateEmail(newMember.value.email)) {
+    validationErrors.value.email = '有効なメールアドレスを入力してください'
+    isValid = false
+  }
+
+  return isValid
+}
 
 const handleAddMember = () => {
-  if (
-    newMember.value.id.trim() !== '' &&
-    newMember.value.name.trim() !== '' &&
-    newMember.value.email.trim() !== ''
-  ) {
+  if (validateNewMember()) {
     organization.value.members.push({
       id: newMember.value.id,
       name: newMember.value.name,
@@ -220,6 +253,7 @@ const handleAddMember = () => {
     console.log('Member added:', newMember.value)
     console.log('Updated members:', organization.value.members)
     newMember.value = { id: '', name: '', email: '' }
+    validationErrors.value = { id: '', name: '', email: '' }
   }
 }
 
@@ -297,7 +331,7 @@ onMounted(async () => {
 .organization-card {
   background-color: white;
   border-radius: 0.5rem;
-  padding: 2rem;
+  padding: 1.5em;
 }
 
 .organization-name-input {
@@ -305,7 +339,7 @@ onMounted(async () => {
 }
 
 .member-id-input {
-  width: 100px;
+  width: 120px;
 }
 
 .member-name-input {
