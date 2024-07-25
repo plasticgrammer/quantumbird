@@ -395,7 +395,10 @@ onMounted(async () => {
 </script>
 
 <style>
-.members-table .v-field__field:has(input[readOnly])+.v-field__outline {
+.members-table .v-field:has(input[readOnly]) .v-field__overlay {
+  background-color: transparent;
+}
+.members-table .v-field:has(input[readOnly]) .v-field__outline {
   display: none;
 }
 </style>
