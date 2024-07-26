@@ -1,11 +1,25 @@
 <template>
   <v-container class="report-form-container">
-    <v-btn @click="copyFromPreviousWeek" color="secondary" class="mb-4">
-      <v-icon class="mr-1" left>mdi-content-copy</v-icon>
+    <v-btn
+      color="secondary"
+      class="mb-4"
+      @click="copyFromPreviousWeek"
+    >
+      <v-icon
+        class="mr-1"
+        left
+      >
+        mdi-content-copy
+      </v-icon>
       前週よりコピー
     </v-btn>
-    <v-form @submit.prevent="handleSubmit" class="report-form elevation-4">
-      <v-card v-for="(project, projectIndex) in report.projects" :key="projectIndex" 
+    <v-form
+      class="report-form elevation-4"
+      @submit.prevent="handleSubmit"
+    >
+      <v-card
+        v-for="(project, projectIndex) in report.projects"
+        :key="projectIndex" 
         elevation="2"
         class="mb-4"
       >
@@ -16,46 +30,57 @@
                 v-model="project.name"
                 :items="projectNames"
                 label="プロジェクト"
-                @update:model-value="onProjectSelect(project)"
                 required
                 dense
                 outlined
                 hide-details="auto"
-              ></v-combobox>
+                @update:model-value="onProjectSelect(project)"
+              />
             </v-col>
-            <v-col cols="2" class="d-flex justify-end">
+            <v-col
+              cols="2"
+              class="d-flex justify-end"
+            >
               <v-btn
+                v-if="report.projects.length > 1"
                 icon
                 x-small
-                @click="removeProject(projectIndex)"
-                v-if="report.projects.length > 1"
                 class="project-delete-btn"
+                @click="removeProject(projectIndex)"
               >
-                <v-icon small>mdi-delete-outline</v-icon>
+                <v-icon small>
+                  mdi-delete-outline
+                </v-icon>
               </v-btn>
             </v-col>
           </v-row>
           <v-row v-if="project.workItems.length > 0">
             <v-col cols="12">
-              <div v-for="(item, itemIndex) in project.workItems" :key="itemIndex" class="mb-2">
+              <div
+                v-for="(item, itemIndex) in project.workItems"
+                :key="itemIndex"
+                class="mb-2"
+              >
                 <v-text-field
+                  :ref="el => setWorkItemRef(el, projectIndex, itemIndex)"
                   v-model="item.content"
                   :label="`作業内容 ${itemIndex + 1}`"
                   dense
                   outlined
                   hide-details="auto"
-                  :ref="el => setWorkItemRef(el, projectIndex, itemIndex)"
                   required
-                  @keydown="handleKeyDown($event, project, itemIndex)"
                   class="work-item-input pl-5"
+                  @keydown="handleKeyDown($event, project, itemIndex)"
                 >
-                  <template v-slot:append>
+                  <template #append>
                     <v-icon 
                       :color="item.content ? 'grey darken-2' : 'grey lighten-1'"
-                      @click="removeWorkItem(project, itemIndex)"
                       small
                       tabindex="-1"
-                    >mdi-close-circle-outline</v-icon>
+                      @click="removeWorkItem(project, itemIndex)"
+                    >
+                      mdi-close-circle-outline
+                    </v-icon>
                   </template>
                 </v-text-field>
               </div>
@@ -65,14 +90,25 @@
       </v-card>
       
       <div class="d-flex justify-end mb-4">
-        <v-btn color="primary" @click="addProject">
-          <v-icon class="mr-1" left>mdi-plus</v-icon>
+        <v-btn
+          color="primary"
+          @click="addProject"
+        >
+          <v-icon
+            class="mr-1"
+            left
+          >
+            mdi-plus
+          </v-icon>
           プロジェクトを追加
         </v-btn>
       </div>
       
       <v-row>
-        <v-col cols="12" sm="6">
+        <v-col
+          cols="12"
+          sm="6"
+        >
           <v-text-field
             v-model="formattedOvertimeHours"
             label="残業時間"
@@ -80,15 +116,27 @@
             min="0"
             max="99"
             step="0.5"
-            @input="updateOvertime"
             required
             outlined
             dense
             class="overtime-input"
+            @input="updateOvertime"
           >
-            <template v-slot:append>
-              <v-btn icon small @click="decreaseOvertime"><v-icon>mdi-minus</v-icon></v-btn>
-              <v-btn icon small @click="increaseOvertime"><v-icon>mdi-plus</v-icon></v-btn>
+            <template #append>
+              <v-btn
+                icon
+                small
+                @click="decreaseOvertime"
+              >
+                <v-icon>mdi-minus</v-icon>
+              </v-btn>
+              <v-btn
+                icon
+                small
+                @click="increaseOvertime"
+              >
+                <v-icon>mdi-plus</v-icon>
+              </v-btn>
             </template>
           </v-text-field>
         </v-col>
@@ -103,7 +151,7 @@
         outlined
         clear-icon="mdi-close-circle"
         clearable 
-      ></v-textarea>
+      />
       
       <v-text-field
         v-model="report.achievements"
@@ -112,7 +160,7 @@
         dense
         clear-icon="mdi-close-circle"
         clearable 
-      ></v-text-field>
+      />
       
       <v-text-field
         v-model="report.improvements"
@@ -121,10 +169,19 @@
         dense
         clear-icon="mdi-close-circle"
         clearable 
-      ></v-text-field>
+      />
 
-      <v-btn color="success" type="submit" class="mt-4">
-        <v-icon class="mr-1" left>mdi-check</v-icon>
+      <v-btn
+        color="success"
+        type="submit"
+        class="mt-4"
+      >
+        <v-icon
+          class="mr-1"
+          left
+        >
+          mdi-check
+        </v-icon>
         報告を提出する
       </v-btn>
     </v-form>
@@ -132,7 +189,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, reactive, defineProps, onMounted } from 'vue'
+import { ref, computed, nextTick, reactive, onMounted } from 'vue'
 import { getReport, submitReport } from '../services/reportService'
 
 const props = defineProps({

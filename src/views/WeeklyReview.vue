@@ -1,24 +1,29 @@
 <template>
   <v-container>
     <WeekSelector
-      :selectedWeek="selectedWeek"
+      :selected-week="selectedWeek"
       @select-week="handleWeekSelection"
       @reset="handleReset"
     />
 
-    <v-alert v-if="!isValidWeek" type="error" class="mt-5" outlined>
+    <v-alert
+      v-if="!isValidWeek"
+      type="error"
+      class="mt-5"
+      outlined
+    >
       指定された週は有効範囲外です。
     </v-alert>
 
-    <ReviewForm v-if="selectedWeek && isValidWeek"
-      :weekString="getStringFromWeek(selectedWeek)"
+    <ReviewForm
+      v-if="selectedWeek && isValidWeek"
+      :week-string="getStringFromWeek(selectedWeek)"
     />
-
   </v-container>
 </template>
 
 <script setup>
-import { ref, watch, defineProps } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import WeekSelector from '../components/WeekSelector.vue'
 import ReviewForm from '../components/ReviewForm.vue'

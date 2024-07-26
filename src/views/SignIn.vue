@@ -6,7 +6,12 @@
       elevation="4"
     >
       <v-card-title>
-        <v-icon size="large" class="mr-1">mdi-bird</v-icon>
+        <v-icon
+          size="large"
+          class="mr-1"
+        >
+          mdi-bird
+        </v-icon>
         {{ getTitle }}
       </v-card-title>
       <v-card-text>
@@ -27,18 +32,21 @@
           {{ errorMessage }}
         </v-alert>
         <template v-if="isSignIn">
-          <v-form @submit.prevent="handleSignIn" v-if="currentView === 'signIn'">
+          <v-form
+            v-if="currentView === 'signIn'"
+            @submit.prevent="handleSignIn"
+          >
             <v-text-field
               v-model="signInEmail"
               label="メールアドレス"
               required
-            ></v-text-field>
+            />
             <v-text-field
               v-model="signInPassword"
               label="パスワード"
               type="password"
               required
-            ></v-text-field>
+            />
             <v-btn
               color="primary"
               type="submit"
@@ -50,17 +58,19 @@
             </v-btn>
           </v-form>
 
-          <v-divider class="my-4"></v-divider>
+          <v-divider class="my-4" />
           
           <v-btn
             color="red"
             dark
             block
             class="mb-2 d-none"
-            @click="signInWithGoogle"
             :loading="loading"
+            @click="signInWithGoogle"
           >
-            <v-icon left>mdi-google</v-icon>
+            <v-icon left>
+              mdi-google
+            </v-icon>
             Googleでサインイン
           </v-btn>
         </template>
@@ -72,23 +82,23 @@
               label="メールアドレス"
               type="email"
               required
-            ></v-text-field>
+            />
             <v-text-field
               v-model="signUpPassword"
               label="パスワード"
               type="password"
               required
-            ></v-text-field>
+            />
             <v-text-field
               v-model="organizationId"
               label="組織ID"
               required
-            ></v-text-field>
+            />
             <v-text-field
               v-model="signUpName"
               label="名前"
               required
-            ></v-text-field>
+            />
             <v-btn
               color="success"
               type="submit"
@@ -107,12 +117,12 @@
               v-model="confirmEmail"
               label="メールアドレス"
               required
-            ></v-text-field>
+            />
             <v-text-field
               v-model="confirmCode"
               label="確認コード"
               required
-            ></v-text-field>
+            />
             <v-btn
               color="primary"
               type="submit"
@@ -126,16 +136,16 @@
           <v-btn
             text
             color="secondary"
-            @click="resendConfirmationCode"
             :disabled="loading"
             class="mt-2"
+            @click="resendConfirmationCode"
           >
             確認コードを再送信
           </v-btn>
         </template>
 
         <v-card-actions>
-          <v-spacer></v-spacer>
+          <v-spacer />
           <v-btn
             text
             color="primary"

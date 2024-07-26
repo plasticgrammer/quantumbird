@@ -1,20 +1,36 @@
 <!-- ConfirmationDialog.vue -->
 <template>
-  <v-dialog v-model="isOpen" max-width="400px">
+  <v-dialog
+    v-model="isOpen"
+    max-width="400px"
+  >
     <v-card>
-      <v-card-title class="headline">{{ currentTitle }}</v-card-title>
+      <v-card-title class="headline">
+        {{ currentTitle }}
+      </v-card-title>
       <v-card-text>{{ currentMessage }}</v-card-text>
       <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="grey darken-1" text @click="cancel">キャンセル</v-btn>
-        <v-btn color="primary" @click="confirm">確認</v-btn>
+        <v-spacer />
+        <v-btn
+          color="grey darken-1"
+          text
+          @click="cancel"
+        >
+          キャンセル
+        </v-btn>
+        <v-btn
+          color="primary"
+          @click="confirm"
+        >
+          確認
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup>
-import { ref, defineExpose } from 'vue'
+import { ref } from 'vue'
 
 const isOpen = ref(false)
 const currentTitle = ref('')

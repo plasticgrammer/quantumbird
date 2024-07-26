@@ -6,20 +6,32 @@
       outlined
     >
       <v-card-title>
-        <v-icon size="large" class="mr-1">mdi-bird</v-icon>
+        <v-icon
+          size="large"
+          class="mr-1"
+        >
+          mdi-bird
+        </v-icon>
         組織情報メンテナンス
       </v-card-title>
 
-      <div v-if="notification.show" class="notification-overlay">
+      <div
+        v-if="notification.show"
+        class="notification-overlay"
+      >
         <v-alert
           :type="notification.type"
           :text="notification.message"
           closable
           @click:close="closeNotification"
-        ></v-alert>
+        />
       </div>
 
-      <v-form @submit.prevent="handleSubmit" ref="form" v-model="isFormValid">
+      <v-form
+        ref="form"
+        v-model="isFormValid"
+        @submit.prevent="handleSubmit"
+      >
         <v-row class="mt-2">
           <v-col cols="3">
             <v-text-field
@@ -29,7 +41,7 @@
               outlined
               dense
               readonly
-            ></v-text-field>
+            />
           </v-col>
           <v-col cols="9">
             <v-text-field
@@ -41,28 +53,49 @@
               :rules="[v => !!v || '組織名は必須です']"
               required
               @input="validateForm"
-            ></v-text-field>
+            />
           </v-col>
         </v-row>
 
-        <v-skeleton-loader elevation="4" type="table-thead, table-tbody" v-if="loading">
-        </v-skeleton-loader>
+        <v-skeleton-loader
+          v-if="loading"
+          elevation="4"
+          type="table-tbody"
+        />
 
-        <v-card elevation="4" class="px-1" v-else>
+        <v-card
+          v-else
+          elevation="4"
+          class="px-1"
+        >
           <v-table class="members-table">
             <thead>
               <tr>
-                <th class="text-left"></th>
-                <th class="text-left">ID</th>
-                <th class="text-left">名前</th>
-                <th class="text-left">メールアドレス</th>
-                <th class="text-left" style="width: 100px;"></th>
+                <th class="text-left" />
+                <th class="text-left">
+                  ID
+                </th>
+                <th class="text-left">
+                  名前
+                </th>
+                <th class="text-left">
+                  メールアドレス
+                </th>
+                <th
+                  class="text-left"
+                  style="width: 100px;"
+                />
               </tr>
             </thead>
             <tbody>
-              <tr v-for="member in organization.members" :key="member.id">
+              <tr
+                v-for="member in organization.members"
+                :key="member.id"
+              >
                 <td>
-                  <v-icon size="x-large">mdi-account-circle</v-icon>
+                  <v-icon size="x-large">
+                    mdi-account-circle
+                  </v-icon>
                 </td>
                 <td>
                   <v-text-field
@@ -72,7 +105,7 @@
                     density="compact"
                     hide-details
                     class="member-id-input"
-                  ></v-text-field>
+                  />
                 </td>
                 <td>
                   <v-text-field
@@ -84,7 +117,7 @@
                     :error-messages="editingMember?.id === member.id ? editValidationErrors.name : ''"
                     hide-details="auto"
                     class="member-name-input"
-                  ></v-text-field>
+                  />
                 </td>
                 <td>
                   <v-text-field
@@ -96,45 +129,54 @@
                     :error-messages="editingMember?.id === member.id ? editValidationErrors.email : ''"
                     hide-details="auto"
                     class="member-email-input"
-                  ></v-text-field>
+                  />
                 </td>
                 <td>
-                  <v-row no-gutters justify="end">
+                  <v-row
+                    no-gutters
+                    justify="end"
+                  >
                     <v-col v-if="editingMember?.id === member.id">
                       <v-btn
                         icon
                         small
-                        @click="handleUpdateMember(member)"
                         class="action-btn"
+                        @click="handleUpdateMember(member)"
                       >
-                        <v-icon small>mdi-check</v-icon>
+                        <v-icon small>
+                          mdi-check
+                        </v-icon>
                       </v-btn>
                     </v-col>
                     <v-col v-else>
                       <v-btn
                         icon
                         small
-                        @click="setEditingMember(member)"
                         class="mr-1 action-btn"
                         elevation="4"
+                        @click="setEditingMember(member)"
                       >
-                        <v-icon small>mdi-pencil</v-icon>
+                        <v-icon small>
+                          mdi-pencil
+                        </v-icon>
                       </v-btn>
                       <v-btn
                         icon
                         small
-                        @click="handleDeleteMember(member.id)"
                         class="action-btn"
                         elevation="4"
+                        @click="handleDeleteMember(member.id)"
                       >
-                        <v-icon small>mdi-delete</v-icon>
+                        <v-icon small>
+                          mdi-delete
+                        </v-icon>
                       </v-btn>
                     </v-col>
                   </v-row>
                 </td>
               </tr>
               <tr class="newMember">
-                <td></td>
+                <td />
                 <td>
                   <v-text-field
                     v-model="newMember.id"
@@ -145,7 +187,7 @@
                     color="primary"
                     :error-messages="validationErrors.id"
                     class="member-id-input mr-2"
-                  ></v-text-field>
+                  />
                 </td>
                 <td>
                   <v-text-field
@@ -156,7 +198,7 @@
                     color="primary"
                     :error-messages="validationErrors.name"
                     class="member-name-input mr-2"
-                  ></v-text-field>
+                  />
                 </td>
                 <td>
                   <v-text-field
@@ -167,7 +209,7 @@
                     color="primary"
                     :error-messages="validationErrors.email"
                     class="member-email-input mr-2"
-                  ></v-text-field>
+                  />
                 </td>
                 <td>
                   <v-btn
@@ -189,22 +231,31 @@
             :loading="loading"
             :disabled="!isFormValid || !!editingMember"
           >
-            <v-icon class="mr-1" left>mdi-check</v-icon>
+            <v-icon
+              class="mr-1"
+              left
+            >
+              mdi-check
+            </v-icon>
             更新する
           </v-btn>
-          <span class="px-3"></span>
+          <span class="px-3" />
           <v-btn 
             color="grey lighten-1" 
             :to="{ name: 'Dashboard' }"
             :disabled="loading"
           >
-            <v-icon class="mr-1" left>mdi-cancel</v-icon>
+            <v-icon
+              class="mr-1"
+              left
+            >
+              mdi-cancel
+            </v-icon>
             更新せずに戻る
           </v-btn>
         </div>
       </v-form>
     </v-card>
-
   </v-container>
 </template>
 
@@ -397,15 +448,6 @@ onMounted(async () => {
 })
 </script>
 
-<style>
-.members-table .v-field:has(input[readOnly]) .v-field__overlay {
-  background-color: transparent;
-}
-.members-table .v-field:has(input[readOnly]) .v-field__outline {
-  display: none;
-}
-</style>
-
 <style scoped>
 .organization-management-container {
   min-width: 960px;
@@ -414,7 +456,7 @@ onMounted(async () => {
 .organization-card {
   background-color: white;
   border-radius: 0.5rem;
-  padding: 1.5em;
+  padding: .5em 1.5em 1em;
   position: relative;
 }
 

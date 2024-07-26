@@ -1,7 +1,7 @@
 <template>
   <v-app id="main">
     <v-main>
-      <router-view/>
+      <router-view />
     </v-main>
     <ConfirmationDialog ref="confirmDialog" />
   </v-app>

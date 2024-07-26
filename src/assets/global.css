@@ -11,3 +11,13 @@ body {
 h1 { font-size: 2rem; }
 h2 { font-size: 1.5rem; }
 h3 { font-size: 1.2rem; }
+
+/*
+ * customize vuetify style
+ */
+.v-field:has(input[readOnly]) .v-field__overlay {
+  background-color: transparent;
+}
+.v-field:has(input[readOnly]) .v-field__outline::before {
+  display: none;
+}

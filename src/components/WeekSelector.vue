@@ -1,28 +1,54 @@
 <template>
   <v-container class="week-selector">
-    <v-row align="center" justify="space-between" class="mb-1">
+    <v-row
+      align="center"
+      justify="space-between"
+      class="mb-1"
+    >
       <v-col class="py-4">
         <h3>
-          <v-icon size="x-large" class="mr-1">mdi-bird</v-icon>
+          <v-icon
+            size="x-large"
+            class="mr-1"
+          >
+            mdi-bird
+          </v-icon>
           {{ selectedWeekRange }}
         </h3>
       </v-col>
     </v-row>
     <v-card 
       elevation="4"
+      :class="{ 'hover-effect': isHovering, 'leave-effect': !isHovering, 'show-all-weeks': showAllWeeks }"
       @mouseenter="handleMouseEnter"
       @mouseleave="handleMouseLeave"
-      :class="{ 'hover-effect': isHovering, 'leave-effect': !isHovering, 'show-all-weeks': showAllWeeks }"
     >
       <v-card-text class="pa-0">
-        <v-row class="weekdays" no-gutters>
-          <v-col cols="1" class="week-number-header">週</v-col>
-          <v-col v-for="day in weekdays" :key="day.label" :class="['weekday', day.class]">
+        <v-row
+          class="weekdays"
+          no-gutters
+        >
+          <v-col
+            cols="1"
+            class="week-number-header"
+          >
+            週
+          </v-col>
+          <v-col
+            v-for="day in weekdays"
+            :key="day.label"
+            :class="['weekday', day.class]"
+          >
             {{ day.label }}
           </v-col>
         </v-row>
-        <transition-group name="week-transition" tag="div">
-          <v-row v-for="(week, weekIndex) in visibleWeeks" :key="getWeekKey(week)" 
+        <transition-group
+          name="week-transition"
+          tag="div"
+        >
+          <v-row
+            v-for="(week, weekIndex) in visibleWeeks"
+            :key="getWeekKey(week)" 
             no-gutters
             class="week-row"
             :class="{ 
@@ -34,8 +60,15 @@
             @mouseenter="setHoverWeek(week)"
             @mouseleave="clearHoverWeek"
           >
-            <v-col cols="1" class="week-number">{{ getWeekNumber(week[0]) }}</v-col>
-            <v-col v-for="(day, dayIndex) in week" :key="day.toISOString()"
+            <v-col
+              cols="1"
+              class="week-number"
+            >
+              {{ getWeekNumber(week[0]) }}
+            </v-col>
+            <v-col
+              v-for="(day, dayIndex) in week"
+              :key="day.toISOString()"
               :class="[
                 'day',
                 { 'today': isToday(day) },
@@ -43,7 +76,10 @@
                 { 'sunday': isSunday(day) }
               ]"
             >
-              <span v-if="shouldShowMonth(day, weekIndex, dayIndex)" class="month">
+              <span
+                v-if="shouldShowMonth(day, weekIndex, dayIndex)"
+                class="month"
+              >
                 {{ formatShortMonth(day) }}
               </span>
               <span class="date">{{ day.getDate() }}</span>
@@ -57,7 +93,7 @@
 
 ">
 <script setup>
-import { ref, computed, watch, defineProps, defineEmits } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useCalendar } from '../composables/useCalendar'
 
 const props = defineProps({

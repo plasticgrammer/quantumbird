@@ -1,7 +1,11 @@
 <template>
   <v-container class="review-form-container">
     <v-row>
-      <v-col v-for="report in reports" :key="report.id" cols="12">
+      <v-col
+        v-for="report in reports"
+        :key="report.id"
+        cols="12"
+      >
         <v-card
           :class="{ 'approved-card': report.status === 'approved' }"
           elevation="4"
@@ -11,7 +15,11 @@
         >
           <v-card-title class="d-flex justify-space-between align-center py-2">
             <span class="text-h6 font-weight-bold">
-              <v-icon size="x-large" class="mr-1" color="black">mdi-account-box-outline</v-icon>
+              <v-icon
+                size="x-large"
+                class="mr-1"
+                color="black"
+              >mdi-account-box-outline</v-icon>
               {{ report.name }}
             </span>
             <v-chip
@@ -20,31 +28,68 @@
               x-small
               class="ml-2"
             >
-              <v-icon v-if="report.status === 'approved'" class="mr-1" x-small>mdi-check-circle-outline</v-icon>
+              <v-icon
+                v-if="report.status === 'approved'"
+                class="mr-1"
+                x-small
+              >
+                mdi-check-circle-outline
+              </v-icon>
               {{ getStatusText(report.status) }}
             </v-chip>
           </v-card-title>
 
           <v-card-text class="pa-4">
             <v-row>
-              <v-col cols="12" sm="6" md="5">
-                <div class="text-subtitle-2 font-weight-medium mb-1">作業内容</div>
-                <v-list dense class="tasks pa-0 mb-3">
-                  <v-list-item v-for="(project, index) in report.projects" :key="index" class="px-2 py-2">
+              <v-col
+                cols="12"
+                sm="6"
+                md="5"
+              >
+                <div class="text-subtitle-2 font-weight-medium mb-1">
+                  作業内容
+                </div>
+                <v-list
+                  dense
+                  class="tasks pa-0 mb-3"
+                >
+                  <v-list-item
+                    v-for="(project, index) in report.projects"
+                    :key="index"
+                    class="px-2 py-2"
+                  >
                     <v-list-item-title class="text-body-2">
-                      <v-icon small>mdi-clipboard-check-outline</v-icon>
+                      <v-icon small>
+                        mdi-clipboard-check-outline
+                      </v-icon>
                       {{ project.name }}
                     </v-list-item-title>
-                    <v-list-item-subtitle class="ml-2 my-2">{{ project.tasks }}</v-list-item-subtitle>
+                    <v-list-item-subtitle class="ml-2 my-2">
+                      {{ project.tasks }}
+                    </v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
-                <v-chip color="primary" x-small>
-                  <v-icon class="mr-1" x-small>mdi-clock-outline</v-icon>
+                <v-chip
+                  color="primary"
+                  x-small
+                >
+                  <v-icon
+                    class="mr-1"
+                    x-small
+                  >
+                    mdi-clock-outline
+                  </v-icon>
                   残業: {{ report.overtime }}時間
                 </v-chip>
               </v-col>
-              <v-col cols="12" sm="6" md="7">
-                <div class="text-subtitle-2 font-weight-medium mb-1">現状・問題点</div>
+              <v-col
+                cols="12"
+                sm="6"
+                md="7"
+              >
+                <div class="text-subtitle-2 font-weight-medium mb-1">
+                  現状・問題点
+                </div>
                 <v-textarea
                   v-model="report.issues"
                   outlined
@@ -54,9 +99,11 @@
                   rows="2"
                   hide-details
                   class="small-text-area mb-2"
-                ></v-textarea>
+                />
 
-                <div class="text-subtitle-2 font-weight-medium mb-1">成果</div>
+                <div class="text-subtitle-2 font-weight-medium mb-1">
+                  成果
+                </div>
                 <v-textarea
                   v-model="report.achievements"
                   outlined
@@ -66,9 +113,11 @@
                   rows="1"
                   hide-details
                   class="small-text-area mb-2"
-                ></v-textarea>
+                />
 
-                <div class="text-subtitle-2 font-weight-medium mb-1">改善点</div>
+                <div class="text-subtitle-2 font-weight-medium mb-1">
+                  改善点
+                </div>
                 <v-textarea
                   v-model="report.improvements"
                   outlined
@@ -78,7 +127,7 @@
                   rows="1"
                   hide-details
                   class="small-text-area"
-                ></v-textarea>
+                />
               </v-col>
             </v-row>
 
@@ -94,7 +143,7 @@
                   clearable 
                   rows="2"
                   class="small-text-area"
-                ></v-textarea>
+                />
 
                 <v-alert
                   v-if="report.status === 'feedback'"
@@ -103,33 +152,48 @@
                   dense
                   class="mb-0"
                 >
-                  <div class="font-weight-bold">フィードバック:</div>
+                  <div class="font-weight-bold">
+                    フィードバック:
+                  </div>
                   <p>{{ report.feedback }}</p>
                 </v-alert>
               </v-col>
             </v-row>
           </v-card-text>
 
-          <v-card-actions class="py-1" v-if="report.status !== 'approved'">
-            <v-spacer></v-spacer>
+          <v-card-actions
+            v-if="report.status !== 'approved'"
+            class="py-1"
+          >
+            <v-spacer />
             <v-btn
               color="success"
-              @click="handleApprove(report.id)"
               outlined
               x-small
+              @click="handleApprove(report.id)"
             >
-              <v-icon left x-small>mdi-check-bold</v-icon>
+              <v-icon
+                left
+                x-small
+              >
+                mdi-check-bold
+              </v-icon>
               確認
             </v-btn>
             <v-btn
               color="warning"
-              @click="submitFeedback(report.id)"
               :disabled="!report.feedback.trim()"
               class="ml-2"
               outlined
               x-small
+              @click="submitFeedback(report.id)"
             >
-              <v-icon left x-small>mdi-message</v-icon>
+              <v-icon
+                left
+                x-small
+              >
+                mdi-message
+              </v-icon>
               フィードバック送信
             </v-btn>
           </v-card-actions>
@@ -140,7 +204,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps } from 'vue'
+import { ref } from 'vue'
 
 const props = defineProps({
   weekString: {
