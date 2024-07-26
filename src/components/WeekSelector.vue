@@ -1,10 +1,10 @@
 <template>
   <v-container class="week-selector">
     <v-row
-      align="center"
-      justify="space-between"
+      dense 
+      class="pb-4"
     >
-      <v-col class="pb-4">
+      <v-col>
         <h3>
           <v-icon
             size="x-large"
@@ -199,6 +199,7 @@ const getWeekKey = getStringFromWeek
 <style scoped>
 .week-selector {
   max-width: 800px;
+  padding-top: 0;
 }
 
 .hover-effect {
