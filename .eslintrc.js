@@ -45,7 +45,9 @@ module.exports = {
     'keyword-spacing': 2,
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    'vue/multi-word-component-names': 'off', // このルールを無効にします
+    'vue/multi-word-component-names': 'off',
+    'vue/max-attributes-per-line': 'off', 
+    'vue/html-self-closing': 'off',
     'vue/script-setup-uses-vars': 'error'
   }
 }

@@ -13,7 +13,7 @@
             size="large" 
             class="mr-1"
           >
-            mdi-bird
+            mdi-view-dashboard
           </v-icon>
           ダッシュボード
         </h3>

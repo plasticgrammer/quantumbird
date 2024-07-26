@@ -10,7 +10,7 @@
             size="large" 
             class="mr-1"
           >
-            mdi-bird
+            mdi-domain
           </v-icon>
           組織情報メンテナンス
         </h3>

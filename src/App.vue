@@ -1,68 +1,81 @@
 <template>
   <v-app id="main">
-    <v-app-bar
-      color="secondary"
-      :elevation="2"
-      scroll-behavior="hide"
-    >
-      <v-app-bar-nav-icon
-        aria-label="Toggle navigation menu"
-        @click.stop="toggleDrawer"
-      />
-      
-      <v-app-bar-title>SixWeeks</v-app-bar-title>
-    </v-app-bar>
-
     <v-navigation-drawer
-      v-model="drawer"
-      :location="$vuetify.display.mobile ? 'bottom' : 'left'"
-      temporary
+      color="secondary"
+      expand-on-hover
+      rail
     >
       <v-list>
         <v-list-item
-          v-for="item in items"
-          :key="item.value"
-          :value="item.value"
-          :title="item.title"
-          @click="handleNavigation(item)"
+          prepend-icon="mdi-bird"
+          subtitle="plasticgrammer@gmailcom"
+          title="plasticgrammer"
         />
       </v-list>
+
+      <v-divider />
+
+      <v-list nav>
+        <v-list-item
+          v-for="item in navigationItems"
+          :key="item.value"
+          :prepend-icon="item.icon"
+          :title="item.title"
+          :value="item.value"
+          @click="navigateTo(item.route)"
+        />
+      </v-list>
+
+      <template #append>
+        <div class="pa-2">
+          <v-btn block />
+        </div>
+      </template>
     </v-navigation-drawer>
 
     <v-main>
       <router-view />
     </v-main>
 
-    <ConfirmationDialog
-      v-show="showConfirmDialog"
-      ref="confirmDialog"
-    />
+    <div v-show="showConfirmDialog">
+      <ConfirmationDialog ref="confirmDialog" />
+    </div>
   </v-app>
 </template>
 
 <script setup>
 import { ref, provide, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import ConfirmationDialog from './components/ConfirmationDialog.vue'
 
+const router = useRouter()
 const confirmDialog = ref(null)
 const drawer = ref(false)
 const showConfirmDialog = ref(false)
 
-const items = ref([
-  { title: 'Foo', value: 'foo' },
-  { title: 'Bar', value: 'bar' },
-  { title: 'Fizz', value: 'fizz' },
-  { title: 'Buzz', value: 'buzz' },
-])
+const navigationItems = [
+  { 
+    icon: 'mdi-view-dashboard', 
+    title: 'Dashboard', 
+    value: 'Dashboard', 
+    route: { name: 'Dashboard' }
+  },
+  { 
+    icon: 'mdi-domain', 
+    title: 'Organization', 
+    value: 'Organization', 
+    route: { name: 'OrganizationManagement' }
+  },
+  { 
+    icon: 'mdi-account-multiple', 
+    title: 'WeeklyReview', 
+    value: 'WeeklyReview', 
+    route: { name: 'WeeklyReviewSelector' }
+  },
+]
 
-const toggleDrawer = () => {
-  drawer.value = !drawer.value
-  localStorage.setItem('app-drawer-state', String(drawer.value))
-}
-
-const handleNavigation = (item) => {
-  // ナビゲーション処理をここに実装
-  console.log(`Navigating to ${item.value}`)
+const navigateTo = (route, params = {}) => {
+  router.push({ ...route, params: { ...route.params, ...params } })
   drawer.value = false
 }
 
