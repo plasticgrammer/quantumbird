@@ -1,20 +1,27 @@
 <template>
-  <v-container class="organization-management-container">
+  <v-container class="organization-management-container p-2">
+    <v-row 
+      dense 
+      class="pb-4"
+    >
+      <v-col>
+        <h3>
+          <v-icon 
+            size="large" 
+            class="mr-1"
+          >
+            mdi-bird
+          </v-icon>
+          組織情報メンテナンス
+        </h3>
+      </v-col>
+    </v-row>
+
     <v-card 
       class="organization-card"
       elevation="4"
       outlined
     >
-      <v-card-title>
-        <v-icon
-          size="large"
-          class="mr-1"
-        >
-          mdi-bird
-        </v-icon>
-        組織情報メンテナンス
-      </v-card-title>
-
       <div
         v-if="notification.show"
         class="notification-overlay"
@@ -94,7 +101,7 @@
               >
                 <td>
                   <v-icon size="x-large">
-                    mdi-account-circle
+                    mdi-account-box-outline
                   </v-icon>
                 </td>
                 <td>

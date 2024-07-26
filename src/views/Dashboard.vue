@@ -1,13 +1,22 @@
 <template>
   <v-container
     fluid
-    class="pa-2"
+    class="p-2"
   >
-    <v-row dense>
-      <v-col cols="12">
-        <h1 class="text-h5 mb-2">
+    <v-row 
+      dense 
+      class="pb-4"
+    >
+      <v-col>
+        <h3>
+          <v-icon 
+            size="large" 
+            class="mr-1"
+          >
+            mdi-bird
+          </v-icon>
           ダッシュボード
-        </h1>
+        </h3>
       </v-col>
     </v-row>
 

@@ -3,9 +3,8 @@
     <v-row
       align="center"
       justify="space-between"
-      class="mb-1"
     >
-      <v-col class="py-4">
+      <v-col class="pb-4">
         <h3>
           <v-icon
             size="x-large"
