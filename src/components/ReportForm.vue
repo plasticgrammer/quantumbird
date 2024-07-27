@@ -1,18 +1,45 @@
 <template>
   <v-container class="report-form-container">
-    <v-btn
-      color="secondary"
-      class="mb-4"
-      @click="copyFromPreviousWeek"
-    >
-      <v-icon
-        class="mr-1"
-        left
+    <template v-if="showCopyButton">
+      <v-card 
+        class="mb-4"
+        elevation="4"
+        color="blue-lighten-5"
       >
-        mdi-content-copy
-      </v-icon>
-      前週よりコピー
-    </v-btn>
+        <v-card-title>前週の報告内容</v-card-title>
+        <v-card-text>
+          <v-list class="bg-transparent custom-list">
+            <v-list-item v-for="(project, index) in previousWeekReport.projects" :key="index">
+              <v-list-item-title>{{ project.name }}</v-list-item-title>
+              <v-list-item-subtitle style="display: block;">
+                <ul class="work-items-list">
+                  <li v-for="(item, itemIndex) in project.workItems" :key="itemIndex">
+                    {{ item.content }}
+                  </li>
+                </ul>
+              </v-list-item-subtitle>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn
+            color="secondary"
+            variant="elevated" 
+            class="mx-2 mb-2"
+            @click="copyFromPreviousWeek"
+          >
+            <v-icon
+              class="mr-1"
+              left
+            >
+              mdi-content-copy
+            </v-icon>
+            作業内容をコピー
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </template>
+
     <v-form
       class="report-form elevation-4"
       @submit.prevent="handleSubmit"
@@ -217,11 +244,14 @@ const initialReport = (organizationId, memberUuid, weekString) => ({
   achievements: '',
   improvements: ''
 })
+
 const report = ref(initialReport(props.organizationId, props.memberUuid, props.weekString))
 const workItemRefs = reactive({})
 const projectNames = ref(['プロジェクト1', 'プロジェクト2', 'プロジェクト3'])
 const isLoading = ref(false)
 const error = ref(null)
+const previousWeekReport = ref(null)
+const showCopyButton = ref(false)
 
 const formattedOvertimeHours = computed({
   get: () => report.value.overtimeHours.toFixed(1),
@@ -296,17 +326,15 @@ const removeWorkItem = (project, index) => {
 }
 
 const copyFromPreviousWeek = () => {
-  if (props.previousWeekReport) {
+  if (previousWeekReport.value) {
     report.value = {
       ...report.value,
-      projects: props.previousWeekReport.projects?.map(project => ({
+      projects: previousWeekReport.value.projects?.map(project => ({
         ...project,
         workItems: project.workItems.map(item => ({ ...item }))
       })) || [],
-      issues: props.previousWeekReport.issues || '',
-      achievements: props.previousWeekReport.achievements || '',
-      improvements: props.previousWeekReport.improvements || ''
     }
+    showCopyButton.value = false
   }
 }
 
@@ -317,6 +345,14 @@ const onProjectSelect = (project) => {
   if (project.workItems.length === 0) {
     project.workItems.push({ content: '' })
   }
+}
+
+const getPreviousWeekString = (weekString) => {
+  const [year, week] = weekString.split('-W').map(Number)
+  if (week === 1) {
+    return `${year - 1}-W52`
+  }
+  return `${year}-W${(week - 1).toString().padStart(2, '0')}`
 }
 
 const fetchReport = async () => {
@@ -330,6 +366,13 @@ const fetchReport = async () => {
         issues: fetchedReport.issues || '',
         achievements: fetchedReport.achievements || '',
         improvements: fetchedReport.improvements || ''
+      }
+    } else {
+      // 今週の報告が取得できなかった場合、前週の報告を取得
+      const previousWeekString = getPreviousWeekString(props.weekString)
+      previousWeekReport.value = await getReport(props.memberUuid, previousWeekString)
+      if (previousWeekReport.value) {
+        showCopyButton.value = true
       }
     }
   } catch (err) {
@@ -355,6 +398,29 @@ const handleSubmit = async () => {
 <style scoped>
 .report-form-container {
   max-width: 800px;
+}
+
+.custom-list {
+  padding: 0 !important;
+}
+
+.custom-list :deep(.v-list-item) {
+  padding: 0 !important;
+}
+
+.custom-list :deep(.v-list-item__content) {
+  padding: 8px 0 !important;
+}
+
+.work-items-list {
+  list-style-type: disc !important;
+  padding-left: 24px !important;
+  margin: 0;
+}
+
+.work-items-list li {
+  padding: 4px 0;
+  display: list-item !important;
 }
 
 .report-form {

@@ -236,7 +236,7 @@
             color="success" 
             type="submit" 
             :loading="loading"
-            :disabled="!isFormValid || !!editingMember"
+            :disabled="!isFormValid || !!editingMember || !isFormChanged"
           >
             <v-icon
               class="mr-1"
@@ -246,20 +246,6 @@
             </v-icon>
             更新する
           </v-btn>
-          <span class="px-3" />
-          <v-btn 
-            color="grey lighten-1" 
-            :to="{ name: 'Dashboard' }"
-            :disabled="loading"
-          >
-            <v-icon
-              class="mr-1"
-              left
-            >
-              mdi-cancel
-            </v-icon>
-            更新せずに戻る
-          </v-btn>
         </div>
       </v-form>
     </v-card>
@@ -267,7 +253,7 @@
 </template>
 
 <script setup>
-import { reactive, toRefs, ref, onMounted, inject } from 'vue'
+import { reactive, toRefs, ref, onMounted, inject, watch } from 'vue'
 import { useStore } from 'vuex'
 import { submitOrganization, updateOrganization, getOrganization } from '../services/organizationService'
 
@@ -287,6 +273,7 @@ const state = reactive({
   loading: false,
   isNew: true,
   isFormValid: false,
+  isFormChanged: false,
   notification: {
     show: false,
     type: 'success',
@@ -300,10 +287,11 @@ const state = reactive({
   editValidationErrors: {
     name: '',
     email: ''
-  }
+  },
+  originalOrganization: null
 })
 
-const { organization, newMember, editingMember, loading, isNew, isFormValid, notification, validationErrors, editValidationErrors } = toRefs(state)
+const { organization, newMember, editingMember, loading, isNew, isFormValid, isFormChanged, notification, validationErrors, editValidationErrors } = toRefs(state)
 
 const validateEmail = (email) => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -346,6 +334,15 @@ const validateNewMember = () => {
   return isValid
 }
 
+const setEditingMember = (member) => {
+  editingMember.value = member ? { ...member } : null
+  editValidationErrors.value = { name: '', email: '' }
+}
+
+const handleFormChange = () => {
+  isFormChanged.value = true
+}
+
 const handleAddMember = () => {
   if (validateNewMember()) {
     organization.value.members.push({
@@ -357,12 +354,8 @@ const handleAddMember = () => {
     console.log('Updated members:', organization.value.members)
     newMember.value = { id: '', name: '', email: '' }
     validationErrors.value = { id: '', name: '', email: '' }
+    handleFormChange()
   }
-}
-
-const setEditingMember = (member) => {
-  editingMember.value = member ? { ...member } : null
-  editValidationErrors.value = { name: '', email: '' }
 }
 
 const handleUpdateMember = (member) => {
@@ -373,6 +366,7 @@ const handleUpdateMember = (member) => {
     }
     editingMember.value = null
     editValidationErrors.value = { name: '', email: '' }
+    handleFormChange()
   }
 }
 
@@ -380,6 +374,7 @@ const handleDeleteMember = async (memberId) => {
   const confirmed = await showConfirmDialog('確認', '本当にこの項目を削除しますか？')
   if (confirmed) {
     organization.value.members = organization.value.members.filter((member) => member.id !== memberId)
+    handleFormChange()
   }
 }
 
@@ -410,7 +405,7 @@ const validateForm = async () => {
 const handleSubmit = async () => {
   await validateForm()
   
-  if (!isFormValid.value) {
+  if (!isFormValid.value || !isFormChanged.value) {
     return
   }
 
@@ -424,6 +419,8 @@ const handleSubmit = async () => {
       showNotification('組織情報を更新しました')
     }
     console.log('Organization submitted:', organization.value)
+    state.originalOrganization = JSON.parse(JSON.stringify(organization.value))
+    isFormChanged.value = false
   } catch (error) {
     showNotification('組織の保存に失敗しました', error)
   } finally {
@@ -440,6 +437,7 @@ onMounted(async () => {
       const result = await getOrganization(organizationId)
       if (result && Object.keys(result).length > 0) {
         organization.value = result
+        state.originalOrganization = JSON.parse(JSON.stringify(result))
         isNew.value = false
       } else {
         isNew.value = true
@@ -453,6 +451,17 @@ onMounted(async () => {
     }
   }
 })
+
+// フォームの内容が変更されたかどうかを監視
+watch(
+  () => JSON.stringify(organization.value),
+  (newVal) => {
+    if (state.originalOrganization) {
+      isFormChanged.value = newVal !== JSON.stringify(state.originalOrganization)
+    }
+  },
+  { deep: true }
+)
 </script>
 
 <style scoped>

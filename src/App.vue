@@ -1,20 +1,12 @@
 <template>
   <v-app id="main">
     <v-navigation-drawer
-      color="secondary"
+      v-model="drawer"
       expand-on-hover
-      rail
+      :rail="true"
+      permanent
+      color="secondary"
     >
-      <v-list>
-        <v-list-item
-          prepend-icon="mdi-bird"
-          subtitle="plasticgrammer@gmailcom"
-          title="plasticgrammer"
-        />
-      </v-list>
-
-      <v-divider />
-
       <v-list nav>
         <v-list-item
           v-for="item in navigationItems"
@@ -27,9 +19,19 @@
       </v-list>
 
       <template #append>
-        <div class="pa-2">
-          <v-btn block />
-        </div>
+        <v-divider />
+        <v-list>
+          <v-list-item
+            :title="user.username"
+            :subtitle="user.email"
+          >
+            <template #prepend>
+              <v-avatar color="secondary">
+                <v-icon icon="mdi-account-circle"></v-icon>
+              </v-avatar>
+            </template>
+          </v-list-item>
+        </v-list>
       </template>
     </v-navigation-drawer>
 
@@ -44,14 +46,19 @@
 </template>
 
 <script setup>
-import { ref, provide, onMounted, watch } from 'vue'
+import { ref, provide } from 'vue'
 import { useRouter } from 'vue-router'
 import ConfirmationDialog from './components/ConfirmationDialog.vue'
 
 const router = useRouter()
 const confirmDialog = ref(null)
-const drawer = ref(false)
+const drawer = ref(true)
 const showConfirmDialog = ref(false)
+
+const user = ref({
+  username: 'plasticgrammer',
+  email: 'plasticgrammer@gmail.com'
+})
 
 const navigationItems = [
   { 
@@ -76,7 +83,6 @@ const navigationItems = [
 
 const navigateTo = (route, params = {}) => {
   router.push({ ...route, params: { ...route.params, ...params } })
-  drawer.value = false
 }
 
 const showConfirmDialogGlobal = async (title, message) => {
@@ -85,27 +91,12 @@ const showConfirmDialogGlobal = async (title, message) => {
     return await confirmDialog.value?.open(title, message)
   } catch (error) {
     console.error('Error showing confirmation dialog:', error)
-    // エラー時の適切な処理を追加
   } finally {
     showConfirmDialog.value = false
   }
 }
 
-// 確認ダイアログ関数を子コンポーネントに提供
 provide('showConfirmDialog', showConfirmDialogGlobal)
-
-// ローカルストレージからドロワーの状態を復元
-onMounted(() => {
-  const savedDrawerState = localStorage.getItem('app-drawer-state')
-  if (savedDrawerState !== null) {
-    drawer.value = savedDrawerState === 'true'
-  }
-})
-
-// ドロワーの状態が変更されたときにローカルストレージに保存
-watch(drawer, (newValue) => {
-  localStorage.setItem('app-drawer-state', String(newValue))
-})
 </script>
 
 <style scoped>
