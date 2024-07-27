@@ -65,7 +65,7 @@
                 @update:model-value="handleProjectUpdate(project)"
               >
                 <template #item="{ props: itemProps, item }">
-                  <v-list-item v-bind="itemProps">
+                  <v-list-item v-bind="itemProps" class="project-list-item">
                     <template #append>
                       <v-btn
                         icon="mdi-close"
@@ -406,7 +406,6 @@ const fetchReport = async () => {
       getReport(props.memberUuid, props.weekString),
       getMemberProjects(props.memberUuid)
     ])
-    console.info(memberProjects)
 
     if (fetchedReport) {
       report.value = {
@@ -450,16 +449,8 @@ const handleSubmit = async () => {
   max-width: 800px;
 }
 
-.custom-list {
-  padding: 0 !important;
-}
-
-.custom-list :deep(.v-list-item) {
-  padding: 0 !important;
-}
-
-.custom-list :deep(.v-list-item__content) {
-  padding: 8px 0 !important;
+.project-list-item:hover {
+  background-color: rgba(179, 215, 255, 0.6) !important;
 }
 
 .work-items-list {

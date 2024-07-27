@@ -7,7 +7,7 @@
         cols="12"
       >
         <v-card
-          :class="{ 'approved-card': report.status === 'approved' }"
+          :class="{ 'approved-card': report.status === 'approved', 'none-card': report.status === 'none' }"
           elevation="4"
           hover
           outlined
@@ -39,12 +39,14 @@
             </v-chip>
           </v-card-title>
 
-          <v-card-text class="pa-4">
+          <v-card-text
+            v-if="report.status !== 'none'"
+            class="pa-4" 
+          >
             <v-row>
               <v-col
                 cols="12"
-                sm="6"
-                md="5"
+                md="6"
               >
                 <div class="text-subtitle-2 font-weight-medium mb-1">
                   作業内容
@@ -84,8 +86,7 @@
               </v-col>
               <v-col
                 cols="12"
-                sm="6"
-                md="7"
+                md="6"
               >
                 <div class="text-subtitle-2 font-weight-medium mb-1">
                   現状・問題点
@@ -162,12 +163,13 @@
           </v-card-text>
 
           <v-card-actions
-            v-if="report.status !== 'approved'"
+            v-if="report.status !== 'approved' && report.status !== 'none'"
             class="py-1"
           >
             <v-spacer />
             <v-btn
               color="success"
+              variant="elevated" 
               outlined
               x-small
               @click="handleApprove(report.id)"
@@ -175,6 +177,7 @@
               <v-icon
                 left
                 x-small
+                class="mr-1"
               >
                 mdi-check-bold
               </v-icon>
@@ -182,6 +185,7 @@
             </v-btn>
             <v-btn
               color="warning"
+              variant="elevated" 
               :disabled="!report.feedback.trim()"
               class="ml-2"
               outlined
@@ -191,6 +195,7 @@
               <v-icon
                 left
                 x-small
+                class="mr-1"
               >
                 mdi-message
               </v-icon>
@@ -204,56 +209,24 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { listReports } from '../services/reportService'
+import { listMembers } from '../services/memberService'
+import { useStore } from 'vuex'
+
+const store = useStore()
+const organizationId = store.getters['user/organizationId']
 
 const props = defineProps({
   weekString: {
     type: String,
     required: true
-  },
+  }
 })
 
-const reports = ref([
-  {
-    id: 1,
-    name: '田中太郎',
-    projects: [
-      { name: 'プロジェクトA', tasks: '設計完了、実装着手' },
-      { name: 'プロジェクトB', tasks: 'テスト計画作成' }
-    ],
-    overtime: 5,
-    achievements: 'プロジェクトAの設計を予定通り完了',
-    issues: 'プロジェクトBのリソース不足',
-    status: 'approved',
-    feedback: '',
-    approvedAt: '2024-07-08 14:30'
-  },
-  {
-    id: 2,
-    name: '佐藤花子',
-    projects: [
-      { name: 'プロジェクトC', tasks: '要件定義更新、クライアントミーティング' }
-    ],
-    overtime: 3,
-    achievements: 'クライアントから新要件の承認を得た',
-    issues: 'スケジュールの遅れが懸念される',
-    status: 'pending',
-    feedback: ''
-  },
-  {
-    id: 3,
-    name: '鈴木一郎',
-    projects: [
-      { name: 'プロジェクトD', tasks: 'コードレビュー、バグ修正' },
-      { name: 'プロジェクトE', tasks: '新機能の設計' }
-    ],
-    overtime: 2,
-    achievements: '重要なバグを修正し、顧客満足度が向上',
-    issues: '新機能の設計に予想以上に時間がかかっている',
-    status: 'feedback',
-    feedback: '新機能の設計遅延について、具体的な原因と対策を教えてください。'
-  }
-])
+const reports = ref([])
+const isLoading = ref(false)
+const error = ref(null)
 
 const handleApprove = (id) => {
   const now = new Date()
@@ -265,7 +238,6 @@ const handleApprove = (id) => {
 }
 
 const submitFeedback = (id) => {
-  console.info(props.weekString)
   const report = reports.value.find(r => r.id === id)
   if (report && report.feedback.trim() !== '') {
     reports.value = reports.value.map(r =>
@@ -276,6 +248,8 @@ const submitFeedback = (id) => {
 
 const getStatusText = (status) => {
   switch (status) {
+  case 'none':
+    return '報告なし'
   case 'pending':
     return '保留中'
   case 'approved':
@@ -289,6 +263,8 @@ const getStatusText = (status) => {
 
 const getStatusColor = (status) => {
   switch (status) {
+  case 'none':
+    return 'error'
   case 'pending':
     return 'grey'
   case 'approved':
@@ -299,11 +275,78 @@ const getStatusColor = (status) => {
     return ''
   }
 }
+
+const fetchReports = async () => {
+  try {
+    const fetchedReports = await listReports(organizationId, props.weekString)
+    return fetchedReports.map(report => ({
+      id: report.memberUuid,
+      projects: report.projects.map(project => ({
+        name: project.name,
+        tasks: project.workItems.map(item => item.content).join(', ')
+      })),
+      overtime: report.overtimeHours,
+      achievements: report.achievements,
+      issues: report.issues,
+      improvements: report.improvements,
+      status: report.status || 'pending',
+      feedback: report.feedback || '',
+      approvedAt: report.approvedAt || null
+    }))
+  } catch (err) {
+    console.error('Failed to fetch reports:', err)
+    throw err
+  }
+}
+
+const fetchMembers = async () => {
+  try {
+    return await listMembers(organizationId)
+  } catch (err) {
+    console.error('Failed to fetch members:', err)
+    throw err
+  }
+}
+
+const fetchData = async () => {
+  isLoading.value = true
+  error.value = null
+  try {
+    const [fetchedReports, members] = await Promise.all([fetchReports(), fetchMembers()])
+    
+    reports.value = members.map(member => {
+      const report = fetchedReports.find(r => r.id === member.memberUuid) || {}
+      return {
+        id: member.memberUuid,
+        memberId: member.id,
+        name: member.name,
+        projects: report.projects || [],
+        overtime: report.overtime || 0,
+        achievements: report.achievements || '',
+        issues: report.issues || '',
+        improvements: report.improvements || '',
+        status: report.status || 'none',
+        feedback: report.feedback || '',
+        approvedAt: report.approvedAt || null
+      }
+    }).sort((a, b) => a.memberId.localeCompare(b.memberId, undefined, { numeric: true, sensitivity: 'base' }))
+  } catch (err) {
+    error.value = '報告書またはメンバー情報の取得に失敗しました。'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(fetchData)
 </script>
 
 <style scoped>
 .review-form-container {
   max-width: 800px;
+}
+
+.none-card {
+  background-color: whitesmoke;
 }
 
 .approved-card {
