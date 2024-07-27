@@ -56,13 +56,27 @@
               <v-combobox
                 v-model="project.name"
                 :items="projectNames"
+                class="project-combobox"
                 label="プロジェクト"
                 required
                 dense
-                outlined
                 hide-details="auto"
-                @update:model-value="onProjectSelect(project)"
-              />
+                @keydown="handleProjectKeydown($event, project)"
+                @update:model-value="handleProjectUpdate(project)"
+              >
+                <template #item="{ props: itemProps, item }">
+                  <v-list-item v-bind="itemProps">
+                    <template #append>
+                      <v-btn
+                        icon="mdi-close"
+                        size="small"
+                        flat
+                        @click.stop="removeProjectOption(item.title)"
+                      ></v-btn>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-combobox>
             </v-col>
             <v-col
               cols="2"
@@ -218,6 +232,7 @@
 <script setup>
 import { ref, computed, nextTick, reactive, onMounted } from 'vue'
 import { getReport, submitReport } from '../services/reportService'
+import { getMemberProjects, updateMemberProjects } from '../services/memberService'
 
 const props = defineProps({
   organizationId: {
@@ -247,7 +262,7 @@ const initialReport = (organizationId, memberUuid, weekString) => ({
 
 const report = ref(initialReport(props.organizationId, props.memberUuid, props.weekString))
 const workItemRefs = reactive({})
-const projectNames = ref(['プロジェクト1', 'プロジェクト2', 'プロジェクト3'])
+const projectNames = ref([])
 const isLoading = ref(false)
 const error = ref(null)
 const previousWeekReport = ref(null)
@@ -277,14 +292,6 @@ const decreaseOvertime = () => {
   if (report.value.overtimeHours > 0) {
     report.value.overtimeHours = parseFloat((report.value.overtimeHours - 0.5).toFixed(1))
   }
-}
-
-const addProject = () => {
-  report.value.projects.push({ name: '', workItems: [] })
-}
-
-const removeProject = (index) => {
-  report.value.projects.splice(index, 1)
 }
 
 const setWorkItemRef = (el, projectIndex, itemIndex) => {
@@ -338,12 +345,48 @@ const copyFromPreviousWeek = () => {
   }
 }
 
-const onProjectSelect = (project) => {
-  if (!projectNames.value.includes(project.name)) {
-    projectNames.value.push(project.name)
+const addProject = () => {
+  report.value.projects.push({ name: '', workItems: [] })
+}
+
+const handleProjectKeydown = (event, project) => {
+  if (event.key === 'Enter' && !event.isComposing) {
+    event.preventDefault()
+    onProjectSelect(project)
   }
+}
+
+const handleProjectUpdate = (project) => {
   if (project.workItems.length === 0) {
     project.workItems.push({ content: '' })
+  }
+}
+
+const onProjectSelect = async (project) => {
+  if (project.name && !projectNames.value.includes(project.name)) {
+    projectNames.value.push(project.name)
+    try {
+      await updateMemberProjects(props.memberUuid, projectNames.value)
+    } catch (error) {
+      console.error('Failed to update member projects:', error)
+      // オプション: エラーメッセージを表示するなどのエラーハンドリング
+    }
+  }
+}
+
+const removeProjectOption = async (projectToRemove) => {
+  projectNames.value = projectNames.value.filter(p => p !== projectToRemove)
+  // 現在選択されているプロジェクトが削除された場合、そのプロジェクトの名前をクリアする
+  report.value.projects.forEach(project => {
+    if (project.name === projectToRemove) {
+      project.name = ''
+    }
+  })
+  try {
+    await updateMemberProjects(props.memberUuid, projectNames.value)
+  } catch (error) {
+    console.error('Failed to update member projects after removal:', error)
+    // オプション: エラーメッセージを表示するなどのエラーハンドリング
   }
 }
 
@@ -359,7 +402,12 @@ const fetchReport = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const fetchedReport = await getReport(props.memberUuid, props.weekString)
+    const [fetchedReport, memberProjects] = await Promise.all([
+      getReport(props.memberUuid, props.weekString),
+      getMemberProjects(props.memberUuid)
+    ])
+    console.info(memberProjects)
+
     if (fetchedReport) {
       report.value = {
         ...fetchedReport,
@@ -375,9 +423,11 @@ const fetchReport = async () => {
         showCopyButton.value = true
       }
     }
+
+    projectNames.value = memberProjects
   } catch (err) {
-    console.error('Failed to fetch report:', err)
-    error.value = '報告書の取得に失敗しました。'
+    console.error('Failed to fetch report or member projects:', err)
+    error.value = '報告書またはプロジェクトリストの取得に失敗しました。'
   } finally {
     isLoading.value = false
   }
@@ -442,6 +492,7 @@ const handleSubmit = async () => {
   font-size: 18px;
   color: #757575;
 }
+
 .work-item-input :deep() .v-input__append {
   padding: 0;
   margin-right: 8px;

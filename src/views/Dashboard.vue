@@ -61,7 +61,7 @@
             <span class="px-3" />
             <v-btn
               color="secondary"
-              :to="{ name: 'WeeklyReportSelector', params: { organizationId: 'jsp-d3g', memberUuid: 'UID0027' } }"
+              :to="{ name: 'WeeklyReportSelector', params: { organizationId: 'jsp-d3', memberUuid: 'c5b7ec52-2c39-4a8e-bc92-e854108f6825' } }"
               x-small
             >
               <v-icon
