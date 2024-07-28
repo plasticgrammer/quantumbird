@@ -121,7 +121,10 @@ def prepare_item(report_data):
         'overtimeHours': report_data.get('overtimeHours'),
         'issues': report_data.get('issues'),
         'achievements': report_data.get('achievements'),
-        'improvements': report_data.get('improvements')
+        'improvements': report_data.get('improvements'),
+        'status': report_data.get('status'),
+        'feedback': report_data.get('feedback'),
+        'approvedAt': report_data.get('approvedAt'),
     }
 
 def get_reports_by_organization(organization_id, week_string):

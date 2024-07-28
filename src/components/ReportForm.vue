@@ -50,6 +50,19 @@
         </v-expand-transition>
       </template>
 
+      <v-alert
+        v-if="report.status === 'feedback'"
+        type="warning"
+        outlined
+        dense
+        class="mb-4"
+      >
+        <div class="font-weight-bold">
+          フィードバック:
+        </div>
+        <p>{{ report.feedback }}</p>
+      </v-alert>
+
       <v-form
         class="report-form elevation-4"
         @submit.prevent="handleSubmit"

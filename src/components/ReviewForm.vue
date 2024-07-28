@@ -3,7 +3,7 @@
     <v-row>
       <v-col
         v-for="report in reports"
-        :key="report.id"
+        :key="report.memberUuid"
         cols="12"
       >
         <v-card
@@ -151,7 +151,7 @@
                   type="warning"
                   outlined
                   dense
-                  class="mb-0"
+                  class="mb-0 custom-feedback-alert"
                 >
                   <div class="font-weight-bold">
                     フィードバック:
@@ -172,7 +172,7 @@
               variant="elevated" 
               outlined
               x-small
-              @click="handleApprove(report.id)"
+              @click="handleApprove(report.memberUuid)"
             >
               <v-icon
                 left
@@ -190,7 +190,7 @@
               class="ml-2"
               outlined
               x-small
-              @click="submitFeedback(report.id)"
+              @click="submitFeedback(report.memberUuid)"
             >
               <v-icon
                 left
@@ -210,7 +210,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { listReports } from '../services/reportService'
+import { listReports, updateReport } from '../services/reportService'
 import { listMembers } from '../services/memberService'
 import { useStore } from 'vuex'
 
@@ -227,24 +227,6 @@ const props = defineProps({
 const reports = ref([])
 const isLoading = ref(false)
 const error = ref(null)
-
-const handleApprove = (id) => {
-  const now = new Date()
-  reports.value = reports.value.map(report =>
-    report.id === id
-      ? { ...report, status: 'approved', feedback: '', approvedAt: now.toLocaleString() }
-      : report
-  )
-}
-
-const submitFeedback = (id) => {
-  const report = reports.value.find(r => r.id === id)
-  if (report && report.feedback.trim() !== '') {
-    reports.value = reports.value.map(r =>
-      r.id === id ? { ...r, status: 'feedback' } : r
-    )
-  }
-}
 
 const getStatusText = (status) => {
   switch (status) {
@@ -279,23 +261,47 @@ const getStatusColor = (status) => {
 const fetchReports = async () => {
   try {
     const fetchedReports = await listReports(organizationId, props.weekString)
-    return fetchedReports.map(report => ({
-      id: report.memberUuid,
-      projects: report.projects.map(project => ({
-        name: project.name,
-        tasks: project.workItems.map(item => item.content).join(', ')
-      })),
-      overtime: report.overtimeHours,
-      achievements: report.achievements,
-      issues: report.issues,
-      improvements: report.improvements,
-      status: report.status || 'pending',
-      feedback: report.feedback || '',
-      approvedAt: report.approvedAt || null
-    }))
+    
+    if (!fetchedReports) {
+      console.error('No reports data received')
+      return []
+    }
+
+    if (!Array.isArray(fetchedReports)) {
+      console.error('Fetched reports is not an array:', fetchedReports)
+      return []
+    }
+
+    return fetchedReports.map(report => {
+      if (!report || typeof report !== 'object') {
+        console.error('Invalid report object:', report)
+        return null
+      }
+
+      return {
+        memberUuid: report.memberUuid,
+        weekString: report.weekString,
+        organizationId: report.organizationId,
+        projects: Array.isArray(report.projects) 
+          ? report.projects.map(project => ({
+            name: project.name,
+            tasks: Array.isArray(project.workItems) 
+              ? project.workItems.map(item => item.content).join(', ')
+              : ''
+          }))
+          : [],
+        overtime: report.overtimeHours || 0,
+        achievements: report.achievements || '',
+        issues: report.issues || '',
+        improvements: report.improvements || '',
+        status: report.status || 'pending',
+        feedback: report.feedback || '',
+        approvedAt: report.approvedAt || null
+      }
+    }).filter(report => report !== null)
   } catch (err) {
     console.error('Failed to fetch reports:', err)
-    throw err
+    throw new Error(`Failed to fetch reports: ${err.message}`)
   }
 }
 
@@ -315,9 +321,11 @@ const fetchData = async () => {
     const [fetchedReports, members] = await Promise.all([fetchReports(), fetchMembers()])
     
     reports.value = members.map(member => {
-      const report = fetchedReports.find(r => r.id === member.memberUuid) || {}
+      const report = fetchedReports.find(r => r.memberUuid === member.memberUuid) || {}
       return {
-        id: member.memberUuid,
+        memberUuid: member.memberUuid,
+        weekString: props.weekString,
+        organizationId: organizationId,
         memberId: member.id,
         name: member.name,
         projects: report.projects || [],
@@ -331,13 +339,80 @@ const fetchData = async () => {
       }
     }).sort((a, b) => a.memberId.localeCompare(b.memberId, undefined, { numeric: true, sensitivity: 'base' }))
   } catch (err) {
-    error.value = '報告書またはメンバー情報の取得に失敗しました。'
+    console.error('Error in fetchData:', err)
+    error.value = `データの取得に失敗しました: ${err.message}`
   } finally {
     isLoading.value = false
   }
 }
 
 onMounted(fetchData)
+
+const submitFeedback = async (memberUuid) => {
+  const report = reports.value.find(r => r.memberUuid === memberUuid)
+  if (report && report.feedback.trim() !== '') {
+    try {
+      const updatedReport = {
+        memberUuid: report.memberUuid,
+        organizationId: report.organizationId,
+        weekString: report.weekString,
+        achievements: report.achievements,
+        improvements: report.improvements,
+        issues: report.issues,
+        overtimeHours: report.overtime,
+        projects: report.projects.map(project => ({
+          name: project.name,
+          workItems: project.tasks.split(', ').map(content => ({ content }))
+        })),
+        status: 'feedback',
+        feedback: report.feedback
+      }
+      await updateReport(updatedReport)
+      
+      // 成功したら、ローカルの状態を更新
+      reports.value = reports.value.map(r =>
+        r.memberUuid === memberUuid ? { ...r, status: 'feedback' } : r
+      )
+    } catch (error) {
+      console.error('Failed to submit feedback:', error)
+      // エラーハンドリング（例：エラーメッセージを表示）
+    }
+  }
+}
+
+const handleApprove = async (memberUuid) => {
+  const now = new Date()
+  const report = reports.value.find(r => r.memberUuid === memberUuid)
+  if (report) {
+    try {
+      const updatedReport = {
+        memberUuid: report.memberUuid,
+        organizationId: report.organizationId,
+        weekString: report.weekString,
+        achievements: report.achievements,
+        improvements: report.improvements,
+        issues: report.issues,
+        overtimeHours: report.overtime,
+        projects: report.projects.map(project => ({
+          name: project.name,
+          workItems: project.tasks.split(', ').map(content => ({ content }))
+        })),
+        status: 'approved',
+        feedback: '',
+        approvedAt: now.toISOString()
+      }
+      await updateReport(updatedReport)
+      
+      // 成功したら、ローカルの状態を更新
+      reports.value = reports.value.map(r =>
+        r.memberUuid === memberUuid ? { ...r, status: 'approved', feedback: '', approvedAt: now.toLocaleString() } : r
+      )
+    } catch (error) {
+      console.error('Failed to approve report:', error)
+      // エラーハンドリング（例：エラーメッセージを表示）
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -368,5 +443,9 @@ onMounted(fetchData)
 
 .v-list-item__subtitle {
   font-size: 0.75rem !important;
+}
+
+.custom-feedback-alert {
+  background-color: rgba(251, 140, 0, 0.8) !important;
 }
 </style>
