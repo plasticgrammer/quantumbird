@@ -38,3 +38,11 @@ export const getReport = async (memberUuid, weekString) => {
 export const listReports = async (organizationId, weekString) => {
   return invokeLambda('get', { organizationId, weekString })
 }
+
+export const getReportStatus = async (organizationId) => {
+  return invokeLambda('getReportStatus', { organizationId })
+}
+
+export const getOvertimeData = async (organizationId) => {
+  return invokeLambda('getOvertimeData', { organizationId })
+}

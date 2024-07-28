@@ -258,7 +258,6 @@ import { useStore } from 'vuex'
 import { submitOrganization, updateOrganization, getOrganization } from '../services/organizationService'
 
 const store = useStore()
-
 const form = ref(null)
 const showConfirmDialog = inject('showConfirmDialog')
 

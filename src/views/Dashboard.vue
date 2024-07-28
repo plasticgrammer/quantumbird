@@ -176,87 +176,123 @@
   </v-container>
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted } from 'vue'
 import { Chart, registerables } from 'chart.js'
+import { useStore } from 'vuex'
+import { getOrganization } from '../services/organizationService'
+import { getReportStatus, getOvertimeData } from '../services/reportService'
 
 Chart.register(...registerables)
 
-export default {
-  name: 'Dashboard',
-  setup() {
-    const organizationName = ref('サンプル株式会社')
-    const isAdmin = ref(true)
-    const reportStatus = ref({
-      pending: 5,
-      inFeedback: 3,
-      confirmed: 12
-    })
+const store = useStore()
+const organizationId = store.getters['user/organizationId']
+const isAdmin = ref(true)
 
-    const overtimeChart = ref(null)
-    
-    const overtimeData = {
-      labels: ['5週間前', '4週間前', '3週間前', '2週間前', '先週'],
-      datasets: [
-        {
-          label: '田中太郎',
-          data: [2, 5, 3, 4, 5],
-          borderColor: 'rgb(75, 192, 192)',
-          tension: 0.1
-        },
-        {
-          label: '佐藤花子',
-          data: [1, 3, 6, 2, 0],
-          borderColor: 'rgb(255, 99, 132)',
-          tension: 0.1
-        },
-        {
-          label: '鈴木一郎',
-          data: [4, 2, 5, 3, 0],
-          borderColor: 'rgb(255, 205, 86)',
-          tension: 0.1
-        }
-      ]
-    }
+const organizationName = ref('')
+const reportStatus = ref({
+  pending: 0,
+  inFeedback: 0,
+  confirmed: 0
+})
 
-    onMounted(() => {
-      const ctx = overtimeChart.value.getContext('2d')
-      new Chart(ctx, {
-        type: 'line',
-        data: overtimeData,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'top',
-            },
-            title: {
-              display: false
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: '残業時間'
-              }
-            }
-          }
-        }
-      })
-    })
+const overtimeChart = ref(null)
+const overtimeData = ref({
+  labels: [],
+  datasets: []
+})
 
-    return {
-      organizationName,
-      isAdmin,
-      reportStatus,
-      overtimeChart,
-      overtimeData
-    }
+const isLoading = ref(true)
+const error = ref(null)
+
+const fetchOrganizationInfo = async () => {
+  try {
+    const org = await getOrganization(organizationId)
+    organizationName.value = org.name
+  } catch (err) {
+    console.error('Failed to fetch organization info:', err)
+    error.value = '組織情報の取得に失敗しました'
   }
 }
+
+const fetchReportStatus = async () => {
+  try {
+    const status = await getReportStatus(organizationId)
+    reportStatus.value = status
+  } catch (err) {
+    console.error('Failed to fetch report status:', err)
+    error.value = '報告状況の取得に失敗しました'
+  }
+}
+
+const fetchOvertimeData = async () => {
+  try {
+    const data = await getOvertimeData(organizationId)
+    overtimeData.value = {
+      labels: data.labels,
+      datasets: data.datasets.map(dataset => ({
+        ...dataset,
+        borderColor: getRandomColor(),
+        tension: 0.1
+      }))
+    }
+  } catch (err) {
+    console.error('Failed to fetch overtime data:', err)
+    error.value = '残業時間データの取得に失敗しました'
+  }
+}
+
+const getRandomColor = () => {
+  const r = Math.floor(Math.random() * 255)
+  const g = Math.floor(Math.random() * 255)
+  const b = Math.floor(Math.random() * 255)
+  return `rgb(${r}, ${g}, ${b})`
+}
+
+const initChart = () => {
+  const ctx = overtimeChart.value.getContext('2d')
+  new Chart(ctx, {
+    type: 'line',
+    data: overtimeData.value,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        title: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: '残業時間'
+          }
+        }
+      }
+    }
+  })
+}
+
+onMounted(async () => {
+  try {
+    await Promise.all([
+      fetchOrganizationInfo(),
+      fetchReportStatus(),
+      fetchOvertimeData()
+    ])
+    initChart()
+  } catch (err) {
+    console.error('Error initializing dashboard:', err)
+    error.value = 'ダッシュボードの初期化に失敗しました'
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>
 
 <style scoped>

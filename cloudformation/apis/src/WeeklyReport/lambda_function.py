@@ -4,6 +4,7 @@ import boto3
 from boto3.dynamodb.conditions import Key
 import os
 from decimal import Decimal
+from datetime import datetime, timedelta
 
 print('Loading function')
 
@@ -13,8 +14,10 @@ logger.setLevel(logging.INFO)
 # Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb')
 stage = os.environ.get('STAGE', 'dev')
-table_name = f'{stage}-WeeklyReports'
-table = dynamodb.Table(table_name)
+weekly_reports_table_name = f'{stage}-WeeklyReports'
+members_table_name = f'{stage}-Members'
+weekly_reports_table = dynamodb.Table(weekly_reports_table_name)
+members_table = dynamodb.Table(members_table_name)
 
 def float_to_decimal(obj):
     if isinstance(obj, float):
@@ -47,6 +50,10 @@ def lambda_handler(event, context):
             return handle_put(event)
         elif http_method == 'DELETE' or http_method == 'delete':
             return handle_delete(event)
+        elif http_method == 'getReportStatus':
+            return handle_get_report_status(event)
+        elif http_method == 'getOvertimeData':
+            return handle_get_overtime_data(event)
         else:
             return create_response(400, f'Unsupported operation: {http_method}')
     except Exception as e:
@@ -71,14 +78,14 @@ def handle_get(event):
 def handle_post(event):
     report_data = parse_body(event)
     item = prepare_item(report_data)
-    response = table.put_item(Item=item)
+    response = weekly_reports_table.put_item(Item=item)
     logger.info(f"DynamoDB response: {response}")
     return create_response(201, 'Weekly report created successfully')
 
 def handle_put(event):
     report_data = parse_body(event)
     item = prepare_item(report_data)
-    response = table.put_item(Item=item)
+    response = weekly_reports_table.put_item(Item=item)
     logger.info(f"DynamoDB response: {response}")
     return create_response(200, 'Weekly report updated successfully')
 
@@ -88,7 +95,7 @@ def handle_delete(event):
     if 'memberUuid' not in params or 'weekString' not in params:
         return create_response(400, 'Missing required parameters')
 
-    response = table.delete_item(
+    response = weekly_reports_table.delete_item(
         Key={
             'memberUuid': params['memberUuid'],
             'weekString': params['weekString']
@@ -119,7 +126,7 @@ def prepare_item(report_data):
 
 def get_reports_by_organization(organization_id, week_string):
     try:
-        response = table.query(
+        response = weekly_reports_table.query(
             IndexName='OrganizationWeekIndex',
             KeyConditionExpression=Key('organizationId').eq(organization_id) & Key('weekString').eq(week_string)
         )
@@ -130,7 +137,7 @@ def get_reports_by_organization(organization_id, week_string):
 
 def get_report(member_uuid, week_string):
     try:
-        response = table.get_item(
+        response = weekly_reports_table.get_item(
             Key={
                 'memberUuid': member_uuid,
                 'weekString': week_string
@@ -140,6 +147,110 @@ def get_report(member_uuid, week_string):
     except Exception as e:
         logger.error(f"Error getting report: {str(e)}", exc_info=True)
         raise e
+
+def handle_get_report_status(event):
+    params = event.get('queryStringParameters') or event.get('payload') or {}
+    if 'organizationId' not in params:
+        return create_response(400, 'Missing organizationId parameter')
+
+    organization_id = params['organizationId']
+    current_week = get_current_week_string()
+    reports = get_reports_by_organization(organization_id, current_week)
+
+    status = {
+        'pending': 0,
+        'inFeedback': 0,
+        'confirmed': 0
+    }
+
+    for report in reports:
+        report_status = report.get('status', 'pending')
+        if report_status == 'approved':
+            status['confirmed'] += 1
+        elif report_status == 'feedback':
+            status['inFeedback'] += 1
+        else:
+            status['pending'] += 1
+
+    return create_response(200, status)
+
+def get_member_names(member_uuids):
+    member_names = {}
+    # DynamoDBのバッチ取得の制限（100項目）を考慮
+    for i in range(0, len(member_uuids), 100):
+        batch = member_uuids[i:i+100]
+        try:
+            response = dynamodb.batch_get_item(
+                RequestItems={
+                    members_table_name: {
+                        'Keys': [{'memberUuid': uuid} for uuid in batch],
+                        'ProjectionExpression': 'memberUuid, #n',
+                        'ExpressionAttributeNames': {'#n': 'name'}
+                    }
+                }
+            )
+            for item in response.get('Responses', {}).get(members_table_name, []):
+                member_names[item['memberUuid']] = item.get('#n', 'Unknown')
+        except Exception as e:
+            logger.error(f"Error fetching member names: {str(e)}", exc_info=True)
+            # エラーが発生しても処理を続行し、取得できなかったメンバーは 'Unknown' として扱う
+
+    return member_names
+
+def handle_get_overtime_data(event):
+    params = event.get('queryStringParameters') or event.get('payload') or {}
+    if 'organizationId' not in params:
+        return create_response(400, 'Missing organizationId parameter')
+
+    organization_id = params['organizationId']
+    weeks = get_last_5_weeks()
+    overtime_data = {
+        'labels': weeks,
+        'datasets': []
+    }
+
+    members = {}
+    member_uuids = set()
+    for week in weeks:
+        try:
+            reports = get_reports_by_organization(organization_id, week)
+            for report in reports:
+                member_uuid = report['memberUuid']
+                member_uuids.add(member_uuid)
+                if member_uuid not in members:
+                    members[member_uuid] = {
+                        'data': [0] * 5
+                    }
+                week_index = weeks.index(week)
+                members[member_uuid]['data'][week_index] = float(report.get('overtimeHours', 0))
+        except Exception as e:
+            logger.error(f"Error fetching reports for week {week}: {str(e)}", exc_info=True)
+            # エラーが発生しても処理を続行し、取得できなかった週のデータは 0 として扱う
+
+    # バッチでメンバー名を取得
+    member_names = get_member_names(list(member_uuids))
+
+    overtime_data['datasets'] = [
+        {
+            'label': member_names.get(member_uuid, f'Unknown ({member_uuid})'),
+            'data': member_data['data']
+        }
+        for member_uuid, member_data in members.items()
+    ]
+
+    return create_response(200, overtime_data)
+
+def get_current_week_string():
+    today = datetime.now()
+    return f"{today.year}-W{today.isocalendar()[1]:02d}"
+
+def get_last_5_weeks():
+    today = datetime.now()
+    weeks = []
+    for i in range(5):
+        date = today - timedelta(weeks=i)
+        weeks.append(f"{date.year}-W{date.isocalendar()[1]:02d}")
+    return weeks[::-1]
 
 def decimal_default_proc(obj):
     if isinstance(obj, Decimal):
@@ -155,6 +266,5 @@ def create_response(status_code, body):
             'Access-Control-Allow-Headers': 'Content-Type',
             'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
         },
-#        'body': json.dumps(body, default=decimal_default_proc)
         'body': body
     }

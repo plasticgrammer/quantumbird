@@ -1,231 +1,241 @@
 <template>
   <v-container class="report-form-container">
-    <template v-if="showCopyButton">
-      <v-card 
-        class="mb-4"
+    <template v-if="isLoading">
+      <v-skeleton-loader
         elevation="4"
-        color="blue-lighten-5"
+        type="text, sentences@2, actions, chip, divider, list-item-three-line, list-item@2, button"
+      ></v-skeleton-loader>
+    </template>
+
+    <template v-else>
+      <template v-if="showCopyButton">
+        <v-expand-transition>
+          <v-card 
+            class="mb-4"
+            elevation="4"
+            color="blue-lighten-5"
+          >
+            <v-card-title>前週の報告内容</v-card-title>
+            <v-card-text>
+              <v-list class="bg-transparent custom-list">
+                <v-list-item v-for="(project, index) in previousWeekReport.projects" :key="index">
+                  <v-list-item-title>{{ project.name }}</v-list-item-title>
+                  <v-list-item-subtitle style="display: block;">
+                    <ul class="work-items-list">
+                      <li v-for="(item, itemIndex) in project.workItems" :key="itemIndex">
+                        {{ item.content }}
+                      </li>
+                    </ul>
+                  </v-list-item-subtitle>
+                </v-list-item>
+              </v-list>
+            </v-card-text>
+            <v-card-actions class="justify-end">
+              <v-btn
+                color="secondary"
+                variant="elevated" 
+                class="mx-2 mb-2"
+                @click="copyFromPreviousWeek"
+              >
+                <v-icon
+                  class="mr-1"
+                  left
+                >
+                  mdi-content-copy
+                </v-icon>
+                作業内容をコピー
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-expand-transition>
+      </template>
+
+      <v-form
+        class="report-form elevation-4"
+        @submit.prevent="handleSubmit"
       >
-        <v-card-title>前週の報告内容</v-card-title>
-        <v-card-text>
-          <v-list class="bg-transparent custom-list">
-            <v-list-item v-for="(project, index) in previousWeekReport.projects" :key="index">
-              <v-list-item-title>{{ project.name }}</v-list-item-title>
-              <v-list-item-subtitle style="display: block;">
-                <ul class="work-items-list">
-                  <li v-for="(item, itemIndex) in project.workItems" :key="itemIndex">
-                    {{ item.content }}
-                  </li>
-                </ul>
-              </v-list-item-subtitle>
-            </v-list-item>
-          </v-list>
-        </v-card-text>
-        <v-card-actions class="justify-end">
+        <v-card
+          v-for="(project, projectIndex) in report.projects"
+          :key="projectIndex" 
+          elevation="2"
+          class="mb-4"
+        >
+          <v-card-text>
+            <v-row align="center">
+              <v-col cols="10">
+                <v-combobox
+                  v-model="project.name"
+                  :items="projectNames"
+                  class="project-combobox"
+                  label="プロジェクト"
+                  required
+                  dense
+                  hide-details="auto"
+                  @keydown="handleProjectKeydown($event, project)"
+                  @update:model-value="handleProjectUpdate(project)"
+                >
+                  <template #item="{ props: itemProps, item }">
+                    <v-list-item v-bind="itemProps" class="project-list-item">
+                      <template #append>
+                        <v-btn
+                          icon="mdi-close"
+                          size="small"
+                          flat
+                          @click.stop="removeProjectOption(item.title)"
+                        ></v-btn>
+                      </template>
+                    </v-list-item>
+                  </template>
+                </v-combobox>
+              </v-col>
+              <v-col
+                cols="2"
+                class="d-flex justify-end"
+              >
+                <v-btn
+                  icon
+                  x-small
+                  class="project-delete-btn"
+                  @click="removeProject(projectIndex)"
+                >
+                  <v-icon small>
+                    mdi-delete-outline
+                  </v-icon>
+                </v-btn>
+              </v-col>
+            </v-row>
+            <v-row v-if="project.workItems.length > 0">
+              <v-col cols="12">
+                <div
+                  v-for="(item, itemIndex) in project.workItems"
+                  :key="itemIndex"
+                  class="mb-2"
+                >
+                  <v-text-field
+                    :ref="el => setWorkItemRef(el, projectIndex, itemIndex)"
+                    v-model="item.content"
+                    :label="`作業内容 ${itemIndex + 1}`"
+                    dense
+                    outlined
+                    hide-details="auto"
+                    required
+                    class="work-item-input pl-5"
+                    @keydown="handleKeyDown($event, project, itemIndex)"
+                  >
+                    <template #append>
+                      <v-icon 
+                        :color="item.content ? 'grey darken-2' : 'grey lighten-1'"
+                        small
+                        tabindex="-1"
+                        @click="removeWorkItem(project, itemIndex)"
+                      >
+                        mdi-close-circle-outline
+                      </v-icon>
+                    </template>
+                  </v-text-field>
+                </div>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+        
+        <div class="d-flex justify-end mb-4">
           <v-btn
-            color="secondary"
-            variant="elevated" 
-            class="mx-2 mb-2"
-            @click="copyFromPreviousWeek"
+            color="primary"
+            @click="addProject"
           >
             <v-icon
               class="mr-1"
               left
             >
-              mdi-content-copy
+              mdi-plus
             </v-icon>
-            作業内容をコピー
+            プロジェクトを追加
           </v-btn>
-        </v-card-actions>
-      </v-card>
-    </template>
-
-    <v-form
-      class="report-form elevation-4"
-      @submit.prevent="handleSubmit"
-    >
-      <v-card
-        v-for="(project, projectIndex) in report.projects"
-        :key="projectIndex" 
-        elevation="2"
-        class="mb-4"
-      >
-        <v-card-text>
-          <v-row align="center">
-            <v-col cols="10">
-              <v-combobox
-                v-model="project.name"
-                :items="projectNames"
-                class="project-combobox"
-                label="プロジェクト"
-                required
-                dense
-                hide-details="auto"
-                @keydown="handleProjectKeydown($event, project)"
-                @update:model-value="handleProjectUpdate(project)"
-              >
-                <template #item="{ props: itemProps, item }">
-                  <v-list-item v-bind="itemProps" class="project-list-item">
-                    <template #append>
-                      <v-btn
-                        icon="mdi-close"
-                        size="small"
-                        flat
-                        @click.stop="removeProjectOption(item.title)"
-                      ></v-btn>
-                    </template>
-                  </v-list-item>
-                </template>
-              </v-combobox>
-            </v-col>
-            <v-col
-              cols="2"
-              class="d-flex justify-end"
+        </div>
+        
+        <v-row>
+          <v-col
+            cols="12"
+            sm="6"
+          >
+            <v-text-field
+              v-model="formattedOvertimeHours"
+              label="残業時間"
+              type="number"
+              min="0"
+              max="99"
+              step="0.5"
+              required
+              outlined
+              dense
+              class="overtime-input"
+              @input="updateOvertime"
             >
-              <v-btn
-                v-if="report.projects.length > 1"
-                icon
-                x-small
-                class="project-delete-btn"
-                @click="removeProject(projectIndex)"
-              >
-                <v-icon small>
-                  mdi-delete-outline
-                </v-icon>
-              </v-btn>
-            </v-col>
-          </v-row>
-          <v-row v-if="project.workItems.length > 0">
-            <v-col cols="12">
-              <div
-                v-for="(item, itemIndex) in project.workItems"
-                :key="itemIndex"
-                class="mb-2"
-              >
-                <v-text-field
-                  :ref="el => setWorkItemRef(el, projectIndex, itemIndex)"
-                  v-model="item.content"
-                  :label="`作業内容 ${itemIndex + 1}`"
-                  dense
-                  outlined
-                  hide-details="auto"
-                  required
-                  class="work-item-input pl-5"
-                  @keydown="handleKeyDown($event, project, itemIndex)"
+              <template #append>
+                <v-btn
+                  icon
+                  small
+                  @click="decreaseOvertime"
                 >
-                  <template #append>
-                    <v-icon 
-                      :color="item.content ? 'grey darken-2' : 'grey lighten-1'"
-                      small
-                      tabindex="-1"
-                      @click="removeWorkItem(project, itemIndex)"
-                    >
-                      mdi-close-circle-outline
-                    </v-icon>
-                  </template>
-                </v-text-field>
-              </div>
-            </v-col>
-          </v-row>
-        </v-card-text>
-      </v-card>
-      
-      <div class="d-flex justify-end mb-4">
+                  <v-icon>mdi-minus</v-icon>
+                </v-btn>
+                <v-btn
+                  icon
+                  small
+                  @click="increaseOvertime"
+                >
+                  <v-icon>mdi-plus</v-icon>
+                </v-btn>
+              </template>
+            </v-text-field>
+          </v-col>
+        </v-row>
+        
+        <v-textarea
+          v-model="report.issues"
+          label="現状・問題点"
+          required
+          rows="4"
+          auto-grow
+          outlined
+          clear-icon="mdi-close-circle"
+          clearable 
+        />
+        
+        <v-text-field
+          v-model="report.achievements"
+          label="成果"
+          outlined
+          dense
+          clear-icon="mdi-close-circle"
+          clearable 
+        />
+        
+        <v-text-field
+          v-model="report.improvements"
+          label="改善点"
+          outlined
+          dense
+          clear-icon="mdi-close-circle"
+          clearable 
+        />
+
         <v-btn
-          color="primary"
-          @click="addProject"
+          color="success"
+          type="submit"
+          class="mt-4"
         >
           <v-icon
             class="mr-1"
             left
           >
-            mdi-plus
+            mdi-check
           </v-icon>
-          プロジェクトを追加
+          報告を提出する
         </v-btn>
-      </div>
-      
-      <v-row>
-        <v-col
-          cols="12"
-          sm="6"
-        >
-          <v-text-field
-            v-model="formattedOvertimeHours"
-            label="残業時間"
-            type="number"
-            min="0"
-            max="99"
-            step="0.5"
-            required
-            outlined
-            dense
-            class="overtime-input"
-            @input="updateOvertime"
-          >
-            <template #append>
-              <v-btn
-                icon
-                small
-                @click="decreaseOvertime"
-              >
-                <v-icon>mdi-minus</v-icon>
-              </v-btn>
-              <v-btn
-                icon
-                small
-                @click="increaseOvertime"
-              >
-                <v-icon>mdi-plus</v-icon>
-              </v-btn>
-            </template>
-          </v-text-field>
-        </v-col>
-      </v-row>
-      
-      <v-textarea
-        v-model="report.issues"
-        label="現状・問題点"
-        required
-        rows="4"
-        auto-grow
-        outlined
-        clear-icon="mdi-close-circle"
-        clearable 
-      />
-      
-      <v-text-field
-        v-model="report.achievements"
-        label="成果"
-        outlined
-        dense
-        clear-icon="mdi-close-circle"
-        clearable 
-      />
-      
-      <v-text-field
-        v-model="report.improvements"
-        label="改善点"
-        outlined
-        dense
-        clear-icon="mdi-close-circle"
-        clearable 
-      />
-
-      <v-btn
-        color="success"
-        type="submit"
-        class="mt-4"
-      >
-        <v-icon
-          class="mr-1"
-          left
-        >
-          mdi-check
-        </v-icon>
-        報告を提出する
-      </v-btn>
-    </v-form>
+      </v-form>
+    </template>
   </v-container>
 </template>
 
@@ -347,6 +357,14 @@ const copyFromPreviousWeek = () => {
 
 const addProject = () => {
   report.value.projects.push({ name: '', workItems: [] })
+}
+
+const removeProject = (projectIndex) => {
+  if (report.value.projects.length > 1) {
+    report.value.projects.splice(projectIndex, 1)
+  } else {
+    report.value.projects[0] = { name: '', workItems: [{ content: '' }] }
+  }
 }
 
 const handleProjectKeydown = (event, project) => {

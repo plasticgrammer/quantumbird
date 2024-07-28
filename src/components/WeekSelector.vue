@@ -147,7 +147,7 @@ const selectWeek = (week) => {
     setTimeout(() => {
       showAllWeeks.value = false
       emit('select-week', internalSelectedWeek.value)
-    }, 700)
+    }, 500)
   }
 }
 
