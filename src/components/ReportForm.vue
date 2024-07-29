@@ -78,24 +78,32 @@
               <v-col cols="10">
                 <v-combobox
                   v-model="project.name"
-                  :items="projectNames"
+                  :items="filteredProjectNames(project.name)"
                   class="project-combobox"
                   label="プロジェクト"
                   required
                   dense
                   hide-details="auto"
-                  @keydown="handleProjectKeydown($event, project)"
-                  @update:model-value="handleProjectUpdate(project)"
                 >
                   <template #item="{ props: itemProps, item }">
                     <v-list-item v-bind="itemProps" class="project-list-item">
                       <template #append>
                         <v-btn
+                          v-if="projectNames.includes(item.title)"
                           icon="mdi-close"
                           size="small"
                           flat
                           @click.stop="removeProjectOption(item.title)"
                         ></v-btn>
+                        <v-btn
+                          v-else
+                          icon="mdi-plus"
+                          size="small"
+                          color="primary"
+                          flat
+                          @click.stop="addProjectOption(item.title)"
+                        >
+                        </v-btn>
                       </template>
                     </v-list-item>
                   </template>
@@ -369,33 +377,30 @@ const copyFromPreviousWeek = () => {
 }
 
 const addProject = () => {
-  report.value.projects.push({ name: '', workItems: [] })
+  report.value.projects.push({ name: '', workItems: [{ content: '' }] })
 }
 
 const removeProject = (projectIndex) => {
-  if (report.value.projects.length > 1) {
-    report.value.projects.splice(projectIndex, 1)
-  } else {
-    report.value.projects[0] = { name: '', workItems: [{ content: '' }] }
-  }
+  report.value.projects.splice(projectIndex, 1)
 }
 
-const handleProjectKeydown = (event, project) => {
-  if (event.key === 'Enter' && !event.isComposing) {
-    event.preventDefault()
-    onProjectSelect(project)
+const filteredProjectNames = (inputValue) => {
+  const lowerInput = inputValue ? inputValue.toLowerCase().trim() : ''
+  const existingProjects = new Set(projectNames.value.map(name => name.toLowerCase()))
+  
+  const filtered = Array.from(existingProjects)
+    .filter(name => name.includes(lowerInput))
+  
+  if (lowerInput && !existingProjects.has(lowerInput)) {
+    filtered.push(inputValue)
   }
+  
+  return filtered
 }
 
-const handleProjectUpdate = (project) => {
-  if (project.workItems.length === 0) {
-    project.workItems.push({ content: '' })
-  }
-}
-
-const onProjectSelect = async (project) => {
-  if (project.name && !projectNames.value.includes(project.name)) {
-    projectNames.value.push(project.name)
+const addProjectOption = async (project) => {
+  if (project && !projectNames.value.includes(project)) {
+    projectNames.value.push(project)
     try {
       await updateMemberProjects(props.memberUuid, projectNames.value)
     } catch (error) {

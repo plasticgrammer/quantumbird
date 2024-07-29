@@ -63,19 +63,19 @@ const user = ref({
 const navigationItems = [
   { 
     icon: 'mdi-view-dashboard', 
-    title: 'Dashboard', 
+    title: 'ダッシュボード', 
     value: 'Dashboard', 
     route: { name: 'Dashboard' }
   },
   { 
     icon: 'mdi-domain', 
-    title: 'Organization', 
+    title: '組織情報管理', 
     value: 'Organization', 
     route: { name: 'OrganizationManagement' }
   },
   { 
     icon: 'mdi-account-multiple', 
-    title: 'WeeklyReview', 
+    title: '週次報告レビュー', 
     value: 'WeeklyReview', 
     route: { name: 'WeeklyReviewSelector' }
   },
