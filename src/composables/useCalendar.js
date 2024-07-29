@@ -96,6 +96,14 @@ export function useCalendar() {
     return [weekStart, weekEnd]
   }
 
+  const getPreviousWeekString = (weekString) => {
+    const [year, week] = weekString.split('-W').map(Number)
+    if (week === 1) {
+      return `${year - 1}-W52`
+    }
+    return `${year}-W${(week - 1).toString().padStart(2, '0')}`
+  }
+  
   return {
     calendarWeeks,
     selectedWeek,
@@ -109,6 +117,7 @@ export function useCalendar() {
     isSunday,
     shouldShowMonth,
     getStringFromWeek,
-    getWeekFromString
+    getWeekFromString,
+    getPreviousWeekString
   }
 }

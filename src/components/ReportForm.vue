@@ -13,7 +13,7 @@
           <v-expansion-panels v-model="expandedPanel">
             <v-expansion-panel>
               <v-expansion-panel-title>
-                前週の報告内容
+                先週の報告内容
                 <template #actions>
                   <v-icon icon="mdi-chevron-down"></v-icon>
                 </template>
@@ -87,38 +87,12 @@
           <v-card-text>
             <v-row align="center">
               <v-col cols="10">
-                <v-combobox
+                <ProjectSelector
                   v-model="project.name"
-                  :items="filteredProjectNames(project.name)"
-                  class="project-combobox"
-                  label="プロジェクト"
-                  required
-                  dense
-                  hide-details="auto"
-                >
-                  <template #item="{ props: itemProps, item }">
-                    <v-list-item v-bind="itemProps" class="project-list-item">
-                      <template #append>
-                        <v-btn
-                          v-if="projectNames.includes(item.title)"
-                          icon="mdi-close"
-                          size="small"
-                          flat
-                          @click.stop="removeProjectOption(item.title)"
-                        ></v-btn>
-                        <v-btn
-                          v-else
-                          icon="mdi-plus"
-                          size="small"
-                          color="primary"
-                          flat
-                          @click.stop="addProjectOption(item.title)"
-                        >
-                        </v-btn>
-                      </template>
-                    </v-list-item>
-                  </template>
-                </v-combobox>
+                  :project-names="projectNames"
+                  :member-uuid="props.memberUuid"
+                  @project-list-changed="updateProjectList"
+                />
               </v-col>
               <v-col
                 cols="2"
@@ -273,8 +247,12 @@
 
 <script setup>
 import { ref, computed, nextTick, reactive, onMounted } from 'vue'
+import ProjectSelector from './ProjectSelector.vue'
 import { getReport, submitReport } from '../services/reportService'
-import { getMemberProjects, updateMemberProjects } from '../services/memberService'
+import { getMemberProjects } from '../services/memberService'
+import { useCalendar } from '../composables/useCalendar'
+
+const { getPreviousWeekString } = useCalendar()
 
 const props = defineProps({
   organizationId: {
@@ -316,6 +294,10 @@ const formattedOvertimeHours = computed({
     report.value.overtimeHours = parseFloat(value)
   }
 })
+
+const updateProjectList = (newProjectList) => {
+  projectNames.value = newProjectList
+}
 
 const updateOvertime = (event) => {
   let value = parseFloat(event.target.value)
@@ -392,56 +374,6 @@ const addProject = () => {
 
 const removeProject = (projectIndex) => {
   report.value.projects.splice(projectIndex, 1)
-}
-
-const filteredProjectNames = (inputValue) => {
-  const lowerInput = inputValue ? inputValue.toLowerCase().trim() : ''
-  const existingProjects = new Set(projectNames.value.map(name => name.toLowerCase()))
-  
-  const filtered = Array.from(existingProjects)
-    .filter(name => name.includes(lowerInput))
-  
-  if (lowerInput && !existingProjects.has(lowerInput)) {
-    filtered.push(inputValue)
-  }
-  
-  return filtered
-}
-
-const addProjectOption = async (project) => {
-  if (project && !projectNames.value.includes(project)) {
-    projectNames.value.push(project)
-    try {
-      await updateMemberProjects(props.memberUuid, projectNames.value)
-    } catch (error) {
-      console.error('Failed to update member projects:', error)
-      // オプション: エラーメッセージを表示するなどのエラーハンドリング
-    }
-  }
-}
-
-const removeProjectOption = async (projectToRemove) => {
-  projectNames.value = projectNames.value.filter(p => p !== projectToRemove)
-  // 現在選択されているプロジェクトが削除された場合、そのプロジェクトの名前をクリアする
-  report.value.projects.forEach(project => {
-    if (project.name === projectToRemove) {
-      project.name = ''
-    }
-  })
-  try {
-    await updateMemberProjects(props.memberUuid, projectNames.value)
-  } catch (error) {
-    console.error('Failed to update member projects after removal:', error)
-    // オプション: エラーメッセージを表示するなどのエラーハンドリング
-  }
-}
-
-const getPreviousWeekString = (weekString) => {
-  const [year, week] = weekString.split('-W').map(Number)
-  if (week === 1) {
-    return `${year - 1}-W52`
-  }
-  return `${year}-W${(week - 1).toString().padStart(2, '0')}`
 }
 
 const fetchReport = async () => {
