@@ -54,7 +54,7 @@
               'selected': isSelected(week), 
               'hovered': isHovered(week),
             }"
-            :style="{ '--fade-delay': `${weekIndex * .10}s` }"
+            :style="{ '--fade-delay': `${weekIndex * .05}s` }"
             @click="selectWeek(week)"
             @mouseenter="setHoverWeek(week)"
             @mouseleave="clearHoverWeek"
@@ -203,26 +203,26 @@ const getWeekKey = getStringFromWeek
 }
 
 .hover-effect {
-  transition: all 0.5s ease;
+  transition: all 0.3s ease;
   box-shadow: 0 0 15px rgba(100, 149, 237, 0.6) !important;
   transform: scale(1.02);
 }
 
 .leave-effect {
-  transition: all 0.5s ease;
+  transition: all 0.3s ease;
   transform: scale(1);
 }
 
 .show-all-weeks {
-  transition: all 0.5s ease;
-  transform: scale(1.03);
+  transition: all 0.3s ease;
+  transform: scale(1.02);
 }
 
 /* 要素が追加される時（enter）と削除される時（leave） */
 .week-transition-enter-active,
 .week-transition-leave-active {
   height: 3em;
-  transition: all 0.3s ease-out;
+  transition: all 0.2s ease-out;
   transition-delay: var(--fade-delay, 0s);
 } 
 

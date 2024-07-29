@@ -220,7 +220,7 @@
                 </td>
                 <td>
                   <v-btn
-                    color="primary"
+                    color="secondary"
                     @click="handleAddMember"
                   >
                     メンバーを追加
@@ -233,7 +233,7 @@
 
         <div class="mt-5">
           <v-btn 
-            color="success" 
+            color="primary" 
             type="submit" 
             :loading="loading"
             :disabled="!isFormValid || !!editingMember || !isFormChanged"

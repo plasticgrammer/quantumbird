@@ -8,46 +8,57 @@
     </template>
 
     <template v-else>
-      <template v-if="showCopyButton">
-        <v-expand-transition>
-          <v-card 
-            class="mb-4"
-            elevation="4"
-            color="blue-lighten-5"
-          >
-            <v-card-title>前週の報告内容</v-card-title>
-            <v-card-text>
-              <v-list class="bg-transparent custom-list">
-                <v-list-item v-for="(project, index) in previousWeekReport.projects" :key="index">
-                  <v-list-item-title>{{ project.name }}</v-list-item-title>
-                  <v-list-item-subtitle style="display: block;">
-                    <ul class="work-items-list">
-                      <li v-for="(item, itemIndex) in project.workItems" :key="itemIndex">
-                        {{ item.content }}
-                      </li>
-                    </ul>
-                  </v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-card-text>
-            <v-card-actions class="justify-end">
-              <v-btn
-                color="secondary"
-                variant="elevated" 
-                class="mx-2 mb-2"
-                @click="copyFromPreviousWeek"
-              >
-                <v-icon
-                  class="mr-1"
-                  left
-                >
-                  mdi-content-copy
-                </v-icon>
-                作業内容をコピー
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-expand-transition>
+      <template v-if="!!previousWeekReport">
+        <v-card class="mb-4" elevation="4">
+          <v-expansion-panels v-model="expandedPanel">
+            <v-expansion-panel>
+              <v-expansion-panel-title>
+                前週の報告内容
+                <template #actions>
+                  <v-icon icon="mdi-chevron-down"></v-icon>
+                </template>
+              </v-expansion-panel-title>
+              <v-expansion-panel-text class="bg-blue-lighten-5">
+                <v-list class="bg-transparent custom-list">
+                  <v-list-item v-for="(project, index) in previousWeekReport.projects" :key="index">
+                    <v-list-item-title>{{ project.name }}</v-list-item-title>
+                    <v-list-item-subtitle style="display: block;">
+                      <ul class="work-items-list">
+                        <li v-for="(item, itemIndex) in project.workItems" :key="itemIndex">
+                          {{ item.content }}
+                        </li>
+                      </ul>
+                    </v-list-item-subtitle>
+                  </v-list-item>
+                  <v-list-item>
+                    <v-list-item-title>現状・問題点</v-list-item-title>
+                    <v-list-item-subtitle style="display: block;">
+                      {{ previousWeekReport.issues }}
+                    </v-list-item-subtitle>
+                  </v-list-item>
+                  <v-list-item>
+                    <v-list-item-title>改善点</v-list-item-title>
+                    <v-list-item-subtitle style="display: block;">
+                      {{ previousWeekReport.improvements }}
+                    </v-list-item-subtitle>
+                  </v-list-item>
+                </v-list>
+                <v-row class="justify-end pa-4">
+                  <v-btn
+                    color="secondary"
+                    variant="elevated"
+                    @click="copyFromPreviousWeek"
+                  >
+                    <v-icon class="mr-1">
+                      mdi-content-copy
+                    </v-icon>
+                    作業内容をコピー
+                  </v-btn>
+                </v-row>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </v-card>
       </template>
 
       <v-alert
@@ -70,7 +81,7 @@
         <v-card
           v-for="(project, projectIndex) in report.projects"
           :key="projectIndex" 
-          elevation="2"
+          elevation="4"
           class="mb-4"
         >
           <v-card-text>
@@ -162,7 +173,7 @@
         
         <div class="d-flex justify-end mb-4">
           <v-btn
-            color="primary"
+            color="secondary"
             @click="addProject"
           >
             <v-icon
@@ -243,7 +254,7 @@
         />
 
         <v-btn
-          color="success"
+          color="primary"
           type="submit"
           class="mt-4"
         >
@@ -297,7 +308,7 @@ const projectNames = ref([])
 const isLoading = ref(false)
 const error = ref(null)
 const previousWeekReport = ref(null)
-const showCopyButton = ref(false)
+const expandedPanel = ref(null)
 
 const formattedOvertimeHours = computed({
   get: () => report.value.overtimeHours.toFixed(1),
@@ -372,7 +383,6 @@ const copyFromPreviousWeek = () => {
         workItems: project.workItems.map(item => ({ ...item }))
       })) || [],
     }
-    showCopyButton.value = false
   }
 }
 
@@ -438,8 +448,10 @@ const fetchReport = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const [fetchedReport, memberProjects] = await Promise.all([
+    const previousWeekString = getPreviousWeekString(props.weekString)
+    const [fetchedReport, fetchedPrevReport, memberProjects] = await Promise.all([
       getReport(props.memberUuid, props.weekString),
+      getReport(props.memberUuid, previousWeekString),
       getMemberProjects(props.memberUuid)
     ])
 
@@ -450,15 +462,15 @@ const fetchReport = async () => {
         achievements: fetchedReport.achievements || '',
         improvements: fetchedReport.improvements || ''
       }
-    } else {
-      // 今週の報告が取得できなかった場合、前週の報告を取得
-      const previousWeekString = getPreviousWeekString(props.weekString)
-      previousWeekReport.value = await getReport(props.memberUuid, previousWeekString)
-      if (previousWeekReport.value) {
-        showCopyButton.value = true
+    }
+    if (fetchedPrevReport) {
+      previousWeekReport.value = {
+        ...fetchedPrevReport,
+        issues: fetchedPrevReport.issues || '',
+        achievements: fetchedPrevReport.achievements || '',
+        improvements: fetchedPrevReport.improvements || ''
       }
     }
-
     projectNames.value = memberProjects
   } catch (err) {
     console.error('Failed to fetch report or member projects:', err)
@@ -483,6 +495,10 @@ const handleSubmit = async () => {
 <style scoped>
 .report-form-container {
   max-width: 800px;
+}
+
+.v-expansion-panel-title {
+  font-size: 1rem;
 }
 
 .project-list-item:hover {
