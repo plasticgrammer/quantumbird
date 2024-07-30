@@ -61,21 +61,27 @@
         </v-card>
       </template>
 
-      <v-alert
-        v-if="report.status === 'feedback'"
-        type="warning"
-        outlined
-        dense
-        class="mb-4"
+      <template
+        v-if="report.status === 'feedback' && report.feedbacks"
       >
-        <div class="font-weight-bold">
-          フィードバック:
-        </div>
-        <p>{{ report.feedback }}</p>
-      </v-alert>
+        <v-alert
+          v-for="(feedback, index) in report.feedbacks" :key="index" 
+          type="warning"
+          outlined
+          dense
+          class="mb-1 custom-feedback-alert"
+        >
+          <div class="font-weight-bold">
+            フィードバック（{{ new Date(feedback.createdAt).toLocaleString() }}）:
+          </div>
+          <div class="mt-2">
+            <p>{{ feedback.content }}</p>
+          </div>
+        </v-alert>
+      </template>
 
       <v-form
-        class="report-form elevation-4"
+        class="report-form mt-2 elevation-4"
         @submit.prevent="handleSubmit"
       >
         <v-card

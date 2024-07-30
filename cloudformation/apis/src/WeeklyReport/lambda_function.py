@@ -84,10 +84,38 @@ def handle_post(event):
 
 def handle_put(event):
     report_data = parse_body(event)
-    item = prepare_item(report_data)
-    response = weekly_reports_table.put_item(Item=item)
-    logger.info(f"DynamoDB response: {response}")
-    return create_response(200, 'Weekly report updated successfully')
+    member_uuid = report_data.get('memberUuid')
+    week_string = report_data.get('weekString')
+    
+    if not member_uuid or not week_string:
+        return create_response(400, 'Missing memberUuid or weekString')
+
+    try:
+        # 既存のレポートを取得
+        existing_report = get_report(member_uuid, week_string)
+        
+        if not existing_report:
+            return create_response(404, 'Report not found')
+
+        # 新しいフィードバックを追加
+        new_feedback = report_data.get('newFeedback')
+        if new_feedback:
+            feedbacks = existing_report.get('feedbacks', [])
+            feedbacks.append({
+                'content': new_feedback,
+                'createdAt': datetime.now().isoformat()
+            })
+            report_data['feedbacks'] = feedbacks
+
+        # その他のフィールドを更新
+        updated_item = prepare_item(report_data, existing_report)
+        
+        response = weekly_reports_table.put_item(Item=updated_item)
+        logger.info(f"DynamoDB response: {response}")
+        return create_response(200, 'Weekly report updated successfully')
+    except Exception as e:
+        logger.error(f"Error updating report: {str(e)}", exc_info=True)
+        return create_response(500, f'Failed to update report: {str(e)}')
 
 def handle_delete(event):
     # API Gateway や直接呼び出しの両方に対応するようにパラメータ取得を修正
@@ -123,7 +151,7 @@ def prepare_item(report_data):
         'achievements': report_data.get('achievements'),
         'improvements': report_data.get('improvements'),
         'status': report_data.get('status'),
-        'feedback': report_data.get('feedback'),
+        'feedbacks': report_data.get('feedbacks', []),
         'approvedAt': report_data.get('approvedAt'),
     }
 

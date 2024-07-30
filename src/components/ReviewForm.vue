@@ -67,7 +67,7 @@
                       {{ project.name }}
                     </v-list-item-title>
                     <v-list-item-subtitle class="ml-2 my-2">
-                      {{ project.tasks }}
+                      {{ toTasks(project) }}
                     </v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
@@ -136,8 +136,8 @@
               <v-col cols="12">
                 <v-textarea
                   v-if="report.status !== 'approved'"
-                  v-model="report.feedback"
-                  label="フィードバックを入力..."
+                  v-model="newFeedback"
+                  label="新しいフィードバックを入力..."
                   outlined
                   dense
                   clear-icon="mdi-close-circle"
@@ -147,16 +147,18 @@
                 />
 
                 <v-alert
-                  v-if="report.status === 'feedback'"
+                  v-for="(feedback, index) in report.feedbacks" :key="index" 
                   type="warning"
                   outlined
                   dense
-                  class="mb-0 custom-feedback-alert"
+                  class="mb-1 custom-feedback-alert"
                 >
                   <div class="font-weight-bold">
-                    フィードバック:
+                    フィードバック（{{ new Date(feedback.createdAt).toLocaleString() }}）:
                   </div>
-                  <p>{{ report.feedback }}</p>
+                  <div class="mt-2">
+                    <p>{{ feedback.content }}</p>
+                  </div>
                 </v-alert>
               </v-col>
             </v-row>
@@ -168,17 +170,13 @@
           >
             <v-spacer />
             <v-btn
-              color="success"
+              color="primary"
               variant="elevated" 
               outlined
               x-small
               @click="handleApprove(report.memberUuid)"
             >
-              <v-icon
-                left
-                x-small
-                class="mr-1"
-              >
+              <v-icon left x-small class="mr-1">
                 mdi-check-bold
               </v-icon>
               確認
@@ -186,17 +184,13 @@
             <v-btn
               color="warning"
               variant="elevated" 
-              :disabled="!report.feedback.trim()"
+              :disabled="!newFeedback.trim()"
               class="ml-2"
               outlined
               x-small
               @click="submitFeedback(report.memberUuid)"
             >
-              <v-icon
-                left
-                x-small
-                class="mr-1"
-              >
+              <v-icon left x-small class="mr-1">
                 mdi-message
               </v-icon>
               フィードバック送信
@@ -227,6 +221,7 @@ const props = defineProps({
 const reports = ref([])
 const isLoading = ref(false)
 const error = ref(null)
+const newFeedback = ref('')
 
 const getStatusText = (status) => {
   switch (status) {
@@ -279,30 +274,28 @@ const fetchReports = async () => {
       }
 
       return {
-        memberUuid: report.memberUuid,
-        weekString: report.weekString,
-        organizationId: report.organizationId,
-        projects: Array.isArray(report.projects) 
+        ...report,
+        projects: Array.isArray(report.projects)
           ? report.projects.map(project => ({
             name: project.name,
-            tasks: Array.isArray(project.workItems) 
-              ? project.workItems.map(item => item.content).join(', ')
-              : ''
+            workItems: Array.isArray(project.workItems)
+              ? project.workItems
+              : []
           }))
           : [],
-        overtime: report.overtimeHours || 0,
-        achievements: report.achievements || '',
-        issues: report.issues || '',
-        improvements: report.improvements || '',
-        status: report.status || 'pending',
-        feedback: report.feedback || '',
-        approvedAt: report.approvedAt || null
+        feedbacks: Array.isArray(report.feedbacks) ? report.feedbacks : [],
       }
     }).filter(report => report !== null)
   } catch (err) {
     console.error('Failed to fetch reports:', err)
     throw new Error(`Failed to fetch reports: ${err.message}`)
   }
+}
+
+const toTasks = (project) => {
+  return Array.isArray(project.workItems) 
+    ? project.workItems.map(item => item.content).join(', ')
+    : ''
 }
 
 const fetchMembers = async () => {
@@ -322,7 +315,7 @@ const fetchData = async () => {
     
     reports.value = members.map(member => {
       const report = fetchedReports.find(r => r.memberUuid === member.memberUuid) || {}
-      return {
+      const combinedReport = {
         memberUuid: member.memberUuid,
         weekString: props.weekString,
         organizationId: organizationId,
@@ -334,10 +327,14 @@ const fetchData = async () => {
         issues: report.issues || '',
         improvements: report.improvements || '',
         status: report.status || 'none',
-        feedback: report.feedback || '',
+        feedbacks: report.feedbacks || [],
         approvedAt: report.approvedAt || null
       }
+      console.log('Combined report:', JSON.stringify(combinedReport, null, 2))
+      return combinedReport
     }).sort((a, b) => a.memberId.localeCompare(b.memberId, undefined, { numeric: true, sensitivity: 'base' }))
+
+    console.log('Final reports:', JSON.stringify(reports.value, null, 2))
   } catch (err) {
     console.error('Error in fetchData:', err)
     error.value = `データの取得に失敗しました: ${err.message}`
@@ -350,62 +347,53 @@ onMounted(fetchData)
 
 const submitFeedback = async (memberUuid) => {
   const report = reports.value.find(r => r.memberUuid === memberUuid)
-  if (report && report.feedback.trim() !== '') {
+  if (report && newFeedback.value.trim() !== '') {
     try {
       const updatedReport = {
-        memberUuid: report.memberUuid,
-        organizationId: report.organizationId,
-        weekString: report.weekString,
-        achievements: report.achievements,
-        improvements: report.improvements,
-        issues: report.issues,
-        overtimeHours: report.overtime,
-        projects: report.projects.map(project => ({
-          name: project.name,
-          workItems: project.tasks.split(', ').map(content => ({ content }))
-        })),
-        status: 'feedback',
-        feedback: report.feedback
+        ...report,
+        feedbacks: [
+          ...(report.feedbacks || []),
+          {
+            content: newFeedback.value.trim(),
+            createdAt: new Date().toISOString()
+          }
+        ],
+        status: 'feedback'
       }
       await updateReport(updatedReport)
       
-      // 成功したら、ローカルの状態を更新
+      // ローカルの状態を更新
       reports.value = reports.value.map(r =>
-        r.memberUuid === memberUuid ? { ...r, status: 'feedback' } : r
+        r.memberUuid === memberUuid 
+          ? { ...updatedReport }
+          : r
       )
+      // 入力欄をクリア
+      newFeedback.value = ''
     } catch (error) {
       console.error('Failed to submit feedback:', error)
+      console.error('Report state:', JSON.stringify(report, null, 2))
       // エラーハンドリング（例：エラーメッセージを表示）
     }
   }
 }
-
 const handleApprove = async (memberUuid) => {
   const now = new Date()
   const report = reports.value.find(r => r.memberUuid === memberUuid)
   if (report) {
     try {
       const updatedReport = {
-        memberUuid: report.memberUuid,
-        organizationId: report.organizationId,
-        weekString: report.weekString,
-        achievements: report.achievements,
-        improvements: report.improvements,
-        issues: report.issues,
-        overtimeHours: report.overtime,
-        projects: report.projects.map(project => ({
-          name: project.name,
-          workItems: project.tasks.split(', ').map(content => ({ content }))
-        })),
+        ...report,
         status: 'approved',
-        feedback: '',
         approvedAt: now.toISOString()
       }
       await updateReport(updatedReport)
       
-      // 成功したら、ローカルの状態を更新
+      // ローカルの状態を更新
       reports.value = reports.value.map(r =>
-        r.memberUuid === memberUuid ? { ...r, status: 'approved', feedback: '', approvedAt: now.toLocaleString() } : r
+        r.memberUuid === memberUuid 
+          ? { ...r, status: 'approved', approvedAt: now.toLocaleString() }
+          : r
       )
     } catch (error) {
       console.error('Failed to approve report:', error)
