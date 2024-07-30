@@ -21,7 +21,12 @@
               <v-expansion-panel-text class="bg-blue-lighten-5">
                 <v-list class="bg-transparent custom-list">
                   <v-list-item v-for="(project, index) in previousWeekReport.projects" :key="index">
-                    <v-list-item-title>{{ project.name }}</v-list-item-title>
+                    <v-list-item-title>
+                      <v-icon small>
+                        mdi-folder-outline
+                      </v-icon>
+                      {{ project.name }}
+                    </v-list-item-title>
                     <v-list-item-subtitle style="display: block;">
                       <ul class="work-items-list">
                         <li v-for="(item, itemIndex) in project.workItems" :key="itemIndex">

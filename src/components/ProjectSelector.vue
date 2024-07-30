@@ -4,6 +4,7 @@
     :items="filteredProjectNames"
     class="project-combobox"
     label="プロジェクト"
+    prepend-icon="mdi-folder-outline"
     required
     dense
     hide-details="auto"

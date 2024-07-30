@@ -62,7 +62,7 @@
                   >
                     <v-list-item-title class="text-body-2">
                       <v-icon small>
-                        mdi-clipboard-check-outline
+                        mdi-folder-outline
                       </v-icon>
                       {{ project.name }}
                     </v-list-item-title>

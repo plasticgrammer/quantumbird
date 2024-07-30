@@ -57,6 +57,34 @@
               </v-icon>
               週次報告0027
             </v-btn>
+
+            <v-icon class="mr-1" small left>
+              mdi-clipboard-outline
+            </v-icon>
+            <v-icon class="mr-1" small left>
+              mdi-chart-gantt
+            </v-icon>
+            <v-icon class="mr-1" small left>
+              mdi-folder-outline
+            </v-icon>
+            <v-icon class="mr-1" small left>
+              mdi-briefcase-outline
+            </v-icon>
+            <v-icon class="mr-1" small left>
+              mdi-rocket-launch-outline
+            </v-icon>
+            <v-icon class="mr-1" small left>
+              mdi-lighthouse-on
+            </v-icon>
+            <v-icon class="mr-1" small left>
+              mdi-target
+            </v-icon>
+            <v-icon class="mr-1" small left>
+              mdi-calendar-check
+            </v-icon>
+            <v-icon class="mr-1" small left>
+              mdi-account-group
+            </v-icon>
           </v-card-text>
         </v-card>
       </v-col>
