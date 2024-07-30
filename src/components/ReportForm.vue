@@ -71,10 +71,10 @@
           dense
           class="mb-1 custom-feedback-alert"
         >
-          <div class="font-weight-bold">
+          <div>
             フィードバック（{{ new Date(feedback.createdAt).toLocaleString() }}）:
           </div>
-          <div class="mt-2">
+          <div class="mt-1">
             <p>{{ feedback.content }}</p>
           </div>
         </v-alert>

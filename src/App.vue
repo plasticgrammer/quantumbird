@@ -1,39 +1,41 @@
 <template>
   <v-app id="main">
-    <v-navigation-drawer
-      v-model="drawer"
-      expand-on-hover
-      :rail="true"
-      permanent
-      color="secondary"
-    >
-      <v-list nav>
-        <v-list-item
-          v-for="item in navigationItems"
-          :key="item.value"
-          :prepend-icon="item.icon"
-          :title="item.title"
-          :value="item.value"
-          @click="navigateTo(item.route)"
-        />
-      </v-list>
-
-      <template #append>
-        <v-divider />
-        <v-list>
+    <template v-if="!$route.meta.hideNavigation">
+      <v-navigation-drawer
+        v-model="drawer"
+        expand-on-hover
+        :rail="true"
+        permanent
+        color="secondary"
+      >
+        <v-list nav>
           <v-list-item
-            :title="user.username"
-            :subtitle="user.email"
-          >
-            <template #prepend>
-              <v-avatar color="secondary">
-                <v-icon icon="mdi-account-circle"></v-icon>
-              </v-avatar>
-            </template>
-          </v-list-item>
+            v-for="item in navigationItems"
+            :key="item.value"
+            :prepend-icon="item.icon"
+            :title="item.title"
+            :value="item.value"
+            @click="navigateTo(item.route)"
+          />
         </v-list>
-      </template>
-    </v-navigation-drawer>
+
+        <template #append>
+          <v-divider />
+          <v-list>
+            <v-list-item
+              :title="user.username"
+              :subtitle="user.email"
+            >
+              <template #prepend>
+                <v-avatar color="secondary">
+                  <v-icon icon="mdi-account-circle"></v-icon>
+                </v-avatar>
+              </template>
+            </v-list-item>
+          </v-list>
+        </template>
+      </v-navigation-drawer>
+    </template>
 
     <v-main>
       <router-view />
