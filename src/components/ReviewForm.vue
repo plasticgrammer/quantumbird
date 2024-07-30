@@ -149,9 +149,13 @@
                 <v-alert
                   v-for="(feedback, index) in report.feedbacks" :key="index" 
                   type="warning"
+                  icon="mdi-message"
+                  border="start"
+                  border-color="warning"
+                  density="compact"
                   outlined
                   dense
-                  class="mb-1 custom-feedback-alert"
+                  class="mb-2 custom-feedback-alert"
                 >
                   <div class="font-weight-bold">
                     フィードバック（{{ new Date(feedback.createdAt).toLocaleString() }}）:
@@ -280,10 +284,11 @@ const fetchReports = async () => {
             name: project.name,
             workItems: Array.isArray(project.workItems)
               ? project.workItems
-              : []
+              : [],
           }))
           : [],
         feedbacks: Array.isArray(report.feedbacks) ? report.feedbacks : [],
+        status: report.status || 'pending',
       }
     }).filter(report => report !== null)
   } catch (err) {
@@ -330,11 +335,8 @@ const fetchData = async () => {
         feedbacks: report.feedbacks || [],
         approvedAt: report.approvedAt || null
       }
-      console.log('Combined report:', JSON.stringify(combinedReport, null, 2))
       return combinedReport
     }).sort((a, b) => a.memberId.localeCompare(b.memberId, undefined, { numeric: true, sensitivity: 'base' }))
-
-    console.log('Final reports:', JSON.stringify(reports.value, null, 2))
   } catch (err) {
     console.error('Error in fetchData:', err)
     error.value = `データの取得に失敗しました: ${err.message}`
@@ -434,6 +436,7 @@ const handleApprove = async (memberUuid) => {
 }
 
 .custom-feedback-alert {
-  background-color: rgba(251, 140, 0, 0.8) !important;
+  color: dimgray !important;
+  background-color: whitesmoke !important;
 }
 </style>

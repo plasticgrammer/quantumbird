@@ -7,10 +7,10 @@
       <v-col>
         <h3>
           <v-icon
+            :icon="props.icon"
             size="x-large"
             class="mr-1"
           >
-            mdi-bird
           </v-icon>
           {{ selectedWeekRange }}
         </h3>
@@ -100,6 +100,10 @@ const props = defineProps({
     type: Array,
     default: () => null
   },
+  icon: {
+    type: String,
+    default: 'mdi-bird'
+  }
 })
 
 const emit = defineEmits(['select-week', 'reset'])
