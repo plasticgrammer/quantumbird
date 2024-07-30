@@ -157,8 +157,8 @@ def handle_get_report_status(event):
         return create_response(400, 'Missing organizationId parameter')
 
     organization_id = params['organizationId']
-    current_week = get_current_week_string()
-    reports = get_reports_by_organization(organization_id, current_week)
+    previous_week = get_previous_week_string()
+    reports = get_reports_by_organization(organization_id, previous_week)
 
     status = {
         'pending': 0,
@@ -179,7 +179,6 @@ def handle_get_report_status(event):
 
 def get_member_names(member_uuids):
     member_names = {}
-    # DynamoDBのバッチ取得の制限（100項目）を考慮
     for i in range(0, len(member_uuids), 100):
         batch = member_uuids[i:i+100]
         try:
@@ -193,11 +192,10 @@ def get_member_names(member_uuids):
                 }
             )
             for item in response.get('Responses', {}).get(members_table_name, []):
-                member_names[item['memberUuid']] = item.get('#n', 'Unknown')
+                member_names[item['memberUuid']] = item.get('name', 'Unknown')
         except Exception as e:
             logger.error(f"Error fetching member names: {str(e)}", exc_info=True)
-            # エラーが発生しても処理を続行し、取得できなかったメンバーは 'Unknown' として扱う
-
+    
     return member_names
 
 def handle_get_overtime_data(event):
@@ -243,9 +241,10 @@ def handle_get_overtime_data(event):
 
     return create_response(200, overtime_data)
 
-def get_current_week_string():
+def get_previous_week_string():
     today = datetime.now()
-    return f"{today.year}-W{today.isocalendar()[1]:02d}"
+    last_week = today - timedelta(weeks=1)
+    return f"{last_week.year}-W{last_week.isocalendar()[1]:02d}"
 
 def get_last_5_weeks():
     today = datetime.now()

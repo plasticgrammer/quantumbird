@@ -27,26 +27,10 @@
           elevation="4"
         >
           <v-card-text class="py-5">
-            <v-btn
-              v-if="isAdmin"
-              color="primary"
-              :to="{ name: 'OrganizationManagement' }"
-              x-small
-            >
-              <v-icon
-                class="mr-1"
-                small
-                left
-              >
-                mdi-cog
-              </v-icon>
-              組織管理
-            </v-btn>
             <span class="px-3" />
             <v-btn
-              v-if="isAdmin"
-              color="primary"
-              :to="{ name: 'WeeklyReviewSelector' }"
+              color="secondary"
+              :to="{ name: 'WeeklyReportSelector', params: { organizationId: 'jsp-d3', memberUuid: 'd35cdaa4-07f5-4283-8222-cb338d0a06ee' } }"
               x-small
             >
               <v-icon
@@ -54,9 +38,9 @@
                 small
                 left
               >
-                mdi-cog
+                mdi-clipboard-check-outline
               </v-icon>
-              週次報告管理
+              週次報告0001
             </v-btn>
             <span class="px-3" />
             <v-btn
@@ -71,7 +55,7 @@
               >
                 mdi-clipboard-check-outline
               </v-icon>
-              週次報告
+              週次報告0027
             </v-btn>
           </v-card-text>
         </v-card>
@@ -100,6 +84,21 @@
             <p class="text-body-2 mb-1">
               {{ organizationName }}
             </p>
+            <v-btn
+              v-if="isAdmin"
+              color="primary"
+              :to="{ name: 'OrganizationManagement' }"
+              x-small
+            >
+              <v-icon
+                class="mr-1"
+                small
+                left
+              >
+                mdi-cog
+              </v-icon>
+              組織管理
+            </v-btn>
           </v-card-text>
         </v-card>
       </v-col>
@@ -126,7 +125,7 @@
             <v-chip
               x-small
               class="my-1 mr-2"
-              color="warning"
+              color="primary"
               label
             >
               確認待ち: {{ reportStatus.pending }}
@@ -134,7 +133,7 @@
             <v-chip
               x-small
               class="my-1 mr-2"
-              color="info"
+              color="warning"
               label
             >
               フィードバック中: {{ reportStatus.inFeedback }}
@@ -147,6 +146,23 @@
             >
               確認済み: {{ reportStatus.confirmed }}
             </v-chip>
+            <div>
+              <v-btn
+                v-if="isAdmin"
+                color="primary"
+                :to="{ name: 'WeeklyReviewSelector' }"
+                x-small
+              >
+                <v-icon
+                  class="mr-1"
+                  small
+                  left
+                >
+                  mdi-cog
+                </v-icon>
+                週次報告管理
+              </v-btn>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>

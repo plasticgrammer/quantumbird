@@ -43,7 +43,7 @@ import { updateMemberProjects } from '../services/memberService'
 const props = defineProps({
   modelValue: {
     type: String,
-    required: true
+    default: ''
   },
   projectNames: {
     type: Array,
@@ -60,8 +60,8 @@ const emit = defineEmits(['update:modelValue', 'projectListChanged'])
 const internalProjectNames = ref(props.projectNames)
 
 const filteredProjectNames = computed(() => {
-  const inputValue = props.modelValue
-  const lowerInput = inputValue ? inputValue.toLowerCase().trim() : ''
+  const inputValue = props.modelValue ?? ''
+  const lowerInput = inputValue.toLowerCase().trim()
   const existingProjects = new Set(internalProjectNames.value.map(name => name.toLowerCase()))
   
   const filtered = Array.from(existingProjects)
@@ -75,7 +75,7 @@ const filteredProjectNames = computed(() => {
 })
 
 const updateValue = (newValue) => {
-  emit('update:modelValue', newValue)
+  emit('update:modelValue', newValue ?? '')
 }
 
 const addProjectOption = async (project) => {
@@ -110,7 +110,7 @@ const removeProjectOption = async (project) => {
 const handleKeyDown = async (event) => {
   if (event.key === 'Enter' && !event.isComposing) {
     event.preventDefault()
-    const inputValue = props.modelValue.trim()
+    const inputValue = (props.modelValue ?? '').trim()
     if (inputValue && !internalProjectNames.value.includes(inputValue)) {
       await addProjectOption(inputValue)
     }
