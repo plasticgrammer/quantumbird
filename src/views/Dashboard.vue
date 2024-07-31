@@ -154,12 +154,9 @@
             >
               mdi-calendar-multiple-check
             </v-icon>
-            前週の報告状況
+            前週の報告状況（ {{ reportStatus.reportedCount }} / {{ memberCount }} ）
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            <div class="mb-1 text-h6">
-              報告状況: {{ reportStatus.reportedCount }} / {{ memberCount }} 人
-            </div>
             <div class="mb-1">
               <v-chip
                 class="my-1 mr-2"
