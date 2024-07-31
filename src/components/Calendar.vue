@@ -76,11 +76,11 @@ const props = defineProps({
   },
   onSelectWeek: {
     type: Function,
-    required: true
+    default: () => {}
   },
   isSelected: {
     type: Function,
-    required: true
+    default: () => {}
   },
 })
 

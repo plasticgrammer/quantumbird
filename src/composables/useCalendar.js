@@ -4,10 +4,11 @@ import { ref, computed } from 'vue'
 export function useCalendar() {
   const selectedWeek = ref(null)
 
-  const calendarWeeks = computed(() => {
+  const calendarWeeks = computed(() => createWeeks(6))
+
+  const createWeeks = (weekCount) => {
     const weeks = []
     const today = new Date()
-    const weekCount = 6
 
     let currentDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7 * (weekCount - 1))
 
@@ -25,7 +26,7 @@ export function useCalendar() {
       weeks.push(week)
     }
     return weeks
-  })
+  }
 
   const calendarDateRange = computed(() => {
     if (calendarWeeks.value.length === 0) return { start: null, end: null }
@@ -106,6 +107,7 @@ export function useCalendar() {
   
   return {
     calendarWeeks,
+    createWeeks,
     selectedWeek,
     selectWeek,
     calendarDateRange,

@@ -19,11 +19,8 @@
       @mouseleave="handleMouseLeave"
     >
       <Calendar
-        :selected-week="internalSelectedWeek"
         :calendar-weeks="visibleWeeks"
         :on-select-week="handleSelectWeek"
-        :on-hover-week="setHoverWeek"
-        :on-leave-week="clearHoverWeek"
         :is-selected="isSelected"
       />
     </v-card>

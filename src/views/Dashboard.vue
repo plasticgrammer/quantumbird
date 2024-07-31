@@ -35,19 +35,40 @@
           <v-card-text class="pt-1 pb-3">
             - サインインを組織IDで行う<br>
             - 初期組織情報の登録<br>
+            - 週次報告入力チェック<br>
             - 報告済みステータスをカレンダーに表示<br>
-            - ダッシュボードにカレンダー表示<br>
           </v-card-text>
         </v-card>
       </v-col>
-
+      <v-col cols="12">
+        <v-card
+          class="mb-2"
+          elevation="4"
+        >
+          <v-card-title class="text-subtitle-1">
+            <v-icon
+              small
+              class="mr-1"
+            >
+              mdi-calendar-outline
+            </v-icon>
+            カレンダー
+          </v-card-title>
+          <v-card-text class="pt-1 pb-3">
+            <v-card>
+              <Calendar
+                :calendar-weeks="createWeeks(2)"
+              />
+            </v-card>
+          </v-card-text>
+        </v-card>
+      </v-col>
       <v-col cols="12">
         <v-card
           class="mb-2"
           elevation="4"
         >
           <v-card-text class="py-5">
-            <span class="px-3" />
             <v-btn
               color="secondary"
               :to="{ name: 'WeeklyReportSelector', params: { organizationId: 'jsp-d3', memberUuid: 'd35cdaa4-07f5-4283-8222-cb338d0a06ee' } }"
@@ -230,6 +251,12 @@ import { useStore } from 'vuex'
 import { getOrganization } from '../services/organizationService'
 import { listMembers } from '../services/memberService'
 import { getReportStatus, getOvertimeData } from '../services/reportService'
+import { useCalendar } from '../composables/useCalendar'
+import Calendar from '../components/Calendar.vue'
+
+const {
+  createWeeks
+} = useCalendar()
 
 Chart.register(...registerables)
 

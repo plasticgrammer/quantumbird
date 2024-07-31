@@ -261,11 +261,13 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, reactive, onMounted } from 'vue'
+import { ref, computed, nextTick, reactive, inject, onMounted } from 'vue'
 import ProjectSelector from './ProjectSelector.vue'
 import { getReport, submitReport } from '../services/reportService'
 import { getMemberProjects } from '../services/memberService'
 import { useCalendar } from '../composables/useCalendar'
+
+const showNotification = inject('showNotification')
 
 const { getPreviousWeekString } = useCalendar()
 
@@ -431,8 +433,8 @@ onMounted(fetchReport)
 
 const handleSubmit = async () => {
   try {
-    const result = await submitReport(report.value)
-    console.log('Report submitted successfully:', result)
+    await submitReport(report.value)
+    showNotification('週次報告を提出しました。')
   } catch (error) {
     console.error('Failed to submit report:', error)
   }

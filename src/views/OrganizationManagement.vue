@@ -1,5 +1,5 @@
 <template>
-  <v-container class="organization-management-container p-2">
+  <v-container class="organization-management-container">
     <v-row 
       dense 
       class="pb-4"
@@ -22,18 +22,6 @@
       elevation="4"
       outlined
     >
-      <div
-        v-if="notification.show"
-        class="notification-overlay"
-      >
-        <v-alert
-          :type="notification.type"
-          :text="notification.message"
-          closable
-          @click:close="closeNotification"
-        />
-      </div>
-
       <v-form
         ref="form"
         v-model="isFormValid"
@@ -260,6 +248,7 @@ import { submitOrganization, updateOrganization, getOrganization } from '../serv
 const store = useStore()
 const form = ref(null)
 const showConfirmDialog = inject('showConfirmDialog')
+const showNotification = inject('showNotification')
 
 const state = reactive({
   organization: {
@@ -273,11 +262,6 @@ const state = reactive({
   isNew: true,
   isFormValid: false,
   isFormChanged: false,
-  notification: {
-    show: false,
-    type: 'success',
-    message: ''
-  },
   validationErrors: {
     id: '',
     name: '',
@@ -290,7 +274,7 @@ const state = reactive({
   originalOrganization: null
 })
 
-const { organization, newMember, editingMember, loading, isNew, isFormValid, isFormChanged, notification, validationErrors, editValidationErrors } = toRefs(state)
+const { organization, newMember, editingMember, loading, isNew, isFormValid, isFormChanged, validationErrors, editValidationErrors } = toRefs(state)
 
 const validateEmail = (email) => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -377,25 +361,6 @@ const handleDeleteMember = async (memberId) => {
   }
 }
 
-const showNotification = (message, error) => {
-  notification.value = {
-    show: true,
-    type: error ? 'error' : 'success',
-    message: message
-  }
-  if (error) {
-    console.error(error)
-  }
-  // 5秒後に自動で閉じる
-  setTimeout(() => {
-    closeNotification()
-  }, 5000)
-}
-
-const closeNotification = () => {
-  notification.value.show = false
-}
-
 const validateForm = async () => {
   const validation = await form.value.validate()
   isFormValid.value = validation.valid
@@ -473,18 +438,6 @@ watch(
   border-radius: 0.5rem;
   padding: .5em 1.5em 1em;
   position: relative;
-}
-
-.notification-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
-  padding: 1rem;
-  background-color: rgba(255, 255, 255, 0.9);
-  border-top-left-radius: 0.5rem;
-  border-top-right-radius: 0.5rem;
 }
 
 .organization-name-input {

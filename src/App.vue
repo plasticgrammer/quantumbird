@@ -1,5 +1,23 @@
 <template>
   <v-app id="main">
+    <v-snackbar
+      v-model="notification.show"
+      :color="notification.type"
+      :timeout="5000"
+      location="top"
+    >
+      {{ notification.message }}
+      <template #actions>
+        <v-btn
+          color="white"
+          variant="text"
+          icon="mdi-close"
+          @click="closeNotification"
+        >
+        </v-btn>
+      </template>
+    </v-snackbar>
+
     <template v-if="!$route.meta.hideNavigation">
       <v-navigation-drawer
         v-model="drawer"
@@ -48,7 +66,7 @@
 </template>
 
 <script setup>
-import { ref, provide } from 'vue'
+import { ref, provide, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import ConfirmationDialog from './components/ConfirmationDialog.vue'
 
@@ -83,6 +101,25 @@ const navigationItems = [
   },
 ]
 
+const notification = reactive({
+  show: false,
+  type: 'success',
+  message: ''
+})
+
+const showNotification = (message, error = false) => {
+  notification.show = true
+  notification.type = error ? 'error' : 'success'
+  notification.message = message
+  if (error) {
+    console.error(error)
+  }
+}
+
+const closeNotification = () => {
+  notification.show = false
+}
+
 const navigateTo = (route, params = {}) => {
   router.push({ ...route, params: { ...route.params, ...params } })
 }
@@ -99,6 +136,8 @@ const showConfirmDialogGlobal = async (title, message) => {
 }
 
 provide('showConfirmDialog', showConfirmDialogGlobal)
+provide('showNotification', showNotification)
+
 </script>
 
 <style scoped>
