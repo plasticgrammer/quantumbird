@@ -18,12 +18,19 @@
       </template>
     </v-snackbar>
 
+    <v-app-bar v-if="isMobile" color="secondary" app>
+      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+      <v-toolbar-title>週次報告システム</v-toolbar-title>
+    </v-app-bar>
+
     <template v-if="!$route.meta.hideNavigation">
       <v-navigation-drawer
         v-model="drawer"
-        expand-on-hover
-        :rail="true"
         permanent
+        :location="drawerLocation"
+        :temporary="isMobile"
+        :expand-on-hover="!isMobile"
+        :rail="!isMobile"
         color="secondary"
       >
         <v-list nav>
@@ -66,14 +73,18 @@
 </template>
 
 <script setup>
-import { ref, provide, reactive } from 'vue'
+import { ref, provide, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import ConfirmationDialog from './components/ConfirmationDialog.vue'
+import { useResponsive } from './composables/useResponsive'
 
 const router = useRouter()
 const confirmDialog = ref(null)
 const drawer = ref(true)
 const showConfirmDialog = ref(false)
+
+const { isMobile } = useResponsive()
+const drawerLocation = computed(() => isMobile.value ? 'bottom' : 'left')
 
 const user = ref({
   username: 'plasticgrammer',
@@ -122,6 +133,9 @@ const closeNotification = () => {
 
 const navigateTo = (route, params = {}) => {
   router.push({ ...route, params: { ...route.params, ...params } })
+  if (isMobile.value) {
+    drawer.value = false
+  }
 }
 
 const showConfirmDialogGlobal = async (title, message) => {
@@ -144,5 +158,11 @@ provide('showNotification', showNotification)
 .v-application#main {
   max-width: 960px;
   margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+  .v-application#main {
+    max-width: 100%;
+  }
 }
 </style>
