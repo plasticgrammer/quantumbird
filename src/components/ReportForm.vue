@@ -71,10 +71,14 @@
       >
         <v-alert
           v-for="(feedback, index) in report.feedbacks" :key="index" 
-          type="warning"
+          icon="mdi-message"
+          density="compact"
+          border="start"
+          border-color="warning"
+          elevation="2"
           outlined
           dense
-          class="mb-1 custom-feedback-alert"
+          class="mb-2 custom-feedback-alert"
         >
           <div>
             フィードバック（{{ new Date(feedback.createdAt).toLocaleString() }}）:
@@ -86,7 +90,7 @@
       </template>
 
       <v-form
-        class="report-form mt-2 elevation-4"
+        class="report-form mt-3 elevation-4"
         @submit.prevent="handleSubmit"
       >
         <v-card
@@ -438,6 +442,7 @@ const handleSubmit = async () => {
 <style scoped>
 .report-form-container {
   max-width: 800px;
+  padding-top: 8px;
 }
 
 .v-expansion-panel-title {
@@ -496,5 +501,9 @@ const handleSubmit = async () => {
 .overtime-input :deep() input::-webkit-outer-spin-button,
 .overtime-input :deep() input::-webkit-inner-spin-button {
   margin-left: 10px;
+}
+
+.custom-feedback-alert :deep() .v-icon {
+  color: orange;
 }
 </style>

@@ -1,6 +1,16 @@
 <template>
   <v-container class="review-form-container">
-    <v-row>
+    <v-row v-if="isLoading">
+      <v-col v-for="i in 3" :key="i" cols="12">
+        <v-skeleton-loader
+          type="avatar, text, ossein, paragraph, text, actions"
+          :loading="true"
+          elevation="4"
+          class="mt-2"
+        ></v-skeleton-loader>
+      </v-col>
+    </v-row>
+    <v-row v-else>
       <v-col
         v-for="report in reports"
         :key="report.memberUuid"
@@ -148,11 +158,11 @@
 
                 <v-alert
                   v-for="(feedback, index) in report.feedbacks" :key="index" 
-                  type="warning"
                   icon="mdi-message"
+                  density="compact"
                   border="start"
                   border-color="warning"
-                  density="compact"
+                  elevation="2"
                   outlined
                   dense
                   class="mb-2 custom-feedback-alert"
@@ -223,7 +233,7 @@ const props = defineProps({
 })
 
 const reports = ref([])
-const isLoading = ref(false)
+const isLoading = ref(true)
 const error = ref(null)
 const newFeedback = ref('')
 
@@ -435,8 +445,7 @@ const handleApprove = async (memberUuid) => {
   font-size: 0.75rem !important;
 }
 
-.custom-feedback-alert {
-  color: dimgray !important;
-  background-color: whitesmoke !important;
+.custom-feedback-alert :deep() .v-icon {
+  color: orange;
 }
 </style>

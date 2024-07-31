@@ -112,6 +112,9 @@
             <p class="text-body-2 mb-1">
               {{ organizationName }}
             </p>
+            <p class="text-body-2 mb-1">
+              メンバー: {{ memberCount }} 人
+            </p>
             <v-btn
               v-if="isAdmin"
               color="primary"
@@ -150,6 +153,9 @@
             前週の報告状況
           </v-card-title>
           <v-card-text class="py-1">
+            <div class="mb-2 text-h6">
+              報告状況: {{ reportStatus.reportedCount }} / {{ memberCount }} 人
+            </div>
             <v-chip
               x-small
               class="my-1 mr-2"
@@ -225,6 +231,7 @@ import { ref, onMounted } from 'vue'
 import { Chart, registerables } from 'chart.js'
 import { useStore } from 'vuex'
 import { getOrganization } from '../services/organizationService'
+import { listMembers } from '../services/memberService'
 import { getReportStatus, getOvertimeData } from '../services/reportService'
 
 Chart.register(...registerables)
@@ -239,6 +246,7 @@ const reportStatus = ref({
   inFeedback: 0,
   confirmed: 0
 })
+const memberCount = ref(null)
 
 const overtimeChart = ref(null)
 const overtimeData = ref({
@@ -259,10 +267,24 @@ const fetchOrganizationInfo = async () => {
   }
 }
 
+const fetchMembers = async () => {
+  try {
+    const members = await listMembers(organizationId)
+    memberCount.value = members.length
+  } catch (err) {
+    console.error('Failed to fetch members:', err)
+    throw err
+  }
+}
+
 const fetchReportStatus = async () => {
   try {
     const status = await getReportStatus(organizationId)
-    reportStatus.value = status
+    reportStatus.value = {
+      ...status,
+      reportedCount: status.pending + status.inFeedback + status.confirmed,
+      totalCount: status.totalCount || 0
+    }
   } catch (err) {
     console.error('Failed to fetch report status:', err)
     error.value = '報告状況の取得に失敗しました'
@@ -327,7 +349,8 @@ onMounted(async () => {
     await Promise.all([
       fetchOrganizationInfo(),
       fetchReportStatus(),
-      fetchOvertimeData()
+      fetchOvertimeData(),
+      fetchMembers()
     ])
     initChart()
   } catch (err) {

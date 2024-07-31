@@ -2,7 +2,7 @@
   <v-container class="week-selector">
     <v-row
       dense 
-      class="pb-4"
+      class="pb-3"
     >
       <v-col>
         <h3>
