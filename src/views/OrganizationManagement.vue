@@ -12,7 +12,7 @@
           >
             mdi-domain
           </v-icon>
-          組織情報メンテナンス
+          組織情報管理
         </h3>
       </v-col>
     </v-row>

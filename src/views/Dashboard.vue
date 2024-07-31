@@ -1,8 +1,5 @@
 <template>
-  <v-container
-    fluid
-    class="p-2"
-  >
+  <v-container fluid class="p-2">
     <v-row 
       dense 
       class="pb-4"
@@ -26,6 +23,29 @@
           class="mb-2"
           elevation="4"
         >
+          <v-card-title class="text-subtitle-1">
+            <v-icon
+              small
+              class="mr-1"
+            >
+              mdi-clipboard-check-outline
+            </v-icon>
+            やることリスト
+          </v-card-title>
+          <v-card-text class="pt-1 pb-3">
+            - サインインを組織IDで行う<br>
+            - 初期組織情報の登録<br>
+            - 報告済みステータスをカレンダーに表示<br>
+            - ダッシュボードにカレンダー表示<br>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12">
+        <v-card
+          class="mb-2"
+          elevation="4"
+        >
           <v-card-text class="py-5">
             <span class="px-3" />
             <v-btn
@@ -40,7 +60,22 @@
               >
                 mdi-clipboard-check-outline
               </v-icon>
-              週次報告0001
+              週次報告 0001
+            </v-btn>
+            <span class="px-3" />
+            <v-btn
+              color="secondary"
+              :to="{ name: 'WeeklyReportSelector', params: { organizationId: 'jsp-d3', memberUuid: 'd4435e05-1dbc-4533-82cb-64b96d94bcad' } }"
+              x-small
+            >
+              <v-icon
+                class="mr-1"
+                small
+                left
+              >
+                mdi-clipboard-check-outline
+              </v-icon>
+              週次報告 0009
             </v-btn>
             <span class="px-3" />
             <v-btn
@@ -55,45 +90,14 @@
               >
                 mdi-clipboard-check-outline
               </v-icon>
-              週次報告0027
+              週次報告 0027
             </v-btn>
-
-            <v-icon class="mr-1" small left>
-              mdi-clipboard-outline
-            </v-icon>
-            <v-icon class="mr-1" small left>
-              mdi-chart-gantt
-            </v-icon>
-            <v-icon class="mr-1" small left>
-              mdi-folder-outline
-            </v-icon>
-            <v-icon class="mr-1" small left>
-              mdi-briefcase-outline
-            </v-icon>
-            <v-icon class="mr-1" small left>
-              mdi-rocket-launch-outline
-            </v-icon>
-            <v-icon class="mr-1" small left>
-              mdi-lighthouse-on
-            </v-icon>
-            <v-icon class="mr-1" small left>
-              mdi-target
-            </v-icon>
-            <v-icon class="mr-1" small left>
-              mdi-calendar-check
-            </v-icon>
-            <v-icon class="mr-1" small left>
-              mdi-account-group
-            </v-icon>
           </v-card-text>
         </v-card>
       </v-col>
-    </v-row>
-
-    <v-row dense>
       <v-col
         cols="12"
-        md="4"
+        md="6"
       >
         <v-card
           class="mb-2"
@@ -108,8 +112,8 @@
             </v-icon>
             組織情報
           </v-card-title>
-          <v-card-text class="py-1">
-            <p class="text-body-2 mb-1">
+          <v-card-text class="pt-1 pb-3">
+            <p class="text-body-1 mb-1">
               {{ organizationName }}
             </p>
             <p class="text-body-2 mb-1">
@@ -126,9 +130,9 @@
                 small
                 left
               >
-                mdi-cog
+                mdi-domain
               </v-icon>
-              組織管理
+              組織情報管理
             </v-btn>
           </v-card-text>
         </v-card>
@@ -137,7 +141,7 @@
       <v-col
         cols="12"
         sm="4"
-        md="8"
+        md="6"
       >
         <v-card
           class="mb-2"
@@ -148,38 +152,37 @@
               small
               class="mr-1"
             >
-              mdi-clipboard-check
+              mdi-calendar-multiple-check
             </v-icon>
             前週の報告状況
           </v-card-title>
-          <v-card-text class="py-1">
-            <div class="mb-2 text-h6">
+          <v-card-text class="pt-1 pb-3">
+            <div class="mb-1 text-h6">
               報告状況: {{ reportStatus.reportedCount }} / {{ memberCount }} 人
             </div>
-            <v-chip
-              x-small
-              class="my-1 mr-2"
-              color="primary"
-              label
-            >
-              確認待ち: {{ reportStatus.pending }}
-            </v-chip>
-            <v-chip
-              x-small
-              class="my-1 mr-2"
-              color="warning"
-              label
-            >
-              フィードバック中: {{ reportStatus.inFeedback }}
-            </v-chip>
-            <v-chip
-              x-small
-              class="my-1"
-              color="success"
-              label
-            >
-              確認済み: {{ reportStatus.confirmed }}
-            </v-chip>
+            <div class="mb-1">
+              <v-chip
+                class="my-1 mr-2"
+                color="primary"
+                label
+              >
+                確認待ち: {{ reportStatus.pending }}
+              </v-chip>
+              <v-chip
+                class="my-1 mr-2"
+                color="warning"
+                label
+              >
+                フィードバック中: {{ reportStatus.inFeedback }}
+              </v-chip>
+              <v-chip
+                class="my-1"
+                color="success"
+                label
+              >
+                確認済み: {{ reportStatus.confirmed }}
+              </v-chip>
+            </div>
             <div>
               <v-btn
                 v-if="isAdmin"
@@ -192,17 +195,14 @@
                   small
                   left
                 >
-                  mdi-cog
+                  mdi-calendar-multiple-check
                 </v-icon>
-                週次報告管理
+                週次報告レビュー
               </v-btn>
             </div>
           </v-card-text>
         </v-card>
       </v-col>
-    </v-row>
-
-    <v-row dense>
       <v-col cols="12">
         <v-card elevation="4">
           <v-card-title class="text-subtitle-1">

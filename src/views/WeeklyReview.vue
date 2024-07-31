@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <WeekSelector
-      icon="mdi-account-multiple"
+      icon="mdi-calendar-multiple-check"
       :selected-week="selectedWeek"
       @select-week="handleWeekSelection"
       @reset="handleReset"

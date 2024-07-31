@@ -76,7 +76,7 @@ const navigationItems = [
     route: { name: 'OrganizationManagement' }
   },
   { 
-    icon: 'mdi-account-multiple', 
+    icon: 'mdi-calendar-multiple-check', 
     title: '週次報告レビュー', 
     value: 'WeeklyReview', 
     route: { name: 'WeeklyReviewSelector' }

@@ -8,7 +8,7 @@
         <h3>
           <v-icon
             :icon="props.icon"
-            size="x-large"
+            size="large"
             class="mr-1"
           >
           </v-icon>

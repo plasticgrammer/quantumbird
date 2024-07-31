@@ -42,13 +42,15 @@ const routes = [
     path: '/reports/:organizationId/:memberUuid',
     name: 'WeeklyReportSelector',
     component: WeeklyReport,
-    props: true
+    props: true,
+    meta: { hideNavigation: true }
   },
   {
     path: '/reports/:organizationId/:memberUuid/:weekString',
     name: 'WeeklyReport',
     component: WeeklyReport,
-    props: true
+    props: true,
+    meta: { hideNavigation: true }
   },
 ]
 

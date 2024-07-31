@@ -27,7 +27,7 @@
                       </v-icon>
                       {{ project.name }}
                     </v-list-item-title>
-                    <v-list-item-subtitle style="display: block;">
+                    <v-list-item-subtitle>
                       <ul class="work-items-list">
                         <li v-for="(item, itemIndex) in project.workItems" :key="itemIndex">
                           {{ item.content }}
@@ -37,13 +37,13 @@
                   </v-list-item>
                   <v-list-item>
                     <v-list-item-title>現状・問題点</v-list-item-title>
-                    <v-list-item-subtitle style="display: block;">
+                    <v-list-item-subtitle class="custom-list-subtext">
                       {{ previousWeekReport.issues }}
                     </v-list-item-subtitle>
                   </v-list-item>
                   <v-list-item>
                     <v-list-item-title>改善点</v-list-item-title>
-                    <v-list-item-subtitle style="display: block;">
+                    <v-list-item-subtitle class="custom-list-subtext">
                       {{ previousWeekReport.improvements }}
                     </v-list-item-subtitle>
                   </v-list-item>
@@ -439,14 +439,20 @@ const handleSubmit = async () => {
 }
 </script>
 
+<style>
+.v-expansion-panel-title {
+  font-size: 1rem;
+}
+
+.v-expansion-panel-text__wrapper {
+  padding: 8px 12px;
+}
+</style>
+
 <style scoped>
 .report-form-container {
   max-width: 800px;
   padding-top: 8px;
-}
-
-.v-expansion-panel-title {
-  font-size: 1rem;
 }
 
 .project-list-item:hover {
@@ -501,6 +507,12 @@ const handleSubmit = async () => {
 .overtime-input :deep() input::-webkit-outer-spin-button,
 .overtime-input :deep() input::-webkit-inner-spin-button {
   margin-left: 10px;
+}
+
+.custom-list-subtext {
+  display: block;
+  text-indent: 1em;
+  padding-top: 4px;
 }
 
 .custom-feedback-alert :deep() .v-icon {
