@@ -35,7 +35,6 @@
           <v-card-text class="pt-1 pb-3">
             - サインインを組織IDで行う<br>
             - 初期組織情報の登録<br>
-            - 週次報告入力チェック<br>
             - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>
         </v-card>

@@ -106,6 +106,7 @@
                   v-model="project.name"
                   :project-names="projectNames"
                   :member-uuid="props.memberUuid"
+                  :error-messages="projectErrors[projectIndex]?.name"
                   @project-list-changed="updateProjectList"
                 />
               </v-col>
@@ -139,6 +140,7 @@
                     dense
                     outlined
                     hide-details="auto"
+                    :error-messages="projectErrors[projectIndex]?.workItems[itemIndex]"
                     required
                     class="work-item-input pl-5"
                     @keydown="handleKeyDown($event, project, itemIndex)"
@@ -222,6 +224,7 @@
           outlined
           clear-icon="mdi-close-circle"
           clearable 
+          :error-messages="formErrors.issues"
         />
         
         <v-text-field
@@ -231,6 +234,7 @@
           dense
           clear-icon="mdi-close-circle"
           clearable 
+          :error-messages="formErrors.achievements"
         />
         
         <v-text-field
@@ -240,12 +244,14 @@
           dense
           clear-icon="mdi-close-circle"
           clearable 
+          :error-messages="formErrors.improvements"
         />
 
         <v-btn
           color="primary"
           type="submit"
           class="mt-4"
+          :disabled="!isFormValid"
         >
           <v-icon
             class="mr-1"
@@ -304,6 +310,12 @@ const isLoading = ref(false)
 const error = ref(null)
 const previousWeekReport = ref(null)
 const expandedPanel = ref(null)
+
+const isFormValid = ref(true)
+const formErrors = reactive({
+  issues: []
+})
+const projectErrors = reactive([])
 
 const formattedOvertimeHours = computed({
   get: () => report.value.overtimeHours.toFixed(1),
@@ -430,8 +442,54 @@ const fetchReport = async () => {
 }
 
 onMounted(fetchReport)
+const validateReport = () => {
+  let isValid = true
+  formErrors.issues = []
+  projectErrors.length = 0
+
+  // Check if there's at least one project
+  if (report.value.projects.length === 0) {
+    isValid = false
+    showNotification('少なくとも1つのプロジェクトを追加してください。', true)
+  }
+
+  // Check each project and its work items
+  report.value.projects.forEach((project, index) => {
+    projectErrors[index] = { name: [], workItems: [] }
+    
+    if (!project.name.trim()) {
+      isValid = false
+      projectErrors[index].name.push('プロジェクト名を入力してください。')
+    }
+    
+    if (project.workItems.length === 0 || project.workItems.every(item => !item.content.trim())) {
+      isValid = false
+      projectErrors[index].workItems.push('少なくとも1つの作業内容を追加してください。')
+    } else {
+      project.workItems.forEach((item, itemIndex) => {
+        if (!item.content.trim()) {
+          isValid = false
+          projectErrors[index].workItems[itemIndex] = '作業内容を入力してください。'
+        }
+      })
+    }
+  })
+
+  // Check if issues field is not empty
+  if (!report.value.issues.trim()) {
+    isValid = false
+    formErrors.issues.push('現状・問題点は必須入力です。')
+  }
+
+  return isValid
+}
 
 const handleSubmit = async () => {
+  const isValid = validateReport()
+
+  if (!isValid) {
+    return
+  }
   try {
     await submitReport(report.value)
     showNotification('週次報告を提出しました。')
