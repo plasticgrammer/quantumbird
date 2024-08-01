@@ -38,7 +38,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { updateMemberProjects } from '../services/memberService'
 
 const props = defineProps({
@@ -56,6 +56,8 @@ const props = defineProps({
   }
 })
 
+const showConfirmDialog = inject('showConfirmDialog')
+const showNotification = inject('showNotification')
 const emit = defineEmits(['update:modelValue', 'projectListChanged'])
 
 const internalProjectNames = ref(props.projectNames)
@@ -84,6 +86,7 @@ const addProjectOption = async (project) => {
     const newProjectList = [...internalProjectNames.value, project]
     try {
       await updateMemberProjects(props.memberUuid, newProjectList)
+      showNotification('プロジェクトリストに登録しました。')
       internalProjectNames.value = newProjectList
       emit('projectListChanged', newProjectList)
     } catch (error) {
@@ -94,6 +97,10 @@ const addProjectOption = async (project) => {
 }
 
 const removeProjectOption = async (project) => {
+  const confirmed = await showConfirmDialog('確認', 'プロジェクトリストから削除します。よろしいですか？')
+  if (!confirmed) {
+    return
+  }
   const newProjectList = internalProjectNames.value.filter(p => p !== project)
   try {
     await updateMemberProjects(props.memberUuid, newProjectList)

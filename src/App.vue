@@ -6,7 +6,14 @@
       :timeout="5000"
       location="top"
     >
-      {{ notification.message }}
+      <div class="d-flex align-center">
+        <v-icon
+          :icon="getNotificationIcon"
+          class="mr-2"
+          color="white"
+        />
+        {{ notification.message }}
+      </div>
       <template #actions>
         <v-btn
           color="white"
@@ -18,19 +25,14 @@
       </template>
     </v-snackbar>
 
-    <v-app-bar v-if="isMobile" color="secondary" app>
-      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title>週次報告システム</v-toolbar-title>
-    </v-app-bar>
-
-    <template v-if="!$route.meta.hideNavigation">
+    <template v-if="!$route.meta.hideNavigation && !isMobile">
       <v-navigation-drawer
         v-model="drawer"
         permanent
         :location="drawerLocation"
         :temporary="isMobile"
         :expand-on-hover="!isMobile"
-        :rail="!isMobile"
+        rail
         color="secondary"
       >
         <v-list nav>
@@ -66,6 +68,22 @@
       <router-view />
     </v-main>
 
+    <v-bottom-navigation
+      v-if="isMobile"
+      bg-color="teal"
+      grow
+    >
+      <v-btn
+        v-for="item in navigationItems"
+        :key="item.value"
+        :value="item.value"
+        @click="navigateTo(item.route)"
+      >
+        <v-icon>{{ item.icon }}</v-icon>
+        {{ item.title }}
+      </v-btn>
+    </v-bottom-navigation>
+
     <div v-show="showConfirmDialog">
       <ConfirmationDialog ref="confirmDialog" />
     </div>
@@ -74,10 +92,12 @@
 
 <script setup>
 import { ref, provide, reactive, computed } from 'vue'
+import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import ConfirmationDialog from './components/ConfirmationDialog.vue'
 import { useResponsive } from './composables/useResponsive'
 
+const store = useStore()
 const router = useRouter()
 const confirmDialog = ref(null)
 const drawer = ref(true)
@@ -87,7 +107,7 @@ const { isMobile } = useResponsive()
 const drawerLocation = computed(() => isMobile.value ? 'bottom' : 'left')
 
 const user = ref({
-  username: 'plasticgrammer',
+  username: store.getters['user/organizationId'],
   email: 'plasticgrammer@gmail.com'
 })
 
@@ -116,6 +136,21 @@ const notification = reactive({
   show: false,
   type: 'success',
   message: ''
+})
+
+const getNotificationIcon = computed(() => {
+  switch (notification.type) {
+  case 'success':
+    return 'mdi-check-circle'
+  case 'error':
+    return 'mdi-alert-circle'
+  case 'warning':
+    return 'mdi-alert'
+  case 'info':
+    return 'mdi-information'
+  default:
+    return 'mdi-bell'
+  }
 })
 
 const showNotification = (message, error = false) => {
