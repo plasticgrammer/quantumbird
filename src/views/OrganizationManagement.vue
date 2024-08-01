@@ -59,63 +59,69 @@
           type="table-tbody"
         />
 
-        <v-card v-for="member in organization.members" :key="member.id" class="mb-4" elevation="2">
-          <v-card-text class="px-3 py-1">
-            <v-row dense>
-              <v-col cols="12" md="2">
-                <v-text-field
-                  v-model="member.id"
-                  label="ID"
-                  dense
-                  hide-details="auto"
-                  readonly
-                  class="member-id-input"
-                >
-                  <template #prepend>
-                    <v-icon size="x-large">
-                      mdi-account-box-outline
-                    </v-icon>
-                  </template>
-                </v-text-field>
-              </v-col>
-              <v-col cols="12" md="3">
-                <v-text-field
-                  v-model="member.name"
-                  label="名前"
-                  outlined
-                  dense
-                  hide-details="auto"
-                  :readonly="editingMember?.id !== member.id"
-                  :error-messages="editingMember?.id === member.id ? editValidationErrors.name : ''"
-                />
-              </v-col>
-              <v-col cols="12" md="5">
-                <v-text-field
-                  v-model="member.email"
-                  label="メールアドレス"
-                  outlined
-                  dense
-                  hide-details="auto"
-                  :readonly="editingMember?.id !== member.id"
-                  :error-messages="editingMember?.id === member.id ? editValidationErrors.email : ''"
-                />
-              </v-col>
-              <v-col cols="12" md="2" class="d-flex justify-end">
-                <v-btn v-if="editingMember?.id === member.id" icon small @click="handleUpdateMember(member)">
-                  <v-icon>mdi-check</v-icon>
-                </v-btn>
-                <v-btn v-else icon small @click="setEditingMember(member)">
-                  <v-icon>mdi-pencil</v-icon>
-                </v-btn>
-                <v-btn icon small @click="handleDeleteMember(member.id)">
-                  <v-icon>mdi-delete</v-icon>
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card-text>
+        <v-card elevation="2" class="pa-1">
+          <v-card 
+            v-for="member in organization.members" 
+            :key="member.id"
+            flat
+          >
+            <v-card-text class="px-3 py-1">
+              <v-row>
+                <v-col cols="12" md="2">
+                  <v-text-field
+                    v-model="member.id"
+                    label="ID"
+                    dense
+                    hide-details="auto"
+                    readonly
+                    class="member-id-input"
+                  >
+                    <template #prepend>
+                      <v-icon size="x-large">
+                        mdi-account-box-outline
+                      </v-icon>
+                    </template>
+                  </v-text-field>
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-text-field
+                    v-model="member.name"
+                    label="名前"
+                    outlined
+                    dense
+                    hide-details="auto"
+                    :readonly="editingMember?.id !== member.id"
+                    :error-messages="editingMember?.id === member.id ? editValidationErrors.name : ''"
+                  />
+                </v-col>
+                <v-col cols="12" md="5">
+                  <v-text-field
+                    v-model="member.email"
+                    label="メールアドレス"
+                    outlined
+                    dense
+                    hide-details="auto"
+                    :readonly="editingMember?.id !== member.id"
+                    :error-messages="editingMember?.id === member.id ? editValidationErrors.email : ''"
+                  />
+                </v-col>
+                <v-col cols="12" md="2" class="d-flex justify-end">
+                  <v-btn v-if="editingMember?.id === member.id" icon small @click="handleUpdateMember(member)">
+                    <v-icon>mdi-check</v-icon>
+                  </v-btn>
+                  <v-btn v-else icon small @click="setEditingMember(member)">
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+                  <v-btn icon small @click="handleDeleteMember(member.id)">
+                    <v-icon>mdi-delete</v-icon>
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
         </v-card>
 
-        <v-row class="mt-4 mx-3">
+        <v-row class="mt-4 mx-3 align-center">
           <v-text-field
             v-model="newMember.id"
             label="ID"

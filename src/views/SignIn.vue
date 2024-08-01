@@ -95,8 +95,8 @@
               required
             />
             <v-text-field
-              v-model="signUpName"
-              label="名前"
+              v-model="organizationName"
+              label="組織名"
               required
             />
             <v-btn
@@ -172,6 +172,7 @@ import {
   signOut, 
   getCurrentUser,
 } from '@aws-amplify/auth'
+import { getOrganization, submitOrganization } from '../services/organizationService'
 
 const router = useRouter()
 const store = useStore()
@@ -180,10 +181,10 @@ const store = useStore()
 const currentView = ref('signIn')
 const signInEmail = ref('')
 const signInPassword = ref('')
-const signUpName = ref('')
 const signUpEmail = ref('')
 const signUpPassword = ref('')
 const organizationId = ref('')
+const organizationName = ref('')
 const confirmEmail = ref('')
 const confirmCode = ref('')
 const loading = ref(false)
@@ -271,13 +272,17 @@ const signUpUser = async () => {
   loading.value = true
   errorMessage.value = ''
   try {
+    const org = await getOrganization(organizationId.value)    
+    if (org) {
+      errorMessage.value = 'この組織IDは既に使用されています。'
+      return
+    }
     const { user } = await signUp({
       username: signUpEmail.value,
       password: signUpPassword.value,
       options: {
         userAttributes: {
           email: signUpEmail.value,
-          name: signUpName.value,
           'custom:organizationId': organizationId.value
         }
       }
@@ -298,6 +303,8 @@ const confirmSignUpUser = async () => {
   errorMessage.value = ''
   try {
     await confirmSignUp({ username: confirmEmail.value, confirmationCode: confirmCode.value })
+    const organization = { organizationId: organizationId.value, name: organizationName.value }
+    await submitOrganization(organization)
     currentView.value = 'signIn'
     successMessage.value = '確認が完了しました。サインインしてください。'
   } catch (error) {
