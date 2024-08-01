@@ -25,8 +25,9 @@
       </template>
     </v-snackbar>
 
-    <template v-if="!$route.meta.hideNavigation && !isMobile">
+    <template v-if="!$route.meta.hideNavigation">
       <v-navigation-drawer
+        v-if="!isMobile"
         v-model="drawer"
         permanent
         :location="drawerLocation"
@@ -62,27 +63,27 @@
           </v-list>
         </template>
       </v-navigation-drawer>
+
+      <v-bottom-navigation
+        v-else
+        bg-color="teal"
+        grow
+      >
+        <v-btn
+          v-for="item in navigationItems"
+          :key="item.value"
+          :value="item.value"
+          @click="navigateTo(item.route)"
+        >
+          <v-icon>{{ item.icon }}</v-icon>
+          {{ item.title }}
+        </v-btn>
+      </v-bottom-navigation>
     </template>
 
     <v-main>
       <router-view />
     </v-main>
-
-    <v-bottom-navigation
-      v-if="isMobile"
-      bg-color="teal"
-      grow
-    >
-      <v-btn
-        v-for="item in navigationItems"
-        :key="item.value"
-        :value="item.value"
-        @click="navigateTo(item.route)"
-      >
-        <v-icon>{{ item.icon }}</v-icon>
-        {{ item.title }}
-      </v-btn>
-    </v-bottom-navigation>
 
     <div v-show="showConfirmDialog">
       <ConfirmationDialog ref="confirmDialog" />
