@@ -28,7 +28,7 @@
         @submit.prevent="handleSubmit"
       >
         <v-row class="mt-2">
-          <v-col cols="3">
+          <v-col cols="12" sm="3">
             <v-text-field
               v-model="organization.organizationId"
               label="組織ID"
@@ -36,9 +36,10 @@
               outlined
               dense
               readonly
+              hide-details
             />
           </v-col>
-          <v-col cols="9">
+          <v-col cols="12" sm="9">
             <v-text-field
               v-model="organization.name"
               label="組織名"
@@ -58,166 +59,98 @@
           type="table-tbody"
         />
 
-        <v-card
-          v-else
-          elevation="4"
-          class="px-1"
-        >
-          <v-table class="members-table">
-            <thead>
-              <tr>
-                <th class="text-left" />
-                <th class="text-left">
-                  ID
-                </th>
-                <th class="text-left">
-                  名前
-                </th>
-                <th class="text-left">
-                  メールアドレス
-                </th>
-                <th
-                  class="text-left"
-                  style="width: 100px;"
+        <v-card v-for="member in organization.members" :key="member.id" class="mb-4" elevation="2">
+          <v-card-text class="px-3 py-1">
+            <v-row dense>
+              <v-col cols="12" md="2">
+                <v-text-field
+                  v-model="member.id"
+                  label="ID"
+                  dense
+                  hide-details="auto"
+                  readonly
+                  class="member-id-input"
+                >
+                  <template #prepend>
+                    <v-icon size="x-large">
+                      mdi-account-box-outline
+                    </v-icon>
+                  </template>
+                </v-text-field>
+              </v-col>
+              <v-col cols="12" md="3">
+                <v-text-field
+                  v-model="member.name"
+                  label="名前"
+                  outlined
+                  dense
+                  hide-details="auto"
+                  :readonly="editingMember?.id !== member.id"
+                  :error-messages="editingMember?.id === member.id ? editValidationErrors.name : ''"
                 />
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="member in organization.members"
-                :key="member.id"
-              >
-                <td>
-                  <v-icon size="x-large">
-                    mdi-account-box-outline
-                  </v-icon>
-                </td>
-                <td>
-                  <v-text-field
-                    v-model="member.id"
-                    dense
-                    readonly
-                    density="compact"
-                    hide-details
-                    class="member-id-input"
-                  />
-                </td>
-                <td>
-                  <v-text-field
-                    v-model="member.name"
-                    outlined
-                    dense
-                    density="compact"
-                    :readonly="editingMember?.id !== member.id"
-                    :error-messages="editingMember?.id === member.id ? editValidationErrors.name : ''"
-                    hide-details="auto"
-                    class="member-name-input"
-                  />
-                </td>
-                <td>
-                  <v-text-field
-                    v-model="member.email"
-                    outlined
-                    dense
-                    density="compact"
-                    :readonly="editingMember?.id !== member.id"
-                    :error-messages="editingMember?.id === member.id ? editValidationErrors.email : ''"
-                    hide-details="auto"
-                    class="member-email-input"
-                  />
-                </td>
-                <td>
-                  <v-row
-                    no-gutters
-                    justify="end"
-                  >
-                    <v-col v-if="editingMember?.id === member.id">
-                      <v-btn
-                        icon
-                        small
-                        class="action-btn"
-                        @click="handleUpdateMember(member)"
-                      >
-                        <v-icon small>
-                          mdi-check
-                        </v-icon>
-                      </v-btn>
-                    </v-col>
-                    <v-col v-else>
-                      <v-btn
-                        icon
-                        small
-                        class="mr-1 action-btn"
-                        elevation="4"
-                        @click="setEditingMember(member)"
-                      >
-                        <v-icon small>
-                          mdi-pencil
-                        </v-icon>
-                      </v-btn>
-                      <v-btn
-                        icon
-                        small
-                        class="action-btn"
-                        elevation="4"
-                        @click="handleDeleteMember(member.id)"
-                      >
-                        <v-icon small>
-                          mdi-delete
-                        </v-icon>
-                      </v-btn>
-                    </v-col>
-                  </v-row>
-                </td>
-              </tr>
-              <tr class="newMember">
-                <td />
-                <td>
-                  <v-text-field
-                    v-model="newMember.id"
-                    label="ID"
-                    :maxlength="8"
-                    outlined
-                    dense
-                    color="primary"
-                    :error-messages="validationErrors.id"
-                    class="member-id-input mr-2"
-                  />
-                </td>
-                <td>
-                  <v-text-field
-                    v-model="newMember.name"
-                    label="名前"
-                    outlined
-                    dense
-                    color="primary"
-                    :error-messages="validationErrors.name"
-                    class="member-name-input mr-2"
-                  />
-                </td>
-                <td>
-                  <v-text-field
-                    v-model="newMember.email"
-                    label="メールアドレス"
-                    outlined
-                    dense
-                    color="primary"
-                    :error-messages="validationErrors.email"
-                    class="member-email-input mr-2"
-                  />
-                </td>
-                <td>
-                  <v-btn
-                    color="secondary"
-                    @click="handleAddMember"
-                  >
-                    メンバーを追加
-                  </v-btn>
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
+              </v-col>
+              <v-col cols="12" md="5">
+                <v-text-field
+                  v-model="member.email"
+                  label="メールアドレス"
+                  outlined
+                  dense
+                  hide-details="auto"
+                  :readonly="editingMember?.id !== member.id"
+                  :error-messages="editingMember?.id === member.id ? editValidationErrors.email : ''"
+                />
+              </v-col>
+              <v-col cols="12" md="2" class="d-flex justify-end">
+                <v-btn v-if="editingMember?.id === member.id" icon small @click="handleUpdateMember(member)">
+                  <v-icon>mdi-check</v-icon>
+                </v-btn>
+                <v-btn v-else icon small @click="setEditingMember(member)">
+                  <v-icon>mdi-pencil</v-icon>
+                </v-btn>
+                <v-btn icon small @click="handleDeleteMember(member.id)">
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card-text>
         </v-card>
+
+        <v-row class="mt-4 mx-3">
+          <v-text-field
+            v-model="newMember.id"
+            label="ID"
+            :maxlength="8"
+            outlined
+            dense
+            color="primary"
+            :error-messages="validationErrors.id"
+            class="member-id-input mr-2"
+          />
+          <v-text-field
+            v-model="newMember.name"
+            label="名前"
+            outlined
+            dense
+            color="primary"
+            :error-messages="validationErrors.name"
+            class="member-name-input mr-2"
+          />
+          <v-text-field
+            v-model="newMember.email"
+            label="メールアドレス"
+            outlined
+            dense
+            color="primary"
+            :error-messages="validationErrors.email"
+            class="member-email-input mr-2"
+          />
+          <v-btn
+            color="secondary"
+            @click="handleAddMember"
+          >
+            メンバーを追加
+          </v-btn>
+        </v-row>
 
         <div class="mt-5">
           <v-btn 
@@ -430,7 +363,7 @@ watch(
 
 <style scoped>
 .organization-management-container {
-  min-width: 960px;
+  max-width: 960px;
 }
 
 .organization-card {

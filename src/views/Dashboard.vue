@@ -35,6 +35,8 @@
           <v-card-text class="pt-1 pb-3">
             - サインインを組織IDで行う<br>
             - 初期組織情報の登録<br>
+            - 確認ダイアログのUI調整<br>
+            - 新規メンバー追加エラー状態だと登録不可となる不具合<br>
             - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>
         </v-card>
@@ -53,8 +55,8 @@
             </v-icon>
             カレンダー
           </v-card-title>
-          <v-card-text class="pt-1 pb-3">
-            <v-card>
+          <v-card-text class="pt-1 pb-4">
+            <v-card max-width="800" class="mx-auto">
               <Calendar
                 :calendar-weeks="createWeeks(2)"
               />
