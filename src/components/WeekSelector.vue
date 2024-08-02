@@ -106,8 +106,7 @@ watch(() => props.selectedWeek, (newValue) => {
 
 <style scoped>
 .week-selector {
-  max-width: 800px;
-  padding-top: 0;
+  padding: 0;
 }
 
 .hover-effect {

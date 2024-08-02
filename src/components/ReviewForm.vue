@@ -56,7 +56,8 @@
             <v-row>
               <v-col
                 cols="12"
-                md="6"
+                md="5"
+                class="d-flex flex-column"
               >
                 <div class="text-subtitle-2 font-weight-medium mb-1">
                   作業内容
@@ -81,22 +82,24 @@
                     </v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
-                <v-chip
-                  color="primary"
-                  x-small
-                >
-                  <v-icon
-                    class="mr-1"
+                <div class="mt-auto">
+                  <v-chip
+                    color="primary"
                     x-small
                   >
-                    mdi-clock-outline
-                  </v-icon>
-                  残業: {{ report.overtime }}時間
-                </v-chip>
+                    <v-icon
+                      class="mr-1"
+                      x-small
+                    >
+                      mdi-clock-outline
+                    </v-icon>
+                    残業: {{ report.overtime }}時間
+                  </v-chip>
+                </div>
               </v-col>
               <v-col
                 cols="12"
-                md="6"
+                md="7"
               >
                 <div class="text-subtitle-2 font-weight-medium mb-1">
                   現状・問題点
@@ -417,7 +420,7 @@ const handleApprove = async (memberUuid) => {
 
 <style scoped>
 .review-form-container {
-  max-width: 800px;
+  padding: 16px 0 0;
 }
 
 .none-card {
