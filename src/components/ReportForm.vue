@@ -40,11 +40,9 @@
                     </v-list>
                   </v-col>
                   <v-col col="12" md="7">
-                    <div class="text-subtitle-2 font-weight-medium mt-2 mb-1">
-                      現状・問題点
-                    </div>
                     <v-textarea
                       v-model="previousWeekReport.issues"
+                      label="現状・問題点"
                       outlined
                       readonly
                       auto-grow
@@ -53,11 +51,9 @@
                       class="small-text-area mb-2"
                     />
 
-                    <div class="text-subtitle-2 font-weight-medium mb-1">
-                      改善点
-                    </div>
                     <v-textarea
                       v-model="previousWeekReport.improvements"
+                      label="改善点"
                       outlined
                       readonly
                       auto-grow
@@ -446,9 +442,9 @@ const fetchReport = async () => {
     if (fetchedPrevReport) {
       previousWeekReport.value = {
         ...fetchedPrevReport,
-        issues: fetchedPrevReport.issues || '',
-        achievements: fetchedPrevReport.achievements || '',
-        improvements: fetchedPrevReport.improvements || ''
+        issues: fetchedPrevReport.issues || ' ',
+        achievements: fetchedPrevReport.achievements || ' ',
+        improvements: fetchedPrevReport.improvements || ' '
       }
     }
     projectNames.value = memberProjects
@@ -461,6 +457,7 @@ const fetchReport = async () => {
 }
 
 onMounted(fetchReport)
+
 const validateReport = () => {
   let isValid = true
   formErrors.issues = []
@@ -480,17 +477,10 @@ const validateReport = () => {
       isValid = false
       projectErrors[index].name.push('プロジェクト名を入力してください。')
     }
-    
-    if (project.workItems.length === 0 || project.workItems.every(item => !item.content.trim())) {
+    const validWorkItems = project.workItems.filter(item => item.content.trim() !== '')
+    if (validWorkItems.length === 0) {
       isValid = false
       projectErrors[index].workItems.push('少なくとも1つの作業内容を追加してください。')
-    } else {
-      project.workItems.forEach((item, itemIndex) => {
-        if (!item.content.trim()) {
-          isValid = false
-          projectErrors[index].workItems[itemIndex] = '作業内容を入力してください。'
-        }
-      })
     }
   })
 
@@ -503,17 +493,38 @@ const validateReport = () => {
   return isValid
 }
 
+const removeEmptyWorkItems = (projects) => {
+  return projects.map(project => ({
+    ...project,
+    workItems: project.workItems.filter(item => item.content.trim() !== '')
+  }))
+}
+
 const handleSubmit = async () => {
   const isValid = validateReport()
 
   if (!isValid) {
     return
   }
+
   try {
-    await submitReport(report.value)
-    showNotification('週次報告を提出しました。')
+    // Remove empty work items before submission
+    const cleanedReport = {
+      ...report.value,
+      projects: removeEmptyWorkItems(report.value.projects)
+    }
+
+    // Additional check to ensure each project has at least one work item
+    if (cleanedReport.projects.some(project => project.workItems.length === 0)) {
+      showNotification('各プロジェクトに少なくとも1つの作業内容が必要です。', true)
+      return
+    }
+
+    await submitReport(cleanedReport)
+    showNotification('報告を提出しました。')
   } catch (error) {
     console.error('Failed to submit report:', error)
+    showNotification('報告の提出に失敗しました。', true)
   }
 }
 </script>

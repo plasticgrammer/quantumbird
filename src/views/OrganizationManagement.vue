@@ -180,7 +180,7 @@
 </template>
 
 <script setup>
-import { reactive, toRefs, ref, onMounted, inject, watch } from 'vue'
+import { reactive, toRefs, ref, onMounted, inject, computed, watch } from 'vue'
 import { useStore } from 'vuex'
 import { submitOrganization, updateOrganization, getOrganization } from '../services/organizationService'
 
@@ -249,6 +249,9 @@ const validateNewMember = () => {
   if (!newMember.value.id.trim()) {
     validationErrors.value.id = 'IDは必須です'
     isValid = false
+  } else if (organization.value.members.some(member => member.id === newMember.value.id)) {
+    validationErrors.value.id = '既に存在します'
+    isValid = false
   } else {
     validationErrors.value.id = ''
   }
@@ -272,8 +275,6 @@ const handleAddMember = () => {
       name: newMember.value.name,
       email: newMember.value.email
     })
-    console.log('Member added:', newMember.value)
-    console.log('Updated members:', organization.value.members)
     newMember.value = { id: '', name: '', email: '' }
     validationErrors.value = { id: '', name: '', email: '' }
     handleFormChange()
@@ -305,14 +306,15 @@ const validateForm = async () => {
   isFormValid.value = validation.valid
 }
 
+const isOrganizationValid = computed(() => {
+  return organization.value.name.trim() !== ''
+})
+
 const handleSubmit = async () => {
-  await validateForm()
-  
-  if (!isFormValid.value || !isFormChanged.value) {
+  if (!isOrganizationValid.value || !isFormChanged.value) {
     return
   }
 
-  loading.value = true
   try {
     if (isNew.value) {
       await submitOrganization(organization.value)
@@ -326,8 +328,6 @@ const handleSubmit = async () => {
     isFormChanged.value = false
   } catch (error) {
     showNotification('組織の保存に失敗しました', error)
-  } finally {
-    loading.value = false
   }
 }
 

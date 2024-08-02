@@ -93,7 +93,8 @@ def handle_put(event):
 
         return create_response(200, 'Organization and members updated successfully')
     elif 'memberUuid' in data:
-        item = prepare_member_item(data)
+        existing_member = get_member(data['memberUuid'])
+        item = prepare_member_item(data, existing_member)
         response = members_table.put_item(Item=item)
         logger.info(f"Member update response: {response}")
         return create_response(200, 'Member updated successfully')
@@ -125,14 +126,19 @@ def prepare_organization_item(org_data):
         'name': org_data.get('name')
     }
 
-def prepare_member_item(member_data):
-    return {
-        'memberUuid': member_data.get('memberUuid', str(uuid.uuid4())),
-        'id': member_data.get('id'),
-        'organizationId': member_data['organizationId'],
-        'name': member_data.get('name'),
-        'email': member_data.get('email')
+def prepare_member_item(member_data, existing_member=None):
+    if existing_member is None:
+        existing_member = {}
+    
+    updated_member = {
+        'memberUuid': member_data.get('memberUuid', existing_member.get('memberUuid', str(uuid.uuid4()))),
+        'id': member_data.get('id', existing_member.get('id')),
+        'organizationId': member_data.get('organizationId', existing_member.get('organizationId')),
+        'name': member_data.get('name', existing_member.get('name')),
+        'email': member_data.get('email', existing_member.get('email')),
+        'projects': member_data.get('projects', existing_member.get('projects', []))
     }
+    return {k: v for k, v in updated_member.items() if v is not None}
 
 def get_organization(organization_id):
     try:
@@ -183,23 +189,19 @@ def list_members(organization_id):
 def update_members(organization_id, members):
     # 既存のメンバーを取得
     existing_members = list_members(organization_id)
-    existing_member_ids = {m['id'] for m in existing_members if 'id' in m}
+    existing_members_dict = {m['id']: m for m in existing_members if 'id' in m}
 
     # メンバーの更新と追加
     for member in members:
-        member_item = prepare_member_item({
-            'memberUuid': member.get('memberUuid', str(uuid.uuid4())),
-            'id': member.get('id'),
-            'organizationId': organization_id,
-            'name': member.get('name'),
-            'email': member.get('email')
-        })
+        existing_member = existing_members_dict.get(member.get('id'))
+        member_item = prepare_member_item(member, existing_member)
+        member_item['organizationId'] = organization_id
         members_table.put_item(Item=member_item)
-        if member_item['id'] in existing_member_ids:
-            existing_member_ids.remove(member_item['id'])
+        if member.get('id') in existing_members_dict:
+            del existing_members_dict[member.get('id')]
 
     # 削除されたメンバーの処理
-    for member_id in existing_member_ids:
+    for member_id in existing_members_dict:
         delete_member_by_id(organization_id, member_id)
 
 def delete_organization_and_members(organization_id):
