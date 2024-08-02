@@ -66,7 +66,6 @@
 
       <v-bottom-navigation
         v-else
-        bg-color="teal"
         grow
       >
         <v-btn
@@ -75,8 +74,9 @@
           :value="item.value"
           @click="navigateTo(item.route)"
         >
-          <v-icon>{{ item.icon }}</v-icon>
-          {{ item.title }}
+          <v-icon size="x-large">
+            {{ item.icon }}
+          </v-icon>
         </v-btn>
       </v-bottom-navigation>
     </template>

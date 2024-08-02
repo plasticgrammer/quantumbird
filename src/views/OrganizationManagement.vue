@@ -65,7 +65,7 @@
             :key="member.id"
             flat
           >
-            <v-card-text class="px-3 py-1">
+            <v-card-text class="member-row px-3 py-1">
               <v-row>
                 <v-col cols="12" md="2">
                   <v-text-field
@@ -294,7 +294,7 @@ const handleUpdateMember = (member) => {
 }
 
 const handleDeleteMember = async (memberId) => {
-  const confirmed = await showConfirmDialog('確認', '本当にこの項目を削除しますか？')
+  const confirmed = await showConfirmDialog('確認', '本当にこのメンバーを削除しますか？')
   if (confirmed) {
     organization.value.members = organization.value.members.filter((member) => member.id !== memberId)
     handleFormChange()
@@ -406,5 +406,19 @@ watch(
 
 .v-table .newMember td {
   padding: 30px 10px 10px !important;
+}
+
+@media (max-width: 600px) {
+  .v-row .v-col-12 {
+    padding: 4px !important;
+  }
+
+  .v-row .v-col-12:has(button) {
+    padding: 16px !important;
+  }
+
+  .member-row {
+    border-bottom: solid 1px lightgray;
+  }
 }
 </style>

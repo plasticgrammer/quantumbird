@@ -12,13 +12,13 @@
         <v-card class="mb-4" elevation="4">
           <v-expansion-panels v-model="expandedPanel">
             <v-expansion-panel>
-              <v-expansion-panel-title>
+              <v-expansion-panel-title class="bg-grey-lighten-4">
                 先週の報告内容
                 <template #actions>
                   <v-icon icon="mdi-chevron-down"></v-icon>
                 </template>
               </v-expansion-panel-title>
-              <v-expansion-panel-text class="bg-blue-lighten-5">
+              <v-expansion-panel-text>
                 <v-row>
                   <v-col col="12" md="5">
                     <v-list class="bg-transparent custom-list">

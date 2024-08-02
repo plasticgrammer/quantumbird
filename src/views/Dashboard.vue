@@ -28,29 +28,9 @@
               small
               class="mr-1"
             >
-              mdi-clipboard-check-outline
-            </v-icon>
-            やることリスト
-          </v-card-title>
-          <v-card-text class="pt-1 pb-3">
-            - 確認ダイアログのUI調整<br>
-            - 報告済みステータスをカレンダーに表示<br>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12">
-        <v-card
-          class="mb-2"
-          elevation="4"
-        >
-          <v-card-title class="text-subtitle-1">
-            <v-icon
-              small
-              class="mr-1"
-            >
               mdi-calendar-outline
             </v-icon>
-            カレンダー
+            カレンダー（先週・今週）
           </v-card-title>
           <v-card-text class="pt-1 pb-4">
             <v-card max-width="800" class="mx-auto">
@@ -61,7 +41,29 @@
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="12">
+
+      <v-col cols="12" md="6">
+        <v-card
+          class="mb-2"
+          elevation="4"
+        >
+          <v-card-title class="text-subtitle-1">
+            <v-icon
+              small
+              class="mr-1"
+            >
+              mdi-clipboard-check-outline
+            </v-icon>
+            やることリスト
+          </v-card-title>
+          <v-card-text class="pt-1 pb-3">
+            - 確認ダイアログのUI調整<br>
+            - 報告済みステータスをカレンダーに表示<br>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" md="6">
         <v-card
           class="mb-2"
           elevation="4"

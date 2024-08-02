@@ -36,7 +36,7 @@
               :color="getStatusColor(report.status)"
               outlined
               x-small
-              class="ml-2"
+              class="status-chip ml-2"
             >
               <v-icon
                 v-if="report.status === 'approved'"
@@ -422,7 +422,11 @@ const handleApprove = async (memberUuid) => {
 }
 
 .approved-card {
-  background-color: azure;
+  background-color: white;
+}
+
+.status-chip {
+  border: solid;
 }
 
 .tasks {
