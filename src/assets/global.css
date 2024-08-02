@@ -24,3 +24,16 @@ h3 { font-size: 1.2rem; }
 .v-field:has(input[readOnly]) .v-field__outline::before {
   display: none;
 }
+
+
+.work-items-list {
+  padding-left: 24px;
+}
+
+.work-items-list li {
+  line-height: 1.6;
+}
+
+.small-text-area textarea {
+  font-size: 0.875rem;
+}

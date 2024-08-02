@@ -19,35 +19,54 @@
                 </template>
               </v-expansion-panel-title>
               <v-expansion-panel-text class="bg-blue-lighten-5">
-                <v-list class="bg-transparent custom-list">
-                  <v-list-item v-for="(project, index) in previousWeekReport.projects" :key="index">
-                    <v-list-item-title>
-                      <v-icon small>
-                        mdi-folder-outline
-                      </v-icon>
-                      {{ project.name }}
-                    </v-list-item-title>
-                    <v-list-item-subtitle>
-                      <ul class="work-items-list">
-                        <li v-for="(item, itemIndex) in project.workItems" :key="itemIndex">
-                          {{ item.content }}
-                        </li>
-                      </ul>
-                    </v-list-item-subtitle>
-                  </v-list-item>
-                  <v-list-item>
-                    <v-list-item-title>現状・問題点</v-list-item-title>
-                    <v-list-item-subtitle class="custom-list-subtext">
-                      {{ previousWeekReport.issues }}
-                    </v-list-item-subtitle>
-                  </v-list-item>
-                  <v-list-item>
-                    <v-list-item-title>改善点</v-list-item-title>
-                    <v-list-item-subtitle class="custom-list-subtext">
-                      {{ previousWeekReport.improvements }}
-                    </v-list-item-subtitle>
-                  </v-list-item>
-                </v-list>
+                <v-row>
+                  <v-col col="12" md="5">
+                    <v-list class="bg-transparent custom-list">
+                      <v-list-item v-for="(project, index) in previousWeekReport.projects" :key="index">
+                        <v-list-item-title>
+                          <v-icon small>
+                            mdi-folder-outline
+                          </v-icon>
+                          {{ project.name }}
+                        </v-list-item-title>
+                        <v-list-item-subtitle class="d-block">
+                          <ul class="work-items-list">
+                            <li v-for="(item, itemIndex) in project.workItems" :key="itemIndex">
+                              {{ item.content }}
+                            </li>
+                          </ul>
+                        </v-list-item-subtitle>
+                      </v-list-item>
+                    </v-list>
+                  </v-col>
+                  <v-col col="12" md="7">
+                    <div class="text-subtitle-2 font-weight-medium mt-2 mb-1">
+                      現状・問題点
+                    </div>
+                    <v-textarea
+                      v-model="previousWeekReport.issues"
+                      outlined
+                      readonly
+                      auto-grow
+                      rows="2"
+                      hide-details
+                      class="small-text-area mb-2"
+                    />
+
+                    <div class="text-subtitle-2 font-weight-medium mb-1">
+                      改善点
+                    </div>
+                    <v-textarea
+                      v-model="previousWeekReport.improvements"
+                      outlined
+                      readonly
+                      auto-grow
+                      rows="1"
+                      hide-details
+                      class="small-text-area"
+                    />
+                  </v-col>
+                </v-row>
                 <v-row class="justify-end pa-4">
                   <v-btn
                     color="secondary"
@@ -516,17 +535,6 @@ const handleSubmit = async () => {
 
 .project-list-item:hover {
   background-color: rgba(179, 215, 255, 0.6) !important;
-}
-
-.work-items-list {
-  list-style-type: disc !important;
-  padding-left: 24px !important;
-  margin: 0;
-}
-
-.work-items-list li {
-  padding: 4px 0;
-  display: list-item !important;
 }
 
 .report-form {

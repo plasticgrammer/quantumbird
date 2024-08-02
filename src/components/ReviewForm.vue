@@ -77,8 +77,12 @@
                       </v-icon>
                       {{ project.name }}
                     </v-list-item-title>
-                    <v-list-item-subtitle class="ml-2 my-2">
-                      {{ toTasks(project) }}
+                    <v-list-item-subtitle class="d-block ml-2 my-2">
+                      <ul class="work-items-list">
+                        <li v-for="(item, itemIndex) in project.workItems" :key="itemIndex">
+                          {{ item.content }}
+                        </li>
+                      </ul>
                     </v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
@@ -108,7 +112,6 @@
                   v-model="report.issues"
                   outlined
                   readonly
-                  dense
                   auto-grow
                   rows="2"
                   hide-details
@@ -122,7 +125,6 @@
                   v-model="report.achievements"
                   outlined
                   readonly
-                  dense
                   auto-grow
                   rows="1"
                   hide-details
@@ -136,7 +138,6 @@
                   v-model="report.improvements"
                   outlined
                   readonly
-                  dense
                   auto-grow
                   rows="1"
                   hide-details
@@ -156,7 +157,6 @@
                   clear-icon="mdi-close-circle"
                   clearable 
                   rows="2"
-                  class="small-text-area"
                 />
 
                 <v-alert
@@ -310,12 +310,6 @@ const fetchReports = async () => {
   }
 }
 
-const toTasks = (project) => {
-  return Array.isArray(project.workItems) 
-    ? project.workItems.map(item => item.content).join(', ')
-    : ''
-}
-
 const fetchMembers = async () => {
   try {
     return await listMembers(organizationId)
@@ -433,11 +427,6 @@ const handleApprove = async (memberUuid) => {
 
 .tasks {
   background-color: transparent;
-}
-
-.small-text-area :deep() textarea {
-  font-size: 0.875rem;
-  line-height: 1.25;
 }
 
 .v-list-item__title {
