@@ -140,8 +140,8 @@ def parse_body(event):
     else:
         return float_to_decimal(event)
 
-def prepare_item(report_data):
-    return {
+def prepare_item(report_data, existing_report=None):
+    item = {
         'memberUuid': report_data.get('memberUuid'),
         'weekString': report_data.get('weekString'),
         'organizationId': report_data.get('organizationId'),
@@ -154,6 +154,13 @@ def prepare_item(report_data):
         'feedbacks': report_data.get('feedbacks', []),
         'approvedAt': report_data.get('approvedAt'),
     }
+    
+    if existing_report:
+        # 既存のレポートの内容を保持しつつ、新しいデータで上書き
+        existing_report.update(item)
+        return existing_report
+    
+    return item
 
 def get_reports_by_organization(organization_id, week_string):
     try:

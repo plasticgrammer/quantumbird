@@ -3,16 +3,13 @@
     class="weekdays"
     no-gutters
   >
-    <v-col
-      cols="1"
-      class="week-number-header"
-    >
+    <v-col cols="1" class="week-number-header">
       週
     </v-col>
     <v-col
       v-for="day in weekdays"
       :key="day.label"
-      :class="['weekday', day.class]"
+      :class="['weekday-header', day.class]"
     >
       {{ day.label }}
     </v-col>
@@ -35,14 +32,11 @@
       @mouseenter="onHoverWeek(week)"
       @mouseleave="onLeaveWeek(week)"
     >
-      <v-col
-        cols="1"
-        class="week-number"
-      >
-        {{ getWeekNumber(week[0]) }}
+      <v-col cols="1" class="week-number">
+        {{ getWeekJpText(week.weekOffset) }}
       </v-col>
       <v-col
-        v-for="(day, dayIndex) in week"
+        v-for="(day, dayIndex) in week.days"
         :key="day.toISOString()"
         :class="[
           'day',
@@ -94,8 +88,8 @@ const {
   isToday, 
   isSaturday, 
   isSunday, 
-  getWeekNumber,
-  getStringFromWeek
+  getStringFromWeek,
+  getWeekJpText
 } = useCalendar()
 
 const hoveredWeek = ref(null)
@@ -109,7 +103,7 @@ const onLeaveWeek = () => {
 }
 
 const isHovered = (week) => {
-  return hoveredWeek.value && week[0].getTime() === hoveredWeek.value[0].getTime()
+  return hoveredWeek.value && week.weekOffset === hoveredWeek.value.weekOffset
 }
 
 const weekdays = [
@@ -159,29 +153,52 @@ const getWeekKey = getStringFromWeek
   font-weight: bold;
 }
 
-.weekday,
-.week-number-header,
-.week-number,
-.day {
-  height: 3em;
+.weekday-header,
+.week-number-header {
   display: flex;
   justify-content: center;
   align-items: center;
+  height: 2.5em;
+}
+
+.weekday,
+.week-number,
+.day {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 3.3em;
+}
+
+.week-number-header,
+.week-number {
+  font-weight: bold;
+  background-color: #e0e0e0;
+  border-right: 1px solid #ccc;
+  font-size: 1.1em;
+}
+
+.week-number {
+  text-orientation: upright;
+  white-space: nowrap;
+}
+
+.week-row:hover .week-number {
+  background-color: #d0d0d0;
+}
+
+.week-row.selected .week-number {
+  background-color: #b3d7ff;
 }
 
 .weekday {
   text-align: center;
 }
 
-.week-number-header,
-.week-number {
-  color: #6c757d;
-  font-size: 0.8em;
-}
-
 .day {
   text-align: center;
   position: relative;
+  margin-top: 2px;
 }
 
 .day.today {

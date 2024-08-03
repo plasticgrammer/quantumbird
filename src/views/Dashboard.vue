@@ -96,7 +96,7 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            - 確認ダイアログのUI調整<br>
+            - 今週／先週／先々週／３週前・・・<br>
             - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>
         </v-card>

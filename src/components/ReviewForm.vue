@@ -27,7 +27,6 @@
               <v-icon
                 size="x-large"
                 class="mr-1"
-                color="black"
               >mdi-account-box-outline</v-icon>
               {{ report.name }}
             </span>
@@ -160,7 +159,7 @@
 
                 <v-alert
                   v-for="(feedback, index) in report.feedbacks" :key="index" 
-                  icon="mdi-message"
+                  icon="mdi-reply"
                   density="compact"
                   border="start"
                   border-color="warning"
@@ -175,6 +174,28 @@
                   <div class="mt-2">
                     <p>{{ feedback.content }}</p>
                   </div>
+                  <v-textarea
+                    v-if="!!feedback.replyComment"
+                    v-model="feedback.replyComment"
+                    label="返信コメント"
+                    readonly
+                    rows="1"
+                    auto-grow
+                    outlined
+                    dense
+                    hide-details
+                    class="my-2"
+                  >
+                    <template #prepend-inner>
+                      <v-icon
+                        size="large"
+                        class="mr-1"
+                        color="black"
+                      >
+                        mdi-message
+                      </v-icon>
+                    </template>
+                  </v-textarea>
                 </v-alert>
               </v-col>
             </v-row>
@@ -207,7 +228,7 @@
               @click="submitFeedback(report.memberUuid)"
             >
               <v-icon left x-small class="mr-1">
-                mdi-message
+                mdi-reply
               </v-icon>
               フィードバック送信
             </v-btn>
@@ -384,6 +405,7 @@ const submitFeedback = async (memberUuid) => {
     }
   }
 }
+
 const handleApprove = async (memberUuid) => {
   const now = new Date()
   const report = reports.value.find(r => r.memberUuid === memberUuid)

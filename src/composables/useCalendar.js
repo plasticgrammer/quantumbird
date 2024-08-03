@@ -1,9 +1,7 @@
 // src/composables/useCalendar.js
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 
 export function useCalendar() {
-  const selectedWeek = ref(null)
-
   const calendarWeeks = computed(() => createWeeks(6))
 
   const createWeeks = (weekCount) => {
@@ -18,31 +16,61 @@ export function useCalendar() {
     }
 
     for (let i = 0; i < weekCount; i++) {
-      const week = []
+      const days = []
+      const startDate = new Date(currentDate)
       for (let j = 0; j < 7; j++) {
-        week.push(new Date(currentDate))
+        days.push(new Date(currentDate))
         currentDate.setDate(currentDate.getDate() + 1)
       }
-      weeks.push(week)
+      weeks.push(createWeekItem(startDate, i - weekCount + 1))
     }
     return weeks
   }
 
-  const calendarDateRange = computed(() => {
-    if (calendarWeeks.value.length === 0) return { start: null, end: null }
-    const start = calendarWeeks.value[0][0]
-    const end = calendarWeeks.value[calendarWeeks.value.length - 1][6]
-    return { start, end }
-  })
-
-  const isWeekInRange = (week) => {
-    if (!week || !calendarDateRange.value.start || !calendarDateRange.value.end) return false
-    return getWeekNumber(week[0]) >= getWeekNumber(calendarDateRange.value.start) 
-      && getWeekNumber(week[1]) <= getWeekNumber(calendarDateRange.value.end)
+  const createWeekItem = (startDate, weekOffset) => {
+    const days = []
+    const currentDate = new Date(startDate)
+    for (let j = 0; j < 7; j++) {
+      days.push(new Date(currentDate))
+      currentDate.setDate(currentDate.getDate() + 1)
+    }
+    const endDate = new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000)
+    endDate.setHours(23, 59, 59, 999)
+    return {
+      startDate, 
+      endDate, 
+      weekOffset,
+      days
+    }
   }
 
-  const selectWeek = (week) => {
-    selectedWeek.value = week
+  function getWeekOffset(weekStartDate) {
+    // 現在の日付を取得
+    const today = new Date()
+    
+    // 現在の週の月曜日を取得
+    const currentWeekMonday = new Date(today)
+    currentWeekMonday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1))
+    currentWeekMonday.setHours(0, 0, 0, 0)
+  
+    // 引数で渡された週の月曜日の時間をリセット
+    weekStartDate.setHours(0, 0, 0, 0)
+  
+    // 週の差分を計算
+    const diffTime = weekStartDate.getTime() - currentWeekMonday.getTime()
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
+    const weekOffset = Math.floor(diffDays / 7)
+  
+    return weekOffset
+  }
+
+  const isWeekInRange = (week) => {
+    if (!week) return false
+    const start = calendarWeeks.value[0].startDate
+    const end = calendarWeeks.value[calendarWeeks.value.length - 1].endDate
+    if (!start || !end) return false
+    return week.startDate.getTime() >= start.getTime()
+      && week.endDate.getTime() <= end.getTime()
   }
 
   const getWeekNumber = (date) => {
@@ -77,7 +105,7 @@ export function useCalendar() {
   }
 
   const getStringFromWeek = (week) => {
-    const date = new Date(week[0])
+    const date = new Date(week.startDate)
     date.setHours(0, 0, 0, 0)
     date.setDate(date.getDate() + 3) // 木曜日に移動（ISO 8601準拠）
     const year = date.getFullYear()
@@ -91,10 +119,8 @@ export function useCalendar() {
     const firstThursday = new Date(year, 0, 4)
     const targetThursday = new Date(firstThursday.getTime() + (weekNumber - 1) * 7 * 24 * 60 * 60 * 1000)
     const weekStart = new Date(targetThursday.getTime() - 3 * 24 * 60 * 60 * 1000)
-    const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000)
     weekStart.setHours(0, 0, 0, 0)
-    weekEnd.setHours(23, 59, 59, 999)
-    return [weekStart, weekEnd]
+    return createWeekItem(weekStart, getWeekOffset(weekStart))
   }
 
   const getPreviousWeekString = (weekString) => {
@@ -104,13 +130,18 @@ export function useCalendar() {
     }
     return `${year}-W${(week - 1).toString().padStart(2, '0')}`
   }
+
+  const getWeekJpText = (relativeWeekIndex) => {
+    if (relativeWeekIndex === 0) return '今週'
+    if (relativeWeekIndex === -1) return '先週'
+    if (relativeWeekIndex === 1) return '来週'
+    if (relativeWeekIndex < 0) return `${Math.abs(relativeWeekIndex)}週前`
+    return `${relativeWeekIndex}週後`
+  }
   
   return {
     calendarWeeks,
     createWeeks,
-    selectedWeek,
-    selectWeek,
-    calendarDateRange,
     isWeekInRange,
     getWeekNumber,
     formatShortMonth,
@@ -120,6 +151,7 @@ export function useCalendar() {
     shouldShowMonth,
     getStringFromWeek,
     getWeekFromString,
-    getPreviousWeekString
+    getPreviousWeekString,
+    getWeekJpText
   }
 }

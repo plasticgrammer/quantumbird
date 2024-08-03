@@ -81,11 +81,10 @@
         </v-card>
       </template>
 
-      <template
-        v-if="report.status === 'feedback' && report.feedbacks"
-      >
+      <template v-if="report.status === 'feedback' && report.feedbacks && report.feedbacks.length > 0">
         <v-alert
-          v-for="(feedback, index) in report.feedbacks" :key="index" 
+          v-for="(feedback, index) in sortedFeedbacks"
+          :key="feedback.id"
           icon="mdi-message"
           density="compact"
           border="start"
@@ -93,7 +92,7 @@
           elevation="2"
           outlined
           dense
-          class="mb-2 custom-feedback-alert"
+          class="mb-1 custom-feedback-alert"
         >
           <div>
             フィードバック（{{ new Date(feedback.createdAt).toLocaleString() }}）:
@@ -101,6 +100,31 @@
           <div class="mt-1">
             <p>{{ feedback.content }}</p>
           </div>
+          <template v-if="!!feedback.replyComment || isLatestFeedback(index)">
+            <v-textarea
+              v-model="feedback.replyComment"
+              label="返信コメント"
+              :readonly="!isLatestFeedback(index)"
+              :clearable="isLatestFeedback(index)"
+              rows="2"
+              auto-grow
+              outlined
+              dense
+              hide-details
+              clear-icon="mdi-close-circle"
+              class="my-2"
+            >
+              <template #prepend-inner>
+                <v-icon
+                  size="large"
+                  class="mr-1"
+                  color="black"
+                >
+                  mdi-reply
+                </v-icon>
+              </template>
+            </v-textarea>
+          </template>
         </v-alert>
       </template>
 
@@ -325,8 +349,19 @@ const formErrors = reactive({
 })
 const projectErrors = reactive([])
 
+const sortedFeedbacks = computed(() => {
+  return [...(report.value.feedbacks || [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+})
+
+const isLatestFeedback = (index) => {
+  return index === report.value.feedbacks.length - 1
+}
+
 const formattedOvertimeHours = computed({
-  get: () => report.value.overtimeHours.toFixed(1),
+  get: () => {
+    const hours = report.value?.overtimeHours ?? 0
+    return hours.toFixed(1)
+  },
   set: (value) => {
     report.value.overtimeHours = parseFloat(value)
   }
@@ -504,7 +539,8 @@ const handleSubmit = async () => {
     // Remove empty work items before submission
     const cleanedReport = {
       ...report.value,
-      projects: removeEmptyWorkItems(report.value.projects)
+      projects: removeEmptyWorkItems(report.value.projects),
+      status: 'pending'
     }
 
     // Additional check to ensure each project has at least one work item
