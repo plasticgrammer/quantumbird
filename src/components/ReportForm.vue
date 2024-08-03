@@ -9,7 +9,7 @@
 
     <template v-else>
       <template v-if="!!previousWeekReport">
-        <v-card class="mb-4" elevation="4">
+        <v-card class="mb-4">
           <v-expansion-panels v-model="expandedPanel">
             <v-expansion-panel>
               <v-expansion-panel-title class="bg-grey-lighten-4">
@@ -111,7 +111,6 @@
         <v-card
           v-for="(project, projectIndex) in report.projects"
           :key="projectIndex" 
-          elevation="4"
           class="mb-4"
         >
           <v-card-text>
@@ -193,10 +192,7 @@
         </div>
         
         <v-row>
-          <v-col
-            cols="12"
-            sm="6"
-          >
+          <v-col cols="12" sm="6">
             <v-text-field
               v-model="formattedOvertimeHours"
               label="残業時間"
@@ -268,10 +264,7 @@
           class="mt-4"
           :disabled="!isFormValid"
         >
-          <v-icon
-            class="mr-1"
-            left
-          >
+          <v-icon class="mr-1" left>
             mdi-check
           </v-icon>
           報告を提出する

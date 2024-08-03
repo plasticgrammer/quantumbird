@@ -91,7 +91,6 @@ const addProjectOption = async (project) => {
       emit('projectListChanged', newProjectList)
     } catch (error) {
       console.error('Failed to add project:', error)
-      // エラーハンドリング（例：エラーメッセージの表示）
     }
   }
 }
@@ -111,7 +110,6 @@ const removeProjectOption = async (project) => {
     }
   } catch (error) {
     console.error('Failed to remove project:', error)
-    // エラーハンドリング（例：エラーメッセージの表示）
   }
 }
 

@@ -3,7 +3,6 @@
     <v-card 
       max-width="500" 
       class="mx-auto mt-5"
-      elevation="4"
     >
       <v-card-title>
         <v-icon

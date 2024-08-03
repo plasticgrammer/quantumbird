@@ -21,7 +21,6 @@
       <v-col cols="12">
         <v-card
           class="mb-2"
-          elevation="4"
         >
           <v-card-title class="text-subtitle-1">
             <v-icon
@@ -45,7 +44,6 @@
       <v-col cols="12" md="6">
         <v-card
           class="mb-2"
-          elevation="4"
         >
           <v-card-title class="text-subtitle-1">
             <v-icon
@@ -66,22 +64,23 @@
       <v-col cols="12" md="6">
         <v-card
           class="mb-2"
-          elevation="4"
         >
-          <v-card-text class="py-5">
+          <v-card-title class="text-subtitle-1">
+            <v-icon
+              small
+              class="mr-1"
+            >
+              mdi-calendar-multiple-check
+            </v-icon>
+            メンバーの週次報告
+          </v-card-title>
+          <v-card-text class="pt-1 pb-3">
             <v-btn
               color="secondary"
               :to="{ name: 'WeeklyReportSelector', params: { organizationId: 'jsp-d3', memberUuid: 'd35cdaa4-07f5-4283-8222-cb338d0a06ee' } }"
               x-small
             >
-              <v-icon
-                class="mr-1"
-                small
-                left
-              >
-                mdi-clipboard-check-outline
-              </v-icon>
-              週次報告 0001
+              週報 0001
             </v-btn>
             <span class="px-3" />
             <v-btn
@@ -89,14 +88,7 @@
               :to="{ name: 'WeeklyReportSelector', params: { organizationId: 'jsp-d3', memberUuid: 'd4435e05-1dbc-4533-82cb-64b96d94bcad' } }"
               x-small
             >
-              <v-icon
-                class="mr-1"
-                small
-                left
-              >
-                mdi-clipboard-check-outline
-              </v-icon>
-              週次報告 0009
+              週報 0009
             </v-btn>
             <span class="px-3" />
             <v-btn
@@ -104,14 +96,7 @@
               :to="{ name: 'WeeklyReportSelector', params: { organizationId: 'jsp-d3', memberUuid: 'c5b7ec52-2c39-4a8e-bc92-e854108f6825' } }"
               x-small
             >
-              <v-icon
-                class="mr-1"
-                small
-                left
-              >
-                mdi-clipboard-check-outline
-              </v-icon>
-              週次報告 0027
+              週報 0027
             </v-btn>
           </v-card-text>
         </v-card>
@@ -122,7 +107,6 @@
       >
         <v-card
           class="mb-2"
-          elevation="4"
         >
           <v-card-title class="text-subtitle-1">
             <v-icon
@@ -166,7 +150,6 @@
       >
         <v-card
           class="mb-2"
-          elevation="4"
         >
           <v-card-title class="text-subtitle-1">
             <v-icon
@@ -222,7 +205,7 @@
         </v-card>
       </v-col>
       <v-col cols="12">
-        <v-card elevation="4">
+        <v-card>
           <v-card-title class="text-subtitle-1">
             <v-icon
               small

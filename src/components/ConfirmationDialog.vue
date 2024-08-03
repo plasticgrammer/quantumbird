@@ -1,4 +1,3 @@
-<!-- ConfirmationDialog.vue -->
 <template>
   <v-dialog
     v-model="isOpen"

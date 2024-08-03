@@ -19,7 +19,6 @@
 
     <v-card 
       class="organization-card"
-      elevation="4"
       outlined
     >
       <v-form

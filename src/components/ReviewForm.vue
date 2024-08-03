@@ -18,7 +18,6 @@
       >
         <v-card
           :class="{ 'approved-card': report.status === 'approved', 'none-card': report.status === 'none' }"
-          elevation="4"
           hover
           outlined
           class="mt-2"
@@ -382,7 +381,6 @@ const submitFeedback = async (memberUuid) => {
     } catch (error) {
       console.error('Failed to submit feedback:', error)
       console.error('Report state:', JSON.stringify(report, null, 2))
-      // エラーハンドリング（例：エラーメッセージを表示）
     }
   }
 }
@@ -406,7 +404,6 @@ const handleApprove = async (memberUuid) => {
       )
     } catch (error) {
       console.error('Failed to approve report:', error)
-      // エラーハンドリング（例：エラーメッセージを表示）
     }
   }
 }
