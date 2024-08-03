@@ -29,16 +29,55 @@
             >
               mdi-calendar-outline
             </v-icon>
-            カレンダー（先週・今週）
+            報告状況
           </v-card-title>
-          <v-card-text class="pt-1 pb-4">
-            <v-card max-width="800" class="mx-auto">
-              <v-card-text class="pa-0">
-                <Calendar
-                  :calendar-weeks="createWeeks(2)"
-                />
-              </v-card-text>
-            </v-card>
+          <v-card-text class="pt-1 pb-3">
+            <v-window
+              v-model="weekIndex"
+              :show-arrows="true"
+              style="min-height: 100px;"
+            >
+              <v-window-item
+                v-for="n in calendarWeeks"
+                :key="n"
+              >
+                <v-card max-width="680" class="mx-auto">
+                  <v-card-text class="pa-0">
+                    <Calendar
+                      :calendar-weeks="[n]"
+                    />
+                  </v-card-text>
+                </v-card>
+              </v-window-item>
+            </v-window>
+
+            <v-row class="py-1">
+              <v-col cols="9" class="mb-1">
+                （ {{ reportStatus.reportedCount }} / {{ memberCount }} ）
+                <v-chip class="my-1 mr-2" color="primary" label>
+                  確認待ち: {{ reportStatus.pending }}
+                </v-chip>
+                <v-chip class="my-1 mr-2" color="warning" label>
+                  フィードバック中: {{ reportStatus.inFeedback }}
+                </v-chip>
+                <v-chip class="my-1 mr-2" color="success" label>
+                  確認済み: {{ reportStatus.confirmed }}
+                </v-chip>
+              </v-col>
+              <v-col cols="3">
+                <v-btn
+                  v-if="isAdmin"
+                  color="primary"
+                  :to="{ name: 'WeeklyReview', params: { weekString } }"
+                  x-small
+                >
+                  <v-icon class="mr-1" small left>
+                    mdi-calendar-multiple-check
+                  </v-icon>
+                  週次報告レビュー
+                </v-btn>
+              </v-col>
+            </v-row>
           </v-card-text>
         </v-card>
       </v-col>
@@ -103,6 +142,7 @@
           </v-card-text>
         </v-card>
       </v-col>
+
       <v-col
         cols="12"
         md="6"
@@ -145,67 +185,6 @@
         </v-card>
       </v-col>
 
-      <v-col
-        cols="12"
-        sm="4"
-        md="6"
-      >
-        <v-card
-          class="mb-2"
-        >
-          <v-card-title class="text-subtitle-1">
-            <v-icon
-              small
-              class="mr-1"
-            >
-              mdi-calendar-multiple-check
-            </v-icon>
-            前週の報告状況（ {{ reportStatus.reportedCount }} / {{ memberCount }} ）
-          </v-card-title>
-          <v-card-text class="pt-1 pb-3">
-            <div class="mb-1">
-              <v-chip
-                class="my-1 mr-2"
-                color="primary"
-                label
-              >
-                確認待ち: {{ reportStatus.pending }}
-              </v-chip>
-              <v-chip
-                class="my-1 mr-2"
-                color="warning"
-                label
-              >
-                フィードバック中: {{ reportStatus.inFeedback }}
-              </v-chip>
-              <v-chip
-                class="my-1"
-                color="success"
-                label
-              >
-                確認済み: {{ reportStatus.confirmed }}
-              </v-chip>
-            </div>
-            <div>
-              <v-btn
-                v-if="isAdmin"
-                color="primary"
-                :to="{ name: 'WeeklyReviewSelector' }"
-                x-small
-              >
-                <v-icon
-                  class="mr-1"
-                  small
-                  left
-                >
-                  mdi-calendar-multiple-check
-                </v-icon>
-                週次報告レビュー
-              </v-btn>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
       <v-col cols="12">
         <v-card>
           <v-card-title class="text-subtitle-1">
@@ -230,7 +209,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { Chart, registerables } from 'chart.js'
 import { useStore } from 'vuex'
 import { getOrganization } from '../services/organizationService'
@@ -240,7 +219,8 @@ import { useCalendar } from '../composables/useCalendar'
 import Calendar from '../components/Calendar.vue'
 
 const {
-  createWeeks
+  createWeeks,
+  getStringFromWeek
 } = useCalendar()
 
 Chart.register(...registerables)
@@ -248,6 +228,9 @@ Chart.register(...registerables)
 const store = useStore()
 const organizationId = store.getters['user/organizationId']
 const isAdmin = ref(true)
+const calendarWeeks = createWeeks(6)
+const weekIndex = ref(calendarWeeks.length - 2)
+const weekString = computed(() => getStringFromWeek(calendarWeeks[weekIndex.value]))
 
 const organizationName = ref('')
 const reportStatus = ref({
@@ -286,9 +269,9 @@ const fetchMembers = async () => {
   }
 }
 
-const fetchReportStatus = async () => {
+const fetchReportStatus = async (weekString) => {
   try {
-    const status = await getReportStatus(organizationId)
+    const status = await getReportStatus(organizationId, weekString)
     reportStatus.value = {
       ...status,
       reportedCount: status.pending + status.inFeedback + status.confirmed,
@@ -353,11 +336,15 @@ const initChart = () => {
   })
 }
 
+watch(weekIndex, () => {
+  fetchReportStatus(weekString.value)
+})
+
 onMounted(async () => {
   try {
     await Promise.all([
       fetchOrganizationInfo(),
-      fetchReportStatus(),
+      fetchReportStatus(weekString.value),
       fetchOvertimeData(),
       fetchMembers()
     ])

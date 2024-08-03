@@ -210,6 +210,6 @@ const getWeekKey = getStringFromWeek
   top: 3px;
   left: 5px;
   font-size: 0.75em;
-  color: #666;
+  color: navy;
 }
 </style>

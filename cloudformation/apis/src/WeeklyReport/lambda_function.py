@@ -181,12 +181,12 @@ def get_report(member_uuid, week_string):
 
 def handle_get_report_status(event):
     params = event.get('queryStringParameters') or event.get('payload') or {}
-    if 'organizationId' not in params:
-        return create_response(400, 'Missing organizationId parameter')
+    if 'organizationId' not in params or 'weekString' not in params:
+        return create_response(400, 'Missing required parameter')
 
     organization_id = params['organizationId']
-    previous_week = get_previous_week_string()
-    reports = get_reports_by_organization(organization_id, previous_week)
+    week_string = params['weekString']
+    reports = get_reports_by_organization(organization_id, week_string)
 
     status = {
         'pending': 0,
