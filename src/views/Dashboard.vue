@@ -33,9 +33,11 @@
           </v-card-title>
           <v-card-text class="pt-1 pb-4">
             <v-card max-width="800" class="mx-auto">
-              <Calendar
-                :calendar-weeks="createWeeks(2)"
-              />
+              <v-card-text class="pa-0">
+                <Calendar
+                  :calendar-weeks="createWeeks(2)"
+                />
+              </v-card-text>
             </v-card>
           </v-card-text>
         </v-card>

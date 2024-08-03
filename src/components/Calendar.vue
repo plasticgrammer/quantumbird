@@ -1,68 +1,66 @@
 <template>
-  <v-card-text class="pa-0">
+  <v-row
+    class="weekdays"
+    no-gutters
+  >
+    <v-col
+      cols="1"
+      class="week-number-header"
+    >
+      週
+    </v-col>
+    <v-col
+      v-for="day in weekdays"
+      :key="day.label"
+      :class="['weekday', day.class]"
+    >
+      {{ day.label }}
+    </v-col>
+  </v-row>
+  <transition-group
+    name="week-transition"
+    tag="div"
+  >
     <v-row
-      class="weekdays"
+      v-for="(week, weekIndex) in calendarWeeks"
+      :key="getWeekKey(week)" 
       no-gutters
+      class="week-row"
+      :class="{ 
+        'selected': isSelected(week), 
+        'hovered': isHovered(week),
+      }"
+      :style="{ '--fade-delay': `${weekIndex * .05}s` }"
+      @click="onSelectWeek(week)"
+      @mouseenter="onHoverWeek(week)"
+      @mouseleave="onLeaveWeek(week)"
     >
       <v-col
         cols="1"
-        class="week-number-header"
+        class="week-number"
       >
-        週
+        {{ getWeekNumber(week[0]) }}
       </v-col>
       <v-col
-        v-for="day in weekdays"
-        :key="day.label"
-        :class="['weekday', day.class]"
+        v-for="(day, dayIndex) in week"
+        :key="day.toISOString()"
+        :class="[
+          'day',
+          { 'today': isToday(day) },
+          { 'saturday': isSaturday(day) },
+          { 'sunday': isSunday(day) }
+        ]"
       >
-        {{ day.label }}
+        <span
+          v-if="shouldShowMonth(day, weekIndex, dayIndex)"
+          class="month"
+        >
+          {{ formatShortMonth(day) }}
+        </span>
+        <span class="date">{{ day.getDate() }}</span>
       </v-col>
     </v-row>
-    <transition-group
-      name="week-transition"
-      tag="div"
-    >
-      <v-row
-        v-for="(week, weekIndex) in calendarWeeks"
-        :key="getWeekKey(week)" 
-        no-gutters
-        class="week-row"
-        :class="{ 
-          'selected': isSelected(week), 
-          'hovered': isHovered(week),
-        }"
-        :style="{ '--fade-delay': `${weekIndex * .05}s` }"
-        @click="onSelectWeek(week)"
-        @mouseenter="onHoverWeek(week)"
-        @mouseleave="onLeaveWeek(week)"
-      >
-        <v-col
-          cols="1"
-          class="week-number"
-        >
-          {{ getWeekNumber(week[0]) }}
-        </v-col>
-        <v-col
-          v-for="(day, dayIndex) in week"
-          :key="day.toISOString()"
-          :class="[
-            'day',
-            { 'today': isToday(day) },
-            { 'saturday': isSaturday(day) },
-            { 'sunday': isSunday(day) }
-          ]"
-        >
-          <span
-            v-if="shouldShowMonth(day, weekIndex, dayIndex)"
-            class="month"
-          >
-            {{ formatShortMonth(day) }}
-          </span>
-          <span class="date">{{ day.getDate() }}</span>
-        </v-col>
-      </v-row>
-    </transition-group>
-  </v-card-text>
+  </transition-group>
 </template>
 
 <script setup>

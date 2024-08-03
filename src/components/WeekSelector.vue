@@ -17,11 +17,13 @@
       @mouseenter="handleMouseEnter"
       @mouseleave="handleMouseLeave"
     >
-      <Calendar
-        :calendar-weeks="visibleWeeks"
-        :on-select-week="handleSelectWeek"
-        :is-selected="isSelected"
-      />
+      <v-card-text class="pa-0">
+        <Calendar
+          :calendar-weeks="visibleWeeks"
+          :on-select-week="handleSelectWeek"
+          :is-selected="isSelected"
+        />
+      </v-card-text>
     </v-card>
   </v-container>
 </template>
