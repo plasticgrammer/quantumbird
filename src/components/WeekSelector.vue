@@ -111,7 +111,6 @@ watch(() => props.selectedWeek, (newValue) => {
 
 .hover-effect {
   transition: all 0.3s ease;
-  box-shadow: 0 0 15px rgba(100, 149, 237, 0.6) !important;
   transform: scale(1.02);
 }
 

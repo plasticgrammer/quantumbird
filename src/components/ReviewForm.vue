@@ -2,23 +2,29 @@
   <v-container class="review-form-container">
     <v-row class="mt-2">
       <v-col cols="12" class="py-0">
-        <v-chip-group
-          v-model="selectedStatuses"
-          column
-          multiple
+        <v-card
+          class="px-4"
+          rounded="lg"
+          variant="text"
         >
-          <v-chip
-            v-for="status in statusOptions"
-            :key="status.value"
-            :value="status.value"
-            :color="getStatusColor(status.value)"
-            outlined
-            filter
-            @click="toggleStatus(status.value)"
+          <v-chip-group
+            v-model="selectedStatuses"
+            column
+            multiple
           >
-            {{ status.text }}
-          </v-chip>
-        </v-chip-group>
+            <v-chip
+              v-for="status in statusOptions"
+              :key="status.value"
+              :value="status.value"
+              :color="getStatusColor(status.value)"
+              outlined
+              filter
+              @click="toggleStatus(status.value)"
+            >
+              {{ status.text }}
+            </v-chip>
+          </v-chip-group>
+        </v-card>
       </v-col>
     </v-row>
 
