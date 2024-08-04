@@ -38,16 +38,30 @@
               style="min-height: 100px;"
             >
               <template #prev="{ props }">
-                <v-btn icon="mdi-arrow-left" size="small" @click="props.onClick"></v-btn>
+                <v-btn
+                  class="me-4 bg-transparent"
+                  icon="mdi-arrow-left-thick"
+                  :location="isMobile ? 'bottom start' : 'top start'"
+                  size="small"
+                  absolute
+                  @click="props.onClick"
+                ></v-btn>
               </template>
               <template #next="{ props }">
-                <v-btn icon="mdi-arrow-right" size="small" @click="props.onClick"></v-btn>
+                <v-btn
+                  class="ms-4 bg-transparent"
+                  icon="mdi-arrow-right-thick"
+                  :location="isMobile ? 'bottom start' : 'top start'"
+                  size="small"
+                  absolute
+                  @click="props.onClick"
+                ></v-btn>
               </template>
               <v-window-item
                 v-for="n in calendarWeeks"
                 :key="n"
               >
-                <v-card max-width="680" class="mx-auto">
+                <v-card max-width="700" class="mx-auto">
                   <v-card-text class="pa-0">
                     <Calendar
                       :calendar-weeks="[n]"
@@ -59,7 +73,9 @@
 
             <v-row class="py-1">
               <v-col cols="9" class="mb-1">
-                （ {{ reportStatus.reportedCount }} / {{ memberCount }} ）
+                <span class="pa-2">
+                  {{ reportStatus.reportedCount }} / {{ memberCount }}
+                </span>
                 <v-chip class="my-1 mr-2" color="primary" label>
                   確認待ち: {{ reportStatus.pending }}
                 </v-chip>
@@ -222,6 +238,7 @@ import { getOrganization } from '../services/organizationService'
 import { listMembers } from '../services/memberService'
 import { getReportStatus, getOvertimeData } from '../services/reportService'
 import { useCalendar } from '../composables/useCalendar'
+import { useResponsive } from '../composables/useResponsive'
 import Calendar from '../components/Calendar.vue'
 
 const {
@@ -254,6 +271,7 @@ const overtimeData = ref({
 
 const isLoading = ref(true)
 const error = ref(null)
+const { isMobile } = useResponsive()
 
 const fetchOrganizationInfo = async () => {
   try {

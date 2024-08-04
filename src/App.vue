@@ -34,7 +34,7 @@
         :temporary="isMobile"
         :expand-on-hover="!isMobile"
         rail
-        color="secondary"
+        color="secondary d-print-none"
       >
         <v-list nav>
           <v-list-item
@@ -67,6 +67,7 @@
       <v-bottom-navigation
         v-else
         bg-color="blue-grey-darken-3"
+        class="d-print-none"
         grow
       >
         <v-btn

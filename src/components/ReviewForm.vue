@@ -1,5 +1,27 @@
 <template>
   <v-container class="review-form-container">
+    <v-row class="mt-2">
+      <v-col cols="12" class="py-0">
+        <v-chip-group
+          v-model="selectedStatuses"
+          column
+          multiple
+        >
+          <v-chip
+            v-for="status in statusOptions"
+            :key="status.value"
+            :value="status.value"
+            :color="getStatusColor(status.value)"
+            outlined
+            filter
+            @click="toggleStatus(status.value)"
+          >
+            {{ status.text }}
+          </v-chip>
+        </v-chip-group>
+      </v-col>
+    </v-row>
+
     <v-row v-if="isLoading">
       <v-col v-for="i in 3" :key="i" cols="12">
         <v-skeleton-loader
@@ -12,7 +34,7 @@
     </v-row>
     <v-row v-else>
       <v-col
-        v-for="report in reports"
+        v-for="report in filteredReports"
         :key="report.memberUuid"
         cols="12"
       >
@@ -240,7 +262,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { listReports, updateReport } from '../services/reportService'
 import { listMembers } from '../services/memberService'
 import { useStore } from 'vuex'
@@ -259,6 +281,15 @@ const reports = ref([])
 const isLoading = ref(true)
 const error = ref(null)
 const newFeedback = ref('')
+const statusOptions = [
+  { value: 'all', text: '全て' },
+  { value: 'none', text: '報告なし' },
+  { value: 'pending', text: '保留中' },
+  { value: 'feedback', text: 'フィードバック済み' },
+  { value: 'approved', text: '確認済み' }
+]
+
+const selectedStatuses = ref(['all'])
 
 const getStatusText = (status) => {
   switch (status) {
@@ -289,6 +320,36 @@ const getStatusColor = (status) => {
     return ''
   }
 }
+
+const toggleStatus = (status) => {
+  if (status === 'all') {
+    selectedStatuses.value = ['all']
+  } else {
+    const newSelection = selectedStatuses.value.filter(s => s !== 'all')
+    const statusIndex = newSelection.indexOf(status)
+    if (statusIndex > -1) {
+      newSelection.splice(statusIndex, 1)
+    } else {
+      newSelection.push(status)
+    }
+    selectedStatuses.value = newSelection.length ? newSelection : ['all']
+  }
+}
+
+watch(selectedStatuses, (newValue) => {
+  if (newValue.length === 0) {
+    selectedStatuses.value = ['all']
+  } else if (newValue.includes('all') && newValue.length > 1) {
+    selectedStatuses.value = newValue.filter(status => status !== 'all')
+  }
+}, { deep: true })
+
+const filteredReports = computed(() => {
+  if (selectedStatuses.value.includes('all')) {
+    return reports.value
+  }
+  return reports.value.filter(report => selectedStatuses.value.includes(report.status))
+})
 
 const fetchReports = async () => {
   try {

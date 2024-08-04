@@ -13,7 +13,7 @@
           <v-expansion-panels v-model="expandedPanel">
             <v-expansion-panel>
               <v-expansion-panel-title class="bg-grey-lighten-4">
-                先週の報告内容
+                前週の報告内容
                 <template #actions>
                   <v-icon icon="mdi-chevron-down"></v-icon>
                 </template>

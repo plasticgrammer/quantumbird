@@ -177,6 +177,7 @@ const getWeekKey = getStringFromWeek
   border-right: 1px solid #ccc;
   font-size: 1.1em;
   max-width: 80px;
+  min-width: 60px;
 }
 
 .week-number {
