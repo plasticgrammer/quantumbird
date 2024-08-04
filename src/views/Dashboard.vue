@@ -37,6 +37,12 @@
               :show-arrows="true"
               style="min-height: 100px;"
             >
+              <template #prev="{ props }">
+                <v-btn icon="mdi-arrow-left" size="small" @click="props.onClick"></v-btn>
+              </template>
+              <template #next="{ props }">
+                <v-btn icon="mdi-arrow-right" size="small" @click="props.onClick"></v-btn>
+              </template>
               <v-window-item
                 v-for="n in calendarWeeks"
                 :key="n"
@@ -96,7 +102,7 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            - 今週／先週／先々週／３週前・・・<br>
+            - レヴュー時ステータスフィルタ・・・<br>
             - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>
         </v-card>

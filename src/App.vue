@@ -66,6 +66,7 @@
 
       <v-bottom-navigation
         v-else
+        bg-color="blue-grey-darken-3"
         grow
       >
         <v-btn
@@ -77,6 +78,7 @@
           <v-icon size="x-large">
             {{ item.icon }}
           </v-icon>
+          {{ item.title }}
         </v-btn>
       </v-bottom-navigation>
     </template>

@@ -35,7 +35,7 @@ import Calendar from './Calendar.vue'
 
 const props = defineProps({
   selectedWeek: {
-    type: Array,
+    type: Object,
     default: () => null
   },
   icon: {

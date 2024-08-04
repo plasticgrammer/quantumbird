@@ -3,7 +3,7 @@
     class="weekdays"
     no-gutters
   >
-    <v-col cols="1" class="week-number-header">
+    <v-col class="week-number-header">
       週
     </v-col>
     <v-col
@@ -32,7 +32,7 @@
       @mouseenter="onHoverWeek(week)"
       @mouseleave="onLeaveWeek(week)"
     >
-      <v-col cols="1" class="week-number">
+      <v-col class="week-number">
         {{ getWeekJpText(week.weekOffset) }}
       </v-col>
       <v-col
@@ -176,6 +176,7 @@ const getWeekKey = getStringFromWeek
   background-color: #e0e0e0;
   border-right: 1px solid #ccc;
   font-size: 1.1em;
+  max-width: 80px;
 }
 
 .week-number {
