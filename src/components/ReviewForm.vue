@@ -290,7 +290,7 @@ const newFeedback = ref('')
 const statusOptions = [
   { value: 'all', text: '全て' },
   { value: 'none', text: '報告なし' },
-  { value: 'pending', text: '保留中' },
+  { value: 'pending', text: '確認待ち' },
   { value: 'feedback', text: 'フィードバック済み' },
   { value: 'approved', text: '確認済み' }
 ]
@@ -302,7 +302,7 @@ const getStatusText = (status) => {
   case 'none':
     return '報告なし'
   case 'pending':
-    return '保留中'
+    return '確認待ち'
   case 'approved':
     return '確認済み'
   case 'feedback':

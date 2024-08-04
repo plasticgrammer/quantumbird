@@ -27,7 +27,7 @@
               small
               class="mr-1"
             >
-              mdi-calendar-outline
+              mdi-calendar-multiple-check
             </v-icon>
             報告状況
           </v-card-title>
@@ -72,21 +72,21 @@
             </v-window>
 
             <v-row class="py-1">
-              <v-col cols="9" class="mb-1">
-                <span class="pa-2">
-                  {{ reportStatus.reportedCount }} / {{ memberCount }}
-                </span>
-                <v-chip class="my-1 mr-2" color="primary" label>
+              <v-col cols="12" md="9">
+                <v-chip class="ma-1" color="error" label>
+                  報告なし: {{ memberCount - reportStatus.reportedCount }}
+                </v-chip>
+                <v-chip class="ma-1" color="grey" label>
                   確認待ち: {{ reportStatus.pending }}
                 </v-chip>
-                <v-chip class="my-1 mr-2" color="warning" label>
+                <v-chip class="ma-1" color="warning" label>
                   フィードバック中: {{ reportStatus.inFeedback }}
                 </v-chip>
-                <v-chip class="my-1 mr-2" color="success" label>
+                <v-chip class="ma-1" color="success" label>
                   確認済み: {{ reportStatus.confirmed }}
                 </v-chip>
               </v-col>
-              <v-col cols="3">
+              <v-col cols="12" md="3">
                 <v-btn
                   v-if="isAdmin"
                   color="primary"
@@ -118,7 +118,6 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            - レヴュー時ステータスフィルタ・・・<br>
             - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>
         </v-card>

@@ -226,8 +226,8 @@ const getWeekKey = getStringFromWeek
 
 .month {
   position: absolute;
-  top: 3px;
-  left: 5px;
+  top: 2px;
+  left: 6px;
   font-size: 0.75em;
   color: navy;
 }
