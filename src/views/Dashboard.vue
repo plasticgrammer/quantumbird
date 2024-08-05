@@ -36,9 +36,9 @@
               <v-col cols="12" md="9">
                 <v-card max-width="560" class="mx-auto calendar-card">
                   <v-container class="pa-0 position-relative">
-                    <Calendar
-                      :calendar-weeks="[calendarWeeks[weekIndex]]"
-                    />
+                    <div v-for="(week, index) in calendarWeeks" :key="index" :class="{ 'd-none': index !== weekIndex }">
+                      <Calendar :calendar-weeks="[week]" />
+                    </div>
                     <v-btn
                       class="calendar-nav-btn calendar-nav-btn-left"
                       icon="mdi-arrow-left-thick"
@@ -410,15 +410,16 @@ onMounted(async () => {
 }
 
 .calendar-nav-btn {
+  opacity: 0.6;
   position: absolute;
-  bottom: 8px;
+  bottom: 6px;
 }
 
 .calendar-nav-btn-left {
-  left: -35px;
+  left: -30px;
 }
 
 .calendar-nav-btn-right {
-  right: -35px;
+  right: -30px;
 }
 </style>
