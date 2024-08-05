@@ -89,7 +89,7 @@
                 <v-chip v-if="((memberCount - reportStatus.reportedCount) || 0) > 0" class="status-chip ma-1" color="error" label>
                   報告なし: {{ (memberCount - reportStatus.reportedCount) || 0 }}
                 </v-chip>
-                <v-chip v-if="reportStatus.pending > 0" class="status-chip ma-1" color="grey" label>
+                <v-chip v-if="reportStatus.pending > 0" class="status-chip ma-1" color="primary" label>
                   確認待ち: {{ reportStatus.pending }}
                 </v-chip>
                 <v-chip v-if="reportStatus.inFeedback > 0" class="status-chip ma-1" color="warning" label>

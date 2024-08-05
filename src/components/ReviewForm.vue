@@ -60,7 +60,7 @@
             </span>
             <v-chip
               :color="getStatusColor(report.status)"
-              outlined
+              label
               x-small
               class="status-chip ml-2"
             >
@@ -319,7 +319,7 @@ const getStatusColor = (status) => {
   case 'none':
     return 'error'
   case 'pending':
-    return 'grey'
+    return 'primary'
   case 'approved':
     return 'success'
   case 'feedback':
@@ -511,10 +511,6 @@ const handleApprove = async (memberUuid) => {
 
 .approved-card {
   background-color: white;
-}
-
-.status-chip {
-  border: solid;
 }
 
 .tasks {
