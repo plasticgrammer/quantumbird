@@ -291,7 +291,7 @@ const statusOptions = [
   { value: 'all', text: '全て' },
   { value: 'none', text: '報告なし' },
   { value: 'pending', text: '確認待ち' },
-  { value: 'feedback', text: 'フィードバック済み' },
+  { value: 'feedback', text: 'フィードバック中' },
   { value: 'approved', text: '確認済み' }
 ]
 
@@ -306,7 +306,7 @@ const getStatusText = (status) => {
   case 'approved':
     return '確認済み'
   case 'feedback':
-    return 'フィードバック済み'
+    return 'フィードバック中'
   default:
     return ''
   }
@@ -314,6 +314,8 @@ const getStatusText = (status) => {
 
 const getStatusColor = (status) => {
   switch (status) {
+  case 'all':
+    return 'indigo'
   case 'none':
     return 'error'
   case 'pending':

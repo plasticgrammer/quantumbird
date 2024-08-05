@@ -32,64 +32,50 @@
             報告状況
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            <v-window
-              v-model="weekIndex"
-              :show-arrows="true"
-              style="min-height: 100px;"
-            >
-              <template #prev="{ props }">
-                <v-btn
-                  class="me-4 bg-transparent"
-                  icon="mdi-arrow-left-thick"
-                  :location="isMobile ? 'bottom start' : 'top start'"
-                  size="small"
-                  absolute
-                  @click="props.onClick"
-                ></v-btn>
-              </template>
-              <template #next="{ props }">
-                <v-btn
-                  class="ms-4 bg-transparent"
-                  icon="mdi-arrow-right-thick"
-                  :location="isMobile ? 'bottom start' : 'top start'"
-                  size="small"
-                  absolute
-                  @click="props.onClick"
-                ></v-btn>
-              </template>
-              <v-window-item
-                v-for="n in calendarWeeks"
-                :key="n"
-              >
-                <v-card max-width="700" class="mx-auto">
-                  <v-card-text class="pa-0">
-                    <Calendar
-                      :calendar-weeks="[n]"
-                    />
-                  </v-card-text>
-                </v-card>
-              </v-window-item>
-            </v-window>
-
             <v-row class="py-1">
               <v-col cols="12" md="9">
-                <v-chip class="ma-1" color="error" label>
-                  報告なし: {{ memberCount - reportStatus.reportedCount }}
-                </v-chip>
-                <v-chip class="ma-1" color="grey" label>
-                  確認待ち: {{ reportStatus.pending }}
-                </v-chip>
-                <v-chip class="ma-1" color="warning" label>
-                  フィードバック中: {{ reportStatus.inFeedback }}
-                </v-chip>
-                <v-chip class="ma-1" color="success" label>
-                  確認済み: {{ reportStatus.confirmed }}
-                </v-chip>
-              </v-col>
-              <v-col cols="12" md="3">
+                <v-window
+                  v-model="weekIndex"
+                  :show-arrows="true"
+                  style="min-height: 100px;"
+                >
+                  <template #prev="{ props }">
+                    <v-btn
+                      class="me-4 bg-transparent"
+                      icon="mdi-arrow-left-thick"
+                      :location="isMobile ? 'bottom start' : 'top start'"
+                      size="small"
+                      absolute
+                      @click="props.onClick"
+                    ></v-btn>
+                  </template>
+                  <template #next="{ props }">
+                    <v-btn
+                      class="ms-4 bg-transparent"
+                      icon="mdi-arrow-right-thick"
+                      :location="isMobile ? 'bottom start' : 'top start'"
+                      size="small"
+                      absolute
+                      @click="props.onClick"
+                    ></v-btn>
+                  </template>
+                  <v-window-item
+                    v-for="n in calendarWeeks"
+                    :key="n"
+                  >
+                    <v-card max-width="500" class="mx-auto">
+                      <v-card-text class="pa-0">
+                        <Calendar
+                          :calendar-weeks="[n]"
+                        />
+                      </v-card-text>
+                    </v-card>
+                  </v-window-item>
+                </v-window>
                 <v-btn
                   v-if="isAdmin"
                   color="primary"
+                  class="mt-3"
                   :to="{ name: 'WeeklyReview', params: { weekString } }"
                   x-small
                 >
@@ -98,6 +84,20 @@
                   </v-icon>
                   週次報告レビュー
                 </v-btn>
+              </v-col>
+              <v-col cols="12" md="3" class="d-flex flex-column align-start">
+                <v-chip v-if="((memberCount - reportStatus.reportedCount) || 0) > 0" class="status-chip ma-1" color="error" label>
+                  報告なし: {{ (memberCount - reportStatus.reportedCount) || 0 }}
+                </v-chip>
+                <v-chip v-if="reportStatus.pending > 0" class="status-chip ma-1" color="grey" label>
+                  確認待ち: {{ reportStatus.pending }}
+                </v-chip>
+                <v-chip v-if="reportStatus.inFeedback > 0" class="status-chip ma-1" color="warning" label>
+                  フィードバック中: {{ reportStatus.inFeedback }}
+                </v-chip>
+                <v-chip class="status-chip ma-1" color="success" label>
+                  確認済み: {{ reportStatus.confirmed }}
+                </v-chip>
               </v-col>
             </v-row>
           </v-card-text>
@@ -118,6 +118,9 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
+            - 押下可能なチップと表示チップの見分け<br>
+            - 現状を☆で評価<br>
+            - 報告画面に名前表示<br>
             - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>
         </v-card>
@@ -251,7 +254,7 @@ const store = useStore()
 const organizationId = store.getters['user/organizationId']
 const isAdmin = ref(true)
 const calendarWeeks = createWeeks(6)
-const weekIndex = ref(calendarWeeks.length - 2)
+const weekIndex = ref(calendarWeeks.length - 1)
 const weekString = computed(() => getStringFromWeek(calendarWeeks[weekIndex.value]))
 
 const organizationName = ref('')

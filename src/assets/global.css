@@ -25,7 +25,9 @@ h3 { font-size: 1.2rem; }
   display: none;
 }
 
-
+/*
+ * app common style
+ */
 .work-items-list {
   padding-left: 24px;
 }
@@ -36,4 +38,8 @@ h3 { font-size: 1.2rem; }
 
 .small-text-area textarea {
   font-size: 0.875rem;
+}
+
+.status-chip {
+  border: solid 2px;
 }
