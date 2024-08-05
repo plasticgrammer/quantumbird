@@ -40,6 +40,7 @@
                       <Calendar :calendar-weeks="[week]" />
                     </div>
                     <v-btn
+                      v-if="weekIndex > 0"
                       class="calendar-nav-btn calendar-nav-btn-left"
                       icon="mdi-arrow-left-thick"
                       size="small"
@@ -47,6 +48,7 @@
                       @click="weekIndex = Math.max(0, weekIndex - 1)"
                     ></v-btn>
                     <v-btn
+                      v-if="weekIndex < calendarWeeks.length - 1"
                       class="calendar-nav-btn calendar-nav-btn-right"
                       icon="mdi-arrow-right-thick"
                       size="small"
@@ -55,6 +57,18 @@
                     ></v-btn>
                   </v-container>
                 </v-card>
+                <v-btn
+                  v-if="isAdmin"
+                  color="primary"
+                  class="mt-4"
+                  :to="{ name: 'WeeklyReview', params: { weekString } }"
+                  x-small
+                >
+                  <v-icon class="mr-1" small left>
+                    mdi-calendar-multiple-check
+                  </v-icon>
+                  週次報告レビュー
+                </v-btn>
               </v-col>
               <v-col cols="12" md="3" class="d-flex flex-column align-start">
                 <v-chip v-if="((memberCount - reportStatus.reportedCount) || 0) > 0" class="status-chip ma-1" color="error" label>
@@ -71,18 +85,6 @@
                 </v-chip>
               </v-col>
             </v-row>
-            <v-btn
-              v-if="isAdmin"
-              color="primary"
-              class="mt-3"
-              :to="{ name: 'WeeklyReview', params: { weekString } }"
-              x-small
-            >
-              <v-icon class="mr-1" small left>
-                mdi-calendar-multiple-check
-              </v-icon>
-              週次報告レビュー
-            </v-btn>
           </v-card-text>
         </v-card>
       </v-col>
@@ -101,7 +103,6 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            - 押下可能なチップと表示チップの見分け<br>
             - 現状を☆で評価<br>
             - 報告画面に名前表示<br>
             - 報告済みステータスをカレンダーに表示<br>
