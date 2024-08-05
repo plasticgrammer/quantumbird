@@ -8,9 +8,8 @@
           variant="text"
         >
           <v-chip-group
-            v-model="selectedStatuses"
+            v-model="selectedStatus"
             column
-            multiple
           >
             <v-chip
               v-for="status in statusOptions"
@@ -19,7 +18,6 @@
               :color="getStatusColor(status.value)"
               outlined
               filter
-              @click="toggleStatus(status.value)"
             >
               {{ status.text }}
             </v-chip>
@@ -295,7 +293,13 @@ const statusOptions = [
   { value: 'approved', text: '確認済み' }
 ]
 
-const selectedStatuses = ref(['all'])
+const selectedStatus = ref('all')
+
+watch(selectedStatus, (newValue) => {
+  if (newValue === undefined) {
+    selectedStatus.value = 'all'
+  }
+})
 
 const getStatusText = (status) => {
   switch (status) {
@@ -329,34 +333,11 @@ const getStatusColor = (status) => {
   }
 }
 
-const toggleStatus = (status) => {
-  if (status === 'all') {
-    selectedStatuses.value = ['all']
-  } else {
-    const newSelection = selectedStatuses.value.filter(s => s !== 'all')
-    const statusIndex = newSelection.indexOf(status)
-    if (statusIndex > -1) {
-      newSelection.splice(statusIndex, 1)
-    } else {
-      newSelection.push(status)
-    }
-    selectedStatuses.value = newSelection.length ? newSelection : ['all']
-  }
-}
-
-watch(selectedStatuses, (newValue) => {
-  if (newValue.length === 0) {
-    selectedStatuses.value = ['all']
-  } else if (newValue.includes('all') && newValue.length > 1) {
-    selectedStatuses.value = newValue.filter(status => status !== 'all')
-  }
-}, { deep: true })
-
 const filteredReports = computed(() => {
-  if (selectedStatuses.value.includes('all')) {
+  if (selectedStatus.value === 'all') {
     return reports.value
   }
-  return reports.value.filter(report => selectedStatuses.value.includes(report.status))
+  return reports.value.filter(report => selectedStatus.value === report.status)
 })
 
 const fetchReports = async () => {
