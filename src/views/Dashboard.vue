@@ -32,7 +32,7 @@
             報告状況
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            <v-row class="py-1">
+            <v-row class="pb-1">
               <v-col cols="12" md="9">
                 <v-window
                   v-model="weekIndex"
@@ -314,15 +314,36 @@ const fetchOvertimeData = async () => {
     const data = await getOvertimeData(organizationId)
     overtimeData.value = {
       labels: data.labels,
-      datasets: data.datasets.map(dataset => ({
+      datasets: data.datasets.map((dataset, index) => ({
         ...dataset,
-        borderColor: getRandomColor(),
+        borderColor: getColor(index),
         tension: 0.1
       }))
     }
   } catch (err) {
     console.error('Failed to fetch overtime data:', err)
     error.value = '残業時間データの取得に失敗しました'
+  }
+}
+
+// 定型カラーパレットを定義
+const colorPalette = [
+  'rgb(54, 162, 235)', // 青
+  'rgb(75, 192, 192)', // 緑
+  'rgb(199, 199, 199)', // グレー
+  'rgb(255, 99, 132)', // 赤
+  'rgb(255, 206, 86)', // 黄
+  'rgb(153, 102, 255)', // 紫
+  'rgb(255, 159, 64)', // オレンジ
+  'rgb(83, 102, 255)' // 青紫
+]
+
+// 色を取得する関数
+const getColor = (index) => {
+  if (index < colorPalette.length) {
+    return colorPalette[index]
+  } else {
+    return getRandomColor()
   }
 }
 
