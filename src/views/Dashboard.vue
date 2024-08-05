@@ -34,56 +34,27 @@
           <v-card-text class="pt-1 pb-3">
             <v-row class="pb-1">
               <v-col cols="12" md="9">
-                <v-window
-                  v-model="weekIndex"
-                  :show-arrows="true"
-                  style="min-height: 100px;"
-                >
-                  <template #prev="{ props }">
+                <v-card max-width="560" class="mx-auto calendar-card">
+                  <v-container class="pa-0 position-relative">
+                    <Calendar
+                      :calendar-weeks="[calendarWeeks[weekIndex]]"
+                    />
                     <v-btn
-                      class="me-4 bg-transparent"
+                      class="calendar-nav-btn calendar-nav-btn-left"
                       icon="mdi-arrow-left-thick"
-                      :location="isMobile ? 'bottom start' : 'top start'"
                       size="small"
-                      absolute
-                      @click="props.onClick"
+                      fab
+                      @click="weekIndex = Math.max(0, weekIndex - 1)"
                     ></v-btn>
-                  </template>
-                  <template #next="{ props }">
                     <v-btn
-                      class="ms-4 bg-transparent"
+                      class="calendar-nav-btn calendar-nav-btn-right"
                       icon="mdi-arrow-right-thick"
-                      :location="isMobile ? 'bottom start' : 'top start'"
                       size="small"
-                      absolute
-                      @click="props.onClick"
+                      fab
+                      @click="weekIndex = Math.min(calendarWeeks.length - 1, weekIndex + 1)"
                     ></v-btn>
-                  </template>
-                  <v-window-item
-                    v-for="n in calendarWeeks"
-                    :key="n"
-                  >
-                    <v-card max-width="500" class="mx-auto">
-                      <v-card-text class="pa-0">
-                        <Calendar
-                          :calendar-weeks="[n]"
-                        />
-                      </v-card-text>
-                    </v-card>
-                  </v-window-item>
-                </v-window>
-                <v-btn
-                  v-if="isAdmin"
-                  color="primary"
-                  class="mt-3"
-                  :to="{ name: 'WeeklyReview', params: { weekString } }"
-                  x-small
-                >
-                  <v-icon class="mr-1" small left>
-                    mdi-calendar-multiple-check
-                  </v-icon>
-                  週次報告レビュー
-                </v-btn>
+                  </v-container>
+                </v-card>
               </v-col>
               <v-col cols="12" md="3" class="d-flex flex-column align-start">
                 <v-chip v-if="((memberCount - reportStatus.reportedCount) || 0) > 0" class="status-chip ma-1" color="error" label>
@@ -100,6 +71,18 @@
                 </v-chip>
               </v-col>
             </v-row>
+            <v-btn
+              v-if="isAdmin"
+              color="primary"
+              class="mt-3"
+              :to="{ name: 'WeeklyReview', params: { weekString } }"
+              x-small
+            >
+              <v-icon class="mr-1" small left>
+                mdi-calendar-multiple-check
+              </v-icon>
+              週次報告レビュー
+            </v-btn>
           </v-card-text>
         </v-card>
       </v-col>
@@ -240,7 +223,6 @@ import { getOrganization } from '../services/organizationService'
 import { listMembers } from '../services/memberService'
 import { getReportStatus, getOvertimeData } from '../services/reportService'
 import { useCalendar } from '../composables/useCalendar'
-import { useResponsive } from '../composables/useResponsive'
 import Calendar from '../components/Calendar.vue'
 
 const {
@@ -273,7 +255,6 @@ const overtimeData = ref({
 
 const isLoading = ref(true)
 const error = ref(null)
-const { isMobile } = useResponsive()
 
 const fetchOrganizationInfo = async () => {
   try {
@@ -418,5 +399,26 @@ onMounted(async () => {
 
 .calendar-small :deep(.v-date-picker-controls) {
   display: none;
+}
+
+.calendar-card {
+  overflow: visible !important;
+}
+
+.position-relative {
+  position: relative;
+}
+
+.calendar-nav-btn {
+  position: absolute;
+  bottom: 8px;
+}
+
+.calendar-nav-btn-left {
+  left: -35px;
+}
+
+.calendar-nav-btn-right {
+  right: -35px;
 }
 </style>
