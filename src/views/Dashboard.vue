@@ -70,19 +70,18 @@
                   週次報告レビュー
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="3" class="d-flex flex-column align-start">
-                <v-chip v-if="((memberCount - reportStatus.reportedCount) || 0) > 0" class="status-chip ma-1" color="error" label>
-                  報告なし: {{ (memberCount - reportStatus.reportedCount) || 0 }}
-                </v-chip>
-                <v-chip v-if="reportStatus.pending > 0" class="status-chip ma-1" color="primary" label>
-                  確認待ち: {{ reportStatus.pending }}
-                </v-chip>
-                <v-chip v-if="reportStatus.inFeedback > 0" class="status-chip ma-1" color="warning" label>
-                  フィードバック中: {{ reportStatus.inFeedback }}
-                </v-chip>
-                <v-chip class="status-chip ma-1" color="success" label>
-                  確認済み: {{ reportStatus.confirmed }}
-                </v-chip>
+              <v-col cols="12" md="3" class="d-flex flex-column align-start pt-2">
+                <span v-for="status in filteredStatusOptions" :key="status.value">
+                  <v-chip
+                    v-if="statusCounts[status.value] > 0"
+                    class="ma-1"
+                    :value="status.value"
+                    :color="status.color"
+                    label
+                  >
+                    {{ status.text }}: {{ statusCounts[status.value] }}
+                  </v-chip>                  
+                </span>
               </v-col>
             </v-row>
           </v-card-text>
@@ -106,7 +105,6 @@
             - 報告画面に名前表示<br>
             - 報告済みステータスをカレンダーに表示<br>
             - メンバー報告では通知よりダイアログで<br>
-            - 評価のベクトルが良し悪しでブレてるのはいい？<br>
             - 報告画面FAB<br>
           </v-card-text>
         </v-card>
@@ -123,39 +121,28 @@
             >
               mdi-calendar-multiple-check
             </v-icon>
-            メンバーの週次報告
+            【テスト用】メンバーの週次報告
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
+            <v-select
+              v-model="selectedMember"
+              :items="members"
+              item-title="name"
+              item-value="id"
+              label="メンバー選択"
+              class="mb-2"
+              density="compact"
+              hide-details
+            ></v-select>
             <v-btn
-              color="secondary"
-              href="/reports/jsp-d3/d35cdaa4-07f5-4283-8222-cb338d0a06ee"
+              color="success"
+              :href="weeklyReportLink"
               target="_blank"
               rel="noopener noreferrer"
+              :disabled="!selectedMember"
               x-small
             >
-              週報 0001
-              <v-icon icon="mdi-open-in-new" end small />
-            </v-btn>
-            <span class="px-3" />
-            <v-btn
-              color="secondary"
-              href="/reports/jsp-d3/d4435e05-1dbc-4533-82cb-64b96d94bcad"
-              target="_blank"
-              rel="noopener noreferrer"
-              x-small
-            >
-              週報 0009
-              <v-icon icon="mdi-open-in-new" end small />
-            </v-btn>
-            <span class="px-3" />
-            <v-btn
-              color="secondary"
-              href="/reports/jsp-d3/c5b7ec52-2c39-4a8e-bc92-e854108f6825"
-              target="_blank"
-              rel="noopener noreferrer"
-              x-small
-            >
-              週報 0027
+              週報を開く
               <v-icon icon="mdi-open-in-new" end small />
             </v-btn>
           </v-card-text>
@@ -231,25 +218,37 @@
 import { ref, watch, computed, onMounted } from 'vue'
 import { Chart, registerables } from 'chart.js'
 import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
+import { useCalendar } from '../composables/useCalendar'
+import { useReport } from '../composables/useReport'
 import { getOrganization } from '../services/organizationService'
 import { listMembers } from '../services/memberService'
 import { getReportStatus, getOvertimeData } from '../services/reportService'
-import { useCalendar } from '../composables/useCalendar'
 import Calendar from '../components/Calendar.vue'
-
-const {
-  createWeeks,
-  getStringFromWeek
-} = useCalendar()
 
 Chart.register(...registerables)
 
 const store = useStore()
+const router = useRouter()
+const { createWeeks, getStringFromWeek } = useCalendar()
+const { statusOptions } = useReport()
+
 const organizationId = store.getters['user/organizationId']
 const isAdmin = ref(true)
 const calendarWeeks = createWeeks(6)
 const weekIndex = ref(calendarWeeks.length - 1)
 const weekString = computed(() => getStringFromWeek(calendarWeeks[weekIndex.value]))
+
+const filteredStatusOptions = statusOptions.filter(option => option.value !== 'all')
+const statusCounts = computed(() => {
+  const counts = {
+    none: memberCount.value - reportStatus.value.reportedCount,
+    pending: reportStatus.value.pending,
+    feedback: reportStatus.value.inFeedback,
+    approved: reportStatus.value.confirmed
+  }
+  return counts
+})
 
 const organizationName = ref('')
 const reportStatus = ref({
@@ -258,6 +257,20 @@ const reportStatus = ref({
   confirmed: 0
 })
 const memberCount = ref(null)
+const members = ref([])
+const selectedMember = ref(null)
+const weeklyReportLink = computed(() => {
+  if (!selectedMember.value) return '#'
+  const route = router.resolve({
+    name: 'WeeklyReport',
+    params: {
+      organizationId,
+      memberUuid: selectedMember.value,
+      weekString: weekString.value
+    }
+  })
+  return route.href
+})
 
 const overtimeChart = ref(null)
 const overtimeData = ref({
@@ -280,8 +293,8 @@ const fetchOrganizationInfo = async () => {
 
 const fetchMembers = async () => {
   try {
-    const members = await listMembers(organizationId)
-    memberCount.value = members.length
+    members.value = await listMembers(organizationId)
+    memberCount.value = members.value.length
   } catch (err) {
     console.error('Failed to fetch members:', err)
     throw err

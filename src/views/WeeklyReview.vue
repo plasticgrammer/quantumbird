@@ -30,7 +30,6 @@ import WeekSelector from '../components/WeekSelector.vue'
 import ReviewForm from '../components/ReviewForm.vue'
 import { useCalendar } from '../composables/useCalendar'
 
-// Props definition
 const props = defineProps({
   weekString: {
     type: String,

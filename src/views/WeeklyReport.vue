@@ -32,7 +32,6 @@ import WeekSelector from '../components/WeekSelector.vue'
 import ReportForm from '../components/ReportForm.vue'
 import { useCalendar } from '../composables/useCalendar'
 
-// Props definition
 const props = defineProps({
   organizationId: {
     type: String,

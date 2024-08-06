@@ -18,7 +18,7 @@
               <v-chip
                 v-if="statusCounts[status.value] > 0"
                 :value="status.value"
-                :color="getStatusColor(status.value)"
+                :color="status.color"
                 outlined
                 filter
               >
@@ -134,7 +134,7 @@
                 md="7"
               >
                 <div class="text-subtitle-2 font-weight-medium mb-1">
-                  現状・問題点
+                  現状と問題点
                 </div>
                 <v-textarea
                   v-model="report.issues"
@@ -147,7 +147,7 @@
                 />
 
                 <div class="text-subtitle-2 font-weight-medium mb-1">
-                  改善点
+                  改善したいこと
                 </div>
                 <v-textarea
                   v-model="report.improvements"
@@ -258,11 +258,13 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useStore } from 'vuex'
+import { useReport } from '../composables/useReport'
 import { listReports, updateReport } from '../services/reportService'
 import { listMembers } from '../services/memberService'
-import { useStore } from 'vuex'
 
 const store = useStore()
+const { statusOptions, getStatusText, getStatusColor } = useReport()
 const organizationId = store.getters['user/organizationId']
 
 const props = defineProps({
@@ -276,13 +278,6 @@ const reports = ref([])
 const isLoading = ref(true)
 const error = ref(null)
 const newFeedback = ref('')
-const statusOptions = [
-  { value: 'all', text: '全て' },
-  { value: 'none', text: '報告なし' },
-  { value: 'pending', text: '確認待ち' },
-  { value: 'feedback', text: 'フィードバック中' },
-  { value: 'approved', text: '確認済み' }
-]
 
 const selectedStatus = ref('all')
 
@@ -291,38 +286,6 @@ watch(selectedStatus, (newValue) => {
     selectedStatus.value = 'all'
   }
 })
-
-const getStatusText = (status) => {
-  switch (status) {
-  case 'none':
-    return '報告なし'
-  case 'pending':
-    return '確認待ち'
-  case 'approved':
-    return '確認済み'
-  case 'feedback':
-    return 'フィードバック中'
-  default:
-    return ''
-  }
-}
-
-const getStatusColor = (status) => {
-  switch (status) {
-  case 'all':
-    return 'indigo'
-  case 'none':
-    return 'error'
-  case 'pending':
-    return 'primary'
-  case 'approved':
-    return 'success'
-  case 'feedback':
-    return 'warning'
-  default:
-    return ''
-  }
-}
 
 const statusCounts = computed(() => {
   const counts = {

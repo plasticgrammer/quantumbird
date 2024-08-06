@@ -1,21 +1,23 @@
 <template>
-  <v-row>
-    <v-col cols="3" class="d-flex align-middle">
-      <span class="mt-5">{{ label }}</span>
+  <v-row class="align-center">
+    <v-col cols="8" md="3" class="d-flex align-center">
+      <span class="text-body-1">{{ label }}</span>
     </v-col>
-    <v-col cols="1" class="d-flex justify-center pa-0">
-      <span class="text-h4 mt-5 mr-5">
+    <v-col cols="4" md="1" class="d-flex justify-center align-center pa-0">
+      <div class="text-h4 mr-5">
         {{ modelValue || '-' }}
         <span class="text-h6 ml-n1">/ {{ length }}</span>
-      </span>
+      </div>
     </v-col>
-    <v-col cols="8" class="d-flex align-middle">
+    <v-col cols="12" md="8" class="d-flex align-middle pa-2">
       <v-rating
         :model-value="modelValue"
         :item-labels="itemLabels"
         :length="length"
         size="x-large"
         density="compact"
+        :active-color="negative ? 'blue' : 'orange-accent-4'" 
+        color="grey"
         @update:model-value="emit('update:modelValue', $event)"
       ></v-rating>
     </v-col>
@@ -37,10 +39,20 @@ const props = defineProps({
   itemLabels: {
     type: Array,
     default: () => ['', '', '', '', '']
-  }
+  },
+  negative: {
+    type: Boolean,
+    default: false
+  },
 })
 
 const length = ref(props.itemLabels.length)
 
 const emit = defineEmits(['update:modelValue'])
 </script>
+
+<style>
+.v-rating__item .v-btn {
+  width: 3.2em;
+}
+</style>

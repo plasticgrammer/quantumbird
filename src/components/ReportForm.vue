@@ -254,7 +254,7 @@
 
         <v-textarea
           v-model="report.issues"
-          label="現状・問題点"
+          label="現状と問題点"
           required
           rows="4"
           auto-grow
@@ -266,7 +266,7 @@
 
         <v-text-field
           v-model="report.improvements"
-          label="改善点"
+          label="改善したいこと"
           outlined
           dense
           clear-icon="mdi-close-circle"
@@ -291,6 +291,7 @@
               v-model="report.rating[item.key]"
               :label="item.label"
               :item-labels="item.itemLabels"
+              :negative="item.negative"
             />
           </v-card-text>
         </v-card>
@@ -360,17 +361,20 @@ const ratingItems = [
   {
     key: 'achievement',
     label: 'タスク目標の達成度',
-    itemLabels: ['大幅遅延', '', '', '', '期待以上']
+    itemLabels: ['大幅遅延', '', '', '', '期待以上'],
+    negative: false
   },
   {
     key: 'disability',
     label: 'タスク遂行の難易度',
-    itemLabels: ['易しい', '', '', '', '難しい']
+    itemLabels: ['易しい', '', '', '', '難しい'],
+    negative: true
   },
   {
     key: 'stress',
     label: 'ストレス度',
-    itemLabels: ['余裕あり', '', '', '', '極限状態']
+    itemLabels: ['余裕あり', '', '', '', '極限状態'],
+    negative: true
   }
 ]
 
