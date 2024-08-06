@@ -11,16 +11,20 @@
             v-model="selectedStatus"
             column
           >
-            <v-chip
+            <span 
               v-for="status in statusOptions"
               :key="status.value"
-              :value="status.value"
-              :color="getStatusColor(status.value)"
-              outlined
-              filter
             >
-              {{ status.text }}
-            </v-chip>
+              <v-chip
+                v-if="statusCounts[status.value] > 0"
+                :value="status.value"
+                :color="getStatusColor(status.value)"
+                outlined
+                filter
+              >
+                {{ status.text }}: {{ statusCounts[status.value] }}
+              </v-chip>
+            </span>
           </v-chip-group>
         </v-card>
       </v-col>
@@ -319,6 +323,22 @@ const getStatusColor = (status) => {
     return ''
   }
 }
+
+const statusCounts = computed(() => {
+  const counts = {
+    all: reports.value.length,
+    none: 0,
+    pending: 0,
+    feedback: 0,
+    approved: 0
+  }
+
+  reports.value.forEach(report => {
+    counts[report.status]++
+  })
+
+  return counts
+})
 
 const filteredReports = computed(() => {
   if (selectedStatus.value === 'all') {
