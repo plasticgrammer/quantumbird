@@ -135,6 +135,8 @@
         <v-card
           v-for="(project, projectIndex) in report.projects"
           :key="projectIndex" 
+          variant="flat"
+          elevation="2"
           class="mb-4"
         >
           <v-card-text>
@@ -249,7 +251,7 @@
             </v-text-field>
           </v-col>
         </v-row>
-        
+
         <v-textarea
           v-model="report.issues"
           label="現状・問題点"
@@ -261,17 +263,7 @@
           clearable 
           :error-messages="formErrors.issues"
         />
-        
-        <v-text-field
-          v-model="report.achievements"
-          label="成果"
-          outlined
-          dense
-          clear-icon="mdi-close-circle"
-          clearable 
-          :error-messages="formErrors.achievements"
-        />
-        
+
         <v-text-field
           v-model="report.improvements"
           label="改善点"
@@ -281,6 +273,29 @@
           clearable 
           :error-messages="formErrors.improvements"
         />
+
+        <v-card 
+          class="mt-2 mb-4"
+          elevation="0"
+          variant="flat"
+          color="blue-lighten-5"
+        >
+          <v-card-title>
+            <v-icon left class="mr-1">
+              mdi-poll
+            </v-icon>
+            評価
+          </v-card-title>
+          <v-card-text>
+            <rating-item
+              v-for="item in ratingItems"
+              :key="item.key"
+              v-model="report.rating[item.key]"
+              :label="item.label"
+              :item-labels="item.itemLabels"
+            />
+          </v-card-text>
+        </v-card>
 
         <v-btn
           color="primary"
@@ -304,6 +319,7 @@ import ProjectSelector from './ProjectSelector.vue'
 import { getReport, submitReport } from '../services/reportService'
 import { getMemberProjects } from '../services/memberService'
 import { useCalendar } from '../composables/useCalendar'
+import RatingItem from '../components/RatingItem.vue'
 
 const showNotification = inject('showNotification')
 
@@ -324,16 +340,41 @@ const props = defineProps({
   }
 })
 
-const initialReport = (organizationId, memberUuid, weekString) => ({
-  organizationId,
-  memberUuid,
-  weekString,
-  projects: [{ name: '', workItems: [{ content: '' }] }],
-  overtimeHours: 0,
-  issues: '',
-  achievements: '',
-  improvements: ''
-})
+const initialReport = (organizationId, memberUuid, weekString) => {
+  const initialRatings = ratingItems.reduce((acc, item) => {
+    acc[item.key] = 0
+    return acc
+  }, {})
+
+  return {
+    organizationId,
+    memberUuid,
+    weekString,
+    projects: [{ name: '', workItems: [{ content: '' }] }],
+    overtimeHours: 0,
+    issues: '',
+    improvements: '',
+    rating: initialRatings
+  }
+}
+
+const ratingItems = [
+  {
+    key: 'achievement',
+    label: 'タスク目標の達成度',
+    itemLabels: ['大幅遅延', '', '', '', '期待以上']
+  },
+  {
+    key: 'disability',
+    label: 'タスク遂行の難易度',
+    itemLabels: ['易しい', '', '', '', '難しい']
+  },
+  {
+    key: 'stress',
+    label: 'ストレス度',
+    itemLabels: ['余裕あり', '', '', '', '極限状態']
+  }
+]
 
 const report = ref(initialReport(props.organizationId, props.memberUuid, props.weekString))
 const workItemRefs = reactive({})
@@ -464,7 +505,8 @@ const fetchReport = async () => {
         ...fetchedReport,
         issues: fetchedReport.issues || '',
         achievements: fetchedReport.achievements || '',
-        improvements: fetchedReport.improvements || ''
+        improvements: fetchedReport.improvements || '',
+        rating: fetchedReport.rating || {}
       }
     }
     if (fetchedPrevReport) {

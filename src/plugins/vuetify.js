@@ -9,6 +9,11 @@ export default createVuetify({
   defaults: {
     VCard: {
       elevation: 4
+    },
+    VRating: {
+      activeColor: 'orange-accent-4',
+      color: 'blue',
+      hover: true
     }
   },
 })

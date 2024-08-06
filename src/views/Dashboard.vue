@@ -103,9 +103,10 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            - 現状を☆で評価<br>
             - 報告画面に名前表示<br>
             - 報告済みステータスをカレンダーに表示<br>
+            - メンバー報告では通知よりダイアログで<br>
+            - 報告画面FAB<br>
           </v-card-text>
         </v-card>
       </v-col>
@@ -126,26 +127,35 @@
           <v-card-text class="pt-1 pb-3">
             <v-btn
               color="secondary"
-              :to="{ name: 'WeeklyReportSelector', params: { organizationId: 'jsp-d3', memberUuid: 'd35cdaa4-07f5-4283-8222-cb338d0a06ee' } }"
+              href="/reports/jsp-d3/d35cdaa4-07f5-4283-8222-cb338d0a06ee"
+              target="_blank"
+              rel="noopener noreferrer"
               x-small
             >
               週報 0001
+              <v-icon icon="mdi-open-in-new" end small />
             </v-btn>
             <span class="px-3" />
             <v-btn
               color="secondary"
-              :to="{ name: 'WeeklyReportSelector', params: { organizationId: 'jsp-d3', memberUuid: 'd4435e05-1dbc-4533-82cb-64b96d94bcad' } }"
+              href="/reports/jsp-d3/d4435e05-1dbc-4533-82cb-64b96d94bcad"
+              target="_blank"
+              rel="noopener noreferrer"
               x-small
             >
               週報 0009
+              <v-icon icon="mdi-open-in-new" end small />
             </v-btn>
             <span class="px-3" />
             <v-btn
               color="secondary"
-              :to="{ name: 'WeeklyReportSelector', params: { organizationId: 'jsp-d3', memberUuid: 'c5b7ec52-2c39-4a8e-bc92-e854108f6825' } }"
+              href="/reports/jsp-d3/c5b7ec52-2c39-4a8e-bc92-e854108f6825"
+              target="_blank"
+              rel="noopener noreferrer"
               x-small
             >
               週報 0027
+              <v-icon icon="mdi-open-in-new" end small />
             </v-btn>
           </v-card-text>
         </v-card>

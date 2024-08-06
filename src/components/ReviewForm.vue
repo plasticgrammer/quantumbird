@@ -143,19 +143,6 @@
                 />
 
                 <div class="text-subtitle-2 font-weight-medium mb-1">
-                  成果
-                </div>
-                <v-textarea
-                  v-model="report.achievements"
-                  outlined
-                  readonly
-                  auto-grow
-                  rows="1"
-                  hide-details
-                  class="small-text-area mb-2"
-                />
-
-                <div class="text-subtitle-2 font-weight-medium mb-1">
                   改善点
                 </div>
                 <v-textarea
