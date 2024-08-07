@@ -59,8 +59,9 @@
                 </v-card>
                 <v-btn
                   v-if="isAdmin"
-                  color="primary"
-                  class="mt-4"
+                  color="black"
+                  variant="outlined"
+                  class="mt-6"
                   :to="{ name: 'WeeklyReview', params: { weekString } }"
                   x-small
                 >
@@ -130,7 +131,7 @@
                   v-model="selectedMember"
                   :items="members"
                   item-title="name"
-                  item-value="id"
+                  item-value="memberUuid"
                   label="メンバー選択"
                   class="mb-2"
                   density="comfortable"
@@ -140,14 +141,15 @@
               </v-col>
               <v-col>
                 <v-btn
-                  color="success"
+                  color="black"
+                  variant="outlined"
                   :href="weeklyReportLink"
                   target="_blank"
                   rel="noopener noreferrer"
                   :disabled="!selectedMember"
                   x-small
                 >
-                  週報を開く
+                  週次報告
                   <v-icon icon="mdi-open-in-new" end small />
                 </v-btn>
               </v-col>
@@ -181,8 +183,10 @@
             </p>
             <v-btn
               v-if="isAdmin"
-              color="primary"
+              color="black"
+              variant="outlined"
               :to="{ name: 'OrganizationManagement' }"
+              class="mt-3"
               x-small
             >
               <v-icon

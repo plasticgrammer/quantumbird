@@ -275,7 +275,7 @@
         />
 
         <v-card 
-          class="mt-2 mb-4 border-sm"
+          class="mt-2 border-sm"
           elevation="0"
           variant="flat"
           color="blue-lighten-5"
@@ -295,11 +295,24 @@
             />
           </v-card-text>
         </v-card>
+        <div class="v-input--error">
+          <div class="v-input__details">
+            <div 
+              v-for="(ratingError, index) in formErrors.rating"
+              :key="index"
+              class="v-messages" 
+            >
+              <div class="v-messages__message pl-4">
+                {{ ratingError }}
+              </div>
+            </div>
+          </div>
+        </div>
 
         <v-btn
           color="primary"
           type="submit"
-          class="mt-4"
+          class="mt-6"
           :disabled="!isFormValid"
         >
           <v-icon class="mr-1" left>
@@ -388,7 +401,8 @@ const expandedPanel = ref(null)
 
 const isFormValid = ref(true)
 const formErrors = reactive({
-  issues: []
+  issues: [],
+  rating: []
 })
 const projectErrors = reactive([])
 
@@ -506,7 +520,6 @@ const fetchReport = async () => {
       report.value = {
         ...fetchedReport,
         issues: fetchedReport.issues || '',
-        achievements: fetchedReport.achievements || '',
         improvements: fetchedReport.improvements || '',
         rating: fetchedReport.rating || {}
       }
@@ -515,7 +528,6 @@ const fetchReport = async () => {
       previousWeekReport.value = {
         ...fetchedPrevReport,
         issues: fetchedPrevReport.issues || ' ',
-        achievements: fetchedPrevReport.achievements || ' ',
         improvements: fetchedPrevReport.improvements || ' '
       }
     }
@@ -533,6 +545,7 @@ onMounted(fetchReport)
 const validateReport = () => {
   let isValid = true
   formErrors.issues = []
+  formErrors.rating = []
   projectErrors.length = 0
 
   // Check if there's at least one project
@@ -560,6 +573,11 @@ const validateReport = () => {
   if (!report.value.issues.trim()) {
     isValid = false
     formErrors.issues.push('現状・問題点は必須入力です。')
+  }
+
+  if (!report.value.rating?.achievement || !report.value.rating?.disability || !report.value.rating?.stress) {
+    isValid = false
+    formErrors.rating.push('評価は必須入力です。')
   }
 
   return isValid
