@@ -275,7 +275,7 @@
         />
 
         <v-card 
-          class="mt-2 mb-4"
+          class="mt-2 mb-4 border-sm"
           elevation="0"
           variant="flat"
           color="blue-lighten-5"

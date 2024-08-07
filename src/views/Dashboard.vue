@@ -124,27 +124,34 @@
             【テスト用】メンバーの週次報告
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            <v-select
-              v-model="selectedMember"
-              :items="members"
-              item-title="name"
-              item-value="id"
-              label="メンバー選択"
-              class="mb-2"
-              density="compact"
-              hide-details
-            ></v-select>
-            <v-btn
-              color="success"
-              :href="weeklyReportLink"
-              target="_blank"
-              rel="noopener noreferrer"
-              :disabled="!selectedMember"
-              x-small
-            >
-              週報を開く
-              <v-icon icon="mdi-open-in-new" end small />
-            </v-btn>
+            <v-row>
+              <v-col>
+                <v-select
+                  v-model="selectedMember"
+                  :items="members"
+                  item-title="name"
+                  item-value="id"
+                  label="メンバー選択"
+                  class="mb-2"
+                  density="comfortable"
+                  variant="outlined"
+                  hide-details
+                ></v-select>
+              </v-col>
+              <v-col>
+                <v-btn
+                  color="success"
+                  :href="weeklyReportLink"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  :disabled="!selectedMember"
+                  x-small
+                >
+                  週報を開く
+                  <v-icon icon="mdi-open-in-new" end small />
+                </v-btn>
+              </v-col>
+            </v-row>
           </v-card-text>
         </v-card>
       </v-col>

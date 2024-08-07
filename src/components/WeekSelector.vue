@@ -13,6 +13,7 @@
       </v-col>
     </v-row>
     <v-card 
+      class="d-print-none"
       :class="{ 'hover-effect': isHovering, 'leave-effect': !isHovering, 'show-all-weeks': showAllWeeks }"
       @mouseenter="handleMouseEnter"
       @mouseleave="handleMouseLeave"

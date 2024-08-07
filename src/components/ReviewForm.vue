@@ -1,6 +1,6 @@
 <template>
   <v-container class="review-form-container">
-    <v-row class="mt-2">
+    <v-row class="d-print-none mt-2">
       <v-col cols="12" class="py-0">
         <v-card
           class="px-4"
@@ -169,6 +169,7 @@
                   label="新しいフィードバックを入力..."
                   outlined
                   dense
+                  class="d-print-none"
                   clear-icon="mdi-close-circle"
                   clearable 
                   rows="2"
@@ -220,7 +221,7 @@
 
           <v-card-actions
             v-if="report.status !== 'approved' && report.status !== 'none'"
-            class="py-1"
+            class="d-print-none py-1"
           >
             <v-spacer />
             <v-btn
@@ -228,7 +229,7 @@
               variant="elevated" 
               outlined
               x-small
-              @click="handleApprove(report.memberUuid)"
+              @click="submitApprove(report.memberUuid)"
             >
               <v-icon left x-small class="mr-1">
                 mdi-check-bold
@@ -426,7 +427,7 @@ const submitFeedback = async (memberUuid) => {
   }
 }
 
-const handleApprove = async (memberUuid) => {
+const submitApprove = async (memberUuid) => {
   const now = new Date()
   const report = reports.value.find(r => r.memberUuid === memberUuid)
   if (report) {

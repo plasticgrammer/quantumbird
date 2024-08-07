@@ -58,11 +58,11 @@
           type="table-tbody"
         />
 
-        <v-card elevation="2" class="pa-1">
+        <v-card elevation="0" class="pa-1">
           <v-card 
             v-for="member in organization.members" 
             :key="member.id"
-            flat
+            variant="flat"
           >
             <v-card-text class="member-row px-3 py-1">
               <v-row>
