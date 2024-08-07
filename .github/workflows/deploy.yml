@@ -11,16 +11,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-region: ap-southeast-2
-          aws-access-key-id: ${{ secrets.APP_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.APP_AWS_SECRET_ACCESS_KEY }}
-          user-pool-id: ${{ secrets.APP_USER_POOL_ID }}
-          user-pool-web-client-id: ${{ secrets.APP_USER_POOL_WEB_CLIENT_ID }}
-          cognito-domain: ${{ secrets.APP_COGNITO_DOMAIN }}
-
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -33,11 +23,19 @@ jobs:
         run: npm run build
         env:
           VUE_APP_AWS_REGION: ap-southeast-2
-          VUE_APP_AWS_ACCESS_KEY_ID: ${{ secrets.APP_AWS_ACCESS_KEY_ID }}
-          VUE_APP_AWS_SECRET_ACCESS_KEY: ${{ secrets.APP_AWS_SECRET_ACCESS_KEY }}
-          VUE_APP_USER_POOL_ID: ${{ secrets.APP_USER_POOL_ID }}
-          VUE_APP_USER_POOL_WEB_CLIENT_ID: ${{ secrets.APP_USER_POOL_WEB_CLIENT_ID }}
-          VUE_APP_COGNITO_DOMAIN: ${{ secrets.APP_COGNITO_DOMAIN }}
+          # 他の環境変数は削除し、代わりに構成ファイルを使用します
+
+      - name: Create config file
+        run: |
+          echo '{
+            "aws_project_region": "ap-southeast-2",
+            "aws_cognito_region": "ap-southeast-2",
+            "aws_user_pools_id": "${{ secrets.APP_USER_POOL_ID }}",
+            "aws_user_pools_web_client_id": "${{ secrets.APP_USER_POOL_WEB_CLIENT_ID }}",
+            "oauth": {
+              "domain": "${{ secrets.APP_COGNITO_DOMAIN }}"
+            }
+          }' > ./dist/aws-exports.js
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
