@@ -19,17 +19,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create config file
+      - name: Create aws-exports.js
         run: |
-          echo '{
-            "aws_project_region": "ap-southeast-2",
-            "aws_cognito_region": "ap-southeast-2",
-            "aws_user_pools_id": "${{ secrets.APP_USER_POOL_ID }}",
-            "aws_user_pools_web_client_id": "${{ secrets.APP_USER_POOL_WEB_CLIENT_ID }}",
-            "oauth": {
-              "domain": "${{ secrets.APP_COGNITO_DOMAIN }}"
+          echo "const awsmobile = {
+            aws_project_region: 'ap-southeast-2',
+            aws_cognito_region: 'ap-southeast-2',
+            aws_user_pools_id: '${{ secrets.APP_USER_POOL_ID }}',
+            aws_user_pools_web_client_id: '${{ secrets.APP_USER_POOL_WEB_CLIENT_ID }}',
+            oauth: {
+              domain: '${{ secrets.APP_COGNITO_DOMAIN }}',
+              scope: ['email', 'openid', 'profile'],
+              redirectSignIn: 'https://plasticgrammer.github.io/quantumbird/',
+              redirectSignOut: 'https://plasticgrammer.github.io/quantumbird/',
+              responseType: 'code'
             }
-          }' > ./dist/aws-exports.js
+          };" > src/aws-exports.js
+          echo "export default awsmobile;" >> src/aws-exports.js
 
       - name: Build
         run: npm run build
@@ -38,7 +43,7 @@ jobs:
           VUE_APP_USER_POOL_ID: ${{ secrets.APP_USER_POOL_ID }}
           VUE_APP_USER_POOL_WEB_CLIENT_ID: ${{ secrets.APP_USER_POOL_WEB_CLIENT_ID }}
           VUE_APP_COGNITO_DOMAIN: ${{ secrets.APP_COGNITO_DOMAIN }}
-
+        
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
