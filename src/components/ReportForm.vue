@@ -349,6 +349,8 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['report-submitted'])
+
 const report = ref(initialReport(props.organizationId, props.memberUuid, props.weekString))
 const workItemRefs = reactive({})
 const projectNames = ref([])
@@ -570,7 +572,9 @@ const handleSubmit = async () => {
     }
 
     await submitReport(cleanedReport)
-    showNotification('報告を提出しました。')
+    //showNotification('報告を提出しました。')
+    emit('report-submitted')
+
   } catch (error) {
     console.error('Failed to submit report:', error)
     showNotification('報告の提出に失敗しました。', true)
