@@ -8,7 +8,9 @@ module.exports = defineConfig({
       title: 'sixweeks'
     }
   },
-  publicPath: '/',
+  publicPath: process.env.NODE_ENV === 'production'
+    ? '/quantumbird/'  // GitHub リポジトリ名を入力してください
+    : '/',
   devServer: {
     port: 3000,
   },

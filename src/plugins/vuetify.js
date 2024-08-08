@@ -8,7 +8,7 @@ import { createVuetify } from 'vuetify'
 export default createVuetify({
   defaults: {
     VCard: {
-      elevation: 4
+      elevation: 4,
     },
     VRating: {
       hover: true

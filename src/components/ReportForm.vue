@@ -13,7 +13,9 @@
           <v-expansion-panels v-model="expandedPanel">
             <v-expansion-panel>
               <v-expansion-panel-title class="bg-grey-lighten-4">
-                前週の報告内容
+                <span class="text-decoration-underline" style="text-underline-offset: 4px">
+                  前週の報告内容
+                </span>
                 <template #actions>
                   <v-icon icon="mdi-chevron-down"></v-icon>
                 </template>
@@ -129,19 +131,18 @@
       </template>
 
       <v-form
-        class="report-form mt-3 elevation-4"
+        class="report-form mt-3 elevation-6"
         @submit.prevent="handleSubmit"
       >
         <v-card
           v-for="(project, projectIndex) in report.projects"
           :key="projectIndex" 
-          variant="flat"
           elevation="2"
           class="mb-4"
         >
           <v-card-text>
             <v-row align="center">
-              <v-col cols="10">
+              <v-col cols="9" md="10">
                 <ProjectSelector
                   v-model="project.name"
                   :project-names="projectNames"
@@ -150,10 +151,7 @@
                   @project-list-changed="updateProjectList"
                 />
               </v-col>
-              <v-col
-                cols="2"
-                class="d-flex justify-end"
-              >
+              <v-col cols="3" md="2" class="d-flex justify-end">
                 <v-btn
                   icon
                   x-small
@@ -207,10 +205,7 @@
             color="secondary"
             @click="addProject"
           >
-            <v-icon
-              class="mr-1"
-              left
-            >
+            <v-icon class="mr-1" left>
               mdi-plus
             </v-icon>
             プロジェクトを追加
@@ -327,15 +322,17 @@
 
 <script setup>
 import { ref, computed, nextTick, reactive, inject, onMounted } from 'vue'
-import ProjectSelector from './ProjectSelector.vue'
 import { getReport, submitReport } from '../services/reportService'
 import { getMemberProjects } from '../services/memberService'
 import { useCalendar } from '../composables/useCalendar'
+import { useReport } from '../composables/useReport'
+import ProjectSelector from './ProjectSelector.vue'
 import RatingItem from '../components/RatingItem.vue'
 
 const showNotification = inject('showNotification')
 
 const { getPreviousWeekString } = useCalendar()
+const { initialReport, ratingItems } = useReport()
 
 const props = defineProps({
   organizationId: {
@@ -351,45 +348,6 @@ const props = defineProps({
     required: true
   }
 })
-
-const initialReport = (organizationId, memberUuid, weekString) => {
-  const initialRatings = ratingItems.reduce((acc, item) => {
-    acc[item.key] = 0
-    return acc
-  }, {})
-
-  return {
-    organizationId,
-    memberUuid,
-    weekString,
-    projects: [{ name: '', workItems: [{ content: '' }] }],
-    overtimeHours: 0,
-    issues: '',
-    improvements: '',
-    rating: initialRatings
-  }
-}
-
-const ratingItems = [
-  {
-    key: 'achievement',
-    label: 'タスク目標の達成度',
-    itemLabels: ['大幅遅延', '', '', '', '期待以上'],
-    negative: false
-  },
-  {
-    key: 'disability',
-    label: 'タスク遂行の難易度',
-    itemLabels: ['易しい', '', '', '', '難しい'],
-    negative: true
-  },
-  {
-    key: 'stress',
-    label: 'ストレス度',
-    itemLabels: ['余裕あり', '', '', '', '極限状態'],
-    negative: true
-  }
-]
 
 const report = ref(initialReport(props.organizationId, props.memberUuid, props.weekString))
 const workItemRefs = reactive({})

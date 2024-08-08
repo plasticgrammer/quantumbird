@@ -5,7 +5,6 @@
         <v-card
           class="px-4"
           rounded="lg"
-          variant="text"
         >
           <v-chip-group
             v-model="selectedStatus"
