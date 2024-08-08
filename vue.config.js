@@ -9,7 +9,7 @@ module.exports = defineConfig({
     }
   },
   publicPath: process.env.NODE_ENV === 'production'
-    ? '/quantumbird/'  // GitHub リポジトリ名を入力してください
+    ? '/'  // GitHubActions対応時には リポジトリ名を入力してください
     : '/',
   devServer: {
     port: 3000,

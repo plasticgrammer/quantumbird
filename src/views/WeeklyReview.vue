@@ -1,6 +1,7 @@
 <template>
   <v-container>
     <WeekSelector
+      function-name="週次報告レビュー"
       icon="mdi-calendar-multiple-check"
       :selected-week="selectedWeek"
       @select-week="handleWeekSelection"

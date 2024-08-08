@@ -8,7 +8,7 @@
             size="large"
             class="mr-1"
           />
-          {{ selectedWeekRange }}
+          {{ functionName }}［{{ selectedWeekRange }}］
         </h3>
       </v-col>
     </v-row>
@@ -35,6 +35,10 @@ import { useCalendar } from '../composables/useCalendar'
 import Calendar from './Calendar.vue'
 
 const props = defineProps({
+  functionName: {
+    type: String,
+    required: true
+  },
   selectedWeek: {
     type: Object,
     default: () => null
@@ -48,7 +52,8 @@ const props = defineProps({
 const emit = defineEmits(['select-week', 'reset'])
 
 const {
-  calendarWeeks
+  calendarWeeks,
+  getWeekJpText
 } = useCalendar()
 
 const internalSelectedWeek = ref(props.selectedWeek)
@@ -79,16 +84,8 @@ const isSelected = (week) => {
   return internalSelectedWeek.value && week.weekOffset === internalSelectedWeek.value.weekOffset
 }
 
-const formatDateRange = (week) => {
-  if (!week || week.length < 2) return '週の選択'
-  const start = week.startDate
-  const end = week.endDate
-  const options = { year: 'numeric', month: 'long', day: 'numeric' }
-  return `${start.toLocaleDateString('ja-JP', options)} - ${end.toLocaleDateString('ja-JP', options)}`
-}
-
 const selectedWeekRange = computed(() => {
-  return internalSelectedWeek.value ? formatDateRange(internalSelectedWeek.value) : '週の選択'
+  return internalSelectedWeek.value ? getWeekJpText(internalSelectedWeek.value.weekOffset) : '週の選択'
 })
 
 const handleMouseEnter = () => {

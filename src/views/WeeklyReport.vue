@@ -1,6 +1,7 @@
 <template>
   <v-container>
     <WeekSelector 
+      function-name="週次報告"
       icon="mdi-calendar-week"
       :selected-week="selectedWeek"
       @select-week="handleWeekSelection"
@@ -16,45 +17,48 @@
       指定された週は有効範囲外です。
     </v-alert>
 
-    <template v-if="!isReportSubmitted">
-      <ReportForm
-        v-if="selectedWeek && isValidWeek" 
-        :organization-id="organizationId"
-        :member-uuid="memberUuid"
-        :week-string="getStringFromWeek(selectedWeek)"
-        @report-submitted="handleReportSubmitted"
-      />
-    </template>
+    <ReportForm
+      v-if="selectedWeek && isValidWeek" 
+      :organization-id="organizationId"
+      :member-uuid="memberUuid"
+      :week-string="getStringFromWeek(selectedWeek)"
+      @report-submitted="handleReportSubmitted"
+    />
 
-    <v-card v-if="isReportSubmitted" class="mt-5 text-center">
-      <v-card-title class="text-h5 font-weight-bold">
-        週次報告が完了しました
-      </v-card-title>
-      <v-card-text>
-        <v-img
-          src="@/assets/images/usagikigurumi-1.gif"
-          max-width="240"
-          class="mx-auto mt-0 mb-5"
-        ></v-img>
-        <p class="text-body-1">
-          報告ありがとうございました。
-        </p>
-      </v-card-text>
-      <v-card-actions class="pb-4">
-        <v-row justify="center" no-gutters>
-          <v-col cols="auto" class="mx-2">
-            <v-btn color="primary" prepend-icon="mdi-chevron-left" variant="elevated" @click="handleBackToReport">
-              週次報告に戻る
-            </v-btn>
-          </v-col>
-          <v-col cols="auto" class="mx-2">
-            <v-btn color="grey" prepend-icon="mdi-close" variant="elevated" @click="handleClose">
-              閉じる
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-card-actions>
-    </v-card>
+    <v-dialog 
+      v-model="isReportSubmitted" 
+      max-width="460"
+    >
+      <v-card class="text-center">
+        <v-card-title class="text-h5 font-weight-bold">
+          週次報告が完了しました
+        </v-card-title>
+        <v-card-text>
+          <v-img
+            src="@/assets/images/usagikigurumi-1.gif"
+            max-width="240"
+            class="mx-auto mt-0 mb-5"
+          ></v-img>
+          <p class="text-body-1">
+            報告ありがとうございました。
+          </p>
+        </v-card-text>
+        <v-card-actions class="pb-4">
+          <v-row justify="center" no-gutters>
+            <v-col cols="auto" class="mx-2">
+              <v-btn color="primary" prepend-icon="mdi-chevron-left" variant="elevated" @click="handleBackToReport">
+                週次報告に戻る
+              </v-btn>
+            </v-col>
+            <v-col cols="auto" class="mx-2">
+              <v-btn color="#B00020" prepend-icon="mdi-close" variant="elevated" @click="handleClose">
+                終了する
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
