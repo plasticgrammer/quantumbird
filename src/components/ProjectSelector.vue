@@ -4,13 +4,17 @@
     :items="filteredProjectNames"
     class="project-combobox"
     label="プロジェクト"
-    prepend-icon="mdi-folder-outline"
     required
     dense
     hide-details="auto"
     @update:model-value="updateValue"
     @keydown="handleKeyDown"
   >
+    <template #prepend>
+      <v-icon class="d-none d-md-flex">
+        mdi-folder-outline
+      </v-icon>
+    </template>
     <template #item="{ props: itemProps, item }">
       <v-list-item v-bind="itemProps" class="project-list-item">
         <template #append>

@@ -24,7 +24,19 @@
       :week-string="getStringFromWeek(selectedWeek)"
       @report-submitted="handleReportSubmitted"
     />
-
+    
+    <v-fab
+      color="surface-variant"
+      variant="tonal"
+      icon="mdi-bird"
+      class="ma-1"
+      location="top start"
+      extended
+      text="Extended"
+      sticky
+      app
+    ></v-fab>
+    
     <v-dialog 
       v-model="isReportSubmitted" 
       max-width="460"
