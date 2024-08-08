@@ -32,15 +32,15 @@
       </v-card-title>
       <v-card-text>
         <v-img
-          src="@/assets/images/rakko-1.png"
-          max-width="300"
-          class="mx-auto my-5"
+          src="@/assets/images/usagikigurumi-1.gif"
+          max-width="240"
+          class="mx-auto mt-0 mb-5"
         ></v-img>
         <p class="text-body-1">
-          お疲れ様でした。週次報告が正常に送信されました。
+          報告ありがとうございました。
         </p>
       </v-card-text>
-      <v-card-actions class="pb-3">
+      <v-card-actions class="pb-4">
         <v-row justify="center" no-gutters>
           <v-col cols="auto" class="mx-2">
             <v-btn color="primary" prepend-icon="mdi-chevron-left" variant="elevated" @click="handleBackToReport">

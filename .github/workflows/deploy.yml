@@ -19,12 +19,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
-        env:
-          VUE_APP_AWS_REGION: ap-southeast-2
-          # 他の環境変数は削除し、代わりに構成ファイルを使用します
-
       - name: Create config file
         run: |
           echo '{
@@ -36,6 +30,14 @@ jobs:
               "domain": "${{ secrets.APP_COGNITO_DOMAIN }}"
             }
           }' > ./dist/aws-exports.js
+
+      - name: Build
+        run: npm run build
+        env:
+          VUE_APP_AWS_REGION: ap-southeast-2
+          VUE_APP_USER_POOL_ID: ${{ secrets.APP_USER_POOL_ID }}
+          VUE_APP_USER_POOL_WEB_CLIENT_ID: ${{ secrets.APP_USER_POOL_WEB_CLIENT_ID }}
+          VUE_APP_COGNITO_DOMAIN: ${{ secrets.APP_COGNITO_DOMAIN }}
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

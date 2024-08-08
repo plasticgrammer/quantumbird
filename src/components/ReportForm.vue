@@ -251,7 +251,7 @@
           v-model="report.issues"
           label="現状と問題点"
           required
-          rows="4"
+          rows="3"
           auto-grow
           outlined
           clear-icon="mdi-close-circle"
@@ -290,7 +290,7 @@
             />
           </v-card-text>
         </v-card>
-        <div class="v-input--error">
+        <div v-if="formErrors.rating.length" class="v-input--error">
           <div class="v-input__details">
             <div 
               v-for="(ratingError, index) in formErrors.rating"
