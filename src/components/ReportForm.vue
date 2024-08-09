@@ -65,7 +65,7 @@
                     />
                   </v-col>
                 </v-row>
-                <v-row class="justify-end pa-4">
+                <v-row class="justify-end pa-4 pt-1">
                   <v-btn
                     color="secondary"
                     variant="elevated"
@@ -199,20 +199,22 @@
             </v-row>
           </v-card-text>
         </v-card>
+        <v-fab
+          class="me-5 mt-n2"
+          prepend-icon="mdi-folder-outline"
+          location="top end"
+          color="secondary"
+          extended
+          absolute
+          offset
+          @click="addProject"
+        >
+          <v-icon class="ml-n1">
+            mdi-plus
+          </v-icon>
+        </v-fab>
         
-        <div class="d-flex justify-end mb-4">
-          <v-btn
-            color="secondary"
-            @click="addProject"
-          >
-            <v-icon class="mr-1" left>
-              mdi-plus
-            </v-icon>
-            プロジェクトを追加
-          </v-btn>
-        </div>
-        
-        <v-row>
+        <v-row class="mt-2">
           <v-col cols="12" sm="6">
             <v-text-field
               v-model="formattedOvertimeHours"
