@@ -19,22 +19,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create aws-exports.js
-        run: |
-          echo "const awsmobile = {
-            aws_project_region: 'ap-southeast-2',
-            aws_cognito_region: 'ap-southeast-2',
-            aws_user_pools_id: '${{ secrets.APP_USER_POOL_ID }}',
-            aws_user_pools_web_client_id: '${{ secrets.APP_USER_POOL_WEB_CLIENT_ID }}',
-            oauth: {
-              domain: '${{ secrets.APP_COGNITO_DOMAIN }}',
-              scope: ['email', 'openid', 'profile'],
-              redirectSignIn: 'https://plasticgrammer.github.io/quantumbird/',
-              redirectSignOut: 'https://plasticgrammer.github.io/quantumbird/',
-              responseType: 'code'
-            }
-          };" > src/aws-exports.js
-          echo "export default awsmobile;" >> src/aws-exports.js
+      # - name: Create amplify-config.js
+      #   run: |
+      #     echo "export default {
+      #       Auth: {
+      #         Cognito: {
+      #           region: 'ap-southeast-2',
+      #           userPoolId: '${{ secrets.APP_USER_POOL_ID }}',
+      #           userPoolClientId: '${{ secrets.APP_USER_POOL_WEB_CLIENT_ID }}',
+      #           signUpVerificationMethod: 'code',
+      #           loginWith: {
+      #             oauth: {
+      #               domain: '${{ secrets.APP_COGNITO_DOMAIN }}',
+      #               scopes: ['email', 'openid', 'aws.cognito.signin.user.admin'],
+      #               redirectSignIn: 'https://plasticgrammer.github.io/quantumbird/',
+      #               redirectSignOut: 'https://plasticgrammer.github.io/quantumbird/',
+      #               responseType: 'code'
+      #             }
+      #           }
+      #         }
+      #       }
+      #     }" >> src/config/amplify-config.js
 
       - name: Build
         run: npm run build
