@@ -142,7 +142,7 @@
         >
           <v-card-text>
             <v-row align="center">
-              <v-col cols="9" md="10">
+              <v-col cols="9">
                 <ProjectSelector
                   v-model="project.name"
                   :project-names="projectNames"
@@ -151,7 +151,7 @@
                   @project-list-changed="updateProjectList"
                 />
               </v-col>
-              <v-col cols="3" md="2" class="d-flex justify-end">
+              <v-col cols="3" class="d-flex justify-end">
                 <v-btn
                   icon
                   x-small

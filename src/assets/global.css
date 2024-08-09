@@ -24,6 +24,13 @@ h3 { font-size: 1.2rem; }
 .v-field:has(input[readOnly]) .v-field__outline::before {
   display: none;
 }
+.v-overlay__scrim {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  opacity: 1 !important;
+}
+.v-dialog > .v-card {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important;
+}
 
 /*
  * app common style

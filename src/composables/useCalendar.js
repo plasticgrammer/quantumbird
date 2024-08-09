@@ -139,6 +139,13 @@ export function useCalendar() {
     return `${relativeWeekIndex}週後`
   }
   
+  const formatDateRange = (week) => {
+    const start = week.startDate
+    const end = week.endDate
+    const options = { year: 'numeric', month: 'long', day: 'numeric' }
+    return `${start.toLocaleDateString('ja-JP', options)} - ${end.toLocaleDateString('ja-JP', options)}`
+  }
+
   return {
     calendarWeeks,
     createWeeks,
@@ -152,6 +159,7 @@ export function useCalendar() {
     getStringFromWeek,
     getWeekFromString,
     getPreviousWeekString,
-    getWeekJpText
+    getWeekJpText,
+    formatDateRange
   }
 }
