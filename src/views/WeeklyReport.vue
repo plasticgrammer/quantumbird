@@ -39,7 +39,6 @@
           location="top end"
           size="large"
           extended
-          :text="`${ member.name }さん`"
           sticky
           app
         >
@@ -48,6 +47,7 @@
               mdi-account-circle
             </v-icon>
           </template>
+          <span class="ml-n1 text-body-2">{{ member.name }} さん</span>
         </v-fab>
       </template>
 
