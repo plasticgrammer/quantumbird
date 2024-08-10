@@ -54,11 +54,15 @@ def handle_get(event):
 
     if 'organizationId' in params:
         org = get_organization(params['organizationId'])
+        if org is None:
+            return create_response(404, f"Organization with id {params['organizationId']} not found")
         members = list_members(params['organizationId'])
         org['members'] = sorted(members, key=lambda x: x.get('id', ''))  # IDでソート
         return create_response(200, org)
     elif 'memberUuid' in params:
         member = get_member(params['memberUuid'])
+        if member is None:
+            return create_response(404, f"Member with uuid {params['memberUuid']} not found")
         return create_response(200, member)
     else:
         orgs = list_organizations()
@@ -150,7 +154,7 @@ def get_organization(organization_id):
         return response.get('Item')
     except Exception as e:
         logger.error(f"Error getting organization: {str(e)}", exc_info=True)
-        raise e
+        return None
 
 def get_member(member_uuid):
     try:
@@ -162,7 +166,7 @@ def get_member(member_uuid):
         return response.get('Item')
     except Exception as e:
         logger.error(f"Error getting member: {str(e)}", exc_info=True)
-        raise e
+        return None
 
 def list_organizations():
     try:

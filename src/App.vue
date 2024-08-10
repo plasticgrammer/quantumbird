@@ -30,9 +30,9 @@
         v-if="!isMobile"
         v-model="drawer"
         permanent
-        :location="drawerLocation"
+        location="left"
         :temporary="isMobile"
-        :expand-on-hover="!isMobile"
+        expand-on-hover
         rail
         color="secondary d-print-none"
       >
@@ -98,21 +98,19 @@
 import { ref, provide, reactive, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
-import ConfirmationDialog from './components/ConfirmationDialog.vue'
 import { useResponsive } from './composables/useResponsive'
+import ConfirmationDialog from './components/ConfirmationDialog.vue'
+
+const { isMobile } = useResponsive()
 
 const store = useStore()
 const router = useRouter()
 const confirmDialog = ref(null)
 const drawer = ref(true)
 const showConfirmDialog = ref(false)
-
-const { isMobile } = useResponsive()
-const drawerLocation = computed(() => isMobile.value ? 'bottom' : 'left')
-
 const user = ref({
   username: store.getters['user/organizationId'],
-  email: 'plasticgrammer@gmail.com'
+  email: store.getters['user/email']
 })
 
 const navigationItems = [
@@ -190,7 +188,6 @@ const showConfirmDialogGlobal = async (title, message) => {
 
 provide('showConfirmDialog', showConfirmDialogGlobal)
 provide('showNotification', showNotification)
-
 </script>
 
 <style scoped>

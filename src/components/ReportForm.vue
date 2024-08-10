@@ -22,7 +22,7 @@
               </v-expansion-panel-title>
               <v-expansion-panel-text>
                 <v-row>
-                  <v-col col="12" md="5">
+                  <v-col col="12" md="5" class="pa-2">
                     <v-list class="bg-transparent custom-list">
                       <v-list-item v-for="(project, index) in previousWeekReport.projects" :key="index">
                         <v-list-item-title>

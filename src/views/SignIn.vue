@@ -282,6 +282,7 @@ const signUpUser = async () => {
       options: {
         userAttributes: {
           email: signUpEmail.value,
+          name: signUpEmail.value,
           'custom:organizationId': organizationId.value
         }
       }

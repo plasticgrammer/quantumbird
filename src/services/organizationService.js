@@ -32,7 +32,15 @@ export const deleteOrganization = async (organizationId) => {
 }
 
 export const getOrganization = async (organizationId) => {
-  return invokeLambda('get', { organizationId })
+  try {
+    const response = await invokeLambda('get', { organizationId })
+    return response
+  } catch (error) {
+    if (error.message.includes('not found')) {
+      return null // 組織が見つからない場合はnullを返す
+    }
+    throw error // その他のエラーは上位に伝播させる
+  }
 }
 
 export const listOrganizations = async () => {
