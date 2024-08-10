@@ -218,7 +218,7 @@
           </v-icon>
         </v-fab>
         
-        <v-row class="mt-2">
+        <v-row class="mt-3">
           <v-col cols="12" sm="6">
             <v-text-field
               v-model="formattedOvertimeHours"
@@ -236,14 +236,15 @@
               <template #append>
                 <v-btn
                   icon
-                  small
+                  :size="isMobile ? 38 : 48"
                   @click="decreaseOvertime"
                 >
                   <v-icon>mdi-minus</v-icon>
                 </v-btn>
+                <span class="mr-1"></span>
                 <v-btn
                   icon
-                  small
+                  :size="isMobile ? 38 : 48"
                   @click="increaseOvertime"
                 >
                   <v-icon>mdi-plus</v-icon>
@@ -332,9 +333,11 @@ import { getReport, submitReport } from '../services/reportService'
 import { getMemberProjects } from '../services/memberService'
 import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
+import { useResponsive } from '../composables/useResponsive'
 import ProjectSelector from './ProjectSelector.vue'
 import RatingItem from '../components/RatingItem.vue'
 
+const { isMobile } = useResponsive()
 const showNotification = inject('showNotification')
 
 const { getPreviousWeekString } = useCalendar()

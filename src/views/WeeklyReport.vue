@@ -35,7 +35,7 @@
           v-bind="activatorProps"
           color="surface-variant"
           variant="tonal"
-          class="me-1"
+          class="me-1 d-none d-md-flex"
           location="top end"
           size="large"
           extended
@@ -47,7 +47,9 @@
               mdi-account-circle
             </v-icon>
           </template>
-          <span class="ml-n1 text-body-2">{{ member.name }} さん</span>
+          <span class="ml-n1 text-body-2">
+            {{ member.name }} さん
+          </span>
         </v-fab>
       </template>
 
