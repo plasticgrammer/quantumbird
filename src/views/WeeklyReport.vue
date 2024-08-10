@@ -25,18 +25,52 @@
       @report-submitted="handleReportSubmitted"
     />
     
-    <v-fab
-      color="surface-variant"
-      variant="tonal"
-      icon="mdi-bird"
-      class="ma-1"
-      location="top start"
-      extended
-      text="Extended"
-      sticky
-      app
-    ></v-fab>
-    
+    <v-speed-dial
+      location="bottom right"
+      transition="fade-transition"
+    >
+      <template #activator="{ props: activatorProps }">
+        <v-fab
+          v-if="member"
+          v-bind="activatorProps"
+          color="surface-variant"
+          variant="tonal"
+          class="me-1"
+          location="top end"
+          size="large"
+          extended
+          :text="`${ member.name }さん`"
+          sticky
+          app
+        >
+          <template #prepend>
+            <v-icon size="x-large">
+              mdi-account-circle
+            </v-icon>
+          </template>
+        </v-fab>
+      </template>
+
+      <v-list
+        key="1"
+        :lines="false"
+        density="compact"
+      >
+        <v-list-subheader></v-list-subheader>
+        <v-list-item
+          v-for="(item, i) in [{icon:'mdi-cog', text:'設定'}]"
+          :key="i"
+          :value="item"
+          color="primary"
+        >
+          <v-list-item-title>
+            <v-icon :icon="item.icon" class="mr-2"></v-icon>
+            {{ item.text }}
+          </v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-speed-dial>
+
     <v-dialog 
       v-model="isReportSubmitted" 
       max-width="460"
@@ -75,11 +109,12 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import WeekSelector from '../components/WeekSelector.vue'
 import ReportForm from '../components/ReportForm.vue'
 import { useCalendar } from '../composables/useCalendar'
+import { getMember } from '../services/memberService'
 
 const props = defineProps({
   organizationId: {
@@ -102,6 +137,7 @@ const router = useRouter()
 const selectedWeek = ref(null)
 const isValidWeek = ref(true)
 const isReportSubmitted = ref(false)
+const member = ref(null)
 
 const handleWeekSelection = (week) => {
   selectedWeek.value = week
@@ -167,4 +203,12 @@ watch(() => props.weekString, (newWeekParam) => {
     isValidWeek.value = true
   }
 }, { immediate: true })
+
+onMounted(async () => {
+  try {
+    member.value = await getMember(props.memberUuid)
+  } catch (err) {
+    console.error('Error initializing dashboard:', err)
+  }
+})
 </script>

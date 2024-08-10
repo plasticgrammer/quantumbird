@@ -142,7 +142,7 @@
         >
           <v-card-text>
             <v-row align="center">
-              <v-col cols="9">
+              <v-col cols="9" class="pa-1 pa-md-4">
                 <ProjectSelector
                   v-model="project.name"
                   :project-names="projectNames"
@@ -165,7 +165,7 @@
               </v-col>
             </v-row>
             <v-row v-if="project.workItems.length > 0">
-              <v-col cols="12">
+              <v-col cols="12" class="pa-1 pa-md-4">
                 <div
                   v-for="(item, itemIndex) in project.workItems"
                   :key="itemIndex"
@@ -180,7 +180,7 @@
                     hide-details="auto"
                     :error-messages="projectErrors[projectIndex]?.workItems[itemIndex]"
                     required
-                    class="work-item-input pl-5"
+                    class="work-item-input pl-2 pl-md-5"
                     @keydown="handleKeyDown($event, project, itemIndex)"
                   >
                     <template #append>
@@ -200,8 +200,7 @@
           </v-card-text>
         </v-card>
         <v-fab
-          class="me-5 mt-n2"
-          prepend-icon="mdi-folder-outline"
+          class="me-md-5 mt-n4 mt-md-n2"
           location="top end"
           color="secondary"
           extended
@@ -209,7 +208,12 @@
           offset
           @click="addProject"
         >
-          <v-icon class="ml-n1">
+          <template #prepend>
+            <v-icon class="mx-n2">
+              mdi-folder-outline
+            </v-icon>
+          </template>
+          <v-icon class="pl-1 mr-n2">
             mdi-plus
           </v-icon>
         </v-fab>
