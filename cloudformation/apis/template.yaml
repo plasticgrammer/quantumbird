@@ -17,6 +17,9 @@ Parameters:
   Stage:
     Type: String
     Default: dev
+    AllowedValues:
+      - dev
+      - prod
 
 Conditions:
   IsProd: !Equals [!Ref Stage, "prod"]
@@ -26,10 +29,11 @@ Resources:
 # ------------------------------------------------------------#
 #  Lambda Function
 # ------------------------------------------------------------#
-  InfospaceCorporation:
+  OrganizationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./src/infospace-corporation
+      FunctionName: !Sub '${Stage}-organization'
+      CodeUri: ./src/Organization
       Policies:
         - AmazonDynamoDBFullAccess
       Description: ''
@@ -37,12 +41,40 @@ Resources:
         Variables:
           STAGE: !Ref Stage
       Layers:
-        - !Ref InfospaceLayer
+        - !Ref CommonLayer
+  
+  MemberFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-member'
+      CodeUri: ./src/Member
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Description: ''
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+      Layers:
+        - !Ref CommonLayer
+  
+  WeeklyReportFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-weekly-report'
+      CodeUri: ./src/WeeklyReport
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Description: ''
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+      Layers:
+        - !Ref CommonLayer
 
 # ------------------------------------------------------------#
 #  Lambda Layer
 # ------------------------------------------------------------#
-  InfospaceLayer:
+  CommonLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
       Description: common functions

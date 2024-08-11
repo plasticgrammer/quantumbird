@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "wrs-table"
+resolve_s3 = true
+s3_prefix = "wrs-table"
+region = "ap-northeast-1"
+profile = "wrs"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "EnvironmentName=\"dev\""
+image_repositories = []

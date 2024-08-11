@@ -1,8 +1,10 @@
 import { lambda } from './awsConfig'
 
+const stage = process.env.STAGE || 'dev'
+
 const invokeLambda = async (operation, payload) => {
   const params = {
-    FunctionName: 'Organization',
+    FunctionName: `${stage}-organization`,
     Payload: JSON.stringify({ operation, payload })
   }
 

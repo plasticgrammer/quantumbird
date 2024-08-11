@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for creating DynamoDB tables for the Weekly Report
+  System
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    Description: Environment name (e.g., dev, prod)
+Resources:
+  OrganizationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: ${EnvironmentName}-Organizations
+      AttributeDefinitions:
+      - AttributeName: organizationId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: organizationId
+        KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+  MembersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: ${EnvironmentName}-Members
+      AttributeDefinitions:
+      - AttributeName: memberUuid
+        AttributeType: S
+      - AttributeName: organizationId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: memberUuid
+        KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: OrganizationIndex
+        KeySchema:
+        - AttributeName: organizationId
+          KeyType: HASH
+        - AttributeName: memberUuid
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+  WeeklyReportsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: ${EnvironmentName}-WeeklyReports
+      AttributeDefinitions:
+      - AttributeName: memberUuid
+        AttributeType: S
+      - AttributeName: weekString
+        AttributeType: S
+      - AttributeName: organizationId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: memberUuid
+        KeyType: HASH
+      - AttributeName: weekString
+        KeyType: RANGE
+      GlobalSecondaryIndexes:
+      - IndexName: OrganizationWeekIndex
+        KeySchema:
+        - AttributeName: organizationId
+          KeyType: HASH
+        - AttributeName: weekString
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+  DynamoDBAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: DynamoDBAccess
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+            - dynamodb:Scan
+            Resource:
+            - Fn::GetAtt:
+              - OrganizationsTable
+              - Arn
+            - Fn::GetAtt:
+              - MembersTable
+              - Arn
+            - Fn::GetAtt:
+              - WeeklyReportsTable
+              - Arn
+Outputs:
+  OrganizationsTableName:
+    Description: Organizations Table Name
+    Value:
+      Ref: OrganizationsTable
+  MembersTableName:
+    Description: Members Table Name
+    Value:
+      Ref: MembersTable
+  WeeklyReportsTableName:
+    Description: Weekly Reports Table Name
+    Value:
+      Ref: WeeklyReportsTable
+  DynamoDBAccessRoleARN:
+    Description: ARN of IAM Role for DynamoDB Access
+    Value:
+      Fn::GetAtt:
+      - DynamoDBAccessRole
+      - Arn
