@@ -1,10 +1,7 @@
 <template>
   <v-container fluid class="p-2">
-    <v-row 
-      dense 
-      class="pb-4"
-    >
-      <v-col>
+    <v-row dense class="pb-2">
+      <v-col cols="10">
         <h3>
           <v-icon 
             size="large" 
@@ -14,6 +11,11 @@
           </v-icon>
           ダッシュボード
         </h3>
+      </v-col>
+      <v-col cols="2" class="d-flex justify-end align-center">
+        <v-icon class="me-3" @click="fetchAll">
+          mdi-reload
+        </v-icon>
       </v-col>
     </v-row>
 
@@ -103,7 +105,7 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            - 報告画面に名前表示<br>
+            - dashboardのリロード<br>
             - 報告済みステータスをカレンダーに表示<br>
             - デイリーログ機能<br>
           </v-card-text>
@@ -403,14 +405,18 @@ watch(weekIndex, () => {
   fetchReportStatus(weekString.value)
 })
 
+const fetchAll = async () => {
+  await Promise.all([
+    fetchOrganizationInfo(),
+    fetchReportStatus(weekString.value),
+    fetchOvertimeData(),
+    fetchMembers()
+  ])
+}
+
 onMounted(async () => {
   try {
-    await Promise.all([
-      fetchOrganizationInfo(),
-      fetchReportStatus(weekString.value),
-      fetchOvertimeData(),
-      fetchMembers()
-    ])
+    fetchAll()
     initChart()
   } catch (err) {
     console.error('Error initializing dashboard:', err)

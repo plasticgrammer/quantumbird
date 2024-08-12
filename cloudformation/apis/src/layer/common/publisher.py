@@ -5,9 +5,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 
-def send_mail(sendFrom, to, subject, body, corporationId, userId):
-    client = boto3.client('ses', 'ap-southeast-2')
+ses = boto3.client('ses', region_name='us-east-1')  # SESを使用するリージョンを指定
 
+def send_mail(sendFrom, to, subject, body):
     CHARSET = "utf-8"
     SEND_MAIL_CONFIG_SET = 'CanaryConfig'
     
@@ -28,13 +28,13 @@ def send_mail(sendFrom, to, subject, body, corporationId, userId):
     
     try:
         #Provide the contents of the email.
-        response = client.send_raw_email(
+        response = ses.send_raw_email(
             Source=sendFrom,
             Destinations=to,
             RawMessage={
                 'Data':msg.as_string(),
             },
-            ConfigurationSetName=SEND_MAIL_CONFIG_SET
+            #ConfigurationSetName=SEND_MAIL_CONFIG_SET
         )
         
         return response
@@ -44,6 +44,27 @@ def send_mail(sendFrom, to, subject, body, corporationId, userId):
         print(e.response['Error']['Message'])
         raise e
 
-def get_from_address(corp):
+def get_from_address(organization):
     # メール差出人名 <差出人アドレス>
-    return '%s <%s>'%(Header(corp['mail_from_name'].encode('iso-2022-jp'),'iso-2022-jp').encode(), corp['mail_address'])
+    #return '%s <%s>'%(Header(organization['name'].encode('iso-2022-jp'),'iso-2022-jp').encode(), organization['mail_address'])
+    return '%s <%s>'%(Header(organization['name'].encode('iso-2022-jp'),'iso-2022-jp').encode(), 'plasticgrammer@gmail.com')
+
+def check_verification_status(email_address):
+    try:
+        response = ses.get_identity_verification_attributes(
+            Identities=[email_address]
+        )
+        status = response['VerificationAttributes'].get(email_address, {}).get('VerificationStatus', 'NotVerified')
+        return status
+    except ClientError as e:
+        print(f'Error checking verification status: {e}')
+        raise
+
+def start_verification_process(email_address):
+    try:
+        ses.verify_email_identity(
+            EmailAddress=email_address
+        )
+    except ClientError as e:
+        print(f'Error starting verification process: {e}')
+        raise

@@ -66,7 +66,7 @@
           >
             <v-card-text class="member-row px-3 py-1">
               <v-row>
-                <v-col cols="12" md="2">
+                <v-col cols="12" md="2" class="px-2">
                   <v-text-field
                     v-model="member.id"
                     label="ID"
@@ -82,7 +82,7 @@
                     </template>
                   </v-text-field>
                 </v-col>
-                <v-col cols="12" md="3">
+                <v-col cols="12" md="3" class="px-2">
                   <v-text-field
                     v-model="member.name"
                     label="名前"
@@ -93,7 +93,7 @@
                     :error-messages="editingMember?.id === member.id ? editValidationErrors.name : ''"
                   />
                 </v-col>
-                <v-col cols="12" md="5">
+                <v-col cols="12" md="5" class="px-2">
                   <v-text-field
                     v-model="member.email"
                     label="メールアドレス"
@@ -102,7 +102,19 @@
                     hide-details="auto"
                     :readonly="editingMember?.id !== member.id"
                     :error-messages="editingMember?.id === member.id ? editValidationErrors.email : ''"
-                  />
+                  >
+                    <template #append>
+                      <v-icon v-if="member.mailConfirmed" color="success">
+                        mdi-email-check-outline
+                      </v-icon>
+                      <v-icon v-else>
+                        mdi-email-search-outline
+                      </v-icon>
+                      <v-tooltip activator="parent" location="top">
+                        メール{{ member.mailConfirmed ? '確認済み' : '確認中' }}
+                      </v-tooltip>
+                    </template>
+                  </v-text-field>
                 </v-col>
                 <v-col cols="12" md="2" class="d-flex justify-end">
                   <v-btn v-if="editingMember?.id === member.id" icon small @click="handleUpdateMember(member)">

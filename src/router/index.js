@@ -5,6 +5,7 @@ import SignIn from '../views/SignIn.vue'
 import WeeklyReport from '../views/WeeklyReport.vue'
 import WeeklyReview from '../views/WeeklyReview.vue'
 import OrganizationManagement from '../views/OrganizationManagement.vue'
+import NortificationSetting from '../views/NortificationSetting.vue'
 
 const routes = [
   {
@@ -35,6 +36,13 @@ const routes = [
     path: '/admin/reports/:weekString',
     name: 'WeeklyReview',
     component: WeeklyReview,
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/nortification',
+    name: 'NortificationSetting',
+    component: NortificationSetting,
     props: true,
     meta: { requiresAuth: true }
   },

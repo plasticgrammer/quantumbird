@@ -5,6 +5,7 @@ from boto3.dynamodb.conditions import Key
 from decimal import Decimal
 import os
 import uuid
+import common.publisher
 
 print('Loading function')
 
@@ -191,6 +192,8 @@ def list_members(organization_id):
         raise e
 
 def update_members(organization_id, members):
+    org = get_organization(organization_id)
+
     # 既存のメンバーを取得
     existing_members = list_members(organization_id)
     existing_members_dict = {m['id']: m for m in existing_members if 'id' in m}
@@ -199,6 +202,9 @@ def update_members(organization_id, members):
     for member in members:
         existing_member = existing_members_dict.get(member.get('id'))
         member_item = prepare_member_item(member, existing_member)
+        if existing_member is None:
+            send_registor_mail(org, member_item)
+
         member_item['organizationId'] = organization_id
         members_table.put_item(Item=member_item)
         if member.get('id') in existing_members_dict:
@@ -207,6 +213,12 @@ def update_members(organization_id, members):
     # 削除されたメンバーの処理
     for member_id in existing_members_dict:
         delete_member_by_id(organization_id, member_id)
+
+def send_registor_mail(organization, member):
+    sendFrom = common.publisher.get_from_address(organization)
+    subject = "【週次報告システム】メンバー登録設定完了のご連絡"
+    bodyText = "「週次報告システム」の送信先に登録されました。\n※本メールは、登録した際に配信される自動配信メールです。\n"
+    common.publisher.send_mail(sendFrom, [member.get('mail')], subject, bodyText)
 
 def delete_organization_and_members(organization_id):
     try:

@@ -79,7 +79,6 @@
           <v-icon size="x-large">
             {{ item.icon }}
           </v-icon>
-          {{ item.title }}
         </v-btn>
       </v-bottom-navigation>
     </template>
@@ -131,6 +130,12 @@ const navigationItems = [
     title: '週次報告レビュー', 
     value: 'WeeklyReview', 
     route: { name: 'WeeklyReviewSelector' }
+  },
+  { 
+    icon: 'mdi-bell-ring', 
+    title: '通知設定', 
+    value: 'NortificationSetting', 
+    route: { name: 'NortificationSetting' }
   },
 ]
 
