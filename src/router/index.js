@@ -5,7 +5,7 @@ import SignIn from '../views/SignIn.vue'
 import WeeklyReport from '../views/WeeklyReport.vue'
 import WeeklyReview from '../views/WeeklyReview.vue'
 import OrganizationManagement from '../views/OrganizationManagement.vue'
-import NortificationSetting from '../views/NortificationSetting.vue'
+import RequestSetting from '../views/RequestSetting.vue'
 
 const routes = [
   {
@@ -40,9 +40,9 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/admin/nortification',
-    name: 'NortificationSetting',
-    component: NortificationSetting,
+    path: '/admin/request-setting',
+    name: 'RequestSetting',
+    component: RequestSetting,
     props: true,
     meta: { requiresAuth: true }
   },

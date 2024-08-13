@@ -133,9 +133,9 @@ const navigationItems = [
   },
   { 
     icon: 'mdi-bell-ring', 
-    title: '通知設定', 
-    value: 'NortificationSetting', 
-    route: { name: 'NortificationSetting' }
+    title: '報告依頼設定', 
+    value: 'RequestSetting', 
+    route: { name: 'RequestSetting' }
   },
 ]
 
