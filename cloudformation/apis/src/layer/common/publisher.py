@@ -68,3 +68,15 @@ def start_verification_process(email_address):
     except ClientError as e:
         print(f'Error starting verification process: {e}')
         raise
+
+def start_custom_verification(email_address, template_name):
+    try:
+        response = ses.send_custom_verification_email(
+            EmailAddress=email_address,
+            TemplateName=template_name
+        )
+        print(f"Verification email sent to {email_address}. Message ID: {response['MessageId']}")
+        return True
+    except ClientError as e:
+        print(f"Error sending verification email: {e}")
+        return False
