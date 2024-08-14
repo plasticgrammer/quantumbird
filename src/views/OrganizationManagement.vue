@@ -66,7 +66,7 @@
           >
             <v-card-text class="member-row px-3 py-1">
               <v-row>
-                <v-col cols="12" md="2" class="px-2">
+                <v-col cols="12" sm="2" class="px-2">
                   <v-text-field
                     v-model="member.id"
                     label="ID"
@@ -82,7 +82,7 @@
                     </template>
                   </v-text-field>
                 </v-col>
-                <v-col cols="12" md="3" class="px-2">
+                <v-col cols="12" sm="3" class="px-2">
                   <v-text-field
                     v-model="member.name"
                     label="名前"
@@ -93,7 +93,7 @@
                     :error-messages="editingMember?.id === member.id ? editValidationErrors.name : ''"
                   />
                 </v-col>
-                <v-col cols="12" md="5" class="px-2">
+                <v-col cols="12" sm="5" class="px-2">
                   <v-text-field
                     v-model="member.email"
                     label="メールアドレス"
@@ -116,7 +116,7 @@
                     </template>
                   </v-text-field>
                 </v-col>
-                <v-col cols="12" md="2" class="d-flex justify-end">
+                <v-col cols="12" sm="2" class="d-flex justify-end">
                   <v-btn v-if="editingMember?.id === member.id" icon small @click="handleUpdateMember(member)">
                     <v-icon>mdi-check</v-icon>
                   </v-btn>
@@ -133,40 +133,48 @@
         </v-card>
 
         <v-row class="mt-4 mx-3 align-center">
-          <v-text-field
-            v-model="newMember.id"
-            label="ID"
-            :maxlength="8"
-            outlined
-            dense
-            color="primary"
-            :error-messages="validationErrors.id"
-            class="member-id-input mr-2"
-          />
-          <v-text-field
-            v-model="newMember.name"
-            label="名前"
-            outlined
-            dense
-            color="primary"
-            :error-messages="validationErrors.name"
-            class="member-name-input mr-2"
-          />
-          <v-text-field
-            v-model="newMember.email"
-            label="メールアドレス"
-            outlined
-            dense
-            color="primary"
-            :error-messages="validationErrors.email"
-            class="member-email-input mr-2"
-          />
-          <v-btn
-            color="secondary"
-            @click="handleAddMember"
-          >
-            メンバーを追加
-          </v-btn>
+          <v-col cols="12" sm="2" class="px-1">
+            <v-text-field
+              v-model="newMember.id"
+              label="ID"
+              :maxlength="8"
+              outlined
+              dense
+              color="primary"
+              :error-messages="validationErrors.id"
+              class="member-id-input mr-2"
+            />
+          </v-col>
+          <v-col cols="12" sm="3" class="px-1">
+            <v-text-field
+              v-model="newMember.name"
+              label="名前"
+              outlined
+              dense
+              color="primary"
+              :error-messages="validationErrors.name"
+              class="member-name-input mr-2"
+            />
+          </v-col>
+          <v-col cols="12" sm="5" class="px-1">
+            <v-text-field
+              v-model="newMember.email"
+              label="メールアドレス"
+              outlined
+              dense
+              color="primary"
+              :error-messages="validationErrors.email"
+              class="member-email-input mr-2"
+            />
+          </v-col>
+          <v-col cols="12" sm="2" class="px-1">
+            <v-btn
+              color="secondary"
+              @click="handleAddMember"
+            >
+              メンバーを追加
+            </v-btn>
+          </v-col>
         </v-row>
 
         <div class="mt-5">
@@ -386,24 +394,12 @@ watch(
 .organization-card {
   background-color: white;
   border-radius: 0.5rem;
-  padding: .5em 1.5em 1em;
+  padding: 0.5em 1.5em 1em;
   position: relative;
 }
 
 .organization-name-input {
   font-size: 1.5rem;
-}
-
-.member-id-input {
-  width: 120px;
-}
-
-.member-name-input {
-  width: 160px;
-}
-
-.member-email-input {
-  width: 300px;
 }
 
 .v-table th {

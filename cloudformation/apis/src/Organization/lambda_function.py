@@ -128,7 +128,12 @@ def parse_body(event):
 def prepare_organization_item(org_data):
     return {
         'organizationId': org_data.get('organizationId'),
-        'name': org_data.get('name')
+        'name': org_data.get('name'),
+        'sender': org_data.get('sender'),
+        'requestEnabled': org_data.get('requestEnabled'),
+        'requestTime': org_data.get('requestTime'),
+        'requestDayOfWeek': org_data.get('requestDayOfWeek'),
+        'reportWeek': org_data.get('reportWeek')
     }
 
 def prepare_member_item(member_data, existing_member=None):
@@ -203,7 +208,10 @@ def update_members(organization_id, members):
         existing_member = existing_members_dict.get(member.get('id'))
         member_item = prepare_member_item(member, existing_member)
         if existing_member is None:
-            send_registor_mail(org, member_item)
+            try:
+                send_registor_mail(org, member_item)
+            except Exception as e:
+                logger.error(f"Failed to send registration email to member {member_item.get('id')}: {str(e)}")
 
         member_item['organizationId'] = organization_id
         members_table.put_item(Item=member_item)
@@ -218,7 +226,11 @@ def send_registor_mail(organization, member):
     sendFrom = common.publisher.get_from_address(organization)
     subject = "【週次報告システム】メンバー登録設定完了のご連絡"
     bodyText = "「週次報告システム」の送信先に登録されました。\n※本メールは、登録した際に配信される自動配信メールです。\n"
-    common.publisher.send_mail(sendFrom, [member.get('mail')], subject, bodyText)
+    # Check if email exists and is not None
+    if member.get('email'):
+        common.publisher.send_mail(sendFrom, [member['email']], subject, bodyText)
+    else:
+        logger.warning(f"No email address found for member: {member.get('id', 'Unknown ID')}")
 
 def delete_organization_and_members(organization_id):
     try:

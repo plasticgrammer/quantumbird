@@ -49,20 +49,20 @@
                 <div class="d-flex align-center justify-start">
                   <div class="d-flex align-center">
                     <v-icon
-                      :color="requestSettings.isEnabled ? 'success' : 'error'"
+                      :color="requestSettings.requestEnabled ? 'success' : 'error'"
                       class="mr-2"
                     >
-                      {{ requestSettings.isEnabled ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                      {{ requestSettings.requestEnabled ? 'mdi-check-circle' : 'mdi-close-circle' }}
                     </v-icon>
                     <span class="text-subtitle-1">
                       報告依頼の自動送信は現在
-                      <strong>{{ requestSettings.isEnabled ? '有効' : '無効' }}</strong>
+                      <strong>{{ requestSettings.requestEnabled ? '有効' : '無効' }}</strong>
                       です
                     </span>
                   </div>
                   <span class="mx-3"></span>
                   <v-switch
-                    v-model="requestSettings.isEnabled"
+                    v-model="requestSettings.requestEnabled"
                     color="primary"
                     hide-details="auto"
                     inset
@@ -121,7 +121,7 @@
             <v-btn
               color="secondary"
               :loading="manualExecutionLoading"
-              :disabled="!requestSettings.isEnabled"
+              :disabled="!requestSettings.requestEnabled"
               @click="handleManualExecution"
             >
               <v-icon class="mr-1" left> mdi-play </v-icon>
@@ -135,7 +135,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, inject } from 'vue'
 import { useStore } from 'vuex'
 import {
   getOrganization,
@@ -150,13 +150,15 @@ const form = ref(null)
 const loading = ref(false)
 const manualExecutionLoading = ref(false)
 const isFormValid = ref(false)
+const organization = ref(null)
+const showNotification = inject('showNotification')
 
 const requestSettings = reactive({
-  isEnabled: true,
+  requestEnabled: true,
   sender: '',
   requestDayOfWeek: 'monday',
-  requestTime: null,
-  reportWeek: 'current',
+  requestTime: 6,
+  reportWeek: -1,
 })
 
 const originalSettings = ref(null)
@@ -189,8 +191,8 @@ const hours = ref(
 )
 
 const reportWeekOptions = [
-  { text: '当週', value: 'current' },
-  { text: '前週', value: 'previous' },
+  { text: '前週', value: -1 },
+  { text: '当週', value: 0 },
 ]
 
 const handleSubmit = async () => {
@@ -198,10 +200,11 @@ const handleSubmit = async () => {
 
   try {
     loading.value = true
-    await updateOrganization({
-      ...organizationId.value,
+    const org = {
+      ...organization.value,
       ...requestSettings,
-    })
+    }
+    await updateOrganization(org)
     showNotification('報告依頼設定を更新しました')
     console.log('Request settings updated:', requestSettings)
     originalSettings.value = JSON.parse(JSON.stringify(requestSettings))
@@ -228,13 +231,14 @@ onMounted(async () => {
   loading.value = true
   try {
     const result = await getOrganization(organizationId.value)
+    organization.value = result
     if (result && Object.keys(result).length > 0) {
       Object.assign(requestSettings, {
-        isEnabled: result.isEnabled ?? false,
         sender: result.sender || '',
-        requestTime: result.requestTime !== undefined ? Number(result.requestTime) : null,
+        requestEnabled: result.requestEnabled ?? false,
+        requestTime: result.requestTime !== undefined ? Number(result.requestTime) : 6,
         requestDayOfWeek: result.requestDayOfWeek || 'monday',
-        reportWeek: result.reportWeek || 'current',
+        reportWeek: result.reportWeek || -1,
       })
       originalSettings.value = JSON.parse(JSON.stringify(requestSettings))
     }
@@ -244,12 +248,6 @@ onMounted(async () => {
     loading.value = false
   }
 })
-
-// 通知用のユーティリティ関数（実際の実装に置き換えてください）
-const showNotification = (message, error) => {
-  console.log(message, error)
-  // ここに通知ロジックを実装してください
-}
 </script>
 
 <style scoped>
