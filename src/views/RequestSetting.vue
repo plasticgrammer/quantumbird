@@ -25,67 +25,85 @@
         </v-row>
 
         <v-row>
-          <v-col cols="12">
-            <v-switch
-              v-model="requestSettings.isEnabled"
-              label="報告依頼を有効にする"
-              color="primary"
-              :default="true"
-              hide-details="auto"
-            ></v-switch>
+          <v-col cols="2" class="pl-5 d-flex align-center">
+            <span class="text-body-1">報告対象週</span>
           </v-col>
-        </v-row>
-
-        <v-card outlined class="mb-4">
-          <v-card-title>報告対象週</v-card-title>
-          <v-card-text>
-            <v-row no-gutters>
-              <v-col
-                v-for="option in reportWeekOptions"
-                :key="option.value"
-                cols="auto"
-                class="mr-4"
-              >
-                <v-radio-group v-model="requestSettings.reportWeek" row dense hide-details>
-                  <v-radio :label="option.text" :value="option.value"></v-radio>
-                </v-radio-group>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-
-        <v-card outlined>
-          <v-card-title>報告依頼を行う曜日</v-card-title>
-          <v-card-subtitle>指定曜日に報告依頼メールを送信します。</v-card-subtitle>
-          <v-card-text>
-            <v-row no-gutters>
-              <v-col v-for="day in daysOfWeek" :key="day.value" cols="auto" class="mr-2">
-                <v-radio-group v-model="requestSettings.requestDayOfWeek" row dense hide-details>
-                  <v-radio :label="day.text" :value="day.value"></v-radio>
-                </v-radio-group>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-
-        <v-row class="mt-4">
-          <v-col cols="12" sm="6">
-            <v-select
-              v-model="requestSettings.requestTime"
-              :items="hours"
-              label="通知時間"
-              item-title="text"
-              item-value="value"
-              outlined
-              dense
-              :rules="[v => v !== null || '時間を選択してください']"
+          <v-col cols="10" class="d-flex justify-start align-center">
+            <span
+              v-for="option in reportWeekOptions"
+              :key="option.value"
+              class="mr-4"
             >
-              <template #prepend-inner>
-                <v-icon>mdi-clock-outline</v-icon>
-              </template>
-            </v-select>
+              <v-radio-group v-model="requestSettings.reportWeek" row dense hide-details>
+                <v-radio :label="option.text" :value="option.value"></v-radio>
+              </v-radio-group>
+            </span>
           </v-col>
         </v-row>
+
+        <v-card outlined class="mt-4">
+          <v-card-title>報告依頼 - 自動送信設定</v-card-title>
+          <v-card-text>
+            <v-row>
+              <v-col cols="12">
+                <div class="d-flex align-center justify-start">
+                  <div class="d-flex align-center">
+                    <v-icon
+                      :color="requestSettings.isEnabled ? 'success' : 'error'"
+                      class="mr-2"
+                    >
+                      {{ requestSettings.isEnabled ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                    </v-icon>
+                    <span class="text-subtitle-1">
+                      報告依頼の自動送信は現在
+                      <strong>{{ requestSettings.isEnabled ? '有効' : '無効' }}</strong>
+                      です
+                    </span>
+                  </div>
+                  <span class="mx-3"></span>
+                  <v-switch
+                    v-model="requestSettings.isEnabled"
+                    color="primary"
+                    hide-details="auto"
+                    inset
+                  ></v-switch>
+                </div>
+              </v-col>
+            </v-row>
+
+            <v-row>
+              <v-col cols="12" sm="4">
+                <v-select
+                  v-model="requestSettings.requestDayOfWeek"
+                  :items="daysOfWeek"
+                  label="送信曜日"
+                  item-title="text"
+                  item-value="value"
+                  outlined
+                  dense
+                  hide-details="auto"
+                ></v-select>
+              </v-col>
+              <v-col cols="12" sm="4">
+                <v-select
+                  v-model="requestSettings.requestTime"
+                  :items="hours"
+                  label="送信時間"
+                  item-title="text"
+                  item-value="value"
+                  outlined
+                  dense
+                  hide-details="auto"
+                  :rules="[v => v !== null || '時間を選択してください']"
+                >
+                  <template #prepend-inner>
+                    <v-icon>mdi-clock-outline</v-icon>
+                  </template>
+                </v-select>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
 
         <v-row class="mt-4">
           <v-col>
@@ -154,13 +172,13 @@ const emailRules = [
 ]
 
 const daysOfWeek = [
-  { text: '月', value: 'monday' },
-  { text: '火', value: 'tuesday' },
-  { text: '水', value: 'wednesday' },
-  { text: '木', value: 'thursday' },
-  { text: '金', value: 'friday' },
-  { text: '土', value: 'saturday' },
-  { text: '日', value: 'sunday' },
+  { text: '月曜日', value: 'monday' },
+  { text: '火曜日', value: 'tuesday' },
+  { text: '水曜日', value: 'wednesday' },
+  { text: '木曜日', value: 'thursday' },
+  { text: '金曜日', value: 'friday' },
+  { text: '土曜日', value: 'saturday' },
+  { text: '日曜日', value: 'sunday' },
 ]
 
 const hours = ref(
