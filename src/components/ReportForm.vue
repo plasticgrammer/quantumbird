@@ -138,7 +138,7 @@
           v-for="(project, projectIndex) in report.projects"
           :key="projectIndex" 
           elevation="2"
-          class="mb-4"
+          class="pb-2 mb-4"
         >
           <v-card-text>
             <v-row align="center">
@@ -165,7 +165,7 @@
               </v-col>
             </v-row>
             <v-row v-if="project.workItems.length > 0">
-              <v-col cols="12" class="pa-1 pa-md-4">
+              <v-col cols="12" class="pa-1">
                 <div
                   v-for="(item, itemIndex) in project.workItems"
                   :key="itemIndex"

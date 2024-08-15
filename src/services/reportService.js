@@ -45,6 +45,10 @@ export const getReportStatus = async (organizationId, weekString) => {
   return invokeLambda('getReportStatus', { organizationId, weekString })
 }
 
-export const getOvertimeData = async (organizationId) => {
-  return invokeLambda('getOvertimeData', { organizationId })
+export const getStatsData = async (organizationId) => {
+  return invokeLambda('getStatsData', { organizationId })
+}
+
+export const submitFeedback = async (memberUuid, weekString, feedback) => {
+  return invokeLambda('submitFeedback', { memberUuid, weekString, feedback })
 }

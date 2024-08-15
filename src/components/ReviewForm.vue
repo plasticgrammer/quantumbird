@@ -231,7 +231,7 @@
               variant="elevated" 
               outlined
               x-small
-              @click="submitApprove(report.memberUuid)"
+              @click="handleApprove(report.memberUuid)"
             >
               <v-icon left x-small class="mr-1">
                 mdi-check-bold
@@ -245,7 +245,7 @@
               class="ml-2"
               outlined
               x-small
-              @click="submitFeedback(report.memberUuid)"
+              @click="handleFeedback(report.memberUuid)"
             >
               <v-icon left x-small class="mr-1">
                 mdi-reply
@@ -263,7 +263,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useReport } from '../composables/useReport'
-import { listReports, updateReport } from '../services/reportService'
+import { listReports, updateReport, submitFeedback } from '../services/reportService'
 import { listMembers } from '../services/memberService'
 
 const store = useStore()
@@ -397,39 +397,37 @@ const fetchData = async () => {
 
 onMounted(fetchData)
 
-const submitFeedback = async (memberUuid) => {
+const handleFeedback = async (memberUuid) => {
   const report = reports.value.find(r => r.memberUuid === memberUuid)
   if (report && newFeedback.value.trim() !== '') {
     try {
-      const updatedReport = {
-        ...report,
-        feedbacks: [
-          ...(report.feedbacks || []),
-          {
-            content: newFeedback.value.trim(),
-            createdAt: new Date().toISOString()
-          }
-        ],
-        status: 'feedback'
+      const feedback = {
+        content: newFeedback.value.trim(),
+        createdAt: new Date().toISOString()
       }
-      await updateReport(updatedReport)
+      
+      await submitFeedback(memberUuid, props.weekString, feedback)
       
       // ローカルの状態を更新
+      const updatedReport = {
+        ...report,
+        feedbacks: [...(report.feedbacks || []), feedback],
+        status: 'feedback'
+      }
       reports.value = reports.value.map(r =>
         r.memberUuid === memberUuid 
-          ? { ...updatedReport }
+          ? updatedReport
           : r
       )
       // 入力欄をクリア
       newFeedback.value = ''
     } catch (error) {
       console.error('Failed to submit feedback:', error)
-      console.error('Report state:', JSON.stringify(report, null, 2))
     }
   }
 }
 
-const submitApprove = async (memberUuid) => {
+const handleApprove = async (memberUuid) => {
   const now = new Date()
   const report = reports.value.find(r => r.memberUuid === memberUuid)
   if (report) {

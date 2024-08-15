@@ -3,16 +3,17 @@ import boto3
 import logging
 import json
 import os
-import pytz
 import urllib.parse
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from boto3.dynamodb.conditions import Key
 import common.publisher
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-TIMEZONE = os.environ.get('TIMEZONE', 'UTC')
+# 環境変数TZからタイムゾーンを取得
+TIMEZONE = ZoneInfo(os.environ.get('TZ', 'UTC'))
 BASE_URL = os.environ.get('BASE_URL', 'http://localhost:3000')
 stage = os.environ.get('STAGE', 'dev')
 
@@ -23,10 +24,8 @@ organizations_table = dynamodb.Table(organizations_table_name)
 members_table = dynamodb.Table(members_table_name)
 
 def scheduler_handler(event, context):
-    
     # 現在の曜日と時間を取得
-    tz = pytz.timezone(TIMEZONE)
-    now = datetime.now(tz)
+    now = datetime.now(TIMEZONE)
     current_day = now.weekday()
     current_time = f"{now.hour:02d}:00"
     
@@ -42,7 +41,6 @@ def scheduler_handler(event, context):
     
     # 一致する設定ごとに処理を実行
     for item in response['Items']:
-        members = response['Items']
         # ここで実際の処理を呼び出す（例：別のLambda関数を呼び出す）
         invoke_processing_lambda(item['organization_id'])
 
@@ -55,7 +53,7 @@ def invoke_processing_lambda(organization_id):
     )
 
 # 処理実行関数
-def processing_handler(event, context):
+def lambda_handler(event, context):
     organization_id = event['organization_id']
     # ここでスケジュールIDに基づいた実際の処理を実行
     print(f"Processing task for organization ID: {organization_id}")
@@ -83,8 +81,7 @@ def send_request_mail(organization, members):
     organization_id = organization['organization_id']
     reportWeek = organization['reportWeek']
 
-    tz = pytz.timezone(TIMEZONE)
-    now = datetime.now(tz)
+    now = datetime.now(TIMEZONE)
     weekString = get_string_from_week(now, reportWeek)
 
     for m in members:
@@ -111,8 +108,8 @@ def generate_report_link(organization_id, member_uuid, week_string):
 def get_string_from_week(current_date, week_offset=0):
     # 日付オブジェクトに変換（文字列が渡された場合に対応）
     if isinstance(current_date, str):
-        current_date = datetime.datetime.strptime(current_date, "%Y-%m-%d").date()
-    elif isinstance(current_date, datetime.datetime):
+        current_date = datetime.strptime(current_date, "%Y-%m-%d").replace(tzinfo=TIMEZONE).date()
+    elif isinstance(current_date, datetime):
         current_date = current_date.date()
     
     # オフセットを適用
@@ -122,7 +119,7 @@ def get_string_from_week(current_date, week_offset=0):
     thursday = current_date + datetime.timedelta(days=(3 - current_date.weekday() + 7) % 7)
     
     # その年の最初の木曜日を計算
-    first_thursday = datetime.date(thursday.year, 1, 1)
+    first_thursday = datetime(thursday.year, 1, 1, tzinfo=TIMEZONE).date()
     if first_thursday.weekday() != 3:
         first_thursday = first_thursday + datetime.timedelta(days=(3 - first_thursday.weekday() + 7) % 7)
     

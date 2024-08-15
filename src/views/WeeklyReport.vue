@@ -186,7 +186,6 @@ const handleBackToReport = () => {
 }
 
 const handleClose = () => {
-  // ウィンドウを閉じる処理を実装
   window.close()
 }
 

@@ -73,7 +73,7 @@
                   週次報告レビュー
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="3" class="d-flex flex-column align-start pt-2">
+              <v-col cols="12" md="3" class="d-flex flex-sm-column align-start pt-2">
                 <span v-for="status in filteredStatusOptions" :key="status.value">
                   <v-chip
                     v-if="statusCounts[status.value] > 0"
@@ -234,7 +234,7 @@ import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
 import { getOrganization } from '../services/organizationService'
 import { listMembers } from '../services/memberService'
-import { getReportStatus, getOvertimeData } from '../services/reportService'
+import { getReportStatus, getStatsData } from '../services/reportService'
 import Calendar from '../components/Calendar.vue'
 
 Chart.register(...registerables)
@@ -326,15 +326,17 @@ const fetchReportStatus = async (weekString) => {
   }
 }
 
-const fetchOvertimeData = async () => {
+const fetchStatsData = async () => {
   try {
-    const data = await getOvertimeData(organizationId)
+    const data = await getStatsData(organizationId)
     overtimeData.value = {
       labels: data.labels,
       datasets: data.datasets.map((dataset, index) => ({
-        ...dataset,
+        label: dataset.label,
+        data: dataset.data.map(item => item.overtimeHours),
         borderColor: getColor(index),
-        tension: 0.1
+        tension: 0.1,
+        fill: false
       }))
     }
   } catch (err) {
@@ -408,14 +410,14 @@ const fetchAll = async () => {
   await Promise.all([
     fetchOrganizationInfo(),
     fetchReportStatus(weekString.value),
-    fetchOvertimeData(),
+    fetchStatsData(),
     fetchMembers()
   ])
 }
 
 onMounted(async () => {
   try {
-    fetchAll()
+    await fetchAll()
     initChart()
   } catch (err) {
     console.error('Error initializing dashboard:', err)

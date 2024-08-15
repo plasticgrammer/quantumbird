@@ -5,10 +5,7 @@
       class="mx-auto mt-5"
     >
       <v-card-title>
-        <v-icon
-          size="large"
-          class="mr-1"
-        >
+        <v-icon size="large" class="mr-1">
           mdi-bird
         </v-icon>
         {{ getTitle }}

@@ -3,8 +3,10 @@ import logging
 import boto3
 from boto3.dynamodb.conditions import Key
 import os
+import urllib.parse
 from decimal import Decimal
 from datetime import datetime, timedelta
+import common.publisher
 
 print('Loading function')
 
@@ -14,10 +16,14 @@ logger.setLevel(logging.INFO)
 # Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb')
 stage = os.environ.get('STAGE', 'dev')
-weekly_reports_table_name = f'{stage}-WeeklyReports'
+BASE_URL = os.environ.get('BASE_URL', 'http://localhost:3000')
+
 members_table_name = f'{stage}-Members'
-weekly_reports_table = dynamodb.Table(weekly_reports_table_name)
+organizations_table_name = f'{stage}-Organizations'
+weekly_reports_table_name = f'{stage}-WeeklyReports'
+organizations_table = dynamodb.Table(organizations_table_name)
 members_table = dynamodb.Table(members_table_name)
+weekly_reports_table = dynamodb.Table(weekly_reports_table_name)
 
 def float_to_decimal(obj):
     if isinstance(obj, float):
@@ -52,8 +58,10 @@ def lambda_handler(event, context):
             return handle_delete(event)
         elif http_method == 'getReportStatus':
             return handle_get_report_status(event)
-        elif http_method == 'getOvertimeData':
-            return handle_get_overtime_data(event)
+        elif http_method == 'getStatsData':
+            return handle_get_stats_data(event)
+        elif http_method == 'submitFeedback':
+            return handle_submit_feedback(event)
         else:
             return create_response(400, f'Unsupported operation: {http_method}')
     except Exception as e:
@@ -98,14 +106,14 @@ def handle_put(event):
             return create_response(404, 'Report not found')
 
         # 新しいフィードバックを追加
-        new_feedback = report_data.get('newFeedback')
-        if new_feedback:
-            feedbacks = existing_report.get('feedbacks', [])
-            feedbacks.append({
-                'content': new_feedback,
-                'createdAt': datetime.now().isoformat()
-            })
-            report_data['feedbacks'] = feedbacks
+        # new_feedback = report_data.get('newFeedback')
+        # if new_feedback:
+        #     feedbacks = existing_report.get('feedbacks', [])
+        #     feedbacks.append({
+        #         'content': new_feedback,
+        #         'createdAt': datetime.now().isoformat()
+        #     })
+        #     report_data['feedbacks'] = feedbacks
 
         # その他のフィールドを更新
         updated_item = prepare_item(report_data, existing_report)
@@ -233,14 +241,14 @@ def get_member_names(member_uuids):
     
     return member_names
 
-def handle_get_overtime_data(event):
+def handle_get_stats_data(event):
     params = event.get('queryStringParameters') or event.get('payload') or {}
     if 'organizationId' not in params:
         return create_response(400, 'Missing organizationId parameter')
 
     organization_id = params['organizationId']
     weeks = get_last_5_weeks()
-    overtime_data = {
+    stats_data = {
         'labels': weeks,
         'datasets': []
     }
@@ -255,10 +263,16 @@ def handle_get_overtime_data(event):
                 member_uuids.add(member_uuid)
                 if member_uuid not in members:
                     members[member_uuid] = {
-                        'data': [0] * 5
+                        'data': [{'overtimeHours': 0, 'achievement': 0, 'disability': 0, 'stress': 0} for _ in range(5)]
                     }
                 week_index = weeks.index(week)
-                members[member_uuid]['data'][week_index] = float(report.get('overtimeHours', 0))
+                stats = members[member_uuid]['data'][week_index]
+                stats['overtimeHours'] = float(report.get('overtimeHours', 0))
+                
+                rating = report.get('rating', {})
+                stats['achievement'] = float(rating.get('achievement', 0))
+                stats['disability'] = float(rating.get('disability', 0))
+                stats['stress'] = float(rating.get('stress', 0))
         except Exception as e:
             logger.error(f"Error fetching reports for week {week}: {str(e)}", exc_info=True)
             # エラーが発生しても処理を続行し、取得できなかった週のデータは 0 として扱う
@@ -266,15 +280,22 @@ def handle_get_overtime_data(event):
     # バッチでメンバー名を取得
     member_names = get_member_names(list(member_uuids))
 
-    overtime_data['datasets'] = [
+    stats_data['datasets'] = [
         {
             'label': member_names.get(member_uuid, f'Unknown ({member_uuid})'),
-            'data': member_data['data']
+            'data': [
+                {
+                    'overtimeHours': week_data['overtimeHours'],
+                    'achievement': week_data['achievement'],
+                    'disability': week_data['disability'],
+                    'stress': week_data['stress']
+                } for week_data in member_data['data']
+            ]
         }
         for member_uuid, member_data in members.items()
     ]
 
-    return create_response(200, overtime_data)
+    return create_response(200, stats_data)
 
 def get_previous_week_string():
     today = datetime.now()
@@ -293,6 +314,113 @@ def decimal_default_proc(obj):
     if isinstance(obj, Decimal):
         return float(obj)
     raise TypeError
+
+def handle_submit_feedback(event):
+    params = parse_body(event)
+    member_uuid = params.get('memberUuid')
+    week_string = params.get('weekString')
+    feedback = params.get('feedback')
+    
+    if not all([member_uuid, week_string, feedback]):
+        return create_response(400, 'Missing required parameters')
+
+    try:
+        # 既存のレポートを取得
+        existing_report = get_report(member_uuid, week_string)
+        
+        if not existing_report:
+            return create_response(404, 'Report not found')
+
+        # 新しいフィードバックを追加
+        feedbacks = existing_report.get('feedbacks', [])
+        feedbacks.append(feedback)
+
+        # レポートを更新
+        updated_item = {
+            **existing_report,
+            'feedbacks': feedbacks,
+            'status': 'feedback'
+        }
+        
+        response = weekly_reports_table.put_item(Item=updated_item)
+        logger.info(f"DynamoDB response: {response}")
+
+        member = get_member(member_uuid)
+        if member:
+            org_id = member.get('organizationId')
+            if org_id:
+                org = get_organization(org_id)
+                if org:
+                    send_feedback_mail(org, member, week_string, feedback)
+                else:
+                    logger.warning(f"Organization not found for ID: {org_id}")
+            else:
+                logger.warning(f"No organizationId found for member: {member_uuid}")
+        else:
+            logger.warning(f"Member not found: {member_uuid}")
+
+        return create_response(200, 'Feedback submitted successfully')
+    except Exception as e:
+        logger.error(f"Error submitting feedback: {str(e)}", exc_info=True)
+        return create_response(500, f'Failed to submit feedback: {str(e)}')
+
+def send_feedback_mail(organization, member, week_string, feedback):
+    try:
+        sendFrom = common.publisher.get_from_address(organization)
+        subject = "【週次報告システム】管理者からのフィードバックがあります"
+        bodyText = "管理者からのフィードバックがありました。\n\n"
+
+        feedback_content = feedback.get('content')
+        feedback_created_at = feedback.get('createdAt')
+        bodyText += f"{feedback_content}\n（{feedback_created_at}）\n\n"
+
+        link = generate_report_link(organization['organizationId'], member["memberUuid"], week_string)
+        bodyText += f"詳細はこちら: {link}"
+        
+        member_email = member.get('email')
+        if member_email:
+            common.publisher.send_mail(sendFrom, [member_email], subject, bodyText)
+        else:
+            logger.warning(f"No email address found for member: {member.get('memberUuid', 'Unknown UUID')}")
+    except Exception as e:
+        logger.error(f"Error sending feedback email: {str(e)}", exc_info=True)
+
+def generate_report_link(organization_id, member_uuid, week_string):
+    base_url = urllib.parse.urljoin(BASE_URL, "reports")
+    
+    # パスパラメータ
+    path_params = [
+        urllib.parse.quote(str(organization_id)),
+        urllib.parse.quote(str(member_uuid)),
+        urllib.parse.quote(week_string)
+    ]    
+    # URLの構築
+    url = f"{base_url}/{'/'.join(path_params)}"    
+    return url
+
+def get_organization(organization_id):
+    try:
+        response = organizations_table.get_item(
+            Key={
+                'organizationId': organization_id
+            }
+        )
+        return response.get('Item')
+    except Exception as e:
+        logger.error(f"Error getting organization: {str(e)}", exc_info=True)
+        return None
+
+def get_member(member_uuid):
+    try:
+        response = members_table.get_item(
+            Key={
+                'memberUuid': member_uuid
+            }
+        )
+        return response.get('Item')
+    except Exception as e:
+        logger.error(f"Error getting member: {str(e)}", exc_info=True)
+        return None
 
 def create_response(status_code, body):
     return {
