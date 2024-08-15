@@ -17,7 +17,7 @@
 
       <v-form v-else ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
         <v-row>
-          <v-col cols="6">
+          <v-col cols="12" md="6">
             <v-text-field
               v-model="requestSettings.sender"
               label="送信元メールアドレス"
@@ -38,7 +38,7 @@
               </template>
             </v-text-field>
           </v-col>
-          <v-col cols="6">
+          <v-col cols="12" md="6">
             <div class="d-flex align-center mt-2">
               <v-btn
                 v-if="emailVerificationStatus !== 'Success' && emailVerificationStatus !== 'Checking'"
@@ -57,10 +57,10 @@
         <v-divider class="mb-3"></v-divider>
 
         <v-row>
-          <v-col cols="2" class="pl-5 d-flex align-center">
+          <v-col cols="12" md="2" class="pl-5 d-flex align-center">
             <span class="text-body-1">報告対象週</span>
           </v-col>
-          <v-col cols="10" class="d-flex justify-start align-center">
+          <v-col cols="12" md="10" class="d-flex justify-start align-center">
             <span
               v-for="option in reportWeekOptions"
               :key="option.value"
