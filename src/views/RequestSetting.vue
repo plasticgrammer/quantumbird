@@ -14,7 +14,7 @@
         v-if="loading"
         type="text, chip@2, ossein, text, paragraph, button"
       />
-      
+
       <v-form v-else ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
         <v-row>
           <v-col cols="6">
@@ -41,7 +41,7 @@
           <v-col cols="6">
             <div class="d-flex align-center mt-2">
               <v-btn
-                v-if="emailVerificationStatus !== 'Success'"
+                v-if="emailVerificationStatus !== 'Success' && emailVerificationStatus !== 'Checking'"
                 color="success"
                 small
                 prepend-icon="mdi-card-account-mail"
@@ -53,6 +53,8 @@
             </div>
           </v-col>
         </v-row>
+
+        <v-divider class="mb-3"></v-divider>
 
         <v-row>
           <v-col cols="2" class="pl-5 d-flex align-center">
@@ -72,7 +74,7 @@
         </v-row>
 
         <v-card outlined class="mt-4">
-          <v-card-title>報告依頼 - 自動送信設定</v-card-title>
+          <v-card-title>自動送信設定</v-card-title>
           <v-card-text>
             <v-row>
               <v-col cols="12">
@@ -199,10 +201,13 @@ const daysOfWeek = [
 ]
 
 const hours = ref(
-  Array.from({ length: 24 }, (_, i) => ({
-    text: `${i.toString().padStart(2, '0')}:00`,
-    value: i,
-  }))
+  Array.from({ length: 24 }, (_, i) => {
+    const timeString = `${i.toString().padStart(2, '0')}:00`
+    return {
+      text: timeString,
+      value: timeString,
+    }
+  })
 )
 
 const reportWeekOptions = [
@@ -317,7 +322,6 @@ const handleSubmit = async () => {
   }
 
   try {
-    loading.value = true
     const org = {
       ...organization.value,
       ...requestSettings,
@@ -328,8 +332,6 @@ const handleSubmit = async () => {
     originalSettings.value = JSON.parse(JSON.stringify(requestSettings))
   } catch (error) {
     showNotification('報告依頼設定の保存に失敗しました', error)
-  } finally {
-    loading.value = false
   }
 }
 
@@ -342,7 +344,7 @@ onMounted(async () => {
       Object.assign(requestSettings, {
         sender: result.sender || '',
         requestEnabled: result.requestEnabled ?? false,
-        requestTime: result.requestTime !== undefined ? Number(result.requestTime) : 6,
+        requestTime: result.requestTime || '06:00',
         requestDayOfWeek: result.requestDayOfWeek || 'monday',
         reportWeek: result.reportWeek || -1,
       })

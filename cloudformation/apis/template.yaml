@@ -90,6 +90,26 @@ Resources:
               Resource: "*"
       Description: ""
 
+  ScheduleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Stage}-schedule"
+      CodeUri: ./src/Schedule
+      Policies:
+        - AmazonDynamoDBFullAccess
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendRawEmail
+                - ses:SendEmail
+              Resource: "*"
+      Description: ""
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+      Layers:
+        - !Ref CommonLayer
+
   # ------------------------------------------------------------#
   #  Lambda Layer
   # ------------------------------------------------------------#

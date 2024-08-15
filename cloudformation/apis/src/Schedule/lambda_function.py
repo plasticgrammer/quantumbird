@@ -28,7 +28,7 @@ def scheduler_handler(event, context):
     tz = pytz.timezone(TIMEZONE)
     now = datetime.now(tz)
     current_day = now.weekday()
-    current_time = now.strftime("%H:%M")
+    current_time = f"{now.hour:02d}:00"
     
     # 現在の曜日と時間に一致する設定を検索
     response = organizations_table.scan(
@@ -49,7 +49,7 @@ def scheduler_handler(event, context):
 def invoke_processing_lambda(organization_id):
     lambda_client = boto3.client('lambda')
     lambda_client.invoke(
-        FunctionName='SendMail',
+        FunctionName=f'{stage}-schedule',
         InvocationType='Event',
         Payload=json.dumps({'organization_id': organization_id})
     )
@@ -81,10 +81,11 @@ def get_organization(organization_id):
 
 def send_request_mail(organization, members):
     organization_id = organization['organization_id']
+    reportWeek = organization['reportWeek']
 
     tz = pytz.timezone(TIMEZONE)
     now = datetime.now(tz)
-    weekString = get_string_from_week(now)
+    weekString = get_string_from_week(now, reportWeek)
 
     for m in members:
         sendTo = m.get("email")

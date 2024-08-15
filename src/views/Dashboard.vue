@@ -105,9 +105,8 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            - dashboardのリロード<br>
+            - フィードバック時のメール通知<br>
             - 報告済みステータスをカレンダーに表示<br>
-            - デイリーログ機能<br>
           </v-card-text>
         </v-card>
       </v-col>
