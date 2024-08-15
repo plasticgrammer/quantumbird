@@ -3,24 +3,54 @@
     <v-row dense class="pb-4">
       <v-col>
         <h3>
-          <v-icon size="large" class="mr-1"> mdi-bell-ring </v-icon>
+          <v-icon size="large" class="mr-1">mdi-bell-ring</v-icon>
           報告依頼設定
         </h3>
       </v-col>
     </v-row>
 
     <v-card class="request-settings-card pt-5" outlined>
-      <v-form ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
+      <v-skeleton-loader
+        v-if="loading"
+        type="text, chip@2, ossein, text, paragraph, button"
+      />
+      
+      <v-form v-else ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
         <v-row>
-          <v-col cols="12">
+          <v-col cols="6">
             <v-text-field
               v-model="requestSettings.sender"
               label="送信元メールアドレス"
               outlined
               dense
-              hide-details="auto"
               :rules="emailRules"
-            ></v-text-field>
+              :color="emailVerificationStatus === 'Success' ? 'success' : ''"
+              :error="emailVerificationStatus === 'Failed'"
+              @input="debouncedCheckEmailVerification"
+            >
+              <template #append>
+                <v-tooltip activator="parent" location="top">
+                  {{ emailVerificationStatusText }}
+                </v-tooltip>
+                <v-icon :color="emailVerificationStatusColor">
+                  {{ emailVerificationStatusIcon }}
+                </v-icon>
+              </template>
+            </v-text-field>
+          </v-col>
+          <v-col cols="6">
+            <div class="d-flex align-center mt-2">
+              <v-btn
+                v-if="emailVerificationStatus !== 'Success'"
+                color="success"
+                small
+                prepend-icon="mdi-card-account-mail"
+                :loading="verifyingEmail"
+                @click="verifyEmail"
+              >
+                メールアドレスを検証する
+              </v-btn>
+            </div>
           </v-col>
         </v-row>
 
@@ -117,17 +147,6 @@
               設定を保存する
             </v-btn>
           </v-col>
-          <v-col>
-            <v-btn
-              color="secondary"
-              :loading="manualExecutionLoading"
-              :disabled="!requestSettings.requestEnabled"
-              @click="handleManualExecution"
-            >
-              <v-icon class="mr-1" left> mdi-play </v-icon>
-              手動実行
-            </v-btn>
-          </v-col>
         </v-row>
       </v-form>
     </v-card>
@@ -135,20 +154,16 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, inject } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useStore } from 'vuex'
-import {
-  getOrganization,
-  updateOrganization,
-  executeManualRequest,
-} from '../services/organizationService'
+import { getOrganization, updateOrganization } from '../services/organizationService'
+import { checkEmailVerification, verifyEmailAddress } from '../services/sesService'
 
 const store = useStore()
 const organizationId = computed(() => store.getters['user/organizationId'])
 
 const form = ref(null)
 const loading = ref(false)
-const manualExecutionLoading = ref(false)
 const isFormValid = ref(false)
 const organization = ref(null)
 const showNotification = inject('showNotification')
@@ -194,9 +209,112 @@ const reportWeekOptions = [
   { text: '前週', value: -1 },
   { text: '当週', value: 0 },
 ]
+const emailVerificationStatus = ref('Pending')
+const emailVerificationTimeout = ref(null)
+const verifyingEmail = ref(false)
+
+const emailVerificationStatusColor = computed(() => {
+  switch (emailVerificationStatus.value) {
+  case 'Success':
+    return 'success'
+  case 'Failed':
+    return 'error'
+  default:
+    return 'grey'
+  }
+})
+
+const emailVerificationStatusIcon = computed(() => {
+  switch (emailVerificationStatus.value) {
+  case 'Success':
+    return 'mdi-check-circle'
+  case 'Failed':
+    return 'mdi-alert-circle'
+  default:
+    return 'mdi-progress-clock'
+  }
+})
+
+const emailVerificationStatusText = computed(() => {
+  switch (emailVerificationStatus.value) {
+  case 'Success':
+    return '検証済み'
+  case 'Failed':
+    return '未検証'
+  default:
+    return '検証中'
+  }
+})
+
+const debouncedCheckEmailVerification = () => {
+  if (emailVerificationTimeout.value) {
+    clearTimeout(emailVerificationTimeout.value)
+  }
+  emailVerificationTimeout.value = setTimeout(async () => {
+    await checkEmailVerificationStatus()
+  }, 500)
+}
+const checkEmailVerificationStatus = async () => {
+  if (!requestSettings.sender) {
+    emailVerificationStatus.value = 'Pending'
+    return
+  }
+
+  try {
+    emailVerificationStatus.value = 'Checking'
+    const result = await checkEmailVerification(requestSettings.sender)
+    
+    switch (result.status) {
+    case 'Success':
+      emailVerificationStatus.value = 'Success'
+      break
+    case 'Pending':
+      emailVerificationStatus.value = 'Pending'
+      showNotification('メールアドレスの検証が保留中です。メールボックスを確認してください。', 'info')
+      break
+    case 'Failed':
+      emailVerificationStatus.value = 'Failed'
+      //showNotification('メールアドレスの検証に失敗しました。', 'error')
+      break
+    default:
+      emailVerificationStatus.value = 'Error'
+      showNotification('メールアドレスの検証状態の確認中にエラーが発生しました。', 'error')
+    }
+  } catch (error) {
+    console.error('Error checking email verification:', error)
+    emailVerificationStatus.value = 'Error'
+    showNotification('メールアドレスの検証状態の確認中にエラーが発生しました。', 'error')
+  }
+}
+
+const verifyEmail = async () => {
+  if (!requestSettings.sender) {
+    showNotification('メールアドレスを入力してください。', 'error')
+    return
+  }
+
+  verifyingEmail.value = true
+  try {
+    await verifyEmailAddress(requestSettings.sender)
+    showNotification('検証メールを送信しました。メールを確認して検証を完了してください。', 'success')
+    await checkEmailVerificationStatus()
+  } catch (error) {
+    console.error('Error verifying email:', error)
+    showNotification('メールアドレスの検証に失敗しました。', 'error')
+  } finally {
+    verifyingEmail.value = false
+  }
+}
 
 const handleSubmit = async () => {
   if (!isFormValid.value || !isFormChanged.value) return
+
+  // Check email verification before submitting
+  await checkEmailVerificationStatus()
+  if (emailVerificationStatus.value !== 'Success') {
+    showNotification('送信元メールアドレスが検証されていません。設定を保存できません。', 'error')
+    return
+  }
 
   try {
     loading.value = true
@@ -215,18 +333,6 @@ const handleSubmit = async () => {
   }
 }
 
-const handleManualExecution = async () => {
-  try {
-    manualExecutionLoading.value = true
-    await executeManualRequest(organizationId.value)
-    showNotification('報告依頼を手動で実行しました')
-  } catch (error) {
-    showNotification('報告依頼の手動実行に失敗しました', error)
-  } finally {
-    manualExecutionLoading.value = false
-  }
-}
-
 onMounted(async () => {
   loading.value = true
   try {
@@ -241,11 +347,21 @@ onMounted(async () => {
         reportWeek: result.reportWeek || -1,
       })
       originalSettings.value = JSON.parse(JSON.stringify(requestSettings))
+      
+      // Check email verification status on mount
+      await checkEmailVerificationStatus()
     }
   } catch (error) {
     showNotification('報告依頼設定の取得に失敗しました', error)
   } finally {
     loading.value = false
+  }
+})
+
+// Clean up the timeout when the component is unmounted
+onUnmounted(() => {
+  if (emailVerificationTimeout.value) {
+    clearTimeout(emailVerificationTimeout.value)
   }
 })
 </script>

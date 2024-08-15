@@ -20,7 +20,7 @@ module.exports = {
     // 無駄なスペースは削除
     'no-multi-spaces': 2,
     // 不要な空白行は削除。2行開けてたらエラー
-    'no-multiple-empty-lines': [2, {'max': 1}],
+    'no-multiple-empty-lines': [2, { 'max': 1 }],
     // 関数とカッコはあけない(function hoge() {/** */})
     'func-call-spacing': [2, 'never'],
     // true/falseを無駄に使うな
@@ -46,8 +46,9 @@ module.exports = {
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'vue/multi-word-component-names': 'off',
-    'vue/max-attributes-per-line': 'off', 
+    'vue/max-attributes-per-line': 'off',
     'vue/html-self-closing': 'off',
+    'vue/singleline-html-element-content-newline': 'off',
     'vue/script-setup-uses-vars': 'error'
   }
 }

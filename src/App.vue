@@ -160,9 +160,9 @@ const getNotificationIcon = computed(() => {
   }
 })
 
-const showNotification = (message, error = false) => {
+const showNotification = (message, type, error = false) => {
   notification.show = true
-  notification.type = error ? 'error' : 'success'
+  notification.type = type || 'success'
   notification.message = message
   if (error) {
     console.error(error)

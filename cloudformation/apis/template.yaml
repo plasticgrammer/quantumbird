@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: infospace-api
 
@@ -25,55 +25,74 @@ Conditions:
   IsProd: !Equals [!Ref Stage, "prod"]
 
 Resources:
-
-# ------------------------------------------------------------#
-#  Lambda Function
-# ------------------------------------------------------------#
+  # ------------------------------------------------------------#
+  #  Lambda Function
+  # ------------------------------------------------------------#
   OrganizationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${Stage}-organization'
+      FunctionName: !Sub "${Stage}-organization"
       CodeUri: ./src/Organization
       Policies:
         - AmazonDynamoDBFullAccess
-      Description: ''
-      Environment:
-        Variables:
-          STAGE: !Ref Stage
-      Layers:
-        - !Ref CommonLayer
-  
-  MemberFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub '${Stage}-member'
-      CodeUri: ./src/Member
-      Policies:
-        - AmazonDynamoDBFullAccess
-      Description: ''
-      Environment:
-        Variables:
-          STAGE: !Ref Stage
-      Layers:
-        - !Ref CommonLayer
-  
-  WeeklyReportFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub '${Stage}-weekly-report'
-      CodeUri: ./src/WeeklyReport
-      Policies:
-        - AmazonDynamoDBFullAccess
-      Description: ''
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendRawEmail
+                - ses:SendEmail
+              Resource: "*"
+      Description: ""
       Environment:
         Variables:
           STAGE: !Ref Stage
       Layers:
         - !Ref CommonLayer
 
-# ------------------------------------------------------------#
-#  Lambda Layer
-# ------------------------------------------------------------#
+  MemberFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Stage}-member"
+      CodeUri: ./src/Member
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Description: ""
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+      Layers:
+        - !Ref CommonLayer
+
+  WeeklyReportFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Stage}-weekly-report"
+      CodeUri: ./src/WeeklyReport
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Description: ""
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+      Layers:
+        - !Ref CommonLayer
+
+  SESFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Stage}-ses"
+      CodeUri: ./src/SES
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:GetIdentityVerificationAttributes
+                - ses:VerifyEmailIdentity
+              Resource: "*"
+      Description: ""
+
+  # ------------------------------------------------------------#
+  #  Lambda Layer
+  # ------------------------------------------------------------#
   CommonLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:

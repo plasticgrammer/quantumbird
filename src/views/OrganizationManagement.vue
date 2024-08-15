@@ -1,15 +1,9 @@
 <template>
   <v-container class="organization-management-container">
-    <v-row 
-      dense 
-      class="pb-4"
-    >
+    <v-row dense class="pb-4">
       <v-col>
         <h3>
-          <v-icon 
-            size="large" 
-            class="mr-1"
-          >
+          <v-icon size="large" class="mr-1">
             mdi-domain
           </v-icon>
           組織情報管理
