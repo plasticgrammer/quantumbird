@@ -188,40 +188,53 @@
             <v-row class="mt-2">
               <v-col cols="12">
                 <v-alert
-                  v-for="(feedback, index) in report.feedbacks" :key="index" 
-                  icon="mdi-reply"
                   density="compact"
                   border="start"
                   border-color="warning"
                   elevation="2"
                   outlined
                   dense
-                  class="mb-2 custom-feedback-alert"
+                  class="px-2 mb-3"
+                  color="white"
                 >
-                  <div class="font-weight-bold">
-                    フィードバック（{{ new Date(feedback.createdAt).toLocaleString() }}）:
-                  </div>
-                  <div class="mt-2">
-                    <p>{{ feedback.content }}</p>
-                  </div>
-                  <v-textarea
-                    v-if="!!feedback.replyComment"
-                    v-model="feedback.replyComment"
-                    label="返信コメント"
-                    readonly
-                    rows="1"
-                    auto-grow
-                    outlined
-                    dense
-                    hide-details
-                    class="my-2"
+                  <div
+                    v-for="(feedback, index) in report.feedbacks" :key="index"
+                    class="pa-0"
                   >
-                    <template #prepend-inner>
-                      <v-icon size="large" class="mr-1" color="black">
-                        mdi-message
-                      </v-icon>
-                    </template>
-                  </v-textarea>
+                    <v-textarea
+                      v-model="feedback.content"
+                      :label="`${ new Date(feedback.createdAt).toLocaleString() }`"
+                      readonly
+                      rows="1"
+                      auto-grow
+                      hide-details
+                      density="comfortable"
+                      class="borderless-textarea"
+                    >
+                      <template #prepend-inner>
+                        <v-icon class="mr-1" color="orange">
+                          mdi-reply
+                        </v-icon>
+                      </template>
+                    </v-textarea>
+                    <v-textarea
+                      v-if="!!feedback.replyComment"
+                      v-model="feedback.replyComment"
+                      label="返信コメント"
+                      readonly
+                      rows="1"
+                      auto-grow
+                      hide-details
+                      density="comfortable"
+                      class="ml-8 mt-n2 borderless-textarea"
+                    >
+                      <template #prepend-inner>
+                        <v-icon size="large" class="mr-1" color="grey">
+                          mdi-message
+                        </v-icon>
+                      </template>
+                    </v-textarea>
+                  </div>
                 </v-alert>
 
                 <v-textarea
@@ -504,7 +517,11 @@ const handleApprove = async (memberUuid) => {
   font-size: 0.75rem !important;
 }
 
-.custom-feedback-alert :deep() .v-icon {
-  color: orange;
+.borderless-textarea :deep() .v-field__outline {
+  display: none;
+}
+
+.borderless-textarea :deep() .v-field__overlay {
+  background-color: transparent;
 }
 </style>
