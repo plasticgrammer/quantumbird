@@ -54,7 +54,7 @@
           </v-col>
         </v-row>
 
-        <v-divider class="mb-3"></v-divider>
+        <v-divider class="mt-1 mb-3"></v-divider>
 
         <v-row>
           <v-col cols="12" md="2" class="pl-5 d-flex align-center">
@@ -77,7 +77,7 @@
           <v-card-title>自動送信設定</v-card-title>
           <v-card-text>
             <v-row>
-              <v-col cols="12">
+              <v-col cols="12" class="py-1">
                 <div class="d-flex align-center justify-start">
                   <div class="d-flex align-center">
                     <v-icon

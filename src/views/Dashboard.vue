@@ -59,19 +59,21 @@
                     ></v-btn>
                   </v-container>
                 </v-card>
-                <v-btn
-                  v-if="isAdmin"
-                  color="black"
-                  variant="outlined"
+                <v-badge 
                   class="mt-6"
-                  :to="{ name: 'WeeklyReview', params: { weekString } }"
-                  x-small
+                  :color="statusCounts['pending'] ? 'info' : 'transparent'"
+                  :content="statusCounts['pending'] || ''"
                 >
-                  <v-icon class="mr-1" small left>
-                    mdi-calendar-multiple-check
-                  </v-icon>
-                  週次報告レビュー
-                </v-btn>
+                  <v-btn 
+                    v-if="isAdmin" color="black" variant="outlined"
+                    :to="{ name: 'WeeklyReview', params: { weekString } }" x-small
+                  >
+                    <v-icon class="mr-1" small left>
+                      mdi-calendar-multiple-check
+                    </v-icon>
+                    週次報告レビュー
+                  </v-btn>
+                </v-badge>
               </v-col>
               <v-col cols="12" md="3" class="d-flex flex-sm-column align-start pt-2">
                 <span v-for="status in filteredStatusOptions" :key="status.value">
@@ -105,7 +107,8 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            - フィードバック時のメール通知<br>
+            - レビュー時更新メッセージ<br>
+            - 確認済みは修正不可<br>
             - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>
         </v-card>

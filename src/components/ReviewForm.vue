@@ -56,10 +56,9 @@
         >
           <v-card-title class="d-flex justify-space-between align-center py-2">
             <span class="text-h6 font-weight-bold">
-              <v-icon
-                size="x-large"
-                class="mr-1"
-              >mdi-account-box-outline</v-icon>
+              <v-icon size="x-large" class="mr-1">
+                mdi-account-box-outline
+              </v-icon>
               {{ report.name }}
             </span>
             <v-chip
@@ -163,20 +162,31 @@
               </v-col>
             </v-row>
 
+            <v-card 
+              class="mt-4 border-sm"
+              elevation="0"
+              variant="flat"
+              color="white"
+              title="評価"
+            >
+              <template #prepend>
+                <v-icon icon="mdi-poll"></v-icon>
+              </template>
+              <v-card-text>
+                <rating-item
+                  v-for="item in ratingItems"
+                  :key="item.key"
+                  v-model="report.rating[item.key]"
+                  :label="item.label"
+                  :item-labels="item.itemLabels"
+                  :negative="item.negative"
+                  :readonly="true"
+                />
+              </v-card-text>
+            </v-card>
+
             <v-row class="mt-2">
               <v-col cols="12">
-                <v-textarea
-                  v-if="report.status !== 'approved'"
-                  v-model="newFeedback"
-                  label="新しいフィードバックを入力..."
-                  outlined
-                  dense
-                  class="d-print-none"
-                  clear-icon="mdi-close-circle"
-                  clearable 
-                  rows="2"
-                />
-
                 <v-alert
                   v-for="(feedback, index) in report.feedbacks" :key="index" 
                   icon="mdi-reply"
@@ -207,23 +217,38 @@
                     class="my-2"
                   >
                     <template #prepend-inner>
-                      <v-icon
-                        size="large"
-                        class="mr-1"
-                        color="black"
-                      >
+                      <v-icon size="large" class="mr-1" color="black">
                         mdi-message
                       </v-icon>
                     </template>
                   </v-textarea>
                 </v-alert>
+
+                <v-textarea
+                  v-if="report.status !== 'approved'"
+                  v-model="newFeedback"
+                  label="新しいフィードバックを入力..."
+                  outlined
+                  dense
+                  class="d-print-none"
+                  clear-icon="mdi-close-circle"
+                  clearable 
+                  hide-details="auto"
+                  rows="2"
+                >
+                  <template #prepend-inner>
+                    <v-icon size="large" class="mr-1" color="grey">
+                      mdi-reply
+                    </v-icon>
+                  </template>
+                </v-textarea>
               </v-col>
             </v-row>
           </v-card-text>
 
           <v-card-actions
             v-if="report.status !== 'approved' && report.status !== 'none'"
-            class="d-print-none py-1"
+            class="d-print-none pt-0 pb-3"
           >
             <v-spacer />
             <v-btn
@@ -265,9 +290,10 @@ import { useStore } from 'vuex'
 import { useReport } from '../composables/useReport'
 import { listReports, updateReport, submitFeedback } from '../services/reportService'
 import { listMembers } from '../services/memberService'
+import RatingItem from '../components/RatingItem.vue'
 
 const store = useStore()
-const { statusOptions, getStatusText, getStatusColor } = useReport()
+const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
 const organizationId = store.getters['user/organizationId']
 
 const props = defineProps({
@@ -381,6 +407,7 @@ const fetchData = async () => {
         achievements: report.achievements || '',
         issues: report.issues || '',
         improvements: report.improvements || '',
+        rating: report.rating || {},
         status: report.status || 'none',
         feedbacks: report.feedbacks || [],
         approvedAt: report.approvedAt || null

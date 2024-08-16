@@ -300,7 +300,11 @@ const confirmSignUpUser = async () => {
   errorMessage.value = ''
   try {
     await confirmSignUp({ username: confirmEmail.value, confirmationCode: confirmCode.value })
-    const organization = { organizationId: organizationId.value, name: organizationName.value }
+    const organization = { 
+      organizationId: organizationId.value, 
+      name: organizationName.value, 
+      sender: confirmEmail.value 
+    }
     await submitOrganization(organization)
     currentView.value = 'signIn'
     successMessage.value = '確認が完了しました。サインインしてください。'

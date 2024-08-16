@@ -14,6 +14,7 @@
         :model-value="modelValue"
         :item-labels="itemLabels"
         :length="length"
+        :readonly="readonly"
         size="x-large"
         density="compact"
         :active-color="negative ? 'blue' : 'orange-accent-4'" 
@@ -41,6 +42,10 @@ const props = defineProps({
     default: () => ['', '', '', '', '']
   },
   negative: {
+    type: Boolean,
+    default: false
+  },
+  readonly: {
     type: Boolean,
     default: false
   },

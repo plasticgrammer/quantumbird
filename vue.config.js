@@ -5,7 +5,7 @@ module.exports = defineConfig({
   pages: {
     index: {
       entry: 'src/main.js',
-      title: 'sixweeks'
+      title: 'fluxweek'
     }
   },
   publicPath: process.env.NODE_ENV === 'production'

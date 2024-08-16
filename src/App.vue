@@ -120,16 +120,16 @@ const navigationItems = [
     route: { name: 'Dashboard' }
   },
   { 
-    icon: 'mdi-domain', 
-    title: '組織情報管理', 
-    value: 'Organization', 
-    route: { name: 'OrganizationManagement' }
-  },
-  { 
     icon: 'mdi-calendar-multiple-check', 
     title: '週次報告レビュー', 
     value: 'WeeklyReview', 
     route: { name: 'WeeklyReviewSelector' }
+  },
+  { 
+    icon: 'mdi-domain', 
+    title: '組織情報管理', 
+    value: 'Organization', 
+    route: { name: 'OrganizationManagement' }
   },
   { 
     icon: 'mdi-bell-ring', 
