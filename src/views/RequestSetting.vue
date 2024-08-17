@@ -146,7 +146,7 @@
               :disabled="!isFormValid || !isFormChanged"
             >
               <v-icon class="mr-1" left> mdi-check </v-icon>
-              設定を保存する
+              更新する
             </v-btn>
           </v-col>
         </v-row>

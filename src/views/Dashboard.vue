@@ -161,25 +161,17 @@
         </v-card>
       </v-col>
 
-      <v-col
-        cols="12"
-        md="6"
-      >
-        <v-card
-          class="mb-2"
-        >
+      <v-col cols="12" md="6">
+        <v-card class="mb-2">
           <v-card-title class="text-subtitle-1">
-            <v-icon
-              small
-              class="mr-1"
-            >
+            <v-icon small class="mr-1">
               mdi-domain
             </v-icon>
             組織情報
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
             <p class="text-body-1 mb-1">
-              {{ organizationName }}
+              {{ organization.name }}
             </p>
             <p class="text-body-2 mb-1">
               メンバー: {{ memberCount }} 人
@@ -192,14 +184,52 @@
               class="mt-3"
               x-small
             >
-              <v-icon
-                class="mr-1"
-                small
-                left
-              >
+              <v-icon class="mr-1" small>
                 mdi-domain
               </v-icon>
               組織情報管理
+            </v-btn>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" md="6">
+        <v-card class="mb-2">
+          <v-card-title class="text-subtitle-1">
+            <v-icon small class="mr-1">
+              mdi-mail
+            </v-icon>
+            報告依頼
+          </v-card-title>
+          <v-card-text class="pt-1 pb-3">
+            <p class="text-body-2 mb-1">
+              自動報告設定: 
+              <v-icon
+                :color="organization.requestEnabled ? 'success' : 'error'"
+                size="small"
+                class="mx-1"
+              >
+                {{ organization.requestEnabled ? 'mdi-check-circle' : 'mdi-close-circle' }}
+              </v-icon>
+              <span class="text-subtitle-1">
+                <strong>{{ organization.requestEnabled ? '有効' : '無効' }}</strong>
+              </span>
+            </p>
+            <p v-if="organization.requestEnabled && nextRequestDateTime" class="text-body-2 mb-1">
+              次回報告依頼日時: {{ formatDate(nextRequestDateTime) }}
+            </p>
+            <v-btn
+              v-if="isAdmin"
+              color="black"
+              variant="outlined"
+              :to="{ name: 'RequestSetting' }"
+              class="mt-3"
+              x-small
+            >
+              <v-icon class="mr-1" small>
+                mdi-mail
+              </v-icon>
+              報告依頼設定
             </v-btn>
           </v-card-text>
         </v-card>
@@ -236,7 +266,6 @@ import { useRouter } from 'vue-router'
 import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
 import { getOrganization } from '../services/organizationService'
-import { listMembers } from '../services/memberService'
 import { getReportStatus, getStatsData } from '../services/reportService'
 import Calendar from '../components/Calendar.vue'
 
@@ -264,7 +293,7 @@ const statusCounts = computed(() => {
   return counts
 })
 
-const organizationName = ref('')
+const organization = ref('')
 const reportStatus = ref({
   pending: 0,
   inFeedback: 0,
@@ -295,23 +324,71 @@ const overtimeData = ref({
 const isLoading = ref(true)
 const error = ref(null)
 
+const dayOfWeekToNumber = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6
+}
+
+const nextRequestDateTime = computed(() => {
+  console.log('Computing next request date time. Organization:', organization.value)
+
+  if (!organization.value?.requestEnabled) {
+    console.log('Request is not enabled')
+    return null
+  }
+
+  try {
+    const now = new Date()
+    const dayOfWeek = dayOfWeekToNumber[organization.value.requestDayOfWeek.toLowerCase()]
+    const [hours, minutes] = organization.value.requestTime.split(':').map(Number)
+
+    console.log('Input data:', { dayOfWeek, hours, minutes })
+
+    // 入力値の検証
+    if (dayOfWeek === undefined || isNaN(hours) || isNaN(minutes)) {
+      console.error('Invalid input data:', { dayOfWeek, hours, minutes })
+      return null
+    }
+
+    // 今日の日付で次回の報告時間を設定
+    let nextDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0)
+
+    // 今日が報告日で、現在時刻が報告時間より前の場合はそのまま返す
+    if (nextDate.getDay() === dayOfWeek && nextDate > now) {
+      return nextDate
+    }
+
+    // 次の報告日まで日数を加算
+    const daysUntilNext = (dayOfWeek - now.getDay() + 7) % 7
+    nextDate.setDate(nextDate.getDate() + (daysUntilNext === 0 ? 7 : daysUntilNext))
+
+    console.log('Calculated next request date:', nextDate)
+    return nextDate
+  } catch (error) {
+    console.error('Error calculating next request date:', error)
+    return null
+  }
+})
+
+const formatDate = (date) => {
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }
+  return date.toLocaleDateString('ja-JP', options)
+}
+
 const fetchOrganizationInfo = async () => {
   try {
     const org = await getOrganization(organizationId)
-    organizationName.value = org.name
+    organization.value = org
+    members.value = org.members
+    memberCount.value = members.value.length
   } catch (err) {
     console.error('Failed to fetch organization info:', err)
     error.value = '組織情報の取得に失敗しました'
-  }
-}
-
-const fetchMembers = async () => {
-  try {
-    members.value = await listMembers(organizationId)
-    memberCount.value = members.value.length
-  } catch (err) {
-    console.error('Failed to fetch members:', err)
-    throw err
   }
 }
 
@@ -413,8 +490,7 @@ const fetchAll = async () => {
   await Promise.all([
     fetchOrganizationInfo(),
     fetchReportStatus(weekString.value),
-    fetchStatsData(),
-    fetchMembers()
+    fetchStatsData()
   ])
 }
 
