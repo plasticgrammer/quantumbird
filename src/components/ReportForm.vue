@@ -101,6 +101,7 @@
           :key="feedback.id"
           icon="mdi-message"
           density="compact"
+          color="white"
           border="start"
           border-color="warning"
           elevation="2"

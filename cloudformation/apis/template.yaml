@@ -103,6 +103,20 @@ Resources:
       CodeUri: ./src/Schedule
       Policies:
         - AmazonDynamoDBFullAccess
+      Description: ""
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+      Layers:
+        - !Ref CommonLayer
+
+  SendRequestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Stage}-send-request"
+      CodeUri: ./src/SendRequest
+      Policies:
+        - AmazonDynamoDBFullAccess
         - Statement:
             - Effect: Allow
               Action:
