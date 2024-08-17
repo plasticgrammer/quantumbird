@@ -88,7 +88,7 @@
                 md="5"
                 class="d-flex flex-column"
               >
-                <div class="text-subtitle-2 font-weight-medium mb-1">
+                <div class="text-subtitle-1 font-weight-medium mb-1">
                   作業内容
                 </div>
                 <v-list
@@ -134,7 +134,7 @@
                 cols="12"
                 md="7"
               >
-                <div class="text-subtitle-2 font-weight-medium mb-1">
+                <div class="text-subtitle-1 font-weight-medium mb-1">
                   現状と問題点
                 </div>
                 <v-textarea
@@ -147,7 +147,7 @@
                   class="small-text-area mb-2"
                 />
 
-                <div class="text-subtitle-2 font-weight-medium mb-1">
+                <div class="text-subtitle-1 font-weight-medium mb-1">
                   改善したいこと
                 </div>
                 <v-textarea
@@ -164,7 +164,7 @@
 
             <v-card 
               class="mt-4 border-sm"
-              elevation="0"
+              elevation="2"
               variant="flat"
               color="white"
               title="評価"
@@ -188,6 +188,7 @@
             <v-row class="mt-2">
               <v-col cols="12">
                 <v-alert
+                  v-if="report.feedbacks.length" 
                   density="compact"
                   border="start"
                   border-color="warning"

@@ -46,25 +46,76 @@ def scheduler_handler(event, context):
 
 def invoke_processing_lambda(organization_id):
     lambda_client = boto3.client('lambda')
-    lambda_client.invoke(
-        FunctionName=f'{stage}-schedule',
-        InvocationType='Event',
-        Payload=json.dumps({'organization_id': organization_id})
-    )
+    payload = json.dumps({
+        'detail-type': 'CustomInvoke',
+        'payload': {
+            'organization_id': organization_id
+        }
+    })
+    logger.info(f"Invoking Lambda with payload: {payload}")
+    try:
+        response = lambda_client.invoke(
+            FunctionName=f'{stage}-schedule',
+            InvocationType='Event',
+            Payload=payload
+        )
+        logger.info(f"Lambda invocation response: {response}")
+        
+        # レスポンスのステータスコードを確認
+        if response['StatusCode'] != 202:
+            logger.error(f"Unexpected status code: {response['StatusCode']}")
+    except Exception as e:
+        logger.error(f"Error invoking Lambda: {str(e)}", exc_info=True)
 
 # 処理実行関数
 def lambda_handler(event, context):
-    organization_id = event['organization_id']
-    # ここでスケジュールIDに基づいた実際の処理を実行
-    print(f"Processing task for organization ID: {organization_id}")
-    # 実際の処理をここに実装
-    org = get_organization(organization_id)
-    response = members_table.query(
-        IndexName='OrganizationIndex',
-        KeyConditionExpression=Key('organizationId').eq(organization_id)
-    )
-    send_request_mail(org, response['Items'])
+    logger.info(f"Received event: {json.dumps(event)}")
+    logger.info(f"Event type: {type(event)}")
+    try:
+        organization_id = None
+        if isinstance(event, dict):
+            payload = event.get('payload', {})
+            if isinstance(payload, str):
+                payload = json.loads(payload)
+            elif isinstance(payload, dict):
+                organization_id = payload.get('organization_id')
+            if not organization_id:
+                organization_id = event.get('organization_id')
+        elif isinstance(event, str):
+            event_dict = json.loads(event)
+            payload = event_dict.get('payload', {})
+            if isinstance(payload, dict):
+                organization_id = payload.get('organization_id')
+            if not organization_id:
+                organization_id = event_dict.get('organization_id')
 
+        if not organization_id:
+            raise ValueError("organization_id not found in the event")
+
+        logger.info(f"Processing task for organization ID: {organization_id}")
+
+        org = get_organization(organization_id)
+        if not org:
+            raise ValueError(f"Organization not found for ID: {organization_id}")
+
+        response = members_table.query(
+            IndexName='OrganizationIndex',
+            KeyConditionExpression=Key('organizationId').eq(organization_id)
+        )
+        send_request_mail(org, response['Items'])
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Processing completed successfully')
+        }
+
+    except Exception as e:
+        logger.error(f"Error processing event: {str(e)}", exc_info=True)
+        return {
+            'statusCode': 500,
+            'body': json.dumps(f'Error processing event: {str(e)}')
+        }
+    
 def get_organization(organization_id):
     try:
         response = organizations_table.get_item(
@@ -78,8 +129,8 @@ def get_organization(organization_id):
         return None
 
 def send_request_mail(organization, members):
-    organization_id = organization['organization_id']
-    reportWeek = organization['reportWeek']
+    organization_id = organization['organizationId']
+    reportWeek = organization.get('reportWeek', 0)
 
     now = datetime.now(TIMEZONE)
     weekString = get_string_from_week(now, reportWeek)

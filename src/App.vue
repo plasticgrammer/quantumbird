@@ -132,7 +132,7 @@ const navigationItems = [
     route: { name: 'OrganizationManagement' }
   },
   { 
-    icon: 'mdi-bell-ring', 
+    icon: 'mdi-mail', 
     title: '報告依頼設定', 
     value: 'RequestSetting', 
     route: { name: 'RequestSetting' }

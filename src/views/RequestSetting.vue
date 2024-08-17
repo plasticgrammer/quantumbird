@@ -3,7 +3,7 @@
     <v-row dense class="pb-4">
       <v-col>
         <h3>
-          <v-icon size="large" class="mr-1">mdi-bell-ring</v-icon>
+          <v-icon size="large" class="mr-1">mdi-mail</v-icon>
           報告依頼設定
         </h3>
       </v-col>

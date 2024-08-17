@@ -38,6 +38,8 @@ def lambda_handler(event, context):
             return handle_put(event)
         elif http_method in ['DELETE', 'delete']:
             return handle_delete(event)
+        elif http_method == 'verifyEmail':
+            return handle_verify_email(event)
         else:
             return create_response(400, f'Unsupported operation: {http_method}')
     except Exception as e:
@@ -175,6 +177,17 @@ def delete_member(member_uuid):
     except Exception as e:
         logger.error(f"Error deleting member: {str(e)}", exc_info=True)
         raise e
+
+def handle_verify_email(event):
+    data = parse_body(event)
+    if 'memberUuid' in data:
+        member = get_member(data['memberUuid'])
+        member['mailConfirmed'] = True
+        response = members_table.put_item(Item=member)
+        logger.info(f"Member update response: {response}")
+        return create_response(200, 'Member updated successfully')
+    else:
+        return create_response(400, 'Invalid data structure')
 
 def create_response(status_code, body):
     return {

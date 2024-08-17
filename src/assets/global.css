@@ -8,9 +8,17 @@ body {
   color: #333;
 }
 
-h1 { font-size: 2rem; }
-h2 { font-size: 1.5rem; }
-h3 { font-size: 1.2rem; }
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+}
+
+h3 {
+  font-size: 1.2rem;
+}
 
 /*
  * customize vuetify style
@@ -18,17 +26,21 @@ h3 { font-size: 1.2rem; }
 .v-list-item--nav .v-list-item-title {
   font-size: 1rem;
 }
+
 .v-field:has(input[readOnly]) .v-field__overlay {
   background-color: transparent;
 }
+
 .v-field:has(input[readOnly]) .v-field__outline::before {
   display: none;
 }
+
 .v-overlay__scrim {
   background-color: rgba(0, 0, 0, 0.6) !important;
   opacity: 1 !important;
 }
-.v-dialog > .v-card {
+
+.v-dialog>.v-card {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important;
 }
 

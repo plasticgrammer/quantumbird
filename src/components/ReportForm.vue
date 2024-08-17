@@ -8,7 +8,19 @@
     </template>
 
     <template v-else>
-      <template v-if="!!previousWeekReport">
+      <template v-if="isReportConfirmed">
+        <v-alert
+          type="info"
+          icon="mdi-information"
+          border="start"
+          elevation="2"
+          class="mt-2 mb-4"
+        >
+          この報告書は確認済みです。編集はできません。
+        </v-alert>
+      </template>
+
+      <template v-if="!!previousWeekReport && !isReportConfirmed">
         <v-card class="mb-4">
           <v-expansion-panels v-model="expandedPanel">
             <v-expansion-panel>
@@ -83,7 +95,7 @@
         </v-card>
       </template>
 
-      <template v-if="report.status === 'feedback' && report.feedbacks && report.feedbacks.length > 0">
+      <template v-if="report.feedbacks && report.feedbacks.length > 0">
         <v-alert
           v-for="(feedback, index) in sortedFeedbacks"
           :key="feedback.id"
@@ -131,9 +143,11 @@
       </template>
 
       <v-form
+        ref="reportForm"
         class="report-form mt-3 elevation-6"
         @submit.prevent="handleSubmit"
       >
+        <!-- Projects section -->
         <v-card
           v-for="(project, projectIndex) in report.projects"
           :key="projectIndex" 
@@ -218,6 +232,7 @@
           </v-icon>
         </v-fab>
         
+        <!-- Overtime section -->
         <v-row class="mt-3">
           <v-col cols="12" sm="6">
             <v-text-field
@@ -254,6 +269,7 @@
           </v-col>
         </v-row>
 
+        <!-- Issues and improvements section -->
         <v-textarea
           v-model="report.issues"
           label="現状と問題点"
@@ -276,6 +292,7 @@
           :error-messages="formErrors.improvements"
         />
 
+        <!-- Rating section -->
         <v-card 
           class="mt-2 border-sm"
           elevation="0"
@@ -311,11 +328,12 @@
           </div>
         </div>
 
+        <!-- Submit button -->
         <v-btn
           color="primary"
           type="submit"
           class="mt-6"
-          :disabled="!isFormValid"
+          :disabled="!isFormValid || isReportConfirmed"
         >
           <v-icon class="mr-1" left>
             mdi-check
@@ -374,6 +392,10 @@ const formErrors = reactive({
   rating: []
 })
 const projectErrors = reactive([])
+
+const isReportConfirmed = computed(() => {
+  return report.value.status === 'approved'
+})
 
 const sortedFeedbacks = computed(() => {
   return [...(report.value.feedbacks || [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
@@ -560,6 +582,11 @@ const removeEmptyWorkItems = (projects) => {
 }
 
 const handleSubmit = async () => {
+  if (isReportConfirmed.value) {
+    showNotification('確認済みの報告書は編集できません。', true)
+    return
+  }
+
   const isValid = validateReport()
 
   if (!isValid) {
