@@ -87,7 +87,7 @@
                       {{ requestSettings.requestEnabled ? 'mdi-check-circle' : 'mdi-close-circle' }}
                     </v-icon>
                     <span class="text-subtitle-1">
-                      報告依頼の自動送信は現在
+                      <span class="d-none d-sm-inline">報告依頼の自動送信は</span>現在
                       <strong>{{ requestSettings.requestEnabled ? '有効' : '無効' }}</strong>
                       です
                     </span>
@@ -97,6 +97,7 @@
                     v-model="requestSettings.requestEnabled"
                     color="primary"
                     hide-details="auto"
+                    class="mr-3"
                     inset
                   ></v-switch>
                 </div>

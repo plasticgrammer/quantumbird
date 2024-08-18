@@ -20,11 +20,23 @@ members_table_name = f'{stage}-Members'
 organizations_table = dynamodb.Table(organizations_table_name)
 members_table = dynamodb.Table(members_table_name)
 
-def scheduler_handler(event, context):
+# 数値の曜日を文字列に変換する辞書
+DAY_OF_WEEK = {
+    0: 'monday',
+    1: 'tuesday',
+    2: 'wednesday',
+    3: 'thursday',
+    4: 'friday',
+    5: 'saturday',
+    6: 'sunday'
+}
+
+def lambda_handler(event, context):
     # 現在の曜日と時間を取得
     now = datetime.now(TIMEZONE)
-    current_day = now.weekday()
+    current_day = DAY_OF_WEEK[now.weekday()]
     current_time = f"{now.hour:02d}:00"
+    logger.info(f"Filter by requestDayOfWeek = {current_day} AND requestTime = {current_time}")
     
     # 現在の曜日と時間に一致する設定を検索
     response = organizations_table.scan(
@@ -39,7 +51,7 @@ def scheduler_handler(event, context):
     # 一致する設定ごとに処理を実行
     for item in response['Items']:
         # ここで実際の処理を呼び出す（例：別のLambda関数を呼び出す）
-        invoke_processing_lambda(item['organization_id'])
+        invoke_processing_lambda(item['organizationId'])
 
 def invoke_processing_lambda(organization_id):
     lambda_client = boto3.client('lambda')

@@ -203,7 +203,7 @@
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
             <p class="text-body-2 mb-1">
-              自動報告設定: 
+              <span>自動報告設定: </span>
               <v-icon
                 :color="organization.requestEnabled ? 'success' : 'error'"
                 size="small"
@@ -216,7 +216,7 @@
               </span>
             </p>
             <p v-if="organization.requestEnabled && nextRequestDateTime" class="text-body-2 mb-1">
-              次回報告依頼日時: {{ formatDate(nextRequestDateTime) }}
+              <span class="mr-2">次回報告依頼日時: </span>{{ formatDate(nextRequestDateTime) }}
             </p>
             <v-btn
               v-if="isAdmin"
@@ -235,7 +235,7 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12">
+      <v-col cols="12" md="6">
         <v-card>
           <v-card-title class="text-subtitle-1">
             <v-icon
@@ -244,11 +244,31 @@
             >
               mdi-chart-line
             </v-icon>
-            個人別残業時間の遷移（過去5週間）
+            残業時間の遷移（過去5週間）
           </v-card-title>
           <v-card-text>
             <canvas
               ref="overtimeChart"
+              height="200"
+            />
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" md="6">
+        <v-card>
+          <v-card-title class="text-subtitle-1">
+            <v-icon
+              small
+              class="mr-1"
+            >
+              mdi-chart-line
+            </v-icon>
+            ストレス評価の遷移（過去5週間）
+          </v-card-title>
+          <v-card-text>
+            <canvas
+              ref="stressChart"
               height="200"
             />
           </v-card-text>
@@ -315,12 +335,6 @@ const weeklyReportLink = computed(() => {
   return route.href
 })
 
-const overtimeChart = ref(null)
-const overtimeData = ref({
-  labels: [],
-  datasets: []
-})
-
 const isLoading = ref(true)
 const error = ref(null)
 
@@ -335,8 +349,6 @@ const dayOfWeekToNumber = {
 }
 
 const nextRequestDateTime = computed(() => {
-  console.log('Computing next request date time. Organization:', organization.value)
-
   if (!organization.value?.requestEnabled) {
     console.log('Request is not enabled')
     return null
@@ -346,8 +358,6 @@ const nextRequestDateTime = computed(() => {
     const now = new Date()
     const dayOfWeek = dayOfWeekToNumber[organization.value.requestDayOfWeek.toLowerCase()]
     const [hours, minutes] = organization.value.requestTime.split(':').map(Number)
-
-    console.log('Input data:', { dayOfWeek, hours, minutes })
 
     // 入力値の検証
     if (dayOfWeek === undefined || isNaN(hours) || isNaN(minutes)) {
@@ -366,9 +376,8 @@ const nextRequestDateTime = computed(() => {
     // 次の報告日まで日数を加算
     const daysUntilNext = (dayOfWeek - now.getDay() + 7) % 7
     nextDate.setDate(nextDate.getDate() + (daysUntilNext === 0 ? 7 : daysUntilNext))
-
-    console.log('Calculated next request date:', nextDate)
     return nextDate
+
   } catch (error) {
     console.error('Error calculating next request date:', error)
     return null
@@ -376,8 +385,15 @@ const nextRequestDateTime = computed(() => {
 })
 
 const formatDate = (date) => {
-  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }
-  return date.toLocaleDateString('ja-JP', options)
+  const weekdays = ['日', '月', '火', '水', '木', '金', '土']
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1 // getMonth() は 0-11 を返すため、+1 する
+  const day = date.getDate()
+  const weekday = weekdays[date.getDay()]
+  const hour = date.getHours().toString().padStart(2, '0')
+  const minute = date.getMinutes().toString().padStart(2, '0')
+
+  return `${year}-${month}-${day} (${weekday})  ${hour}:${minute}`
 }
 
 const fetchOrganizationInfo = async () => {
@@ -419,6 +435,16 @@ const fetchStatsData = async () => {
         fill: false
       }))
     }
+    stressData.value = {
+      labels: data.labels,
+      datasets: data.datasets.map((dataset, index) => ({
+        label: dataset.label,
+        data: dataset.data.map(item => item.stress || 0),
+        borderColor: getColor(index),
+        tension: 0.1,
+        fill: false
+      }))
+    }
   } catch (err) {
     console.error('Failed to fetch overtime data:', err)
     error.value = '残業時間データの取得に失敗しました'
@@ -453,6 +479,18 @@ const getRandomColor = () => {
   return `rgb(${r}, ${g}, ${b})`
 }
 
+const overtimeChart = ref(null)
+const overtimeData = ref({
+  labels: [],
+  datasets: []
+})
+
+const stressChart = ref(null)
+const stressData = ref({
+  labels: [],
+  datasets: []
+})
+
 const initChart = () => {
   const ctx = overtimeChart.value.getContext('2d')
   new Chart(ctx, {
@@ -475,6 +513,44 @@ const initChart = () => {
           title: {
             display: true,
             text: '残業時間'
+          }
+        }
+      }
+    }
+  })
+
+  const ctx2 = stressChart.value.getContext('2d')
+  new Chart(ctx2, {
+    type: 'line',
+    data: stressData.value,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        title: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: false,
+          min: 1,
+          max: 5,
+          ticks: {
+            stepSize: 1,
+            precision: 0,
+            callback: function(value) {
+              if (value === 1) return '低'
+              if (value === 5) return '高'
+              return ''
+            }
+          },
+          title: {
+            display: true,
+            text: '評価'
           }
         }
       }

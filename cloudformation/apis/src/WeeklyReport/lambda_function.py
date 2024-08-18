@@ -6,6 +6,9 @@ import os
 import urllib.parse
 from decimal import Decimal
 from datetime import datetime, timedelta
+from dateutil import tz
+from dateutil.parser import parse
+from zoneinfo import ZoneInfo
 import common.publisher
 
 print('Loading function')
@@ -16,6 +19,7 @@ logger.setLevel(logging.INFO)
 # Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb')
 stage = os.environ.get('STAGE', 'dev')
+TIMEZONE = ZoneInfo(os.environ.get('TZ', 'UTC'))
 BASE_URL = os.environ.get('BASE_URL', 'http://localhost:3000')
 
 members_table_name = f'{stage}-Members'
@@ -372,7 +376,17 @@ def send_feedback_mail(organization, member, week_string, feedback):
 
         feedback_content = feedback.get('content')
         feedback_created_at = feedback.get('createdAt')
-        bodyText += f"{feedback_content}\n（{feedback_created_at}）\n\n"
+
+        # UTCからJSTに変換
+        utc_dt = parse(feedback_created_at)
+        jst_dt = utc_dt.astimezone(TIMEZONE)
+
+        # 日本語の日付形式で文字列化
+        formatted_date = jst_dt.strftime("%Y年%m月%d日 %H:%M")
+
+        bodyText += "------------------------------------------\n"
+        bodyText += f"{feedback_content}\n（{formatted_date}）\n\n"
+        bodyText += "------------------------------------------\n"
 
         link = generate_report_link(organization['organizationId'], member["memberUuid"], week_string)
         bodyText += f"詳細はこちら: {link}"

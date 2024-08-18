@@ -6,8 +6,8 @@
     >
       <v-col cols="12" class="py-0">
         <v-card
-          class="px-4"
-          rounded="lg"
+          class="px-2"
+          elevation="0"
         >
           <v-chip-group
             v-model="selectedStatus"
@@ -275,7 +275,7 @@
               <v-icon left x-small class="mr-1">
                 mdi-check-bold
               </v-icon>
-              確認
+              確認済み
             </v-btn>
             <v-btn
               color="warning"
@@ -299,7 +299,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, inject } from 'vue'
 import { useStore } from 'vuex'
 import { useReport } from '../composables/useReport'
 import { listReports, updateReport, submitFeedback } from '../services/reportService'
@@ -309,6 +309,7 @@ import RatingItem from '../components/RatingItem.vue'
 const store = useStore()
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
 const organizationId = store.getters['user/organizationId']
+const showNotification = inject('showNotification')
 
 const props = defineProps({
   weekString: {
@@ -462,6 +463,7 @@ const handleFeedback = async (memberUuid) => {
       )
       // 入力欄をクリア
       newFeedback.value = ''
+      showNotification('フィードバックを送信しました')
     } catch (error) {
       console.error('Failed to submit feedback:', error)
     }
@@ -479,6 +481,7 @@ const handleApprove = async (memberUuid) => {
         approvedAt: now.toISOString()
       }
       await updateReport(updatedReport)
+      showNotification('報告を確認済みとしました')
       
       // ローカルの状態を更新
       reports.value = reports.value.map(r =>
