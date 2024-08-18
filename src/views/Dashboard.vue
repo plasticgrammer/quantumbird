@@ -13,13 +13,13 @@
         </h3>
       </v-col>
       <v-col cols="2" class="d-flex justify-end align-center">
-        <v-icon class="me-3" @click="fetchAll">
+        <v-icon class="me-3" @click="handleReload">
           mdi-reload
         </v-icon>
       </v-col>
     </v-row>
 
-    <v-row dense>
+    <v-row v-if="!isLoading" dense>
       <v-col cols="12">
         <v-card
           class="mb-2"
@@ -238,19 +238,13 @@
       <v-col cols="12" md="6">
         <v-card>
           <v-card-title class="text-subtitle-1">
-            <v-icon
-              small
-              class="mr-1"
-            >
+            <v-icon small class="mr-1">
               mdi-chart-line
             </v-icon>
             残業時間の遷移（過去5週間）
           </v-card-title>
           <v-card-text>
-            <canvas
-              ref="overtimeChart"
-              height="200"
-            />
+            <OvertimeChart :chart-data="overtimeData" />
           </v-card-text>
         </v-card>
       </v-col>
@@ -258,19 +252,13 @@
       <v-col cols="12" md="6">
         <v-card>
           <v-card-title class="text-subtitle-1">
-            <v-icon
-              small
-              class="mr-1"
-            >
+            <v-icon small class="mr-1">
               mdi-chart-line
             </v-icon>
             ストレス評価の遷移（過去5週間）
           </v-card-title>
           <v-card-text>
-            <canvas
-              ref="stressChart"
-              height="200"
-            />
+            <StressChart :chart-data="stressData" />
           </v-card-text>
         </v-card>
       </v-col>
@@ -280,7 +268,6 @@
 
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue'
-import { Chart, registerables } from 'chart.js'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { useCalendar } from '../composables/useCalendar'
@@ -288,8 +275,8 @@ import { useReport } from '../composables/useReport'
 import { getOrganization } from '../services/organizationService'
 import { getReportStatus, getStatsData } from '../services/reportService'
 import Calendar from '../components/Calendar.vue'
-
-Chart.register(...registerables)
+import OvertimeChart from '../components/chart/OvertimeChart.vue'
+import StressChart from '../components/chart/StressChart.vue'
 
 const store = useStore()
 const router = useRouter()
@@ -446,12 +433,11 @@ const fetchStatsData = async () => {
       }))
     }
   } catch (err) {
-    console.error('Failed to fetch overtime data:', err)
-    error.value = '残業時間データの取得に失敗しました'
+    console.error('Failed to fetch stats data:', err)
+    error.value = '統計データの取得に失敗しました'
   }
 }
 
-// 定型カラーパレットを定義
 const colorPalette = [
   'rgb(54, 162, 235)', // 青
   'rgb(75, 192, 192)', // 緑
@@ -468,119 +454,50 @@ const getColor = (index) => {
   if (index < colorPalette.length) {
     return colorPalette[index]
   } else {
-    return getRandomColor()
+    const r = Math.floor(Math.random() * 255)
+    const g = Math.floor(Math.random() * 255)
+    const b = Math.floor(Math.random() * 255)
+    return `rgb(${r}, ${g}, ${b})`
   }
 }
 
-const getRandomColor = () => {
-  const r = Math.floor(Math.random() * 255)
-  const g = Math.floor(Math.random() * 255)
-  const b = Math.floor(Math.random() * 255)
-  return `rgb(${r}, ${g}, ${b})`
-}
-
-const overtimeChart = ref(null)
 const overtimeData = ref({
   labels: [],
   datasets: []
 })
 
-const stressChart = ref(null)
 const stressData = ref({
   labels: [],
   datasets: []
 })
-
-const initChart = () => {
-  const ctx = overtimeChart.value.getContext('2d')
-  new Chart(ctx, {
-    type: 'line',
-    data: overtimeData.value,
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'top',
-        },
-        title: {
-          display: false
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: '残業時間'
-          }
-        }
-      }
-    }
-  })
-
-  const ctx2 = stressChart.value.getContext('2d')
-  new Chart(ctx2, {
-    type: 'line',
-    data: stressData.value,
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'top',
-        },
-        title: {
-          display: false
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: false,
-          min: 1,
-          max: 5,
-          ticks: {
-            stepSize: 1,
-            precision: 0,
-            callback: function(value) {
-              if (value === 1) return '低'
-              if (value === 5) return '高'
-              return ''
-            }
-          },
-          title: {
-            display: true,
-            text: '評価'
-          }
-        }
-      }
-    }
-  })
-}
 
 watch(weekIndex, () => {
   fetchReportStatus(weekString.value)
 })
 
 const fetchAll = async () => {
-  await Promise.all([
-    fetchOrganizationInfo(),
-    fetchReportStatus(weekString.value),
-    fetchStatsData()
-  ])
-}
-
-onMounted(async () => {
+  isLoading.value = true
   try {
-    await fetchAll()
-    initChart()
+    await Promise.all([
+      fetchOrganizationInfo(),
+      fetchReportStatus(weekString.value),
+      fetchStatsData()
+    ])
+    // initChart の呼び出しを削除
   } catch (err) {
     console.error('Error initializing dashboard:', err)
     error.value = 'ダッシュボードの初期化に失敗しました'
   } finally {
     isLoading.value = false
   }
-})
+}
+
+// リロードボタンのクリックハンドラ
+const handleReload = () => {
+  fetchAll()
+}
+
+onMounted(fetchAll)
 </script>
 
 <style scoped>

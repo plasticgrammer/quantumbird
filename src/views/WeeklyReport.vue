@@ -52,7 +52,7 @@
           </span>
         </v-fab>
       </template>
-
+      <!-- 
       <v-list
         key="1"
         :lines="false"
@@ -70,7 +70,7 @@
             {{ item.text }}
           </v-list-item-title>
         </v-list-item>
-      </v-list>
+      </v-list> -->
     </v-speed-dial>
 
     <v-dialog 
