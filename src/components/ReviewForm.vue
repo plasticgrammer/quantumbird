@@ -50,9 +50,9 @@
       >
         <v-card
           :class="{ 'approved-card': report.status === 'approved', 'none-card': report.status === 'none' }"
+          class="cursor-default mt-2"
           hover
           outlined
-          class="mt-2"
         >
           <v-card-title class="d-flex justify-space-between align-center py-2">
             <span class="text-h6 font-weight-bold">
