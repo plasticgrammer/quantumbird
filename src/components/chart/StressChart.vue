@@ -1,4 +1,3 @@
-<!-- components/StressChart.vue -->
 <template>
   <canvas ref="chartRef"></canvas>
 </template>
