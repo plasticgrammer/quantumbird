@@ -14,7 +14,7 @@
       </v-col>
       <v-col cols="2" class="d-flex justify-end align-center">
         <v-progress-circular 
-          class="me-3" 
+          class="cursor-pointer me-3" 
           :indeterminate="isLoading" 
           :size="24"
           @click="handleReload"
@@ -220,7 +220,8 @@
               </span>
             </p>
             <p v-if="organization.requestEnabled && nextRequestDateTime" class="text-body-2 mb-1">
-              <span class="mr-2">次回報告依頼日時: </span>{{ formatDate(nextRequestDateTime) }}
+              <span class="mr-2">次回報告依頼日時: </span>
+              <span class="text-subtitle-1">{{ formatDate(nextRequestDateTime) }}</span>
             </p>
             <v-btn
               v-if="isAdmin"
