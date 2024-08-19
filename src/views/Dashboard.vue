@@ -13,12 +13,13 @@
         </h3>
       </v-col>
       <v-col cols="2" class="d-flex justify-end align-center">
-        <v-progress-circular 
+        <v-icon
           class="cursor-pointer me-3" 
-          :indeterminate="isLoading" 
-          :size="24"
+          :class="{ 'rotate-animation': isLoading }"
           @click="handleReload"
-        ></v-progress-circular>
+        >
+          mdi-reload
+        </v-icon>
       </v-col>
     </v-row>
 
