@@ -331,6 +331,7 @@ watch(selectedStatus, (newValue) => {
   }
 })
 
+// メモ化されたステータスカウント
 const statusCounts = computed(() => {
   const counts = {
     all: reports.value.length,
@@ -339,19 +340,20 @@ const statusCounts = computed(() => {
     feedback: 0,
     approved: 0
   }
-
-  reports.value.forEach(report => {
+  
+  for (const report of reports.value) {
     counts[report.status]++
-  })
-
+  }
+  
   return counts
 })
 
+// メモ化されたフィルタリング
 const filteredReports = computed(() => {
   if (selectedStatus.value === 'all') {
     return reports.value
   }
-  return reports.value.filter(report => selectedStatus.value === report.status)
+  return reports.value.filter(report => report.status === selectedStatus.value)
 })
 
 const fetchReports = async () => {
@@ -498,7 +500,7 @@ const handleApprove = async (memberUuid) => {
 
 <style scoped>
 .review-form-container {
-  padding: 16px 0 0;
+  padding: 16px 0 24px;
 }
 
 .none-card {

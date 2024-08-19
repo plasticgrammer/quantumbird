@@ -107,8 +107,10 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            - レビュー時更新メッセージ<br>
-            - 確認済みは修正不可<br>
+            - レビュー時 報告並び順<br>
+            - メール文面に組織名<br>
+            - サインアウト<br>
+            - 確認済みは修正不可△<br>
             - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>
         </v-card>
@@ -243,7 +245,7 @@
             </v-icon>
             残業時間の遷移（過去5週間）
           </v-card-title>
-          <v-card-text>
+          <v-card-text class="pb-1">
             <OvertimeChart :chart-data="overtimeData" />
           </v-card-text>
         </v-card>
@@ -257,7 +259,7 @@
             </v-icon>
             ストレス評価の遷移（過去5週間）
           </v-card-title>
-          <v-card-text>
+          <v-card-text class="pb-1">
             <StressChart :chart-data="stressData" />
           </v-card-text>
         </v-card>
