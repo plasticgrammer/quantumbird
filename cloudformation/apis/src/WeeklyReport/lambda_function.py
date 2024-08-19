@@ -105,19 +105,8 @@ def handle_put(event):
     try:
         # 既存のレポートを取得
         existing_report = get_report(member_uuid, week_string)
-        
         if not existing_report:
             return create_response(404, 'Report not found')
-
-        # 新しいフィードバックを追加
-        # new_feedback = report_data.get('newFeedback')
-        # if new_feedback:
-        #     feedbacks = existing_report.get('feedbacks', [])
-        #     feedbacks.append({
-        #         'content': new_feedback,
-        #         'createdAt': datetime.now().isoformat()
-        #     })
-        #     report_data['feedbacks'] = feedbacks
 
         # その他のフィールドを更新
         updated_item = prepare_item(report_data, existing_report)
@@ -331,7 +320,6 @@ def handle_submit_feedback(event):
     try:
         # 既存のレポートを取得
         existing_report = get_report(member_uuid, week_string)
-        
         if not existing_report:
             return create_response(404, 'Report not found')
 
@@ -372,7 +360,9 @@ def send_feedback_mail(organization, member, week_string, feedback):
     try:
         sendFrom = common.publisher.get_from_address(organization)
         subject = "【週次報告システム】管理者からのフィードバックがあります"
-        bodyText = "管理者からのフィードバックがありました。\n\n"
+
+        bodyText = f"組織名：{organization.name}\n\n"
+        bodyText += "管理者からのフィードバックがありました。\n\n"
 
         feedback_content = feedback.get('content')
         feedback_created_at = feedback.get('createdAt')

@@ -94,7 +94,8 @@ def send_request_mail(organization, members):
         sendTo = m.get("email")
         sendFrom = common.publisher.get_from_address(organization)
         subject = "【週次報告システム】週次報告をお願いします"
-        bodyText = "お疲れさまです。\n下記リンクより週次報告をお願いします。\n"
+        bodyText = f"組織名：{organization.name}\n\n"
+        bodyText += "お疲れさまです。\n下記リンクより週次報告をお願いします。\n"
         link = generate_report_link(organization_id, m["memberUuid"], weekString)
         common.publisher.send_mail(sendFrom, sendTo, subject, bodyText + link)
 

@@ -13,9 +13,12 @@
         </h3>
       </v-col>
       <v-col cols="2" class="d-flex justify-end align-center">
-        <v-icon class="me-3" @click="handleReload">
-          mdi-reload
-        </v-icon>
+        <v-progress-circular 
+          class="me-3" 
+          :indeterminate="isLoading" 
+          :size="24"
+          @click="handleReload"
+        ></v-progress-circular>
       </v-col>
     </v-row>
 
@@ -108,7 +111,6 @@
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
             - レビュー時 報告並び順<br>
-            - メール文面に組織名<br>
             - サインアウト<br>
             - 確認済みは修正不可△<br>
             - 報告済みステータスをカレンダーに表示<br>
@@ -339,38 +341,31 @@ const dayOfWeekToNumber = {
 
 const nextRequestDateTime = computed(() => {
   if (!organization.value?.requestEnabled) {
-    console.log('Request is not enabled')
     return null
   }
 
-  try {
-    const now = new Date()
-    const dayOfWeek = dayOfWeekToNumber[organization.value.requestDayOfWeek.toLowerCase()]
-    const [hours, minutes] = organization.value.requestTime.split(':').map(Number)
+  const { requestDayOfWeek, requestTime } = organization.value
+  const dayOfWeek = dayOfWeekToNumber[requestDayOfWeek.toLowerCase()]
+  const [hours, minutes] = requestTime.split(':').map(Number)
 
-    // 入力値の検証
-    if (dayOfWeek === undefined || isNaN(hours) || isNaN(minutes)) {
-      console.error('Invalid input data:', { dayOfWeek, hours, minutes })
-      return null
-    }
+  if (dayOfWeek === undefined || isNaN(hours) || isNaN(minutes)) {
+    console.error('Invalid input data:', { dayOfWeek, hours, minutes })
+    return null
+  }
 
-    // 今日の日付で次回の報告時間を設定
-    let nextDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0)
+  const now = new Date()
+  let nextDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0)
 
-    // 今日が報告日で、現在時刻が報告時間より前の場合はそのまま返す
-    if (nextDate.getDay() === dayOfWeek && nextDate > now) {
-      return nextDate
-    }
-
-    // 次の報告日まで日数を加算
-    const daysUntilNext = (dayOfWeek - now.getDay() + 7) % 7
-    nextDate.setDate(nextDate.getDate() + (daysUntilNext === 0 ? 7 : daysUntilNext))
+  // 今日が報告日で、現在時刻が報告時間より前の場合はそのまま返す
+  if (nextDate.getDay() === dayOfWeek && nextDate > now) {
     return nextDate
-
-  } catch (error) {
-    console.error('Error calculating next request date:', error)
-    return null
   }
+
+  // 次の報告日まで日数を加算
+  const daysUntilNext = (dayOfWeek - now.getDay() + 7) % 7
+  nextDate.setDate(nextDate.getDate() + (daysUntilNext === 0 ? 7 : daysUntilNext))
+  
+  return nextDate
 })
 
 const formatDate = (date) => {

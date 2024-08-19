@@ -103,6 +103,8 @@ Resources:
       CodeUri: ./src/Schedule
       Policies:
         - AmazonDynamoDBFullAccess
+        - LambdaInvokePolicy:
+            FunctionName: !Sub "${Stage}-send-request"
       Description: ""
       Environment:
         Variables:
