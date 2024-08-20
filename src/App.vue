@@ -35,22 +35,27 @@
         :width="235"
         color="secondary d-print-none"
         class="navigation-drawer"
+        @mouseenter="onDrawerEnter"
+        @mouseleave="onDrawerLeave"
       >
         <v-list>
-          <v-list-item @click="toggleDrawerMode">
+          <v-list-item>
             <template #prepend>
               <v-icon size="34" color="white" class="opacity-100 mx-n1">mdi-bird</v-icon>
             </template>
             <v-list-item-title class="font-weight-black">FLUXWEEK</v-list-item-title>
             <v-list-item-subtitle>{{ user.organizationId }}</v-list-item-subtitle>
+            <template #append>
+              <v-icon 
+                v-ripple
+                :icon="isRailMode ? 'mdi-format-horizontal-align-right' : 'mdi-format-horizontal-align-left'"
+                @click="toggleDrawerMode"
+              ></v-icon>
+            </template>
           </v-list-item>
         </v-list>
         <v-divider></v-divider>
-        <v-list
-          nav
-          @mouseenter="onDrawerEnter"
-          @mouseleave="onDrawerLeave"
-        >
+        <v-list nav>
           <v-list-item
             v-for="item in navigationItems"
             :key="item.value"
