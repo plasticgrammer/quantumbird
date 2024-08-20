@@ -86,6 +86,7 @@
             src="@/assets/images/usagikigurumi.gif"
             max-width="240"
             class="mx-auto mt-0 mb-5"
+            :aspect-ratio="1"
           ></v-img>
           <p class="text-body-1">
             報告ありがとうございました。
@@ -207,6 +208,10 @@ watch(() => props.weekString, (newWeekParam) => {
 
 onMounted(async () => {
   try {
+    // 事前ロード
+    const img = new Image()
+    img.src = require('@/assets/images/usagikigurumi.gif')
+
     member.value = await getMember(props.memberUuid)
   } catch (err) {
     console.error('Error initializing dashboard:', err)
