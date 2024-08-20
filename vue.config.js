@@ -14,8 +14,12 @@ module.exports = defineConfig({
   devServer: {
     port: 3000,
   },
-  transpileDependencies: true,
+  transpileDependencies: ['vuetify'],
   configureWebpack: {
+    optimization: {
+      usedExports: true,
+      sideEffects: true,
+    },
     plugins: [
       new webpack.DefinePlugin({
         __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(process.env.NODE_ENV !== 'production')

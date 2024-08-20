@@ -29,24 +29,28 @@
       <v-navigation-drawer
         v-if="!isMobile"
         v-model="drawer"
+        :rail="isRailMode && !isHovered"
         permanent
         location="left"
-        :temporary="isMobile"
-        expand-on-hover
-        rail
+        :width="235"
         color="secondary d-print-none"
+        class="navigation-drawer"
       >
         <v-list>
-          <v-list-item>
+          <v-list-item @click="toggleDrawerMode">
             <template #prepend>
-              <v-icon size="34" color="blue-lighten-5" class="opacity-100 ml-n1 mr-n2">mdi-bird</v-icon>
+              <v-icon size="34" color="white" class="opacity-100 mx-n1">mdi-bird</v-icon>
             </template>
-            <v-list-item-title class="font-weight-bold">FLUXWEEK</v-list-item-title>
+            <v-list-item-title class="font-weight-black">FLUXWEEK</v-list-item-title>
             <v-list-item-subtitle>{{ user.organizationId }}</v-list-item-subtitle>
           </v-list-item>
         </v-list>
         <v-divider></v-divider>
-        <v-list nav>
+        <v-list
+          nav
+          @mouseenter="onDrawerEnter"
+          @mouseleave="onDrawerLeave"
+        >
           <v-list-item
             v-for="item in navigationItems"
             :key="item.value"
@@ -93,8 +97,10 @@
       </v-bottom-navigation>
     </template>
 
-    <v-main>
-      <router-view />
+    <v-main :class="{ 'noshift': isHovered }">
+      <div class="content-wrapper">
+        <router-view />
+      </div>
     </v-main>
 
     <div v-show="showConfirmDialog">
@@ -116,12 +122,29 @@ const store = useStore()
 const router = useRouter()
 const confirmDialog = ref(null)
 const drawer = ref(true)
+const isRailMode = ref(false)
+const isHovered = ref(false)
 const showConfirmDialog = ref(false)
 const user = ref({
   organizationId: store.getters['user/organizationId'],
   username: store.getters['user/name'],
   email: store.getters['user/email']
 })
+
+const toggleDrawerMode = () => {
+  isRailMode.value = !isRailMode.value
+  isHovered.value = false
+}
+
+const onDrawerEnter = () => {
+  if (isRailMode.value) {
+    isHovered.value = true
+  }
+}
+
+const onDrawerLeave = () => {
+  isHovered.value = false
+}
 
 const navigationItems = [
   { 
@@ -208,13 +231,29 @@ provide('showNotification', showNotification)
 
 <style scoped>
 .v-application#main {
-  max-width: 960px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
+.content-wrapper {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.navigation-drawer {
+  z-index: 1000;
+  transition: width 0.2s ease;
+}
+
+#main .v-main.noshift {
+  padding-left: 56px !important;
+}
+
 @media (max-width: 600px) {
-  .v-application#main {
+  .content-wrapper {
     max-width: 100%;
+    padding: 8px;
   }
 }
 </style>
