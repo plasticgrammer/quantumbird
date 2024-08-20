@@ -12,14 +12,13 @@
           ダッシュボード
         </h3>
       </v-col>
-      <v-col cols="2" class="d-flex justify-end align-center">
-        <v-icon
-          class="cursor-pointer me-3" 
-          :class="{ 'rotate-animation': isLoading }"
+      <v-col cols="2" class="d-flex justify-end align-center pe-3">
+        <v-progress-circular 
+          class="cursor-pointer" 
+          size="26"
+          :indeterminate="isLoading"
           @click="handleReload"
-        >
-          mdi-reload
-        </v-icon>
+        ></v-progress-circular>
       </v-col>
     </v-row>
 

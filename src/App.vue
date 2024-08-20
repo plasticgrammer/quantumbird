@@ -36,6 +36,16 @@
         rail
         color="secondary d-print-none"
       >
+        <v-list>
+          <v-list-item>
+            <template #prepend>
+              <v-icon size="34" color="blue-lighten-5" class="opacity-100 ml-n1 mr-n2">mdi-bird</v-icon>
+            </template>
+            <v-list-item-title class="font-weight-bold">FLUXWEEK</v-list-item-title>
+            <v-list-item-subtitle>{{ user.organizationId }}</v-list-item-subtitle>
+          </v-list-item>
+        </v-list>
+        <v-divider></v-divider>
         <v-list nav>
           <v-list-item
             v-for="item in navigationItems"
@@ -108,7 +118,8 @@ const confirmDialog = ref(null)
 const drawer = ref(true)
 const showConfirmDialog = ref(false)
 const user = ref({
-  username: store.getters['user/organizationId'],
+  organizationId: store.getters['user/organizationId'],
+  username: store.getters['user/name'],
   email: store.getters['user/email']
 })
 

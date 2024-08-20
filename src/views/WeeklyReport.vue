@@ -83,7 +83,7 @@
         </v-card-title>
         <v-card-text>
           <v-img
-            src="@/assets/images/usagikigurumi-1.gif"
+            src="@/assets/images/usagikigurumi.gif"
             max-width="240"
             class="mx-auto mt-0 mb-5"
           ></v-img>

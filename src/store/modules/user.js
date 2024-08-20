@@ -38,6 +38,8 @@ export default {
   },
   getters: {
     organizationId: (state) => state.user?.organizationId,
+    name: (state) => state.user?.username,
+    email: (state) => state.user?.email,
     isAuthenticated: state => !!state.user
   }
 }
