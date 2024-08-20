@@ -226,7 +226,7 @@ def send_registor_mail(organization, member):
     sendFrom = common.publisher.get_from_address(organization)
     subject = "【週次報告システム】メンバー登録設定完了のご連絡"
     bodyText = "「週次報告システム」の送信先に登録されました。\n"
-    bodyText += f"組織名：{organization.name}\n\n"
+    bodyText += f"組織名：{organization['name']}\n\n"
     bodyText += "※本メールは、登録した際に配信される自動配信メールです。\n"
     # Check if email exists and is not None
     if member.get('email'):

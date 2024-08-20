@@ -4,7 +4,7 @@ import logging
 import json
 import os
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from boto3.dynamodb.conditions import Key
 import common.publisher
@@ -94,7 +94,7 @@ def send_request_mail(organization, members):
         sendTo = m.get("email")
         sendFrom = common.publisher.get_from_address(organization)
         subject = "【週次報告システム】週次報告をお願いします"
-        bodyText = f"組織名：{organization.name}\n\n"
+        bodyText = f"組織名：{organization['name']}\n\n"
         bodyText += "お疲れさまです。\n下記リンクより週次報告をお願いします。\n"
         link = generate_report_link(organization_id, m["memberUuid"], weekString)
         common.publisher.send_mail(sendFrom, sendTo, subject, bodyText + link)
@@ -120,15 +120,15 @@ def get_string_from_week(current_date, week_offset=0):
         current_date = current_date.date()
     
     # オフセットを適用
-    current_date += datetime.timedelta(weeks=week_offset)
+    current_date += timedelta(weeks=week_offset)
     
     # 木曜日に移動（ISO 8601準拠）
-    thursday = current_date + datetime.timedelta(days=(3 - current_date.weekday() + 7) % 7)
+    thursday = current_date + timedelta(days=(3 - current_date.weekday() + 7) % 7)
     
     # その年の最初の木曜日を計算
     first_thursday = datetime(thursday.year, 1, 1, tzinfo=TIMEZONE).date()
     if first_thursday.weekday() != 3:
-        first_thursday = first_thursday + datetime.timedelta(days=(3 - first_thursday.weekday() + 7) % 7)
+        first_thursday = first_thursday + timedelta(days=(3 - first_thursday.weekday() + 7) % 7)
     
     # 週番号を計算
     week_number = (thursday - first_thursday).days // 7 + 1

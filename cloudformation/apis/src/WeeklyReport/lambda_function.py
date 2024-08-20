@@ -361,7 +361,7 @@ def send_feedback_mail(organization, member, week_string, feedback):
         sendFrom = common.publisher.get_from_address(organization)
         subject = "【週次報告システム】管理者からのフィードバックがあります"
 
-        bodyText = f"組織名：{organization.name}\n\n"
+        bodyText = f"組織名：{organization['name']}\n\n"
         bodyText += "管理者からのフィードバックがありました。\n\n"
 
         feedback_content = feedback.get('content')
