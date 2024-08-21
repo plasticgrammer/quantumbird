@@ -29,7 +29,7 @@
       <v-navigation-drawer
         v-if="!isMobile"
         v-model="drawer"
-        :rail="isRailMode && !isHovered"
+        :rail="isRailMode && !isHovered && !showDropdown"
         permanent
         location="left"
         :width="235"
@@ -79,20 +79,42 @@
 
         <template #append>
           <v-divider />
-          <v-list
-            @mouseenter="onDrawerEnter"
-          >
-            <v-list-item
-              :title="user.username"
-              :subtitle="user.email"
+          <div class="dropdown-container" @mouseenter="onDrawerEnter">
+            <v-list>
+              <v-list-item
+                :title="user.username"
+                :subtitle="user.email"
+              >
+                <template #prepend>
+                  <v-avatar color="teal-lighten-2">
+                    <v-icon icon="mdi-account-circle"></v-icon>
+                  </v-avatar>
+                </template>
+                <template #append>
+                  <v-btn
+                    :icon="showDropdown ? 'mdi-menu-up' : 'mdi-menu-down'"
+                    size="small"
+                    variant="text"
+                  ></v-btn>
+                </template>
+              </v-list-item>
+            </v-list>
+            <v-menu
+              v-model="showDropdown"
+              activator="parent"
+              location="top"
             >
-              <template #prepend>
-                <v-avatar color="secondary">
-                  <v-icon icon="mdi-account-circle"></v-icon>
-                </v-avatar>
-              </template>
-            </v-list-item>
-          </v-list>
+              <v-list class="custom-dropdown bg-teal-lighten-2">
+                <v-list-item>
+                  <v-list-item-title class="text-body-2 opacity-80">{{ user.email }}</v-list-item-title>
+                </v-list-item>
+                <v-divider></v-divider>
+                <v-list-item @click="handleSignOut">
+                  <v-list-item-title>サインアウト</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </div>
         </template>
       </v-navigation-drawer>
 
@@ -115,7 +137,7 @@
       </v-bottom-navigation>
     </template>
 
-    <v-main :class="{ 'noshift': isHovered }">
+    <v-main :class="{ 'noshift': isHovered || showDropdown }">
       <div class="content-wrapper">
         <router-view />
       </div>
@@ -131,6 +153,7 @@
 import { ref, provide, reactive, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
+import { signOut } from '@aws-amplify/auth'
 import { useResponsive } from './composables/useResponsive'
 import ConfirmationDialog from './components/ConfirmationDialog.vue'
 
@@ -143,6 +166,8 @@ const drawer = ref(true)
 const isRailMode = ref(true)
 const isHovered = ref(false)
 const showConfirmDialog = ref(false)
+const showDropdown = ref(false)
+
 const user = ref({
   organizationId: store.getters['user/organizationId'],
   username: store.getters['user/name'],
@@ -232,6 +257,16 @@ const navigateTo = (route, params = {}) => {
   }
 }
 
+const handleSignOut = async () => {
+  try {
+    await signOut()
+    router.push({ name: 'SignIn' })
+  } catch (error) {
+    console.error('Sign out error:', error)
+    showNotification('サインアウトに失敗しました', 'error')
+  }
+}
+
 const showConfirmDialogGlobal = async (title, message) => {
   try {
     showConfirmDialog.value = true
@@ -279,5 +314,9 @@ provide('showNotification', showNotification)
     max-width: 100%;
     padding: 8px;
   }
+}
+
+.custom-dropdown {
+  min-width: 200px;
 }
 </style>
