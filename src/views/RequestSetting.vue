@@ -29,10 +29,10 @@
               @input="debouncedCheckEmailVerification"
             >
               <template #append>
-                <v-tooltip activator="parent" location="top">
-                  {{ emailVerificationStatusText }}
-                </v-tooltip>
-                <v-icon :color="emailVerificationStatusColor">
+                <v-icon 
+                  v-tooltip:top="emailVerificationStatusText"
+                  :color="emailVerificationStatusColor"
+                >
                   {{ emailVerificationStatusIcon }}
                 </v-icon>
               </template>

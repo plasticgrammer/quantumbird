@@ -98,15 +98,12 @@
                     :error-messages="editingMember?.id === member.id ? editValidationErrors.email : ''"
                   >
                     <template #append>
-                      <v-icon v-if="member.mailConfirmed" color="success">
+                      <v-icon v-if="member.mailConfirmed" v-tooltip:top="'メール確認済み'" color="success">
                         mdi-email-check-outline
                       </v-icon>
-                      <v-icon v-else>
+                      <v-icon v-else v-tooltip:top="'メール確認中'">
                         mdi-email-search-outline
                       </v-icon>
-                      <v-tooltip activator="parent" location="top">
-                        メール{{ member.mailConfirmed ? '確認済み' : '確認中' }}
-                      </v-tooltip>
                     </template>
                   </v-text-field>
                 </v-col>

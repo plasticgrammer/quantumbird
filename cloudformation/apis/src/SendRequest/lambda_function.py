@@ -4,6 +4,7 @@ import logging
 import json
 import os
 import urllib.parse
+import decimal
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from boto3.dynamodb.conditions import Key
@@ -87,15 +88,19 @@ def send_request_mail(organization, members):
     organization_id = organization['organizationId']
     reportWeek = organization.get('reportWeek', 0)
 
+    # Decimalを整数に変換
+    if isinstance(reportWeek, decimal.Decimal):
+        reportWeek = int(reportWeek)
+
     now = datetime.now(TIMEZONE)
     weekString = get_string_from_week(now, reportWeek)
 
+    sendFrom = common.publisher.get_from_address(organization)
+    subject = "【週次報告システム】週次報告をお願いします"
+    bodyText = f"組織名：{organization['name']}\n\n"
+    bodyText += "お疲れさまです。\n下記リンクより週次報告をお願いします。\n"
     for m in members:
-        sendTo = m.get("email")
-        sendFrom = common.publisher.get_from_address(organization)
-        subject = "【週次報告システム】週次報告をお願いします"
-        bodyText = f"組織名：{organization['name']}\n\n"
-        bodyText += "お疲れさまです。\n下記リンクより週次報告をお願いします。\n"
+        sendTo = [m.get("email")]
         link = generate_report_link(organization_id, m["memberUuid"], weekString)
         common.publisher.send_mail(sendFrom, sendTo, subject, bodyText + link)
 
@@ -113,6 +118,16 @@ def generate_report_link(organization_id, member_uuid, week_string):
     return url
 
 def get_string_from_week(current_date, week_offset=0):
+    # 引数の型チェックと変換
+    if isinstance(week_offset, decimal.Decimal):
+        week_offset = int(week_offset)
+    elif not isinstance(week_offset, int):
+        try:
+            week_offset = int(week_offset)
+        except ValueError:
+            logger.error(f"Invalid week_offset value: {week_offset}")
+            week_offset = 0  # デフォルト値を設定
+
     # 日付オブジェクトに変換（文字列が渡された場合に対応）
     if isinstance(current_date, str):
         current_date = datetime.strptime(current_date, "%Y-%m-%d").replace(tzinfo=TIMEZONE).date()

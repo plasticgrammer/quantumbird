@@ -411,7 +411,7 @@ const fetchStatsData = async () => {
   try {
     const data = await getStatsData(organizationId)
     overtimeData.value = {
-      labels: data.labels,
+      labels: data.labels.map(label => label.split('-')[1]),
       datasets: data.datasets.map((dataset, index) => ({
         label: dataset.label,
         data: dataset.data.map(item => item.overtimeHours),
@@ -421,7 +421,7 @@ const fetchStatsData = async () => {
       }))
     }
     stressData.value = {
-      labels: data.labels,
+      labels: data.labels.map(label => label.split('-')[1]),
       datasets: data.datasets.map((dataset, index) => ({
         label: dataset.label,
         data: dataset.data.map(item => item.stress || 0),

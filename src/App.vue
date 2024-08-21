@@ -33,21 +33,32 @@
         permanent
         location="left"
         :width="235"
-        color="secondary d-print-none"
-        class="navigation-drawer"
-        @mouseenter="onDrawerEnter"
+        color="teal-lighten-2"
+        class="navigation-drawer d-print-none"
         @mouseleave="onDrawerLeave"
       >
         <v-list>
-          <v-list-item>
+          <v-list-item
+            class="logo-list-item pr-2"
+            @mouseenter="onDrawerEnter"
+          >
             <template #prepend>
-              <v-icon size="34" color="white" class="opacity-100 mx-n1">mdi-bird</v-icon>
-            </template>
-            <v-list-item-title class="font-weight-black">FLUXWEEK</v-list-item-title>
-            <v-list-item-subtitle>{{ user.organizationId }}</v-list-item-subtitle>
-            <template #append>
               <v-icon 
                 v-ripple
+                icon="mdi-menu"
+                color="white" 
+                class="opacity-100 mr-3"
+                @click="toggleDrawerMode"
+              ></v-icon>
+            </template>
+            <v-list-item-title>
+              <v-img
+                src="@/assets/logo.png"
+              ></v-img>
+            </v-list-item-title>
+            <v-list-item-subtitle class="pl-1">{{ user.organizationId }}</v-list-item-subtitle>
+            <template #append>
+              <v-icon 
                 :icon="isRailMode ? 'mdi-format-horizontal-align-right' : 'mdi-format-horizontal-align-left'"
                 @click="toggleDrawerMode"
               ></v-icon>
@@ -68,7 +79,9 @@
 
         <template #append>
           <v-divider />
-          <v-list>
+          <v-list
+            @mouseenter="onDrawerEnter"
+          >
             <v-list-item
               :title="user.username"
               :subtitle="user.email"
@@ -127,7 +140,7 @@ const store = useStore()
 const router = useRouter()
 const confirmDialog = ref(null)
 const drawer = ref(true)
-const isRailMode = ref(false)
+const isRailMode = ref(true)
 const isHovered = ref(false)
 const showConfirmDialog = ref(false)
 const user = ref({
@@ -234,6 +247,12 @@ provide('showConfirmDialog', showConfirmDialogGlobal)
 provide('showNotification', showNotification)
 </script>
 
+<style>
+.logo-list-item .v-list-item__spacer {
+  width: 8px !important;
+}
+</style>
+
 <style scoped>
 .v-application#main {
   max-width: 100%;
@@ -243,12 +262,12 @@ provide('showNotification', showNotification)
 .content-wrapper {
   max-width: 960px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 0 16px;
 }
 
 .navigation-drawer {
   z-index: 1000;
-  transition: width 0.2s ease;
+  transition: width 0.3s ease;
 }
 
 #main .v-main.noshift {
