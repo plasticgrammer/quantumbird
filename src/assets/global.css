@@ -44,6 +44,10 @@ h3 {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important;
 }
 
+.v-list-item__spacer {
+  width: 20px !important;
+}
+
 /*
  * app common style
  */

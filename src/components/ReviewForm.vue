@@ -410,6 +410,12 @@ const fetchData = async () => {
   error.value = null
   try {
     const [fetchedReports, members] = await Promise.all([fetchReports(), fetchMembers()])
+    const statusOrder = {
+      'none': 0,
+      'pending': 1,
+      'feedback': 2,
+      'approved': 3
+    }
     
     reports.value = members.map(member => {
       const report = fetchedReports.find(r => r.memberUuid === member.memberUuid) || {}
@@ -430,7 +436,15 @@ const fetchData = async () => {
         approvedAt: report.approvedAt || null
       }
       return combinedReport
-    }).sort((a, b) => a.memberId.localeCompare(b.memberId, undefined, { numeric: true, sensitivity: 'base' }))
+    }).sort((a, b) => {
+      if (a.status == b.status) {
+        return a.memberId.localeCompare(b.memberId)
+      } else {
+        const orderA = statusOrder[a.status] ?? Number.MAX_SAFE_INTEGER
+        const orderB = statusOrder[b.status] ?? Number.MAX_SAFE_INTEGER
+        return orderA - orderB
+      }
+    })
   } catch (err) {
     console.error('Error in fetchData:', err)
     error.value = `データの取得に失敗しました: ${err.message}`

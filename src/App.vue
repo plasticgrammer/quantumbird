@@ -35,19 +35,19 @@
         :width="235"
         color="teal-lighten-2"
         class="navigation-drawer d-print-none"
+        @mouseenter="onDrawerEnter"
         @mouseleave="onDrawerLeave"
       >
         <v-list>
           <v-list-item
-            class="logo-list-item pr-2"
-            @mouseenter="onDrawerEnter"
+            class="dense-list-item pr-2"
           >
             <template #prepend>
               <v-icon 
                 v-ripple
                 icon="mdi-menu"
                 color="white" 
-                class="opacity-100 mr-3"
+                class="opacity-100 mr-1"
                 @click="toggleDrawerMode"
               ></v-icon>
             </template>
@@ -56,7 +56,6 @@
                 src="@/assets/logo.png"
               ></v-img>
             </v-list-item-title>
-            <v-list-item-subtitle class="pl-1">{{ user.organizationId }}</v-list-item-subtitle>
             <template #append>
               <v-icon 
                 :icon="isRailMode ? 'mdi-format-horizontal-align-right' : 'mdi-format-horizontal-align-left'"
@@ -79,11 +78,12 @@
 
         <template #append>
           <v-divider />
-          <div class="dropdown-container" @mouseenter="onDrawerEnter">
+          <div class="dropdown-container">
             <v-list>
               <v-list-item
-                :title="user.username"
-                :subtitle="user.email"
+                :title="user.email"
+                :subtitle="user.organizationId"
+                class="dense-list-item"
               >
                 <template #prepend>
                   <v-avatar color="teal-lighten-2">
@@ -93,7 +93,8 @@
                 <template #append>
                   <v-btn
                     :icon="showDropdown ? 'mdi-menu-up' : 'mdi-menu-down'"
-                    size="small"
+                    class="mr-n2"
+                    size="x-small"
                     variant="text"
                   ></v-btn>
                 </template>
@@ -104,12 +105,17 @@
               activator="parent"
               location="top"
             >
-              <v-list class="custom-dropdown bg-teal-lighten-2">
+              <v-list class="pa-0 bg-teal-lighten-2">
                 <v-list-item>
-                  <v-list-item-title class="text-body-2 opacity-80">{{ user.email }}</v-list-item-title>
+                  <v-list-item-title class="text-body-2 opacity-60">{{ user.email }}</v-list-item-title>
                 </v-list-item>
                 <v-divider></v-divider>
-                <v-list-item @click="handleSignOut">
+                <v-list-item 
+                  @click="handleSignOut"
+                >
+                  <template #prepend>
+                    <v-icon icon="mdi-logout-variant"></v-icon>
+                  </template>
                   <v-list-item-title>サインアウト</v-list-item-title>
                 </v-list-item>
               </v-list>
@@ -283,7 +289,7 @@ provide('showNotification', showNotification)
 </script>
 
 <style>
-.logo-list-item .v-list-item__spacer {
+.dense-list-item .v-list-item__spacer {
   width: 8px !important;
 }
 </style>
@@ -314,9 +320,5 @@ provide('showNotification', showNotification)
     max-width: 100%;
     padding: 8px;
   }
-}
-
-.custom-dropdown {
-  min-width: 200px;
 }
 </style>

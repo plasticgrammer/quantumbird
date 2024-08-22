@@ -4,7 +4,7 @@
       max-width="500" 
       class="mx-auto mt-5"
     >
-      <v-card-title>
+      <v-card-title class="mt-1 mb-4">
         <v-icon size="large" class="mr-1">
           mdi-bird
         </v-icon>
@@ -44,7 +44,7 @@
               required
             />
             <v-btn
-              color="primary"
+              color="teal"
               type="submit"
               block
               class="mt-4"
@@ -227,11 +227,8 @@ const handleSignIn = async () => {
 }
 
 const signInUser = async () => {
-  const user = await signIn({ username: signInEmail.value, password: signInPassword.value })
-  console.log('サインイン成功:', user)
+  await signIn({ username: signInEmail.value, password: signInPassword.value })
   await store.dispatch('user/fetchUser')
-  console.log('User state after fetchUser:', store.state.user)
-  
   router.push('/admin')
 }
 
