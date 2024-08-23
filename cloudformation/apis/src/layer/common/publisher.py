@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 
-ses = boto3.client('ses', region_name='us-east-1')  # SESを使用するリージョンを指定
+ses = boto3.client('ses', region_name='ap-southeast-2')  # SESを使用するリージョンを指定
 
 def send_mail(sendFrom, to, subject, body):
     CHARSET = "utf-8"

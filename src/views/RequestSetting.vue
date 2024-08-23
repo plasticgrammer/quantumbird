@@ -23,6 +23,7 @@
               label="送信元メールアドレス"
               outlined
               dense
+              hide-details
               :rules="emailRules"
               :color="emailVerificationStatus === 'Success' ? 'success' : ''"
               :error="emailVerificationStatus === 'Failed'"
@@ -52,9 +53,19 @@
               </v-btn>
             </div>
           </v-col>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="requestSettings.senderName"
+              label="送信者名"
+              outlined
+              dense
+              hide-details
+            >
+            </v-text-field>
+          </v-col>
         </v-row>
 
-        <v-divider class="mt-1 mb-3"></v-divider>
+        <v-divider class="mt-5 mb-3"></v-divider>
 
         <v-row>
           <v-col cols="12" md="2" class="pl-5 d-flex align-center">

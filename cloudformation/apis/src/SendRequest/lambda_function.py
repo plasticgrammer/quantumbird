@@ -26,7 +26,6 @@ members_table = dynamodb.Table(members_table_name)
 
 def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
-    logger.info(f"Event type: {type(event)}")
     try:
         organization_id = None
         if isinstance(event, dict):
@@ -102,6 +101,9 @@ def send_request_mail(organization, members):
     for m in members:
         sendTo = [m.get("email")]
         link = generate_report_link(organization_id, m["memberUuid"], weekString)
+
+        logger.info(f"Send mail from: {sendFrom}, to: {sendTo}")
+        
         common.publisher.send_mail(sendFrom, sendTo, subject, bodyText + link)
 
 def generate_report_link(organization_id, member_uuid, week_string):

@@ -143,7 +143,7 @@
       </v-bottom-navigation>
     </template>
 
-    <v-main :class="{ 'noshift': isHovered || showDropdown }">
+    <v-main :class="{ 'noshift': isRailMode && (isHovered || showDropdown) }">
       <div class="content-wrapper">
         <router-view />
       </div>

@@ -14,9 +14,9 @@
           icon="mdi-information"
           border="start"
           elevation="2"
-          class="mt-2 mb-4"
+          class="mt-2 mb-6"
         >
-          この報告書は確認済みです。編集はできません。
+          この報告は確認済みです。編集はできません。
         </v-alert>
       </template>
 
@@ -108,6 +108,7 @@
           outlined
           dense
           class="mb-1 custom-feedback-alert"
+          :class="{ 'form-disabled': isReportConfirmed } " 
         >
           <div>
             フィードバック（{{ new Date(feedback.createdAt).toLocaleString() }}）:
@@ -146,6 +147,7 @@
       <v-form
         ref="reportForm"
         class="report-form mt-3 elevation-6"
+        :class="{ 'form-disabled': isReportConfirmed } " 
         @submit.prevent="handleSubmit"
       >
         <!-- Projects section -->
@@ -221,6 +223,7 @@
           extended
           absolute
           offset
+          :disabled="isReportConfirmed" 
           @click="addProject"
         >
           <template #prepend>
