@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getCurrentUser } from '@aws-amplify/auth'
-import Dashboard from '../views/Dashboard.vue'
 import SignIn from '../views/SignIn.vue'
+import Landing from '../views/Landing.vue'
+import Dashboard from '../views/Dashboard.vue'
 import WeeklyReport from '../views/WeeklyReport.vue'
 import WeeklyReview from '../views/WeeklyReview.vue'
 import OrganizationManagement from '../views/OrganizationManagement.vue'
@@ -13,6 +14,12 @@ const routes = [
     name: 'SignIn',
     component: SignIn,
     meta: { hideNavigation: true }
+  },
+  {
+    path: '/',
+    name: 'Landing',
+    component: Landing,
+    meta: { requiresAuth: true }
   },
   {
     path: '/admin',
