@@ -1,7 +1,7 @@
 <template>
   <v-container class="review-form-container">
     <v-row 
-      v-if="reports.length"
+      v-if="reports.length && !readonly"
       class="d-print-none mt-2"
     >
       <v-col cols="10" class="py-0">
@@ -251,7 +251,7 @@
                 </v-alert>
 
                 <v-textarea
-                  v-if="report.status !== 'approved'"
+                  v-if="report.status !== 'approved' && !readonly"
                   v-model="newFeedback"
                   label="新しいフィードバックを入力..."
                   outlined
@@ -273,7 +273,7 @@
           </v-card-text>
 
           <v-card-actions
-            v-if="report.status !== 'approved' && report.status !== 'none'"
+            v-if="report.status !== 'approved' && report.status !== 'none' && !readonly"
             class="d-print-none pt-0 pb-3"
           >
             <v-spacer />
@@ -311,7 +311,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, inject } from 'vue'
+import { ref, computed, watchEffect, onMounted, inject } from 'vue'
 import { useReport } from '../composables/useReport'
 import { listReports, updateReport, submitFeedback } from '../services/reportService'
 import { listMembers } from '../services/memberService'
@@ -329,6 +329,10 @@ const props = defineProps({
   weekString: {
     type: String,
     required: true
+  },
+  readonly: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -339,51 +343,42 @@ const newFeedback = ref('')
 
 const selectedStatus = ref('all')
 
-watch(selectedStatus, (newValue) => {
-  if (newValue === undefined) {
+// watchをwatchEffectに変更
+watchEffect(() => {
+  if (selectedStatus.value === undefined) {
     selectedStatus.value = 'all'
   }
 })
 
-// メモ化されたステータスカウント
+// メモ化されたステータスカウントを最適化
 const statusCounts = computed(() => {
-  const counts = {
-    all: reports.value.length,
-    none: 0,
-    pending: 0,
-    feedback: 0,
-    approved: 0
-  }
-  
-  for (const report of reports.value) {
+  return reports.value.reduce((counts, report) => {
     counts[report.status]++
-  }
-  
-  return counts
+    return counts
+  }, { all: reports.value.length, none: 0, pending: 0, feedback: 0, approved: 0 })
 })
 
-// メモ化されたフィルタリング
-const filteredReports = computed(() => {
-  if (selectedStatus.value === 'all') {
-    return reports.value
-  }
-  return reports.value.filter(report => report.status === selectedStatus.value)
-})
+// メモ化されたフィルタリングを最適化
+const filteredReports = computed(() => 
+  selectedStatus.value === 'all' 
+    ? reports.value 
+    : reports.value.filter(report => report.status === selectedStatus.value)
+)
 
+// copyShareUrl メソッドを最適化
 const copyShareUrl = async () => {
   try {
-    const params = { 'organizationId': props.organizationId, 'weekString': props.weekString }
+    const params = { organizationId: props.organizationId, weekString: props.weekString }
     const result = await generateToken(params)
-
-    if (navigator.clipboard) {
-      const rootUrl = window.location.href.match(/http(s)?:\/\/[a-zA-Z0-9-.!'()*;?:@&=+$,%#]+/)[0]
-      const shareUrl = rootUrl + '/view/' + result['token']
-      navigator.clipboard.writeText(shareUrl)
-      showNotification('コピーに成功しました')
-    }
+    
+    const rootUrl = window.location.origin
+    const shareUrl = `${rootUrl}/view/${result.token}`
+    
+    await navigator.clipboard.writeText(shareUrl)
+    showNotification('コピーに成功しました')
   } catch (err) {
+    console.error('Failed to copy share URL:', err)
     showNotification('コピーに失敗しました', 'error')
-    throw new Error(`Failed to generate token: ${err.message}`)
   }
 }
 
@@ -436,46 +431,40 @@ const fetchMembers = async () => {
   }
 }
 
+// fetchData メソッドを最適化
+const processReports = (fetchedReports, members) => {
+  const statusOrder = { none: 0, pending: 1, feedback: 2, approved: 3 }
+  
+  return members.map(member => {
+    const report = fetchedReports.find(r => r.memberUuid === member.memberUuid) || {}
+    return {
+      memberUuid: member.memberUuid,
+      weekString: props.weekString,
+      organizationId: props.organizationId,
+      memberId: member.id,
+      name: member.name,
+      projects: report.projects || [],
+      overtime: report.overtime || 0,
+      achievements: report.achievements || '',
+      issues: report.issues || '',
+      improvements: report.improvements || '',
+      rating: report.rating || {},
+      status: report.status || 'none',
+      feedbacks: report.feedbacks || [],
+      approvedAt: report.approvedAt || null
+    }
+  }).sort((a, b) => {
+    if (a.status === b.status) return a.memberId.localeCompare(b.memberId)
+    return (statusOrder[a.status] ?? Number.MAX_SAFE_INTEGER) - (statusOrder[b.status] ?? Number.MAX_SAFE_INTEGER)
+  })
+}
+
 const fetchData = async () => {
   isLoading.value = true
   error.value = null
   try {
     const [fetchedReports, members] = await Promise.all([fetchReports(), fetchMembers()])
-    const statusOrder = {
-      'none': 0,
-      'pending': 1,
-      'feedback': 2,
-      'approved': 3
-    }
-    
-    reports.value = members.map(member => {
-      const report = fetchedReports.find(r => r.memberUuid === member.memberUuid) || {}
-      const combinedReport = {
-        memberUuid: member.memberUuid,
-        weekString: props.weekString,
-        organizationId: props.organizationId,
-        memberId: member.id,
-        name: member.name,
-        projects: report.projects || [],
-        overtime: report.overtime || 0,
-        achievements: report.achievements || '',
-        issues: report.issues || '',
-        improvements: report.improvements || '',
-        rating: report.rating || {},
-        status: report.status || 'none',
-        feedbacks: report.feedbacks || [],
-        approvedAt: report.approvedAt || null
-      }
-      return combinedReport
-    }).sort((a, b) => {
-      if (a.status == b.status) {
-        return a.memberId.localeCompare(b.memberId)
-      } else {
-        const orderA = statusOrder[a.status] ?? Number.MAX_SAFE_INTEGER
-        const orderB = statusOrder[b.status] ?? Number.MAX_SAFE_INTEGER
-        return orderA - orderB
-      }
-    })
+    reports.value = processReports(fetchedReports, members)
   } catch (err) {
     console.error('Error in fetchData:', err)
     error.value = `データの取得に失敗しました: ${err.message}`
@@ -513,6 +502,7 @@ const handleFeedback = async (memberUuid) => {
       showNotification('フィードバックを送信しました')
     } catch (error) {
       console.error('Failed to submit feedback:', error)
+      showNotification('フィードバックの送信に失敗しました', 'error')
     }
   }
 }
@@ -538,6 +528,7 @@ const handleApprove = async (memberUuid) => {
       )
     } catch (error) {
       console.error('Failed to approve report:', error)
+      showNotification('報告の承認に失敗しました', 'error')
     }
   }
 }
