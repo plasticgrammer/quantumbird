@@ -59,7 +59,8 @@
               label="送信者名"
               outlined
               dense
-              hide-details
+              hide-details="auto"
+              :rules="senderNameRules"
             >
             </v-text-field>
           </v-col>
@@ -271,6 +272,7 @@ const debouncedCheckEmailVerification = () => {
     await checkEmailVerificationStatus()
   }, 500)
 }
+
 const checkEmailVerificationStatus = async () => {
   if (!requestSettings.sender) {
     emailVerificationStatus.value = 'Pending'
@@ -323,6 +325,11 @@ const verifyEmail = async () => {
   }
 }
 
+const senderNameRules = [
+  v => !!v || '送信者名は必須です',
+  v => (v && v.length <= 50) || '送信者名は50文字以内で入力してください'
+]
+
 const handleSubmit = async () => {
   if (!isFormValid.value || !isFormChanged.value) return
 
@@ -355,6 +362,7 @@ onMounted(async () => {
     if (result && Object.keys(result).length > 0) {
       Object.assign(requestSettings, {
         sender: result.sender || '',
+        senderName: result.senderName || '',
         requestEnabled: result.requestEnabled ?? false,
         requestTime: result.requestTime || '06:00',
         requestDayOfWeek: result.requestDayOfWeek || 'monday',

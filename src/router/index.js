@@ -1,14 +1,33 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getCurrentUser } from '@aws-amplify/auth'
 import SignIn from '../views/SignIn.vue'
-import Landing from '../views/Landing.vue'
+import Support from '../views/Support.vue'
 import Dashboard from '../views/Dashboard.vue'
 import WeeklyReport from '../views/WeeklyReport.vue'
 import WeeklyReview from '../views/WeeklyReview.vue'
+import WeeklyReportSummary from '../views/WeeklyReportSummary.vue'
 import OrganizationManagement from '../views/OrganizationManagement.vue'
 import RequestSetting from '../views/RequestSetting.vue'
 
 const routes = [
+  {
+    path: '/',
+    name: 'Root',
+    component: SignIn,
+    beforeEnter: async (to, from, next) => {
+      try {
+        const user = await getCurrentUser()
+        if (user) {
+          next('/admin')
+        } else {
+          next('/signin')
+        }
+      } catch (error) {
+        console.error('認証チェックエラー:', error)
+        next('/signin')
+      }
+    }
+  },
   {
     path: '/signin',
     name: 'SignIn',
@@ -16,13 +35,13 @@ const routes = [
     meta: { hideNavigation: true }
   },
   {
-    path: '/',
-    name: 'Landing',
-    component: Landing,
+    path: '/admin',
+    name: 'Support',
+    component: Support,
     meta: { requiresAuth: true }
   },
   {
-    path: '/admin',
+    path: '/admin/dashboard',
     name: 'Dashboard',
     component: Dashboard,
     meta: { requiresAuth: true }
@@ -64,6 +83,13 @@ const routes = [
     path: '/reports/:organizationId/:memberUuid/:weekString',
     name: 'WeeklyReport',
     component: WeeklyReport,
+    props: true,
+    meta: { hideNavigation: true }
+  },
+  {
+    path: '/view/:token',
+    name: 'WeeklyReportSummary',
+    component: WeeklyReportSummary,
     props: true,
     meta: { hideNavigation: true }
   },

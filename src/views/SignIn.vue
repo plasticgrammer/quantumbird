@@ -300,7 +300,8 @@ const confirmSignUpUser = async () => {
     const organization = { 
       organizationId: organizationId.value, 
       name: organizationName.value, 
-      sender: confirmEmail.value 
+      sender: confirmEmail.value,
+      senderName: organizationName.value 
     }
     await submitOrganization(organization)
     currentView.value = 'signIn'

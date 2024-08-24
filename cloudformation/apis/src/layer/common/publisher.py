@@ -46,7 +46,7 @@ def send_mail(sendFrom, to, subject, body):
 
 def get_from_address(organization):
     # メール差出人名 <差出人アドレス>
-    return '%s <%s>'%(Header(organization['name'].encode('iso-2022-jp'),'iso-2022-jp').encode(), organization['sender'])
+    return '%s <%s>'%(Header(organization['senderName'].encode('iso-2022-jp'),'iso-2022-jp').encode(), organization['sender'])
 
 def check_verification_status(email_address):
     try:

@@ -12,18 +12,40 @@
     </v-row>
 
     <ReviewForm
+      v-if="organizationId && weekString"
+      :organization-id="organizationId"
       :week-string="weekString"
     />
   </v-container>
 </template>
 
 <script setup>
+import { ref, inject, onMounted } from 'vue'
+import { verifyToken } from '../services/secureParameterService'
 import ReviewForm from '../components/ReviewForm.vue'
 
 const props = defineProps({
-  weekString: {
+  token: {
     type: String,
-    default: null
+    required: true
+  }
+})
+
+const loading = ref(false)
+const organizationId = ref(null)
+const weekString = ref(null)
+const showNotification = inject('showNotification')
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    const result = await verifyToken(props.token)
+    organizationId.value = result.organizationId
+    weekString.value = result.weekString
+  } catch (error) {
+    showNotification('キー情報の取得に失敗しました', error)
+  } finally {
+    loading.value = false
   }
 })
 </script>

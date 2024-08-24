@@ -1,11 +1,11 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'CloudFormation template for creating DynamoDB tables for the Weekly Report System'
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudFormation template for creating DynamoDB tables for the Weekly Report System"
 
 Parameters:
   EnvironmentName:
     Type: String
-    Default: 'dev'
-    Description: 'Environment name (e.g., dev, prod)'
+    Default: "dev"
+    Description: "Environment name (e.g., dev, prod)"
 
 Resources:
   OrganizationsTable:
@@ -74,7 +74,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -83,7 +83,7 @@ Resources:
       Policies:
         - PolicyName: DynamoDBAccess
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -93,21 +93,21 @@ Resources:
                   - dynamodb:DeleteItem
                   - dynamodb:Query
                   - dynamodb:Scan
-                Resource: 
+                Resource:
                   - !GetAtt OrganizationsTable.Arn
                   - !GetAtt MembersTable.Arn
                   - !GetAtt WeeklyReportsTable.Arn
 
 Outputs:
   OrganizationsTableName:
-    Description: 'Organizations Table Name'
+    Description: "Organizations Table Name"
     Value: !Ref OrganizationsTable
   MembersTableName:
-    Description: 'Members Table Name'
+    Description: "Members Table Name"
     Value: !Ref MembersTable
   WeeklyReportsTableName:
-    Description: 'Weekly Reports Table Name'
+    Description: "Weekly Reports Table Name"
     Value: !Ref WeeklyReportsTable
   DynamoDBAccessRoleARN:
-    Description: 'ARN of IAM Role for DynamoDB Access'
+    Description: "ARN of IAM Role for DynamoDB Access"
     Value: !GetAtt DynamoDBAccessRole.Arn

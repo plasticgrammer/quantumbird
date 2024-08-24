@@ -25,6 +25,24 @@ Conditions:
   IsProd: !Equals [!Ref Stage, "prod"]
 
 Resources:
+  JwtSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "${Stage}-jwt-secret"
+      Description: "JWT Secret Key for token generation and validation"
+      GenerateSecretString:
+        SecretStringTemplate: '{"JWT_SECRET_KEY":""}'
+        GenerateStringKey: "JWT_SECRET_KEY"
+        PasswordLength: 32
+        ExcludeCharacters: '"@/\\'
+
+  JwtSecretParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/weekly-report/${Stage}/jwt-secret-key"
+      Type: String
+      Value: !Sub "{{resolve:secretsmanager:${JwtSecret}:SecretString:JWT_SECRET_KEY}}"
+
   # ------------------------------------------------------------#
   #  Lambda Function
   # ------------------------------------------------------------#
@@ -131,6 +149,27 @@ Resources:
           STAGE: !Ref Stage
       Layers:
         - !Ref CommonLayer
+
+  SecureParameterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Stage}-secure-parameter"
+      CodeUri: ./src/SecureParameter
+      Environment:
+        Variables:
+          JWT_SECRET_PARAMETER: !Ref JwtSecretParameter
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: !Ref JwtSecretParameter
+        - SecretsManagerReadWrite
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:PutParameter
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:DeleteParameter
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/weekly-report/${Stage}/*"
 
   # ------------------------------------------------------------#
   #  Lambda Layer

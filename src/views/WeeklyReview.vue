@@ -19,6 +19,7 @@
 
     <ReviewForm
       v-if="selectedWeek && isValidWeek"
+      :organization-id="organizationId"
       :week-string="getStringFromWeek(selectedWeek)"
     />
   </v-container>
@@ -26,6 +27,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import WeekSelector from '../components/WeekSelector.vue'
 import ReviewForm from '../components/ReviewForm.vue'
@@ -41,6 +43,8 @@ const props = defineProps({
 const { getWeekFromString, getStringFromWeek, isWeekInRange } = useCalendar()
 const router = useRouter()
 
+const store = useStore()
+const organizationId = store.getters['user/organizationId']
 const selectedWeek = ref(null)
 const isValidWeek = ref(true)
 

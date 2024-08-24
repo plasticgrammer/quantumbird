@@ -130,6 +130,7 @@ def prepare_organization_item(org_data):
         'organizationId': org_data.get('organizationId'),
         'name': org_data.get('name'),
         'sender': org_data.get('sender'),
+        'senderName': org_data.get('senderName'),
         'requestEnabled': org_data.get('requestEnabled'),
         'requestTime': org_data.get('requestTime'),
         'requestDayOfWeek': org_data.get('requestDayOfWeek'),

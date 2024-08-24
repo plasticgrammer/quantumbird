@@ -4,9 +4,9 @@
       v-if="reports.length"
       class="d-print-none mt-2"
     >
-      <v-col cols="12" class="py-0">
+      <v-col cols="10" class="py-0">
         <v-card
-          class="px-2"
+          class="px-2 align-center"
           elevation="0"
         >
           <v-chip-group
@@ -29,6 +29,18 @@
             </span>
           </v-chip-group>
         </v-card>
+      </v-col>
+      <v-col cols="2" class="text-end">
+        <v-btn
+          color="secondary"
+          size="small"
+          @click="copyShareUrl"
+        >
+          <v-icon class="mr-2">
+            mdi-share-variant
+          </v-icon>
+          共有する
+        </v-btn>
       </v-col>
     </v-row>
 
@@ -300,18 +312,20 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, inject } from 'vue'
-import { useStore } from 'vuex'
 import { useReport } from '../composables/useReport'
 import { listReports, updateReport, submitFeedback } from '../services/reportService'
 import { listMembers } from '../services/memberService'
+import { generateToken } from '../services/secureParameterService'
 import RatingItem from '../components/RatingItem.vue'
 
-const store = useStore()
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
-const organizationId = store.getters['user/organizationId']
 const showNotification = inject('showNotification')
 
 const props = defineProps({
+  organizationId: {
+    type: String,
+    required: true
+  },
   weekString: {
     type: String,
     required: true
@@ -356,9 +370,26 @@ const filteredReports = computed(() => {
   return reports.value.filter(report => report.status === selectedStatus.value)
 })
 
+const copyShareUrl = async () => {
+  try {
+    const params = { 'organizationId': props.organizationId, 'weekString': props.weekString }
+    const result = await generateToken(params)
+
+    if (navigator.clipboard) {
+      const rootUrl = window.location.href.match(/http(s)?:\/\/[a-zA-Z0-9-.!'()*;?:@&=+$,%#]+/)[0]
+      const shareUrl = rootUrl + '/view/' + result['token']
+      navigator.clipboard.writeText(shareUrl)
+      showNotification('コピーに成功しました')
+    }
+  } catch (err) {
+    showNotification('コピーに失敗しました', 'error')
+    throw new Error(`Failed to generate token: ${err.message}`)
+  }
+}
+
 const fetchReports = async () => {
   try {
-    const fetchedReports = await listReports(organizationId, props.weekString)
+    const fetchedReports = await listReports(props.organizationId, props.weekString)
     
     if (!fetchedReports) {
       console.error('No reports data received')
@@ -398,7 +429,7 @@ const fetchReports = async () => {
 
 const fetchMembers = async () => {
   try {
-    return await listMembers(organizationId)
+    return await listMembers(props.organizationId)
   } catch (err) {
     console.error('Failed to fetch members:', err)
     throw err
@@ -422,7 +453,7 @@ const fetchData = async () => {
       const combinedReport = {
         memberUuid: member.memberUuid,
         weekString: props.weekString,
-        organizationId: organizationId,
+        organizationId: props.organizationId,
         memberId: member.id,
         name: member.name,
         projects: report.projects || [],
