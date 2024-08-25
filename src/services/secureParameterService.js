@@ -1,30 +1,31 @@
-import { lambda } from './awsConfig'
+import axios from 'axios'
 
-const stage = process.env.STAGE || 'dev'
+const API_ENDPOINT = process.env.VUE_APP_API_ENDPOINT
 
-const invokeLambda = async (operation, payload) => {
-  const params = {
-    FunctionName: `${stage}-secure-parameter`,
-    Payload: JSON.stringify({ operation, payload })
-  }
+const apiClient = axios.create({
+  baseURL: API_ENDPOINT,
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  withCredentials: false // CORSリクエストにクレデンシャルを含めない
+})
 
+export const generateToken = async (params) => {
   try {
-    const response = await lambda.invoke(params).promise()
-    const result = JSON.parse(response.Payload)
-    if (result.statusCode >= 400) {
-      throw new Error(result.body)
-    }
-    return result.body
+    const response = await apiClient.post('/secure/generate', params)
+    return response.data
   } catch (error) {
-    console.error(`Error in Lambda operation ${operation}:`, error)
+    console.error('Error generating token:', error)
     throw error
   }
 }
 
-export const generateToken = async (params) => {
-  return invokeLambda('generateToken', params)
-}
-
 export const verifyToken = async (token) => {
-  return invokeLambda('verifyToken', { token })
+  try {
+    const response = await apiClient.post('/secure/verify', { token })
+    return response.data
+  } catch (error) {
+    console.error('Error verifying token:', error)
+    throw error
+  }
 }

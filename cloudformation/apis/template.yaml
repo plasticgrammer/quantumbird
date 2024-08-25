@@ -12,6 +12,12 @@ Globals:
     Environment:
       Variables:
         TZ: Asia/Tokyo
+  Api:
+    EndpointConfiguration: REGIONAL
+    Cors:
+      AllowMethods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
 
 Parameters:
   Stage:
@@ -170,6 +176,17 @@ Resources:
                 - ssm:GetParameters
                 - ssm:DeleteParameter
               Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/weekly-report/${Stage}/*"
+      Events:
+        GenerateTokenApi:
+          Type: Api
+          Properties:
+            Path: /secure/generate
+            Method: ANY
+        VerifyTokenApi:
+          Type: Api
+          Properties:
+            Path: /secure/verify
+            Method: ANY
 
   # ------------------------------------------------------------#
   #  Lambda Layer
@@ -184,3 +201,8 @@ Resources:
       RetentionPolicy: "Delete"
     Metadata:
       BuildMethod: python3.12
+
+Outputs:
+  ApiEndpoint:
+    Description: "API Gateway endpoint URL for Secure Parameter API"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
