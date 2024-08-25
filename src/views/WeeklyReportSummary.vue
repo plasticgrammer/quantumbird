@@ -6,7 +6,8 @@
           <v-icon size="large" class="mr-1">
             mdi-calendar-multiple-check
           </v-icon>
-          週次報告 ［{{ formatDateRange(getWeekFromString(weekString)) }}］
+          週次報告
+          <span v-if="weekString"> ［{{ formatDateRange(getWeekFromString(weekString)) }}］</span>
         </h3>
       </v-col>
     </v-row>

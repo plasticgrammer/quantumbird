@@ -46,7 +46,7 @@ const createChart = () => {
           ticks: {
             stepSize: 1,
             precision: 0,
-            callback: (value) => value === 1 ? '低' : value === 5 ? '高' : ''
+            callback: (value) => value === 1 ? '余裕' : value === 5 ? '極限' : ''
           },
           title: {
             display: true,

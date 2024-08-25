@@ -183,11 +183,92 @@ const isFormValid = ref(false)
 const organization = ref(null)
 const showNotification = inject('showNotification')
 
+// Composable for email verification logic
+const useEmailVerification = () => {
+  const emailVerificationStatus = ref('Pending')
+  const verifyingEmail = ref(false)
+
+  const emailVerificationStatusColor = computed(() => {
+    const colors = { Success: 'success', Failed: 'error', Pending: 'grey', Checking: 'grey', Error: 'error' }
+    return colors[emailVerificationStatus.value] || 'grey'
+  })
+
+  const emailVerificationStatusIcon = computed(() => {
+    const icons = { Success: 'mdi-check-circle', Failed: 'mdi-alert-circle', Pending: 'mdi-progress-clock', Checking: 'mdi-progress-clock', Error: 'mdi-alert' }
+    return icons[emailVerificationStatus.value] || 'mdi-progress-clock'
+  })
+
+  const emailVerificationStatusText = computed(() => {
+    const texts = { Success: '検証済み', Failed: '未検証', Pending: '検証中', Checking: '検証中', Error: 'エラー' }
+    return texts[emailVerificationStatus.value] || '検証中'
+  })
+
+  const checkEmailVerificationStatus = async (email) => {
+    if (!email) {
+      emailVerificationStatus.value = 'Pending'
+      return
+    }
+
+    try {
+      emailVerificationStatus.value = 'Checking'
+      const result = await checkEmailVerification(email)
+      emailVerificationStatus.value = result.status
+      if (result.status === 'Pending') {
+        showNotification('メールアドレスの検証が保留中です。メールボックスを確認してください。', 'info')
+      }
+    } catch (error) {
+      console.error('Error checking email verification:', error)
+      emailVerificationStatus.value = 'Error'
+      showNotification('メールアドレスの検証状態の確認中にエラーが発生しました。', 'error')
+    }
+  }
+
+  const verifyEmail = async (email) => {
+    if (!email) {
+      showNotification('メールアドレスを入力してください。', 'error')
+      return
+    }
+
+    verifyingEmail.value = true
+    try {
+      await verifyEmailAddress(email)
+      showNotification('検証メールを送信しました。メールを確認して検証を完了してください。', 'success')
+      await checkEmailVerificationStatus(email)
+    } catch (error) {
+      console.error('Error verifying email:', error)
+      showNotification('メールアドレスの検証に失敗しました。', 'error')
+    } finally {
+      verifyingEmail.value = false
+    }
+  }
+
+  return {
+    emailVerificationStatus,
+    emailVerificationStatusColor,
+    emailVerificationStatusIcon,
+    emailVerificationStatusText,
+    checkEmailVerificationStatus,
+    verifyEmail,
+    verifyingEmail,
+  }
+}
+
+const {
+  emailVerificationStatus,
+  emailVerificationStatusColor,
+  emailVerificationStatusIcon,
+  emailVerificationStatusText,
+  checkEmailVerificationStatus,
+  verifyEmail,
+  verifyingEmail,
+} = useEmailVerification()
+
 const requestSettings = reactive({
   requestEnabled: true,
   sender: '',
+  senderName: '',
   requestDayOfWeek: 'monday',
-  requestTime: 6,
+  requestTime: '06:00',
   reportWeek: -1,
 })
 
@@ -203,6 +284,11 @@ const emailRules = [
   v => /.+@.+\..+/.test(v) || '有効なメールアドレスを入力してください',
 ]
 
+const senderNameRules = [
+  v => !!v || '送信者名は必須です',
+  v => (v && v.length <= 50) || '送信者名は50文字以内で入力してください'
+]
+
 const daysOfWeek = [
   { text: '月曜日', value: 'monday' },
   { text: '火曜日', value: 'tuesday' },
@@ -213,144 +299,43 @@ const daysOfWeek = [
   { text: '日曜日', value: 'sunday' },
 ]
 
-const hours = ref(
-  Array.from({ length: 24 }, (_, i) => {
-    const timeString = `${i.toString().padStart(2, '0')}:00`
-    return {
-      text: timeString,
-      value: timeString,
-    }
-  })
+const hours = computed(() =>
+  Array.from({ length: 24 }, (_, i) => ({
+    text: `${i.toString().padStart(2, '0')}:00`,
+    value: `${i.toString().padStart(2, '0')}:00`,
+  }))
 )
 
 const reportWeekOptions = [
   { text: '前週', value: -1 },
   { text: '当週', value: 0 },
 ]
-const emailVerificationStatus = ref('Pending')
-const emailVerificationTimeout = ref(null)
-const verifyingEmail = ref(false)
 
-const emailVerificationStatusColor = computed(() => {
-  switch (emailVerificationStatus.value) {
-  case 'Success':
-    return 'success'
-  case 'Failed':
-    return 'error'
-  default:
-    return 'grey'
+const debouncedCheckEmailVerification = (() => {
+  let timeout
+  return () => {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => checkEmailVerificationStatus(requestSettings.sender), 500)
   }
-})
-
-const emailVerificationStatusIcon = computed(() => {
-  switch (emailVerificationStatus.value) {
-  case 'Success':
-    return 'mdi-check-circle'
-  case 'Failed':
-    return 'mdi-alert-circle'
-  default:
-    return 'mdi-progress-clock'
-  }
-})
-
-const emailVerificationStatusText = computed(() => {
-  switch (emailVerificationStatus.value) {
-  case 'Success':
-    return '検証済み'
-  case 'Failed':
-    return '未検証'
-  default:
-    return '検証中'
-  }
-})
-
-const debouncedCheckEmailVerification = () => {
-  if (emailVerificationTimeout.value) {
-    clearTimeout(emailVerificationTimeout.value)
-  }
-  emailVerificationTimeout.value = setTimeout(async () => {
-    await checkEmailVerificationStatus()
-  }, 500)
-}
-
-const checkEmailVerificationStatus = async () => {
-  if (!requestSettings.sender) {
-    emailVerificationStatus.value = 'Pending'
-    return
-  }
-
-  try {
-    emailVerificationStatus.value = 'Checking'
-    const result = await checkEmailVerification(requestSettings.sender)
-    
-    switch (result.status) {
-    case 'Success':
-      emailVerificationStatus.value = 'Success'
-      break
-    case 'Pending':
-      emailVerificationStatus.value = 'Pending'
-      showNotification('メールアドレスの検証が保留中です。メールボックスを確認してください。', 'info')
-      break
-    case 'Failed':
-      emailVerificationStatus.value = 'Failed'
-      //showNotification('メールアドレスの検証に失敗しました。', 'error')
-      break
-    default:
-      emailVerificationStatus.value = 'Error'
-      showNotification('メールアドレスの検証状態の確認中にエラーが発生しました。', 'error')
-    }
-  } catch (error) {
-    console.error('Error checking email verification:', error)
-    emailVerificationStatus.value = 'Error'
-    showNotification('メールアドレスの検証状態の確認中にエラーが発生しました。', 'error')
-  }
-}
-
-const verifyEmail = async () => {
-  if (!requestSettings.sender) {
-    showNotification('メールアドレスを入力してください。', 'error')
-    return
-  }
-
-  verifyingEmail.value = true
-  try {
-    await verifyEmailAddress(requestSettings.sender)
-    showNotification('検証メールを送信しました。メールを確認して検証を完了してください。', 'success')
-    await checkEmailVerificationStatus()
-  } catch (error) {
-    console.error('Error verifying email:', error)
-    showNotification('メールアドレスの検証に失敗しました。', 'error')
-  } finally {
-    verifyingEmail.value = false
-  }
-}
-
-const senderNameRules = [
-  v => !!v || '送信者名は必須です',
-  v => (v && v.length <= 50) || '送信者名は50文字以内で入力してください'
-]
+})()
 
 const handleSubmit = async () => {
   if (!isFormValid.value || !isFormChanged.value) return
 
-  // Check email verification before submitting
-  await checkEmailVerificationStatus()
+  await checkEmailVerificationStatus(requestSettings.sender)
   if (emailVerificationStatus.value !== 'Success') {
     showNotification('送信元メールアドレスが検証されていません。設定を保存できません。', 'error')
     return
   }
 
   try {
-    const org = {
-      ...organization.value,
-      ...requestSettings,
-    }
+    const org = { ...organization.value, ...requestSettings }
     await updateOrganization(org)
     showNotification('報告依頼設定を更新しました')
     console.log('Request settings updated:', requestSettings)
     originalSettings.value = JSON.parse(JSON.stringify(requestSettings))
   } catch (error) {
-    showNotification('報告依頼設定の保存に失敗しました', error)
+    showNotification('報告依頼設定の保存に失敗しました', error.message || '不明なエラーが発生しました')
   }
 }
 
@@ -370,21 +355,17 @@ onMounted(async () => {
       })
       originalSettings.value = JSON.parse(JSON.stringify(requestSettings))
       
-      // Check email verification status on mount
-      await checkEmailVerificationStatus()
+      await checkEmailVerificationStatus(requestSettings.sender)
     }
   } catch (error) {
-    showNotification('報告依頼設定の取得に失敗しました', error)
+    showNotification('報告依頼設定の取得に失敗しました', error.message || '不明なエラーが発生しました')
   } finally {
     loading.value = false
   }
 })
 
-// Clean up the timeout when the component is unmounted
 onUnmounted(() => {
-  if (emailVerificationTimeout.value) {
-    clearTimeout(emailVerificationTimeout.value)
-  }
+  // Clean up is handled by the closure in debouncedCheckEmailVerification
 })
 </script>
 

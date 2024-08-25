@@ -110,8 +110,8 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            - メール到達確認、アドレス変更時の再送信<br>
-            - レビュー結果共有<br>
+            - APIGateway対応<br>
+            - メール到達確認<br>
             - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>
         </v-card>
@@ -271,7 +271,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { useCalendar } from '../composables/useCalendar'
@@ -287,48 +287,6 @@ const router = useRouter()
 const { createWeeks, getStringFromWeek } = useCalendar()
 const { statusOptions } = useReport()
 
-const organizationId = store.getters['user/organizationId']
-const isAdmin = ref(true)
-const calendarWeeks = createWeeks(6)
-const weekIndex = ref(calendarWeeks.length - 1)
-const weekString = computed(() => getStringFromWeek(calendarWeeks[weekIndex.value]))
-
-const filteredStatusOptions = statusOptions.filter(option => option.value !== 'all')
-const statusCounts = computed(() => {
-  const counts = {
-    none: memberCount.value - reportStatus.value.reportedCount,
-    pending: reportStatus.value.pending,
-    feedback: reportStatus.value.inFeedback,
-    approved: reportStatus.value.confirmed
-  }
-  return counts
-})
-
-const organization = ref('')
-const reportStatus = ref({
-  pending: 0,
-  inFeedback: 0,
-  confirmed: 0
-})
-const memberCount = ref(null)
-const members = ref([])
-const selectedMember = ref(null)
-const weeklyReportLink = computed(() => {
-  if (!selectedMember.value) return '#'
-  const route = router.resolve({
-    name: 'WeeklyReport',
-    params: {
-      organizationId,
-      memberUuid: selectedMember.value,
-      weekString: weekString.value
-    }
-  })
-  return route.href
-})
-
-const isLoading = ref(true)
-const error = ref(null)
-
 const dayOfWeekToNumber = {
   sunday: 0,
   monday: 1,
@@ -338,6 +296,54 @@ const dayOfWeekToNumber = {
   friday: 5,
   saturday: 6
 }
+
+const organizationId = computed(() => store.getters['user/organizationId'])
+const isAdmin = ref(true)
+const calendarWeeks = createWeeks(6)
+const weekIndex = ref(calendarWeeks.length - 1)
+
+const organization = ref(null)
+const reportStatus = ref({
+  pending: 0,
+  inFeedback: 0,
+  confirmed: 0,
+  reportedCount: 0,
+  totalCount: 0,
+})
+const selectedMember = ref(null)
+
+const isLoading = ref(true)
+const error = ref(null)
+
+const overtimeData = ref({ labels: [], datasets: [] })
+const stressData = ref({ labels: [], datasets: [] })
+
+// Computed properties
+const members = computed(() => organization.value?.members || [])
+const memberCount = computed(() => members.value.length)
+const weekString = computed(() => getStringFromWeek(calendarWeeks[weekIndex.value]))
+const filteredStatusOptions = computed(() => 
+  statusOptions.filter(option => option.value !== 'all')
+)
+
+const statusCounts = computed(() => ({
+  none: memberCount.value - reportStatus.value.reportedCount,
+  pending: reportStatus.value.pending,
+  feedback: reportStatus.value.inFeedback,
+  approved: reportStatus.value.confirmed,
+}))
+
+const weeklyReportLink = computed(() => {
+  if (!selectedMember.value) return '#'
+  return router.resolve({
+    name: 'WeeklyReport',
+    params: {
+      organizationId: organizationId.value,
+      memberUuid: selectedMember.value,
+      weekString: weekString.value,
+    },
+  }).href
+})
 
 const nextRequestDateTime = computed(() => {
   if (!organization.value?.requestEnabled) {
@@ -349,19 +355,17 @@ const nextRequestDateTime = computed(() => {
   const [hours, minutes] = requestTime.split(':').map(Number)
 
   if (dayOfWeek === undefined || isNaN(hours) || isNaN(minutes)) {
-    console.error('Invalid input data:', { dayOfWeek, hours, minutes })
+    console.error('Invalid organization data:', { requestDayOfWeek, requestTime })
     return null
   }
 
   const now = new Date()
   let nextDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0)
 
-  // 今日が報告日で、現在時刻が報告時間より前の場合はそのまま返す
   if (nextDate.getDay() === dayOfWeek && nextDate > now) {
     return nextDate
   }
 
-  // 次の報告日まで日数を加算
   const daysUntilNext = (dayOfWeek - now.getDay() + 7) % 7
   nextDate.setDate(nextDate.getDate() + (daysUntilNext === 0 ? 7 : daysUntilNext))
   
@@ -369,9 +373,14 @@ const nextRequestDateTime = computed(() => {
 })
 
 const formatDate = (date) => {
+  if (!(date instanceof Date)) {
+    console.error('Invalid date object:', date)
+    return ''
+  }
+  
   const weekdays = ['日', '月', '火', '水', '木', '金', '土']
   const year = date.getFullYear()
-  const month = date.getMonth() + 1 // getMonth() は 0-11 を返すため、+1 する
+  const month = date.getMonth() + 1 // getMonth() returns 0-11
   const day = date.getDate()
   const weekday = weekdays[date.getDay()]
   const hour = date.getHours().toString().padStart(2, '0')
@@ -382,118 +391,94 @@ const formatDate = (date) => {
 
 const fetchOrganizationInfo = async () => {
   try {
-    const org = await getOrganization(organizationId)
+    const org = await getOrganization(organizationId.value)
     organization.value = org
-    members.value = org.members
-    memberCount.value = members.value.length
   } catch (err) {
     console.error('Failed to fetch organization info:', err)
-    error.value = '組織情報の取得に失敗しました'
+    error.value = '組織情報の取得に失敗しました: ' + err.message
+    throw err
   }
 }
 
-const fetchReportStatus = async (weekString) => {
+const fetchReportStatus = async () => {
   try {
-    const status = await getReportStatus(organizationId, weekString)
+    const status = await getReportStatus(organizationId.value, weekString.value)
     reportStatus.value = {
       ...status,
       reportedCount: status.pending + status.inFeedback + status.confirmed,
-      totalCount: status.totalCount || 0
+      totalCount: status.totalCount || 0,
     }
   } catch (err) {
     console.error('Failed to fetch report status:', err)
-    error.value = '報告状況の取得に失敗しました'
+    error.value = '報告状況の取得に失敗しました: ' + err.message
+    throw err
   }
 }
 
 const fetchStatsData = async () => {
   try {
-    const data = await getStatsData(organizationId)
-    overtimeData.value = {
-      labels: data.labels.map(label => label.split('-')[1]),
-      datasets: data.datasets.map((dataset, index) => ({
-        label: dataset.label,
-        data: dataset.data.map(item => item.overtimeHours),
-        borderColor: getColor(index),
-        tension: 0.1,
-        fill: false
-      }))
-    }
-    stressData.value = {
-      labels: data.labels.map(label => label.split('-')[1]),
-      datasets: data.datasets.map((dataset, index) => ({
-        label: dataset.label,
-        data: dataset.data.map(item => item.stress || 0),
-        borderColor: getColor(index),
-        tension: 0.1,
-        fill: false
-      }))
-    }
+    const data = await getStatsData(organizationId.value)
+    overtimeData.value = formatChartData(data, 'overtimeHours')
+    stressData.value = formatChartData(data, 'stress')
   } catch (err) {
     console.error('Failed to fetch stats data:', err)
-    error.value = '統計データの取得に失敗しました'
+    error.value = '統計データの取得に失敗しました: ' + err.message
+    throw err
   }
 }
 
-const colorPalette = [
-  'rgb(54, 162, 235)', // 青
-  'rgb(75, 192, 192)', // 緑
-  'rgb(199, 199, 199)', // グレー
-  'rgb(255, 99, 132)', // 赤
-  'rgb(255, 206, 86)', // 黄
-  'rgb(153, 102, 255)', // 紫
-  'rgb(255, 159, 64)', // オレンジ
-  'rgb(83, 102, 255)' // 青紫
-]
+const formatChartData = (data, dataKey) => ({
+  labels: data.labels.map(label => label.split('-')[1]),
+  datasets: data.datasets.map((dataset, index) => ({
+    label: dataset.label,
+    data: dataset.data.map(item => item[dataKey] || 0),
+    borderColor: getColor(index),
+    tension: 0.1,
+    fill: false,
+  })),
+})
 
-// 色を取得する関数
 const getColor = (index) => {
-  if (index < colorPalette.length) {
-    return colorPalette[index]
-  } else {
-    const r = Math.floor(Math.random() * 255)
-    const g = Math.floor(Math.random() * 255)
-    const b = Math.floor(Math.random() * 255)
-    return `rgb(${r}, ${g}, ${b})`
-  }
+  const colorPalette = [
+    'rgb(54, 162, 235)', 'rgb(75, 192, 192)', 'rgb(199, 199, 199)', 
+    'rgb(255, 99, 132)', 'rgb(255, 206, 86)', 'rgb(153, 102, 255)', 
+    'rgb(255, 159, 64)', 'rgb(83, 102, 255)'
+  ]
+  return index < colorPalette.length ? colorPalette[index] : getRandomColor()
 }
 
-const overtimeData = ref({
-  labels: [],
-  datasets: []
-})
-
-const stressData = ref({
-  labels: [],
-  datasets: []
-})
-
-watch(weekIndex, () => {
-  fetchReportStatus(weekString.value)
-})
+const getRandomColor = () => {
+  const r = Math.floor(Math.random() * 255)
+  const g = Math.floor(Math.random() * 255)
+  const b = Math.floor(Math.random() * 255)
+  return `rgb(${r}, ${g}, ${b})`
+}
 
 const fetchAll = async () => {
   isLoading.value = true
+  error.value = null
   try {
     await Promise.all([
       fetchOrganizationInfo(),
-      fetchReportStatus(weekString.value),
-      fetchStatsData()
+      fetchReportStatus(),
+      fetchStatsData(),
     ])
-    // initChart の呼び出しを削除
   } catch (err) {
     console.error('Error initializing dashboard:', err)
-    error.value = 'ダッシュボードの初期化に失敗しました'
+    error.value = 'ダッシュボードの初期化に失敗しました: ' + err.message
   } finally {
     isLoading.value = false
   }
 }
 
-// リロードボタンのクリックハンドラ
 const handleReload = () => {
   fetchAll()
 }
 
+// Watchers
+watch(weekIndex, fetchReportStatus)
+
+// Lifecycle hooks
 onMounted(fetchAll)
 </script>
 

@@ -4,7 +4,7 @@
       v-if="reports.length && !readonly"
       class="d-print-none mt-2"
     >
-      <v-col cols="10" class="py-0">
+      <v-col cols="12" md="10" class="py-0">
         <v-card
           class="px-2 align-center"
           elevation="0"
@@ -30,7 +30,7 @@
           </v-chip-group>
         </v-card>
       </v-col>
-      <v-col cols="2" class="text-end">
+      <v-col cols="12" md="2" class="text-end">
         <v-btn
           color="secondary"
           size="small"
@@ -112,7 +112,7 @@
                     :key="index"
                     class="px-2 py-2"
                   >
-                    <v-list-item-title class="text-body-2">
+                    <v-list-item-title>
                       <v-icon small>
                         mdi-folder-outline
                       </v-icon>

@@ -225,119 +225,132 @@ const state = reactive({
 
 const { organization, newMember, editingMember, loading, isNew, isFormValid, isFormChanged, validationErrors, editValidationErrors } = toRefs(state)
 
-const validateEmail = (email) => {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return re.test(email)
-}
-
-const validateMember = (member, errors) => {
-  let isValid = true
-
-  if (!member.name.trim()) {
-    errors.name = '名前は必須です'
-    isValid = false
-  } else {
-    errors.name = ''
+// Inline definition of useOrganizationValidation
+const useOrganizationValidation = (organization, newMember, validationErrors) => {
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return re.test(email)
   }
 
-  if (!member.email.trim()) {
-    errors.email = 'メールアドレスは必須です'
-    isValid = false
-  } else if (!validateEmail(member.email)) {
-    errors.email = '有効なメールアドレスを入力してください'
-    isValid = false
-  } else {
-    errors.email = ''
-  }
+  const validateMember = (member, errors) => {
+    let isValid = true
 
-  return isValid
-}
-
-const validateNewMember = () => {
-  let isValid = validateMember(newMember.value, validationErrors.value)
-
-  if (!newMember.value.id.trim()) {
-    validationErrors.value.id = 'IDは必須です'
-    isValid = false
-  } else if (organization.value.members.some(member => member.id === newMember.value.id)) {
-    validationErrors.value.id = '既に存在します'
-    isValid = false
-  } else {
-    validationErrors.value.id = ''
-  }
-
-  return isValid
-}
-
-const setEditingMember = (member) => {
-  editingMember.value = member ? { ...member } : null
-  editValidationErrors.value = { name: '', email: '' }
-}
-
-const handleFormChange = () => {
-  isFormChanged.value = true
-}
-
-const handleAddMember = () => {
-  if (validateNewMember()) {
-    organization.value.members.push({
-      id: newMember.value.id,
-      name: newMember.value.name,
-      email: newMember.value.email
-    })
-    newMember.value = { id: '', name: '', email: '' }
-    validationErrors.value = { id: '', name: '', email: '' }
-    handleFormChange()
-  }
-}
-
-const handleUpdateMember = (member) => {
-  if (validateMember(member, editValidationErrors.value)) {
-    const index = organization.value.members.findIndex(m => m.id === member.id)
-    if (index !== -1) {
-      organization.value.members[index] = { ...member }
+    if (!member.name.trim()) {
+      errors.name = '名前は必須です'
+      isValid = false
+    } else {
+      errors.name = ''
     }
-    editingMember.value = null
-    editValidationErrors.value = { name: '', email: '' }
-    handleFormChange()
+
+    if (!member.email.trim()) {
+      errors.email = 'メールアドレスは必須です'
+      isValid = false
+    } else if (!validateEmail(member.email)) {
+      errors.email = '有効なメールアドレスを入力してください'
+      isValid = false
+    } else {
+      errors.email = ''
+    }
+
+    return isValid
   }
-}
 
-const handleDeleteMember = async (memberId) => {
-  const confirmed = await showConfirmDialog('確認', '本当にこのメンバーを削除しますか？')
-  if (confirmed) {
-    organization.value.members = organization.value.members.filter((member) => member.id !== memberId)
-    handleFormChange()
+  const validateNewMember = () => {
+    let isValid = validateMember(newMember.value, validationErrors.value)
+
+    if (!newMember.value.id.trim()) {
+      validationErrors.value.id = 'IDは必須です'
+      isValid = false
+    } else if (organization.value.members.some(member => member.id === newMember.value.id)) {
+      validationErrors.value.id = '既に存在します'
+      isValid = false
+    } else {
+      validationErrors.value.id = ''
+    }
+
+    return isValid
   }
+
+  return { validateMember, validateNewMember }
 }
 
-const validateForm = async () => {
-  const validation = await form.value.validate()
-  isFormValid.value = validation.valid
-}
+const { validateMember, validateNewMember } = useOrganizationValidation(organization, newMember, validationErrors)
 
+// Computed property for organization validity
 const isOrganizationValid = computed(() => {
   return organization.value.name.trim() !== ''
 })
 
-const handleSubmit = async () => {
-  if (!isOrganizationValid.value || !isFormChanged.value) {
-    return
-  }
+// Group related functions
+const memberManagement = {
+  setEditingMember(member) {
+    editingMember.value = member ? { ...member } : null
+    editValidationErrors.value = { name: '', email: '' }
+  },
 
-  try {
-    if (isNew.value) {
-      await submitOrganization(organization.value)
-      showNotification('組織情報を登録しました')
-    } else {
-      await updateOrganization(organization.value)
-      showNotification('組織情報を更新しました')
+  handleAddMember() {
+    if (validateNewMember()) {
+      organization.value.members.push({
+        id: newMember.value.id,
+        name: newMember.value.name,
+        email: newMember.value.email
+      })
+      newMember.value = { id: '', name: '', email: '' }
+      validationErrors.value = { id: '', name: '', email: '' }
+      formManagement.handleFormChange()
     }
-    console.log('Organization submitted:', organization.value)
-    state.originalOrganization = JSON.parse(JSON.stringify(organization.value))
-    isFormChanged.value = false
-  } catch (error) {
-    showNotification('組織の保存に失敗しました', error)
+  },
+
+  handleUpdateMember(member) {
+    if (validateMember(member, editValidationErrors.value)) {
+      const index = organization.value.members.findIndex(m => m.id === member.id)
+      if (index !== -1) {
+        organization.value.members[index] = { ...member }
+      }
+      editingMember.value = null
+      editValidationErrors.value = { name: '', email: '' }
+      formManagement.handleFormChange()
+    }
+  },
+
+  async handleDeleteMember(memberId) {
+    const confirmed = await showConfirmDialog('確認', '本当にこのメンバーを削除しますか？')
+    if (confirmed) {
+      organization.value.members = organization.value.members.filter((member) => member.id !== memberId)
+      formManagement.handleFormChange()
+    }
+  }
+}
+
+const formManagement = {
+  handleFormChange() {
+    isFormChanged.value = true
+  },
+
+  async validateForm() {
+    const validation = await form.value.validate()
+    isFormValid.value = validation.valid
+  },
+
+  async handleSubmit() {
+    if (!isOrganizationValid.value || !isFormChanged.value) {
+      return
+    }
+
+    try {
+      if (isNew.value) {
+        await submitOrganization(organization.value)
+        showNotification('組織情報を登録しました')
+      } else {
+        await updateOrganization(organization.value)
+        showNotification('組織情報を更新しました')
+      }
+      console.log('Organization submitted:', organization.value)
+      state.originalOrganization = JSON.parse(JSON.stringify(organization.value))
+      isFormChanged.value = false
+    } catch (error) {
+      showNotification('組織の保存に失敗しました', error.message || '不明なエラーが発生しました')
+    }
   }
 }
 
@@ -355,17 +368,15 @@ onMounted(async () => {
       } else {
         isNew.value = true
       }
-      // フォームの初期バリデーション
-      await validateForm()
+      await formManagement.validateForm()
     } catch (error) {
-      showNotification('組織情報の取得に失敗しました', error)
+      showNotification('組織情報の取得に失敗しました', error.message || '不明なエラーが発生しました')
     } finally {
       loading.value = false
     }
   }
 })
 
-// フォームの内容が変更されたかどうかを監視
 watch(
   () => JSON.stringify(organization.value),
   (newVal) => {
@@ -375,6 +386,10 @@ watch(
   },
   { deep: true }
 )
+
+// Expose necessary functions and reactive references
+const { setEditingMember, handleAddMember, handleUpdateMember, handleDeleteMember } = memberManagement
+const { validateForm, handleSubmit } = formManagement
 </script>
 
 <style scoped>
@@ -389,23 +404,6 @@ watch(
   position: relative;
 }
 
-.organization-name-input {
-  font-size: 1.5rem;
-}
-
-.v-table th {
-  font-weight: bold !important;
-  color: rgba(0, 0, 0, 0.6) !important;
-}
-
-.v-table td {
-  padding: 10px 10px !important;
-}
-
-.v-table .newMember td {
-  padding: 30px 10px 10px !important;
-}
-
 @media (max-width: 600px) {
   .v-row .v-col-12 {
     padding: 4px !important;
@@ -413,10 +411,6 @@ watch(
 
   .v-row .v-col-12:has(button) {
     padding: 16px !important;
-  }
-
-  .member-row {
-    border-bottom: solid 1px lightgray;
   }
 }
 </style>

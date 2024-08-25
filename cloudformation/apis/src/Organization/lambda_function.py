@@ -208,13 +208,21 @@ def update_members(organization_id, members):
     for member in members:
         existing_member = existing_members_dict.get(member.get('id'))
         member_item = prepare_member_item(member, existing_member)
+        member_item['organizationId'] = organization_id
+
         if existing_member is None:
+            # 新規メンバーの場合
             try:
                 send_registor_mail(org, member_item)
             except Exception as e:
-                logger.error(f"Failed to send registration email to member {member_item.get('id')}: {str(e)}")
+                logger.error(f"Failed to send registration email to new member {member_item.get('id')}: {str(e)}")
+        elif existing_member.get('email') != member_item.get('email'):
+            # 既存メンバーでメールアドレスが変更された場合
+            try:
+                send_registor_mail(org, member_item)
+            except Exception as e:
+                logger.error(f"Failed to send update email to member {member_item.get('id')}: {str(e)}")
 
-        member_item['organizationId'] = organization_id
         members_table.put_item(Item=member_item)
         if member.get('id') in existing_members_dict:
             del existing_members_dict[member.get('id')]
@@ -226,7 +234,7 @@ def update_members(organization_id, members):
 def send_registor_mail(organization, member):
     sendFrom = common.publisher.get_from_address(organization)
     subject = "【週次報告システム】メンバー登録設定完了のご連絡"
-    bodyText = "「週次報告システム」の送信先に登録されました。\n"
+    bodyText = "週次報告システムの送信先に登録されました。\n"
     bodyText += f"組織名：{organization['name']}\n\n"
     bodyText += "※本メールは、登録した際に配信される自動配信メールです。\n"
     # Check if email exists and is not None
