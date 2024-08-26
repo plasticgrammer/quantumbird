@@ -13,7 +13,7 @@ Globals:
       Variables:
         TZ: Asia/Tokyo
   Api:
-    EndpointConfiguration: REGIONAL
+    OpenApiVersion: 3.0.2
     Cors:
       AllowMethods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
       AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
