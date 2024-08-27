@@ -39,7 +39,7 @@ jobs:
                 }
               }
             }
-          }" >> src/config/amplify-config.js
+          }" > src/config/amplify-config.js
 
       - name: Build
         run: npm run build
