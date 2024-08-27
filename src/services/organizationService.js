@@ -1,42 +1,22 @@
-import { lambda } from './awsConfig'
+import { callApi } from './apiClient'
 
-const stage = process.env.STAGE || 'dev'
-
-const invokeLambda = async (operation, payload) => {
-  const params = {
-    FunctionName: `${stage}-organization`,
-    Payload: JSON.stringify({ operation, payload })
-  }
-
-  try {
-    const response = await lambda.invoke(params).promise()
-    const result = JSON.parse(response.Payload)
-    if (result.statusCode >= 400) {
-      throw new Error(result.body)
-    }
-    return result.body
-  } catch (error) {
-    console.error(`Error in Lambda operation ${operation}:`, error)
-    throw error
-  }
-}
+const BASE_PATH = '/organization'
 
 export const submitOrganization = async (organization) => {
-  return invokeLambda('create', organization)
+  return callApi('POST', BASE_PATH, organization)
 }
 
 export const updateOrganization = async (organization) => {
-  return invokeLambda('update', organization)
+  return callApi('PUT', BASE_PATH, organization)
 }
 
 export const deleteOrganization = async (organizationId) => {
-  return invokeLambda('delete', { organizationId })
+  return callApi('DELETE', BASE_PATH, null, { organizationId })
 }
 
 export const getOrganization = async (organizationId) => {
   try {
-    const response = await invokeLambda('get', { organizationId })
-    return response
+    return await callApi('GET', BASE_PATH, null, { organizationId })
   } catch (error) {
     if (error.message.includes('not found')) {
       return null // 組織が見つからない場合はnullを返す
@@ -46,5 +26,5 @@ export const getOrganization = async (organizationId) => {
 }
 
 export const listOrganizations = async () => {
-  return invokeLambda('get', {})
+  return callApi('GET', BASE_PATH)
 }

@@ -41,40 +41,33 @@ def float_to_decimal(obj):
 def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
     try:
-        # Check if the event is from API Gateway or direct invocation
-        if 'httpMethod' in event:
-            # API Gateway request
-            http_method = event['httpMethod']
-        elif 'operation' in event:
-            # Direct invocation
-            http_method = event['operation']
-        else:
-            logger.error("Invalid event structure")
-            return create_response(400, 'Invalid event structure')
+        http_method = event['httpMethod']
+        resource = event['resource']
 
-        if http_method == 'GET' or http_method == 'get':
-            return handle_get(event)
-        elif http_method == 'POST' or http_method == 'create':
-            return handle_post(event)
-        elif http_method == 'PUT' or http_method == 'update':
+        if http_method == 'GET':
+            if resource == '/weekly-report':
+                return handle_get(event)
+            elif resource == '/weekly-report/status':
+                return handle_get_report_status(event)
+            elif resource == '/weekly-report/stats':
+                return handle_get_stats_data(event)
+        elif http_method == 'POST':
+            if resource == '/weekly-report':
+                return handle_post(event)
+            elif resource == '/weekly-report/feedback':
+                return handle_submit_feedback(event)
+        elif http_method == 'PUT' and resource == '/weekly-report':
             return handle_put(event)
-        elif http_method == 'DELETE' or http_method == 'delete':
+        elif http_method == 'DELETE' and resource == '/weekly-report':
             return handle_delete(event)
-        elif http_method == 'getReportStatus':
-            return handle_get_report_status(event)
-        elif http_method == 'getStatsData':
-            return handle_get_stats_data(event)
-        elif http_method == 'submitFeedback':
-            return handle_submit_feedback(event)
         else:
-            return create_response(400, f'Unsupported operation: {http_method}')
+            return create_response(400, f'Unsupported method: {http_method}')
     except Exception as e:
         logger.error(f"Error: {str(e)}", exc_info=True)
         return create_response(500, f'Internal server error: {str(e)}')
 
 def handle_get(event):
-    # API Gateway や直接呼び出しの両方に対応するようにパラメータ取得を修正
-    params = event.get('queryStringParameters') or event.get('payload') or {}
+    params = event.get('queryStringParameters', {}) or {}
     if not params:
         return create_response(400, 'Missing query parameters')
 
@@ -88,29 +81,26 @@ def handle_get(event):
         return create_response(400, 'Invalid query parameters')
 
 def handle_post(event):
-    report_data = parse_body(event)
+    report_data = json.loads(event['body'])
     item = prepare_item(report_data)
     response = weekly_reports_table.put_item(Item=item)
     logger.info(f"DynamoDB response: {response}")
     return create_response(201, 'Weekly report created successfully')
 
 def handle_put(event):
-    report_data = parse_body(event)
+    report_data = json.loads(event['body'])
     member_uuid = report_data.get('memberUuid')
     week_string = report_data.get('weekString')
-    
+
     if not member_uuid or not week_string:
         return create_response(400, 'Missing memberUuid or weekString')
 
     try:
-        # 既存のレポートを取得
         existing_report = get_report(member_uuid, week_string)
         if not existing_report:
             return create_response(404, 'Report not found')
 
-        # その他のフィールドを更新
         updated_item = prepare_item(report_data, existing_report)
-        
         response = weekly_reports_table.put_item(Item=updated_item)
         logger.info(f"DynamoDB response: {response}")
         return create_response(200, 'Weekly report updated successfully')
@@ -119,8 +109,7 @@ def handle_put(event):
         return create_response(500, f'Failed to update report: {str(e)}')
 
 def handle_delete(event):
-    # API Gateway や直接呼び出しの両方に対応するようにパラメータ取得を修正
-    params = event.get('queryStringParameters') or event.get('payload') or {}
+    params = event.get('queryStringParameters', {}) or {}
     if 'memberUuid' not in params or 'weekString' not in params:
         return create_response(400, 'Missing required parameters')
 
@@ -133,13 +122,6 @@ def handle_delete(event):
     logger.info(f"DynamoDB response: {response}")
     return create_response(200, 'Weekly report deleted successfully')
 
-def parse_body(event):
-    if 'body' in event:
-        return json.loads(event['body'], parse_float=Decimal)
-    elif 'payload' in event:
-        return float_to_decimal(event['payload'])
-    else:
-        return float_to_decimal(event)
 
 def prepare_item(report_data, existing_report=None):
     item = {
@@ -188,7 +170,7 @@ def get_report(member_uuid, week_string):
         raise e
 
 def handle_get_report_status(event):
-    params = event.get('queryStringParameters') or event.get('payload') or {}
+    params = event.get('queryStringParameters', {}) or {}
     if 'organizationId' not in params or 'weekString' not in params:
         return create_response(400, 'Missing required parameter')
 
@@ -235,7 +217,7 @@ def get_member_names(member_uuids):
     return member_names
 
 def handle_get_stats_data(event):
-    params = event.get('queryStringParameters') or event.get('payload') or {}
+    params = event.get('queryStringParameters', {}) or {}
     if 'organizationId' not in params:
         return create_response(400, 'Missing organizationId parameter')
 
@@ -261,16 +243,14 @@ def handle_get_stats_data(event):
                 week_index = weeks.index(week)
                 stats = members[member_uuid]['data'][week_index]
                 stats['overtimeHours'] = float(report.get('overtimeHours', 0))
-                
+
                 rating = report.get('rating', {})
                 stats['achievement'] = float(rating.get('achievement', 0))
                 stats['disability'] = float(rating.get('disability', 0))
                 stats['stress'] = float(rating.get('stress', 0))
         except Exception as e:
             logger.error(f"Error fetching reports for week {week}: {str(e)}", exc_info=True)
-            # エラーが発生しても処理を続行し、取得できなかった週のデータは 0 として扱う
 
-    # バッチでメンバー名を取得
     member_names = get_member_names(list(member_uuids))
 
     stats_data['datasets'] = [
@@ -309,31 +289,28 @@ def decimal_default_proc(obj):
     raise TypeError
 
 def handle_submit_feedback(event):
-    params = parse_body(event)
+    params = json.loads(event['body'])
     member_uuid = params.get('memberUuid')
     week_string = params.get('weekString')
     feedback = params.get('feedback')
-    
+
     if not all([member_uuid, week_string, feedback]):
         return create_response(400, 'Missing required parameters')
 
     try:
-        # 既存のレポートを取得
         existing_report = get_report(member_uuid, week_string)
         if not existing_report:
             return create_response(404, 'Report not found')
 
-        # 新しいフィードバックを追加
         feedbacks = existing_report.get('feedbacks', [])
         feedbacks.append(feedback)
 
-        # レポートを更新
         updated_item = {
             **existing_report,
             'feedbacks': feedbacks,
             'status': 'feedback'
         }
-        
+
         response = weekly_reports_table.put_item(Item=updated_item)
         logger.info(f"DynamoDB response: {response}")
 
@@ -430,10 +407,10 @@ def create_response(status_code, body):
     return {
         'statusCode': status_code,
         'headers': {
-            "content-type":"application/json",
+            'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
             'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
         },
-        'body': body
+        'body': json.dumps(body, default=decimal_default_proc)
     }

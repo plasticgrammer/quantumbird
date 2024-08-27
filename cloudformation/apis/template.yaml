@@ -49,6 +49,11 @@ Resources:
       Type: String
       Value: !Sub "{{resolve:secretsmanager:${JwtSecret}:SecretString:JWT_SECRET_KEY}}"
 
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+
   # ------------------------------------------------------------#
   #  Lambda Function
   # ------------------------------------------------------------#
@@ -71,6 +76,13 @@ Resources:
           STAGE: !Ref Stage
       Layers:
         - !Ref CommonLayer
+      Events:
+        ProcOrganization:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /organization
+            Method: ANY
 
   MemberFunction:
     Type: AWS::Serverless::Function
@@ -85,12 +97,26 @@ Resources:
           STAGE: !Ref Stage
       Layers:
         - !Ref CommonLayer
+      Events:
+        ProcMember:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /member
+            Method: ANY
+        GetMemberProject:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /member/project
+            Method: get
 
   WeeklyReportFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${Stage}-weekly-report"
       CodeUri: ./src/WeeklyReport
+      Handler: lambda_function.lambda_handler
       Policies:
         - AmazonDynamoDBFullAccess
         - Statement:
@@ -99,12 +125,34 @@ Resources:
                 - ses:SendRawEmail
                 - ses:SendEmail
               Resource: "*"
-      Description: ""
-      Environment:
-        Variables:
-          STAGE: !Ref Stage
+      Description: "Weekly Report API Handler"
       Layers:
         - !Ref CommonLayer
+      Events:
+        ProcWeeklyReport:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /weekly-report
+            Method: ANY
+        GetReportStatus:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /weekly-report/status
+            Method: get
+        GetStatsData:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /weekly-report/stats
+            Method: get
+        SubmitFeedback:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /weekly-report/feedback
+            Method: post
 
   SESFunction:
     Type: AWS::Serverless::Function
@@ -118,7 +166,19 @@ Resources:
                 - ses:GetIdentityVerificationAttributes
                 - ses:VerifyEmailIdentity
               Resource: "*"
-      Description: ""
+      Events:
+        CheckEmailApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /ses/check
+            Method: ANY
+        VerifyEmailApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /ses/verify
+            Method: ANY
 
   ScheduleFunction:
     Type: AWS::Serverless::Function
@@ -180,11 +240,13 @@ Resources:
         GenerateTokenApi:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /secure/generate
             Method: ANY
         VerifyTokenApi:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /secure/verify
             Method: ANY
 
@@ -205,4 +267,4 @@ Resources:
 Outputs:
   ApiEndpoint:
     Description: "API Gateway endpoint URL for Secure Parameter API"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
+    Value: !Sub "https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"

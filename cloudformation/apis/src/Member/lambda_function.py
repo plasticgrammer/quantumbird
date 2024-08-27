@@ -1,9 +1,12 @@
+
+
 import json
 import logging
 import boto3
 from boto3.dynamodb.conditions import Key
 import os
 import uuid
+from decimal import Decimal
 
 print('Loading function')
 
@@ -19,90 +22,81 @@ members_table = dynamodb.Table(members_table_name)
 def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
     try:
-        # Check if the event is from API Gateway or direct invocation
-        if 'httpMethod' in event:
-            # API Gateway request
-            http_method = event['httpMethod']
-        elif 'operation' in event:
-            # Direct invocation
-            http_method = event['operation']
-        else:
-            logger.error("Invalid event structure")
-            return create_response(400, 'Invalid event structure')
+        http_method = event['httpMethod']
+        resource = event['resource']
 
-        if http_method in ['GET', 'get']:
-            return handle_get(event)
-        elif http_method in ['POST', 'create']:
-            return handle_post(event)
-        elif http_method in ['PUT', 'update']:
-            return handle_put(event)
-        elif http_method in ['DELETE', 'delete']:
-            return handle_delete(event)
-        elif http_method == 'verifyEmail':
-            return handle_verify_email(event)
-        else:
-            return create_response(400, f'Unsupported operation: {http_method}')
+        if resource == '/member/project' and http_method == 'GET':
+            return handle_get_projects(event)
+        elif resource == '/member':
+            if http_method == 'GET':
+                return handle_get(event)
+            elif http_method == 'POST':
+                return handle_post(event)
+            elif http_method == 'PUT':
+                return handle_put(event)
+            elif http_method == 'DELETE':
+                return handle_delete(event)
+        
+        return create_response(400, {'message': f'Unsupported method: {http_method} or resource: {resource}'})
     except Exception as e:
         logger.error(f"Error: {str(e)}", exc_info=True)
-        return create_response(500, f'Internal server error: {str(e)}')
+        return create_response(500, {'message': f'Internal server error: {str(e)}'})
+
+def handle_get_projects(event):
+    params = event.get('queryStringParameters', {}) or {}
+    if 'memberUuid' not in params:
+        return create_response(400, {'message': 'Missing memberUuid parameter'})
+    
+    projects = get_member_projects(params['memberUuid'])
+    return create_response(200, projects)
 
 def handle_get(event):
-    params = event.get('queryStringParameters') or event.get('payload') or {}
+    params = event.get('queryStringParameters', {}) or {}
     if not params:
-        return create_response(400, 'Missing query parameters')
+        return create_response(400, {'message': 'Missing query parameters'})
 
     if 'memberUuid' in params:
-        if 'projects' in params:
-            projects = get_member_projects(params['memberUuid'])
-            return create_response(200, projects)
-        else:
-            member = get_member(params['memberUuid'])
-            return create_response(200, member)
+        member = get_member(params['memberUuid'])
+        return create_response(200, member)
     elif 'organizationId' in params:
         members = list_members(params['organizationId'])
         return create_response(200, members)
     else:
-        return create_response(400, 'Invalid query parameters')
+        return create_response(400, {'message': 'Invalid query parameters'})
 
 def handle_post(event):
-    data = parse_body(event)
+    data = json.loads(event['body'])
     if 'memberUuid' in data:
         item = prepare_member_item(data)
         response = members_table.put_item(Item=item)
         logger.info(f"DynamoDB response: {response}")
-        return create_response(201, 'Member created successfully')
+        return create_response(201, {'message': 'Member created successfully'})
     else:
-        return create_response(400, 'Invalid data structure')
+        return create_response(400, {'message': 'Invalid data structure'})
 
 def handle_put(event):
-    data = parse_body(event)
+    data = json.loads(event['body'])
     if 'memberUuid' in data:
         if 'projects' in data:
             update_member_projects(data['memberUuid'], data['projects'])
-            return create_response(200, 'Member projects updated successfully')
+            return create_response(200, {'message': 'Member projects updated successfully'})
         else:
             item = prepare_member_item(data)
             response = members_table.put_item(Item=item)
             logger.info(f"Member update response: {response}")
-            return create_response(200, 'Member updated successfully')
+            return create_response(200, {'message': 'Member updated successfully'})
+    elif 'verifyEmail' in data:
+        return handle_verify_email(data)
     else:
-        return create_response(400, 'Invalid data structure')
+        return create_response(400, {'message': 'Invalid data structure'})
 
 def handle_delete(event):
-    params = event.get('queryStringParameters') or event.get('payload') or {}
+    params = event.get('queryStringParameters', {}) or {}
     if 'memberUuid' in params:
         delete_member(params['memberUuid'])
-        return create_response(200, 'Member deleted successfully')
+        return create_response(200, {'message': 'Member deleted successfully'})
     else:
-        return create_response(400, 'Missing required parameters')
-
-def parse_body(event):
-    if 'body' in event:
-        return json.loads(event['body'])
-    elif 'payload' in event:
-        return event['payload']
-    else:
-        return event
+        return create_response(400, {'message': 'Missing required parameters'})
 
 def prepare_member_item(member_data):
     return {
@@ -178,24 +172,29 @@ def delete_member(member_uuid):
         logger.error(f"Error deleting member: {str(e)}", exc_info=True)
         raise e
 
-def handle_verify_email(event):
-    data = parse_body(event)
+def handle_verify_email(data):
     if 'memberUuid' in data:
         member = get_member(data['memberUuid'])
         member['mailConfirmed'] = True
         response = members_table.put_item(Item=member)
         logger.info(f"Member update response: {response}")
-        return create_response(200, 'Member updated successfully')
+        return create_response(200, {'message': 'Member email verified successfully'})
     else:
-        return create_response(400, 'Invalid data structure')
+        return create_response(400, {'message': 'Invalid data structure'})
 
 def create_response(status_code, body):
     return {
         'statusCode': status_code,
         'headers': {
+            'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
             'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
         },
-        'body': body
+        'body': json.dumps(body, default=decimal_default_proc)
     }
+
+def decimal_default_proc(obj):
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError

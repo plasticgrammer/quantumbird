@@ -332,7 +332,6 @@ const handleSubmit = async () => {
     const org = { ...organization.value, ...requestSettings }
     await updateOrganization(org)
     showNotification('報告依頼設定を更新しました')
-    console.log('Request settings updated:', requestSettings)
     originalSettings.value = JSON.parse(JSON.stringify(requestSettings))
   } catch (error) {
     showNotification('報告依頼設定の保存に失敗しました', error.message || '不明なエラーが発生しました')

@@ -345,7 +345,6 @@ const formManagement = {
         await updateOrganization(organization.value)
         showNotification('組織情報を更新しました')
       }
-      console.log('Organization submitted:', organization.value)
       state.originalOrganization = JSON.parse(JSON.stringify(organization.value))
       isFormChanged.value = false
     } catch (error) {
@@ -356,7 +355,6 @@ const formManagement = {
 
 onMounted(async () => {
   const organizationId = store.getters['user/organizationId']
-  console.log('Mounted, organizationId:', organizationId)
   if (organizationId) {
     loading.value = true
     try {

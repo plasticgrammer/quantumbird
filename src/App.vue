@@ -5,6 +5,8 @@
       :color="notification.type"
       :timeout="5000"
       location="top"
+      width="90%"
+      class="mx-auto"
     >
       <div class="d-flex align-center">
         <v-icon
