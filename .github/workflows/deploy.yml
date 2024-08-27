@@ -14,32 +14,32 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: "18"
 
       - name: Install dependencies
         run: npm ci
 
-      # - name: Create amplify-config.js
-      #   run: |
-      #     echo "export default {
-      #       Auth: {
-      #         Cognito: {
-      #           region: 'ap-southeast-2',
-      #           userPoolId: '${{ secrets.APP_USER_POOL_ID }}',
-      #           userPoolClientId: '${{ secrets.APP_USER_POOL_WEB_CLIENT_ID }}',
-      #           signUpVerificationMethod: 'code',
-      #           loginWith: {
-      #             oauth: {
-      #               domain: '${{ secrets.APP_COGNITO_DOMAIN }}',
-      #               scopes: ['email', 'openid', 'aws.cognito.signin.user.admin'],
-      #               redirectSignIn: 'https://plasticgrammer.github.io/quantumbird/',
-      #               redirectSignOut: 'https://plasticgrammer.github.io/quantumbird/',
-      #               responseType: 'code'
-      #             }
-      #           }
-      #         }
-      #       }
-      #     }" >> src/config/amplify-config.js
+      - name: Create amplify-config.js
+        run: |
+          echo "export default {
+            Auth: {
+              Cognito: {
+                region: 'ap-southeast-2',
+                userPoolId: '${{ secrets.APP_USER_POOL_ID }}',
+                userPoolClientId: '${{ secrets.APP_USER_POOL_WEB_CLIENT_ID }}',
+                signUpVerificationMethod: 'code',
+                loginWith: {
+                  oauth: {
+                    domain: '${{ secrets.APP_COGNITO_DOMAIN }}',
+                    scopes: ['email', 'openid', 'aws.cognito.signin.user.admin'],
+                    redirectSignIn: 'https://plasticgrammer.github.io/quantumbird/',
+                    redirectSignOut: 'https://plasticgrammer.github.io/quantumbird/',
+                    responseType: 'code'
+                  }
+                }
+              }
+            }
+          }" >> src/config/amplify-config.js
 
       - name: Build
         run: npm run build
@@ -48,7 +48,8 @@ jobs:
           VUE_APP_USER_POOL_ID: ${{ secrets.APP_USER_POOL_ID }}
           VUE_APP_USER_POOL_WEB_CLIENT_ID: ${{ secrets.APP_USER_POOL_WEB_CLIENT_ID }}
           VUE_APP_COGNITO_DOMAIN: ${{ secrets.APP_COGNITO_DOMAIN }}
-        
+          VUE_APP_API_ENDPOINT: ${{ secrets.VUE_APP_API_ENDPOINT }}
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
