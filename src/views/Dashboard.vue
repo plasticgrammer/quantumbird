@@ -110,7 +110,8 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            - APIGateway対応<br>
+            - APIGateway対応 Cognito<br>
+            - グラフ ストレス値 undefined化
             - メール到達確認<br>
             - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>
@@ -431,7 +432,7 @@ const formatChartData = (data, dataKey) => ({
   labels: data.labels.map(label => label.split('-')[1]),
   datasets: data.datasets.map((dataset, index) => ({
     label: dataset.label,
-    data: dataset.data.map(item => item[dataKey] || 0),
+    data: dataset.data.map(item => item[dataKey]),
     borderColor: getColor(index),
     tension: 0.1,
     fill: false,

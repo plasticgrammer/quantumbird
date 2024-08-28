@@ -1,9 +1,9 @@
-import { callApi } from './apiClient'
+import { apiClient } from './apiClient'
 
 export const checkEmailVerification = async (email) => {
-  return callApi('POST', '/ses/check', { email })
+  return apiClient.post('/ses/check', { email })
 }
 
 export const verifyEmailAddress = async (email) => {
-  return callApi('POST', '/ses/verify', { email })
+  return apiClient.post('/ses/verify', { email })
 }

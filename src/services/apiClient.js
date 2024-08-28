@@ -116,10 +116,10 @@ export const callApiWithRetry = async (method, path, data = null, queryParams = 
   }
 }
 
-export default {
+export const apiClient = {
   get: (path, queryParams, options) => callApi('GET', path, null, queryParams, options),
   post: (path, data, options) => callApi('POST', path, data, null, options),
   put: (path, data, options) => callApi('PUT', path, data, null, options),
-  delete: (path, options) => callApi('DELETE', path, null, null, options),
+  delete: (path, queryParams, options) => callApi('DELETE', path, null, queryParams, options),
   // Add more methods as needed
 }

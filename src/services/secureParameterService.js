@@ -1,9 +1,9 @@
-import { callApi } from './apiClient'
+import { apiClient } from './apiClient'
 
 export const generateToken = async (params) => {
-  return callApi('POST', '/secure/generate', params)
+  return apiClient.post('/secure/generate', params)
 }
 
 export const verifyToken = async (token) => {
-  return callApi('POST', '/secure/verify', { token })
+  return apiClient.post('/secure/verify', { token })
 }

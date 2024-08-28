@@ -1,22 +1,22 @@
-import { callApi } from './apiClient'
+import { apiClient } from './apiClient'
 
 const BASE_PATH = '/organization'
 
 export const submitOrganization = async (organization) => {
-  return callApi('POST', BASE_PATH, organization)
+  return apiClient.post(BASE_PATH, organization)
 }
 
 export const updateOrganization = async (organization) => {
-  return callApi('PUT', BASE_PATH, organization)
+  return apiClient.put(BASE_PATH, organization)
 }
 
 export const deleteOrganization = async (organizationId) => {
-  return callApi('DELETE', BASE_PATH, null, { organizationId })
+  return apiClient.delete(BASE_PATH, { organizationId })
 }
 
 export const getOrganization = async (organizationId) => {
   try {
-    return await callApi('GET', BASE_PATH, null, { organizationId })
+    return await apiClient.get(BASE_PATH, { organizationId })
   } catch (error) {
     if (error.message.includes('not found')) {
       return null // 組織が見つからない場合はnullを返す
@@ -26,5 +26,5 @@ export const getOrganization = async (organizationId) => {
 }
 
 export const listOrganizations = async () => {
-  return callApi('GET', BASE_PATH)
+  return apiClient.get(BASE_PATH)
 }
