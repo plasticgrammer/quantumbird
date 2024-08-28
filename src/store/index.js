@@ -1,15 +1,15 @@
 import { createStore } from 'vuex'
 import createPersistedState from 'vuex-persistedstate'
-import userModule from './modules/user'
+import authModule from './modules/auth'
 
 export default createStore({
   modules: {
-    user: userModule
+    auth: authModule
   },
   plugins: [
     createPersistedState({
       key: 'weekly-report',
-      paths: ['user'], // userモジュールのみを永続化
+      paths: ['auth'], // 指定モジュールのみを永続化
       storage: window.localStorage
     })
   ]

@@ -8,19 +8,49 @@
       min-height="100"
       color="teal-lighten-5"
     >
-      <v-card-text class="text-center text-h6">
+      <v-card-text class="text-center">
         <div v-if="!isLoading">
           <p v-if="organization.members.length == 0">
             最初に組織情報の登録が必要です。<br>
-            メニューより［組織情報管理］を選んでください。<br>
+            <v-btn
+              color="black"
+              variant="outlined"
+              :to="{ name: 'OrganizationManagement' }"
+              class="mt-3"
+            >
+              <v-icon class="mr-1" small>
+                mdi-domain
+              </v-icon>
+              組織情報管理
+            </v-btn>
           </p>
           <p v-else-if="!organization.requestEnabled">
             報告依頼の自動送信がオフとなっています。<br>
-            メニューより［報告依頼設定］を選んでください。<br>
+            <v-btn
+              color="black"
+              variant="outlined"
+              :to="{ name: 'RequestSetting' }"
+              class="mt-3"
+            >
+              <v-icon class="mr-1" small>
+                mdi-mail
+              </v-icon>
+              報告依頼設定
+            </v-btn>
           </p>
           <p v-else>
             メンバーからの報告状況を確認してください。<br>
-            メニューより［ダッシュボード］を選んでください。<br>
+            <v-btn
+              color="black"
+              variant="outlined"
+              :to="{ name: 'Dashboard' }"
+              class="mt-3"
+            >
+              <v-icon class="mr-1" small>
+                mdi-mail
+              </v-icon>
+              ダッシュボード
+            </v-btn>
           </p>
         </div>
         <div v-else>
@@ -46,7 +76,7 @@ import { useStore } from 'vuex'
 import { getOrganization } from '../services/organizationService'
 
 const store = useStore()
-const organizationId = store.getters['user/organizationId']
+const organizationId = store.getters['auth/organizationId']
 
 const isLoading = ref(true)
 const error = ref(null)

@@ -201,7 +201,7 @@ const showNotification = inject('showNotification')
 
 const state = reactive({
   organization: {
-    organizationId: store.getters['user/organizationId'],
+    organizationId: store.getters['auth/organizationId'],
     name: '',
     members: []
   },
@@ -354,7 +354,7 @@ const formManagement = {
 }
 
 onMounted(async () => {
-  const organizationId = store.getters['user/organizationId']
+  const organizationId = store.getters['auth/organizationId']
   if (organizationId) {
     loading.value = true
     try {

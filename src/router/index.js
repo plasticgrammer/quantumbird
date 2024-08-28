@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getCurrentUser } from '@aws-amplify/auth'
+import store from '../store'
 import SignIn from '../views/SignIn.vue'
 import Support from '../views/Support.vue'
 import Dashboard from '../views/Dashboard.vue'
@@ -16,15 +16,21 @@ const routes = [
     component: SignIn,
     beforeEnter: async (to, from, next) => {
       try {
-        const user = await getCurrentUser()
-        if (user) {
+        const token = await store.dispatch('auth/fetchAuthToken')
+        if (token) {
           next('/admin')
         } else {
-          next('/signin')
+          next({
+            name: 'SignIn',
+            query: { redirect: to.fullPath }
+          })
         }
       } catch (error) {
         console.error('認証チェックエラー:', error)
-        next('/signin')
+        next({
+          name: 'SignIn',
+          query: { redirect: to.fullPath }
+        })
       }
     }
   },
@@ -103,9 +109,10 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
     try {
-      const user = await getCurrentUser()
-      if (user) {
-        // ユーザーが認証されている場合、要求されたルートに進む
+      const token = await store.dispatch('auth/fetchAuthToken')
+      if (token) {
+        // トークンが取得できた場合、ユーザー情報も取得
+        await store.dispatch('auth/fetchUser')
         next()
       } else {
         // ユーザーが認証されていない場合、サインインページにリダイレクト

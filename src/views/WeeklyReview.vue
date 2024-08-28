@@ -44,7 +44,7 @@ const { getWeekFromString, getStringFromWeek, isWeekInRange } = useCalendar()
 const router = useRouter()
 
 const store = useStore()
-const organizationId = store.getters['user/organizationId']
+const organizationId = store.getters['auth/organizationId']
 const selectedWeek = ref(null)
 const isValidWeek = ref(true)
 

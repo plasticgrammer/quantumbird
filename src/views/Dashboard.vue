@@ -297,7 +297,7 @@ const dayOfWeekToNumber = {
   saturday: 6
 }
 
-const organizationId = computed(() => store.getters['user/organizationId'])
+const organizationId = store.getters['auth/organizationId']
 const isAdmin = ref(true)
 const calendarWeeks = createWeeks(6)
 const weekIndex = ref(calendarWeeks.length - 1)
@@ -338,7 +338,7 @@ const weeklyReportLink = computed(() => {
   return router.resolve({
     name: 'WeeklyReport',
     params: {
-      organizationId: organizationId.value,
+      organizationId: organizationId,
       memberUuid: selectedMember.value,
       weekString: weekString.value,
     },
@@ -391,7 +391,7 @@ const formatDate = (date) => {
 
 const fetchOrganizationInfo = async () => {
   try {
-    const org = await getOrganization(organizationId.value)
+    const org = await getOrganization(organizationId)
     organization.value = org
   } catch (err) {
     console.error('Failed to fetch organization info:', err)
@@ -402,7 +402,7 @@ const fetchOrganizationInfo = async () => {
 
 const fetchReportStatus = async () => {
   try {
-    const status = await getReportStatus(organizationId.value, weekString.value)
+    const status = await getReportStatus(organizationId, weekString.value)
     reportStatus.value = {
       ...status,
       reportedCount: status.pending + status.inFeedback + status.confirmed,
@@ -417,7 +417,7 @@ const fetchReportStatus = async () => {
 
 const fetchStatsData = async () => {
   try {
-    const data = await getStatsData(organizationId.value)
+    const data = await getStatsData(organizationId)
     overtimeData.value = formatChartData(data, 'overtimeHours')
     stressData.value = formatChartData(data, 'stress')
   } catch (err) {

@@ -1,5 +1,3 @@
-// src/config/amplify-config.js
-
 function getRedirectUrl() {
   if (process.env.NODE_ENV === 'development') {
     // 開発環境では環境変数からポート番号を取得

@@ -175,7 +175,7 @@ import { getOrganization, updateOrganization } from '../services/organizationSer
 import { checkEmailVerification, verifyEmailAddress } from '../services/sesService'
 
 const store = useStore()
-const organizationId = computed(() => store.getters['user/organizationId'])
+const organizationId = store.getters['auth/organizationId']
 
 const form = ref(null)
 const loading = ref(false)
@@ -341,7 +341,7 @@ const handleSubmit = async () => {
 onMounted(async () => {
   loading.value = true
   try {
-    const result = await getOrganization(organizationId.value)
+    const result = await getOrganization(organizationId)
     organization.value = result
     if (result && Object.keys(result).length > 0) {
       Object.assign(requestSettings, {

@@ -228,7 +228,7 @@ const handleSignIn = async () => {
 
 const signInUser = async () => {
   await signIn({ username: signInEmail.value, password: signInPassword.value })
-  await store.dispatch('user/fetchUser')
+  await store.dispatch('auth/fetchUser')
   router.push('/admin')
 }
 

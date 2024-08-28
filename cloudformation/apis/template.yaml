@@ -12,6 +12,7 @@ Globals:
     Environment:
       Variables:
         TZ: Asia/Tokyo
+        BASE_URL: !If [ IsProd, "https://plasticgrammer.github.io/quantumbird/", "http://localhost:3000" ]
   Api:
     OpenApiVersion: 3.0.2
     Cors:
@@ -53,6 +54,21 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: !Ref Stage
+      AccessLogSetting:
+        DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
+        Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user", "requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod", "resourcePath":"$context.resourcePath", "status":"$context.status", "protocol":"$context.protocol", "responseLength":"$context.responseLength" }'
+      MethodSettings:
+        - HttpMethod: '*'
+          ResourcePath: '/*'
+          LoggingLevel: ERROR
+          DataTraceEnabled: true
+          MetricsEnabled: true
+
+  ApiGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/apigateway/${Stage}-api-gateway-logs"
+      RetentionInDays: 7
 
   # ------------------------------------------------------------#
   #  Lambda Function

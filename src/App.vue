@@ -177,9 +177,9 @@ const showConfirmDialog = ref(false)
 const showDropdown = ref(false)
 
 const user = ref({
-  organizationId: store.getters['user/organizationId'],
-  username: store.getters['user/name'],
-  email: store.getters['user/email']
+  organizationId: store.getters['auth/organizationId'],
+  username: store.getters['auth/name'],
+  email: store.getters['auth/email']
 })
 
 const toggleDrawerMode = () => {
