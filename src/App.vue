@@ -8,7 +8,7 @@
       width="90%"
       class="mx-auto"
     >
-      <div class="d-flex align-center">
+      <div class="d-flex align-center py-1">
         <v-icon
           :icon="getNotificationIcon"
           class="mr-2"
@@ -56,6 +56,8 @@
             <v-list-item-title>
               <v-img
                 src="@/assets/logo.png"
+                class="cursor-pointer"
+                @click="navigateTo({ name: 'Support' })"
               ></v-img>
             </v-list-item-title>
             <template #append>
