@@ -1,5 +1,9 @@
 <template>
-  <v-container>
+  <div class="wave"></div>
+  <div class="wave"></div>
+  <div class="wave"></div>
+  <div class="wave"></div>
+  <v-container class="content-container">
     <v-card 
       class="mx-auto mt-8 mb-12 border-md d-flex align-center"
       elevation="0"
@@ -64,8 +68,7 @@
     </v-card>
     <v-img
       src="@/assets/images/rakko.png"
-      max-width="360"
-      class="mx-auto"
+      class="on-wave mx-auto"
     ></v-img>
   </v-container>
 </template>
@@ -109,3 +112,73 @@ const fetchAll = async () => {
 
 onMounted(fetchAll)
 </script>
+
+<style>
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+.content-container {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.on-wave {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 340px;
+  width: 100%;
+}
+
+.wave {
+  position: absolute;
+  bottom: 50px;
+  left: 0;
+  width: 200%;
+  height: 150px;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 88.7"><path d="M800 56.9c-155.5 0-204.9-50-405.5-49.9-200 0-250 49.9-394.5 49.9v31.8h800v-.2-31.6z" fill="%2399BFFF"/></svg>');
+  animation: wave 21s linear infinite;
+  transform: translate3d(0, 0, 0);
+  opacity: 0.9;
+  z-index: 2;
+}
+
+.wave:nth-of-type(2) {
+  bottom: 50px;
+  animation: wave 14s linear reverse infinite;
+  opacity: 0.7;
+}
+
+.wave:nth-of-type(3) {
+  bottom: 65px;
+  animation: wave 42s linear infinite;
+  opacity: 0.5;
+}
+
+.wave:nth-of-type(4) {
+  bottom: 0px;
+  background: #99bfff;
+  height: 50px;
+  opacity: 1;
+}
+
+@keyframes wave {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-25%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+</style>
