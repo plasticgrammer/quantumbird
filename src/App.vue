@@ -1,13 +1,15 @@
 <template>
   <v-app id="main">
-    <div class="wave"></div>
-    <div class="wave"></div>
-    <v-img
-      src="@/assets/images/rakko.png"
-      max-width="340"
-      class="on-wave mx-auto"
-      :style="{ marginLeft: (isRailMode ? 56 : 180) + 'px !important' }"
-    ></v-img>
+    <div :style="waveStyles">
+      <div class="wave"></div>
+      <div class="wave"></div>
+      <v-img
+        src="@/assets/images/rakko.png"
+        max-width="340"
+        class="on-wave mx-auto"
+        :style="{ marginLeft: (isRailMode ? 56 : 180) + 'px !important' }"
+      ></v-img>
+    </div>
 
     <v-snackbar
       v-model="notification.show"
@@ -186,6 +188,13 @@ const isHovered = ref(false)
 const showConfirmDialog = ref(false)
 const showDropdown = ref(false)
 
+const showWave = ref(true)
+const waveStyles = computed(() => {
+  return {
+    display: showWave.value ? 'block' : 'none',
+  }
+})
+
 const user = ref({
   organizationId: store.getters['auth/organizationId'],
   username: store.getters['auth/name'],
@@ -303,10 +312,11 @@ provide('showNotification', showNotification)
 <style>
 #main {
   position: relative;
+  background-color: #F1F8FE;
   z-index: 0;
 }
 
-.wave {
+.wave { /* blue-lighten-2 64B5F6 */
   position: fixed;
   bottom: 0;
   left: 0;
