@@ -1,5 +1,14 @@
 <template>
   <v-app id="main">
+    <div class="wave"></div>
+    <div class="wave"></div>
+    <v-img
+      src="@/assets/images/rakko.png"
+      max-width="340"
+      class="on-wave mx-auto"
+      :style="{ marginLeft: (isRailMode ? 56 : 180) + 'px !important' }"
+    ></v-img>
+
     <v-snackbar
       v-model="notification.show"
       :color="notification.type"
@@ -35,7 +44,7 @@
         permanent
         location="left"
         :width="235"
-        color="teal-lighten-2"
+        color="blue-grey-darken-2"
         class="navigation-drawer d-print-none"
         @mouseenter="onDrawerEnter"
         @mouseleave="onDrawerLeave"
@@ -48,7 +57,6 @@
               <v-icon 
                 v-ripple
                 icon="mdi-menu"
-                color="white" 
                 class="opacity-100 mr-1"
                 @click="toggleDrawerMode"
               ></v-icon>
@@ -90,7 +98,7 @@
                 class="dense-list-item"
               >
                 <template #prepend>
-                  <v-avatar color="teal-lighten-2">
+                  <v-avatar>
                     <v-icon icon="mdi-account-circle"></v-icon>
                   </v-avatar>
                 </template>
@@ -109,7 +117,7 @@
               activator="parent"
               location="top"
             >
-              <v-list class="pa-0 bg-teal-lighten-2">
+              <v-list class="pa-0">
                 <v-list-item>
                   <v-list-item-title class="text-body-2 opacity-60">{{ user.email }}</v-list-item-title>
                 </v-list-item>
@@ -293,8 +301,64 @@ provide('showNotification', showNotification)
 </script>
 
 <style>
-.dense-list-item .v-list-item__spacer {
-  width: 8px !important;
+#main {
+  position: relative;
+  z-index: 0;
+}
+
+.wave {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 300%;
+  height: 200px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 200'%3E%3Cdefs%3E%3ClinearGradient id='waveGradient' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%2364B5F6;stop-opacity:0.6' /%3E%3Cstop offset='100%25' style='stop-color:%2364B5F6;stop-opacity:0.78' /%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 50c200 0 250 50 400 50 150 0 200-50 400-50v150H0z' fill='url(%23waveGradient)'/%3E%3C/svg%3E");
+  animation: wave 96s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
+  transform: translate3d(0, 0, 0);
+  z-index: -1;
+}
+
+.wave:nth-of-type(2) {
+  animation: wave 60s cubic-bezier(0.36, 0.45, 0.63, 0.53) reverse infinite;
+  opacity: 0.7;
+  z-index: -3;
+}
+
+@keyframes wave {
+  0% {
+    transform: translateX(-5%);
+  }
+  50% {
+    transform: translateX(-30%);
+  }
+  100% {
+    transform: translateX(-5%);
+  }
+}
+
+.on-wave {
+  position: fixed;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  animation: float 16s ease-in-out infinite;
+  z-index: -2;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  25% {
+    transform: translateX(-49%) translateY(-20px);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-10px);
+  }
+  75% {
+    transform: translateX(-51%) translateY(-30px);
+  }
 }
 </style>
 

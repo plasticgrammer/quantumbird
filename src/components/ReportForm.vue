@@ -634,7 +634,7 @@ const handleSubmit = async () => {
 
 <style scoped>
 .report-form-container {
-  padding: 16px 0 24px;
+  padding: 16px 0 320px;
 }
 
 .project-list-item:hover {

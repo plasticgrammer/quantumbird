@@ -48,6 +48,10 @@ h3 {
   width: 20px !important;
 }
 
+.dense-list-item .v-list-item__spacer {
+  width: 8px !important;
+}
+
 /*
  * app common style
  */
@@ -68,6 +72,5 @@ h3 {
 }
 
 .form-disabled {
-  opacity: 0.7;
   pointer-events: none;
 }
