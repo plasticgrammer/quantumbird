@@ -5,9 +5,10 @@
       <div class="wave"></div>
       <v-img
         src="@/assets/images/rakko.png"
-        max-width="340"
+        max-width="50%"
+        width="340"
         class="on-wave mx-auto"
-        :style="{ marginLeft: (isRailMode ? 56 : 180) + 'px !important' }"
+        :style="{ marginLeft: (isMobile ? 0 : (isRailMode ? 56 : 180)) + 'px !important' }"
       ></v-img>
     </div>
 
@@ -312,11 +313,16 @@ provide('showNotification', showNotification)
 <style>
 #main {
   position: relative;
-  background-color: #F1F8FE;
+  background-color: #f1f8fe;
   z-index: 0;
 }
 
-.wave { /* blue-lighten-2 64B5F6 */
+.v-main {
+  padding-bottom: 280px;
+}
+
+.wave {
+  /* blue-lighten-2 64B5F6 */
   position: fixed;
   bottom: 0;
   left: 0;
@@ -348,7 +354,7 @@ provide('showNotification', showNotification)
 
 .on-wave {
   position: fixed;
-  bottom: 0px;
+  bottom: -10px;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
@@ -357,17 +363,18 @@ provide('showNotification', showNotification)
 }
 
 @keyframes float {
-  0%, 100% {
-    transform: translateX(-50%) translateY(0);
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(-0px);
   }
   25% {
-    transform: translateX(-49%) translateY(-20px);
+    transform: translateX(-49%) translateY(-25px);
   }
   50% {
     transform: translateX(-50%) translateY(-10px);
   }
   75% {
-    transform: translateX(-51%) translateY(-30px);
+    transform: translateX(-51%) translateY(-35px);
   }
 }
 </style>
