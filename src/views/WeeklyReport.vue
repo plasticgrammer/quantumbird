@@ -52,25 +52,17 @@
           </span>
         </v-fab>
       </template>
-      <!-- 
-      <v-list
-        key="1"
-        :lines="false"
-        density="compact"
-      >
-        <v-list-subheader></v-list-subheader>
-        <v-list-item
-          v-for="(item, i) in [{icon:'mdi-cog', text:'設定'}]"
-          :key="i"
-          :value="item"
-          color="primary"
+      <v-list key="1" class="px-3">
+        <a
+          href="https://forms.gle/suRGEcRXE33xvFu19"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-decoration-none"
         >
-          <v-list-item-title>
-            <v-icon :icon="item.icon" class="mr-2"></v-icon>
-            {{ item.text }}
-          </v-list-item-title>
-        </v-list-item>
-      </v-list> -->
+          フィードバック
+          <v-icon icon="mdi-open-in-new" class="ml-1" size="x-small" end />
+        </a>
+      </v-list>
     </v-speed-dial>
 
     <v-dialog 

@@ -15,9 +15,12 @@
         :item-labels="itemLabels"
         :length="length"
         :readonly="readonly"
+        :empty-icon="negative ? 'mdi-emoticon-neutral-outline' : 'mdi-emoticon-neutral-outline'"
+        :full-icon="negative ? 'mdi-emoticon-dead' : 'mdi-emoticon'"
+        :half-icon="negative ? 'mdi-emoticon-neutral-outline' : 'mdi-emoticon-neutral-outline'"
+        :active-color="negative ? 'blue' : 'orange-accent-4'" 
         size="x-large"
         density="compact"
-        :active-color="negative ? 'blue' : 'orange-accent-4'" 
         color="grey"
         @update:model-value="emit('update:modelValue', $event)"
       ></v-rating>
