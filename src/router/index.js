@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import store from '../store'
 import SignIn from '../views/SignIn.vue'
-import Support from '../views/Support.vue'
+import Overview from '../views/Overview.vue'
 import Dashboard from '../views/Dashboard.vue'
 import WeeklyReport from '../views/WeeklyReport.vue'
 import WeeklyReview from '../views/WeeklyReview.vue'
@@ -42,8 +42,8 @@ const routes = [
   },
   {
     path: '/admin',
-    name: 'Support',
-    component: Support,
+    name: 'Overview',
+    component: Overview,
     meta: { requiresAuth: true }
   },
   {

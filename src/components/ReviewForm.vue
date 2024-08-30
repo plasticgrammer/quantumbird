@@ -6,7 +6,7 @@
     >
       <v-col cols="12" md="10" class="py-0">
         <v-card
-          class="px-2 align-center"
+          class="px-2 align-center bg-transparent"
           elevation="0"
         >
           <v-chip-group

@@ -38,8 +38,27 @@
               報告依頼設定
             </v-btn>
           </p>
+          <p v-else-if="reportStatus['pending']">
+            今週分の確認待ちの報告があります。<br>
+            <v-badge 
+              color="info"
+              :content="reportStatus['pending']"
+              class="mt-3"
+            >
+              <v-btn 
+                color="black"
+                variant="outlined"
+                :to="{ name: 'WeeklyReview', params: { weekString } }" 
+              >
+                <v-icon class="mr-1" small left>
+                  mdi-calendar-multiple-check
+                </v-icon>
+                週次報告レビュー
+              </v-btn>
+            </v-badge>
+          </p>
           <p v-else>
-            メンバーからの報告状況を確認してください。<br>
+            各種状況を確認してください。<br>
             <v-btn
               color="black"
               variant="outlined"
@@ -47,7 +66,7 @@
               class="mt-3"
             >
               <v-icon class="mr-1" small>
-                mdi-mail
+                mdi-view-dashboard
               </v-icon>
               ダッシュボード
             </v-btn>
@@ -68,14 +87,20 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useStore } from 'vuex'
+import { useCalendar } from '../composables/useCalendar'
 import { getOrganization } from '../services/organizationService'
+import { getReportStatus } from '../services/reportService'
 
 const store = useStore()
 const organizationId = store.getters['auth/organizationId']
+const weekString = ref('')
+
+const { getCurrentWeekString } = useCalendar()
 
 const isLoading = ref(true)
 const error = ref(null)
 const organization = ref('')
+const reportStatus = ref('')
 
 const fetchOrganizationInfo = async () => {
   try {
@@ -87,11 +112,28 @@ const fetchOrganizationInfo = async () => {
   }
 }
 
+const fetchReportStatus = async () => {
+  try {
+    weekString.value = getCurrentWeekString()
+    const status = await getReportStatus(organizationId, getCurrentWeekString())
+    reportStatus.value = {
+      ...status,
+      reportedCount: status.pending + status.inFeedback + status.confirmed,
+      totalCount: status.totalCount || 0,
+    }
+  } catch (err) {
+    console.error('Failed to fetch report status:', err)
+    error.value = '報告状況の取得に失敗しました: ' + err.message
+    throw err
+  }
+}
+
 const fetchAll = async () => {
   isLoading.value = true
   try {
     await Promise.all([
-      fetchOrganizationInfo()
+      fetchOrganizationInfo(),
+      fetchReportStatus()
     ])
     // initChart の呼び出しを削除
   } catch (err) {

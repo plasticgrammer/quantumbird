@@ -112,6 +112,8 @@
           <v-card-text class="pt-1 pb-3">
             - APIGateway対応 Cognito<br>
             - グラフ ストレス値 undefined化
+            - 報告共有ページに組織名表示<br>
+            - 背景非表示指定<br>
             - メール到達確認<br>
             - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>

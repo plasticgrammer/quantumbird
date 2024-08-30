@@ -131,6 +131,10 @@ export function useCalendar() {
     return `${year}-W${(week - 1).toString().padStart(2, '0')}`
   }
 
+  const getCurrentWeekString = () => {
+    return getStringFromWeek(calendarWeeks.value.slice(-1)[0])
+  }
+
   const getWeekJpText = (relativeWeekIndex) => {
     if (relativeWeekIndex === 0) return '今週'
     if (relativeWeekIndex === -1) return '先週'
@@ -159,6 +163,7 @@ export function useCalendar() {
     getStringFromWeek,
     getWeekFromString,
     getPreviousWeekString,
+    getCurrentWeekString,
     getWeekJpText,
     formatDateRange
   }
