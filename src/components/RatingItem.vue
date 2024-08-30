@@ -10,6 +10,11 @@
       </div>
     </v-col>
     <v-col cols="12" md="8" class="d-flex align-middle pa-2">
+      <!--
+        :empty-icon="negative ? 'mdi-robot-outline' : 'mdi-star-outline'"
+        :full-icon="negative ? 'mdi-robot-dead' : 'mdi-star-face'"
+        :half-icon="negative ? 'mdi-robot-outline' : 'mdi-star-outline'"
+      -->
       <v-rating
         :model-value="modelValue"
         :item-labels="itemLabels"
@@ -18,10 +23,10 @@
         :empty-icon="negative ? 'mdi-emoticon-neutral-outline' : 'mdi-emoticon-neutral-outline'"
         :full-icon="negative ? 'mdi-emoticon-dead' : 'mdi-emoticon'"
         :half-icon="negative ? 'mdi-emoticon-neutral-outline' : 'mdi-emoticon-neutral-outline'"
-        :active-color="negative ? 'blue' : 'orange-accent-4'" 
+        :active-color="negative ? 'blue-lighten-1' : 'orange-accent-3'" 
         size="x-large"
         density="compact"
-        color="grey"
+        color="grey-lighten-2"
         @update:model-value="emit('update:modelValue', $event)"
       ></v-rating>
     </v-col>
