@@ -1,16 +1,15 @@
 <template>
-  <v-app id="main">
-    <div :style="waveStyles">
-      <div class="wave"></div>
-      <div class="wave"></div>
+  <v-app id="main" :style="appStyle">
+    <template v-if="!$route.meta.hideAnimation">
+      <div v-for="i in 2" :key="i" class="wave"></div>
       <v-img
         src="@/assets/images/rakko.png"
         max-width="50%"
         width="340"
         class="on-wave mx-auto"
-        :style="{ marginLeft: (isMobile ? 0 : (isRailMode ? 56 : 180)) + 'px !important' }"
+        :style="bgImageStyle"
       ></v-img>
-    </div>
+    </template>
 
     <v-snackbar
       v-model="notification.show"
@@ -43,19 +42,17 @@
       <v-navigation-drawer
         v-if="!isMobile"
         v-model="drawer"
-        :rail="isRailMode && !isHovered && !showDropdown"
+        :rail="isRailModeActive"
         permanent
         location="left"
         :width="235"
         color="blue-grey-darken-2"
         class="navigation-drawer d-print-none"
-        @mouseenter="onDrawerEnter"
-        @mouseleave="onDrawerLeave"
+        @mouseenter="isHovered = true"
+        @mouseleave="isHovered = false"
       >
         <v-list>
-          <v-list-item
-            class="dense-list-item pr-2"
-          >
+          <v-list-item class="dense-list-item pr-2">
             <template #prepend>
               <v-icon 
                 v-ripple
@@ -125,9 +122,7 @@
                   <v-list-item-title class="text-body-2 opacity-60">{{ user.email }}</v-list-item-title>
                 </v-list-item>
                 <v-divider></v-divider>
-                <v-list-item 
-                  @click="handleSignOut"
-                >
+                <v-list-item @click="handleSignOut">
                   <template #prepend>
                     <v-icon icon="mdi-logout-variant"></v-icon>
                   </template>
@@ -158,15 +153,13 @@
       </v-bottom-navigation>
     </template>
 
-    <v-main :class="{ 'noshift': isRailMode && (isHovered || showDropdown) }">
+    <v-main :class="{ 'noshift': isRailModeActive }">
       <div class="content-wrapper">
         <router-view />
       </div>
     </v-main>
 
-    <div v-show="showConfirmDialog">
-      <ConfirmationDialog ref="confirmDialog" />
-    </div>
+    <ConfirmationDialog v-if="showConfirmDialog" ref="confirmDialog" />
   </v-app>
 </template>
 
@@ -189,31 +182,24 @@ const isHovered = ref(false)
 const showConfirmDialog = ref(false)
 const showDropdown = ref(false)
 
-const showWave = ref(true)
-const waveStyles = computed(() => {
-  return {
-    display: showWave.value ? 'block' : 'none',
-  }
-})
-
-const user = ref({
+const user = computed(() => ({
   organizationId: store.getters['auth/organizationId'],
   username: store.getters['auth/name'],
   email: store.getters['auth/email']
-})
+}))
+
+const isRailModeActive = computed(() => isRailMode.value && !isHovered.value && !showDropdown.value)
+
+const appStyle = computed(() => ({
+  paddingBottom: (router.currentRoute.value.meta.hideAnimation ? 30 : 280) + 'px'
+}))
+
+const bgImageStyle = computed(() => ({
+  marginLeft: (isMobile.value ? 0 : (isRailMode.value ? 56 : 180)) + 'px !important'
+}))
 
 const toggleDrawerMode = () => {
   isRailMode.value = !isRailMode.value
-  isHovered.value = false
-}
-
-const onDrawerEnter = () => {
-  if (isRailMode.value) {
-    isHovered.value = true
-  }
-}
-
-const onDrawerLeave = () => {
   isHovered.value = false
 }
 
@@ -252,16 +238,11 @@ const notification = reactive({
 
 const getNotificationIcon = computed(() => {
   switch (notification.type) {
-  case 'success':
-    return 'mdi-check-circle'
-  case 'error':
-    return 'mdi-alert-circle'
-  case 'warning':
-    return 'mdi-alert'
-  case 'info':
-    return 'mdi-information'
-  default:
-    return 'mdi-bell'
+  case 'success': return 'mdi-check-circle'
+  case 'error': return 'mdi-alert-circle'
+  case 'warning': return 'mdi-alert'
+  case 'info': return 'mdi-information'
+  default: return 'mdi-bell'
   }
 })
 
@@ -315,10 +296,6 @@ provide('showNotification', showNotification)
   position: relative;
   background-color: #f1f8fe;
   z-index: 0;
-}
-
-.v-main {
-  padding-bottom: 280px;
 }
 
 .wave {

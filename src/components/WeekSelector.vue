@@ -119,6 +119,6 @@ watch(() => props.selectedWeek, (newValue) => {
 
 .show-all-weeks {
   transition: all 0.3s ease;
-  transform: scale(1.02);
+  transform: scale(1.01);
 }
 </style>

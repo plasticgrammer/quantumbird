@@ -178,7 +178,7 @@
               class="mt-4 border-sm"
               elevation="2"
               variant="flat"
-              color="white"
+              color="light-blue-lighten-5"
               title="評価"
             >
               <template #prepend>

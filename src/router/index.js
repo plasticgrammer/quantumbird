@@ -38,7 +38,7 @@ const routes = [
     path: '/signin',
     name: 'SignIn',
     component: SignIn,
-    meta: { hideNavigation: true }
+    meta: { hideNavigation: true, hideAnimation: true }
   },
   {
     path: '/admin',
@@ -97,7 +97,7 @@ const routes = [
     name: 'WeeklyReportSummary',
     component: WeeklyReportSummary,
     props: true,
-    meta: { hideNavigation: true }
+    meta: { hideNavigation: true, hideAnimation: true }
   },
 ]
 

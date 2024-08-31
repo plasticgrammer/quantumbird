@@ -128,13 +128,22 @@ def handle_put(event):
         logger.error(f"Error updating report: {str(e)}", exc_info=True)
         return create_response(500, f'Failed to update report: {str(e)}')
 
+def float_to_decimal(obj):
+    if isinstance(obj, float):
+        return Decimal(str(obj))
+    elif isinstance(obj, dict):
+        return {k: float_to_decimal(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [float_to_decimal(v) for v in obj]
+    return obj
+
 def prepare_item(report_data, existing_report=None):
     item = {
         'memberUuid': report_data.get('memberUuid'),
         'weekString': report_data.get('weekString'),
         'organizationId': report_data.get('organizationId'),
         'projects': report_data.get('projects'),
-        'overtimeHours': report_data.get('overtimeHours'),
+        'overtimeHours': float_to_decimal(report_data.get('overtimeHours')),
         'issues': report_data.get('issues'),
         'improvements': report_data.get('improvements'),
         'rating': report_data.get('rating', {}),

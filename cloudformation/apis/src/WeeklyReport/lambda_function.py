@@ -151,10 +151,11 @@ def get_reports_by_organization(organization_id, week_string):
             IndexName='OrganizationWeekIndex',
             KeyConditionExpression=Key('organizationId').eq(organization_id) & Key('weekString').eq(week_string)
         )
-        return response['Items']
+        items = response['Items']
+        return items
     except Exception as e:
-        logger.error(f"Error querying reports: {str(e)}", exc_info=True)
-        raise e
+        logger.error(f"Error querying reports for org {organization_id}, week {week_string}: {str(e)}", exc_info=True)
+        return []  # Return an empty list instead of raising an exception
 
 def get_report(member_uuid, week_string):
     try:
@@ -216,6 +217,20 @@ def get_member_names(member_uuids):
     
     return member_names
 
+def get_last_5_weeks():
+    today = datetime.now(TIMEZONE)
+    current_week = today.isocalendar()[1]
+    current_year = today.year
+    weeks = []
+    for i in range(5):
+        week = current_week - i
+        year = current_year
+        if week <= 0:
+            year -= 1
+            week = datetime(year, 12, 28).isocalendar()[1] + week
+        weeks.append(f"{year}-W{week:02d}")
+    return list(reversed(weeks))
+
 def handle_get_stats_data(event):
     params = event.get('queryStringParameters', {}) or {}
     if 'organizationId' not in params:
@@ -223,6 +238,7 @@ def handle_get_stats_data(event):
 
     organization_id = params['organizationId']
     weeks = get_last_5_weeks()
+    
     stats_data = {
         'labels': weeks,
         'datasets': []
@@ -233,55 +249,54 @@ def handle_get_stats_data(event):
     for week in weeks:
         try:
             reports = get_reports_by_organization(organization_id, week)
+            
             for report in reports:
                 member_uuid = report['memberUuid']
                 member_uuids.add(member_uuid)
                 if member_uuid not in members:
                     members[member_uuid] = {
-                        'data': [{'overtimeHours': 0, 'achievement': 0, 'disability': 0, 'stress': 0} for _ in range(5)]
+                        'data': [{
+                            'week': w,
+                            'overtimeHours': 0,
+                            'achievement': None,
+                            'disability': None,
+                            'stress': None
+                        } for w in weeks]
                     }
                 week_index = weeks.index(week)
                 stats = members[member_uuid]['data'][week_index]
-                stats['overtimeHours'] = float(report.get('overtimeHours', 0))
+                
+                # Safely convert overtimeHours to float
+                overtime_hours = report.get('overtimeHours')
+                stats['overtimeHours'] = float(overtime_hours) if overtime_hours is not None else 0
 
                 rating = report.get('rating', {})
-                stats['achievement'] = float(rating.get('achievement', 0))
-                stats['disability'] = float(rating.get('disability', 0))
-                stats['stress'] = float(rating.get('stress', 0))
+                stats['achievement'] = rating.get('achievement')
+                stats['disability'] = rating.get('disability')
+                stats['stress'] = rating.get('stress')
+                
         except Exception as e:
-            logger.error(f"Error fetching reports for week {week}: {str(e)}", exc_info=True)
+            logger.error(f"Error processing reports for week {week}: {str(e)}", exc_info=True)
+            # Continue to next week instead of breaking the loop
 
     member_names = get_member_names(list(member_uuids))
+    logger.info(f"Retrieved names for {len(member_names)} members")
 
     stats_data['datasets'] = [
         {
             'label': member_names.get(member_uuid, f'Unknown ({member_uuid})'),
-            'data': [
-                {
-                    'overtimeHours': week_data['overtimeHours'],
-                    'achievement': week_data['achievement'],
-                    'disability': week_data['disability'],
-                    'stress': week_data['stress']
-                } for week_data in member_data['data']
-            ]
+            'data': member_data['data']
         }
         for member_uuid, member_data in members.items()
     ]
 
+    logger.info(f"Final stats_data: {json.dumps(stats_data, default=str)}")
     return create_response(200, stats_data)
 
 def get_previous_week_string():
     today = datetime.now()
     last_week = today - timedelta(weeks=1)
     return f"{last_week.year}-W{last_week.isocalendar()[1]:02d}"
-
-def get_last_5_weeks():
-    today = datetime.now()
-    weeks = []
-    for i in range(5):
-        date = today - timedelta(weeks=i)
-        weeks.append(f"{date.year}-W{date.isocalendar()[1]:02d}")
-    return weeks[::-1]
 
 def decimal_default_proc(obj):
     if isinstance(obj, Decimal):
