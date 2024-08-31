@@ -68,7 +68,7 @@
               <v-img
                 src="@/assets/logo.png"
                 class="cursor-pointer"
-                @click="navigateTo({ name: 'Support' })"
+                @click="navigateTo({ name: 'Overview' })"
               ></v-img>
             </v-list-item-title>
             <template #append>

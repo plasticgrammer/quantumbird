@@ -313,8 +313,8 @@
 <script setup>
 import { ref, computed, watchEffect, onMounted, inject } from 'vue'
 import { useReport } from '../composables/useReport'
-import { listReports, updateReport, submitFeedback } from '../services/reportService'
-import { listMembers } from '../services/memberService'
+import { listReports, listMembers } from '../services/publicService'
+import { updateReport, submitFeedback } from '../services/reportService'
 import { generateToken } from '../services/secureParameterService'
 import RatingItem from '../components/RatingItem.vue'
 

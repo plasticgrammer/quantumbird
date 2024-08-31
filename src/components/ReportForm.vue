@@ -351,8 +351,7 @@
 
 <script setup>
 import { ref, computed, nextTick, reactive, inject, onMounted } from 'vue'
-import { getReport, submitReport } from '../services/reportService'
-import { getMemberProjects } from '../services/memberService'
+import { getReport, submitReport, getMemberProjects } from '../services/publicService'
 import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
 import { useResponsive } from '../composables/useResponsive'
