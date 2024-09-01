@@ -187,7 +187,7 @@ const user = computed(() => ({
   email: store.getters['auth/email']
 }))
 
-const isRailModeActive = computed(() => isRailMode.value && !isHovered.value && !showDropdown.value)
+const isRailModeActive = computed(() => !isMobile.value && isRailMode.value && !isHovered.value && !showDropdown.value)
 
 const appStyle = computed(() => ({
   paddingBottom: (router.currentRoute.value.meta.hideAnimation ? 30 : 260) + 'px'
