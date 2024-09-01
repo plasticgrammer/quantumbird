@@ -178,7 +178,7 @@
               class="mt-4 border-sm"
               elevation="2"
               variant="flat"
-              color="light-blue-lighten-5"
+              color="blue-lighten-5"
               title="評価"
             >
               <template #prepend>
@@ -371,7 +371,22 @@ const copyShareUrl = async () => {
     const params = { organizationId: props.organizationId, weekString: props.weekString }
     const result = await generateToken(params)
     
-    const rootUrl = window.location.origin
+    // ルートURLを取得する関数
+    const getRootUrl = () => {
+      const { protocol, host, pathname } = window.location
+      const pathSegments = pathname.split('/').filter(segment => segment !== '')
+      
+      // GitHub Pages の場合、最初のセグメントがリポジトリ名
+      const repoName = pathSegments[0]
+      
+      // 開発環境の場合は window.location.origin をそのまま使用
+      // 本番環境（GitHub Pages）の場合は、リポジトリ名を含めたパスを使用
+      return process.env.NODE_ENV === 'production' 
+        ? `${protocol}//${host}/${repoName}`
+        : `${protocol}//${host}`
+    }
+
+    const rootUrl = getRootUrl()
     const shareUrl = `${rootUrl}/view/${result.token}`
     
     await navigator.clipboard.writeText(shareUrl)
