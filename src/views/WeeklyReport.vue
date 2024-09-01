@@ -109,7 +109,7 @@ import { useRouter } from 'vue-router'
 import WeekSelector from '../components/WeekSelector.vue'
 import ReportForm from '../components/ReportForm.vue'
 import { useCalendar } from '../composables/useCalendar'
-import { getMember } from '../services/memberService'
+import { getMember } from '../services/publicService'
 
 const props = defineProps({
   organizationId: {

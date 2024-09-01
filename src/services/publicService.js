@@ -33,6 +33,10 @@ export const listMembers = async (organizationId) => {
   return apiClient.get(`${BASE_PATH}/member`, { organizationId })
 }
 
+export const getMember = async (memberUuid) => {
+  return apiClient.get(`${BASE_PATH}/member`, { memberUuid })
+}
+
 export const getMemberProjects = async (memberUuid) => {
   const result = await apiClient.get(`${BASE_PATH}/project`, { memberUuid })
   return result || []
