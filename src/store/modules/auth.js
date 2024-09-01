@@ -1,4 +1,4 @@
-import { fetchUserAttributes, fetchAuthSession } from 'aws-amplify/auth'
+import { fetchUserAttributes, fetchAuthSession, signOut } from 'aws-amplify/auth'
 
 export default {
   namespaced: true,
@@ -16,6 +16,12 @@ export default {
     setToken(state, token) {
       state.token = token
       state.lastTokenFetch = Date.now()
+    },
+    clearAuthState(state) {
+      state.user = null
+      state.token = null
+      state.lastTokenFetch = null
+      state.lastUserFetch = null
     }
   },
   actions: {
@@ -56,6 +62,16 @@ export default {
         console.error('Error fetching auth token:', error)
         commit('setToken', null)
         return null
+      }
+    },
+    async signOut({ commit }) {
+      try {
+        await signOut()
+        commit('clearAuthState')
+        console.log('Successfully signed out')
+      } catch (error) {
+        console.error('Error signing out:', error)
+        throw error
       }
     }
   },

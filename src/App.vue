@@ -117,7 +117,7 @@
               activator="parent"
               location="top"
             >
-              <v-list class="pa-0">
+              <v-list class="pa-0 bg-blue-grey-darken-1">
                 <v-list-item>
                   <v-list-item-title class="text-body-2 opacity-60">{{ user.email }}</v-list-item-title>
                 </v-list-item>
@@ -136,7 +136,7 @@
 
       <v-bottom-navigation
         v-else
-        bg-color="blue-grey-darken-3"
+        bg-color="blue-grey-darken-2"
         class="d-print-none"
         grow
       >
@@ -167,7 +167,6 @@
 import { ref, provide, reactive, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
-import { signOut } from '@aws-amplify/auth'
 import { useResponsive } from './composables/useResponsive'
 import ConfirmationDialog from './components/ConfirmationDialog.vue'
 
@@ -191,7 +190,7 @@ const user = computed(() => ({
 const isRailModeActive = computed(() => isRailMode.value && !isHovered.value && !showDropdown.value)
 
 const appStyle = computed(() => ({
-  paddingBottom: (router.currentRoute.value.meta.hideAnimation ? 30 : 280) + 'px'
+  paddingBottom: (router.currentRoute.value.meta.hideAnimation ? 30 : 260) + 'px'
 }))
 
 const bgImageStyle = computed(() => ({
@@ -268,7 +267,7 @@ const navigateTo = (route, params = {}) => {
 
 const handleSignOut = async () => {
   try {
-    await signOut()
+    await store.dispatch('auth/signOut')
     router.push({ name: 'SignIn' })
   } catch (error) {
     console.error('Sign out error:', error)

@@ -100,13 +100,25 @@ Resources:
       Layers:
         - !Ref CommonLayer
       Events:
-        ProcWeeklyReportGet:
+        OrganizationReportGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /public/organization
+            Method: GET
+        OrganizationReportPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /public/organization
+            Method: POST
+        WeeklyReportGet:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGatewayApi
             Path: /public/weekly-report
             Method: GET
-        ProcWeeklyReportPost:
+        WeeklyReportPost:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGatewayApi
@@ -124,7 +136,7 @@ Resources:
             RestApiId: !Ref ApiGatewayApi
             Path: /public/member
             Method: PUT
-        ProcProjectGet:
+        ProjectGet:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGatewayApi

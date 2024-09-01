@@ -168,7 +168,7 @@ import {
   signOut, 
   getCurrentUser,
 } from '@aws-amplify/auth'
-import { getOrganization, submitOrganization } from '../services/organizationService'
+import { getOrganization, submitOrganization } from '../services/publicService'
 
 const router = useRouter()
 const store = useStore()

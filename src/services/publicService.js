@@ -2,6 +2,21 @@ import { apiClient } from './apiClient'
 
 const BASE_PATH = '/public'
 
+export const getOrganization = async (organizationId) => {
+  try {
+    return await apiClient.get(`${BASE_PATH}/organization`, { organizationId })
+  } catch (error) {
+    if (error.message.includes('not found')) {
+      return null
+    }
+    throw error
+  }
+}
+
+export const submitOrganization = async (organization) => {
+  return apiClient.post(`${BASE_PATH}/organization`, organization)
+}
+
 export const getReport = async (memberUuid, weekString) => {
   return apiClient.get(`${BASE_PATH}/weekly-report`, { memberUuid, weekString })
 }
@@ -19,21 +34,11 @@ export const listMembers = async (organizationId) => {
 }
 
 export const getMemberProjects = async (memberUuid) => {
-  try {
-    const result = await apiClient.get(`${BASE_PATH}/project`, { memberUuid })
-    return result || []
-  } catch (error) {
-    console.error('Error fetching member projects:', error)
-    throw error
-  }
+  const result = await apiClient.get(`${BASE_PATH}/project`, { memberUuid })
+  return result || []
 }
 
 export const updateMemberProjects = async (memberUuid, projects) => {
-  try {
-    await apiClient.put(`${BASE_PATH}/member`, { memberUuid, projects })
-    return true
-  } catch (error) {
-    console.error('Error updating member projects:', error)
-    throw error
-  }
+  await apiClient.put(`${BASE_PATH}/member`, { memberUuid, projects })
+  return true
 }

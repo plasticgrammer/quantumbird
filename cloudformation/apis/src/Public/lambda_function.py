@@ -44,7 +44,11 @@ def lambda_handler(event, context):
         http_method = event['httpMethod']
         resource = event['resource']
 
-        if http_method == 'GET' and resource == '/public/weekly-report':
+        if http_method == 'GET' and resource == '/public/organization':
+            return handle_get_organization(event)
+        elif http_method == 'POST' and resource == '/public/organization':
+            return handle_post_organization(event)
+        elif http_method == 'GET' and resource == '/public/weekly-report':
             return handle_get(event)
         elif http_method == 'POST' and resource == '/public/weekly-report':
             return handle_post(event)
@@ -281,6 +285,35 @@ def get_organization(organization_id):
     except Exception as e:
         logger.error(f"Error getting organization: {str(e)}", exc_info=True)
         return None
+
+def prepare_organization_item(org_data):
+    return {
+        'organizationId': org_data.get('organizationId'),
+        'name': org_data.get('name'),
+        'sender': org_data.get('sender'),
+        'senderName': org_data.get('senderName'),
+        'requestEnabled': org_data.get('requestEnabled'),
+        'requestTime': org_data.get('requestTime'),
+        'requestDayOfWeek': org_data.get('requestDayOfWeek'),
+        'reportWeek': org_data.get('reportWeek')
+    }
+
+def handle_get_organization(event):
+    params = event.get('queryStringParameters', {}) or {}
+    if 'organizationId' in params:
+        org = get_organization(params['organizationId'])
+        return create_response(200, org)
+    else:
+        return create_response(400, {'message': 'Invalid data structure'})
+
+def handle_post_organization(event):
+    data = json.loads(event['body'])
+    if 'organizationId' in data:
+        item = prepare_organization_item(data)
+        response = organizations_table.put_item(Item=item)
+        return create_response(201, {'message': 'Organization created successfully'})
+    else:
+        return create_response(400, {'message': 'Invalid data structure'})
 
 def decimal_default_proc(obj):
     if isinstance(obj, Decimal):

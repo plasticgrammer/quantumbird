@@ -63,12 +63,10 @@ def handle_post(event):
     if 'organizationId' in data:
         item = prepare_organization_item(data)
         response = organizations_table.put_item(Item=item)
-        logger.info(f"DynamoDB response: {response}")
         return create_response(201, {'message': 'Organization created successfully'})
     elif 'memberUuid' in data:
         item = prepare_member_item(data)
         response = members_table.put_item(Item=item)
-        logger.info(f"DynamoDB response: {response}")
         return create_response(201, {'message': 'Member created successfully'})
     else:
         return create_response(400, {'message': 'Invalid data structure'})
@@ -78,7 +76,6 @@ def handle_put(event):
     if 'organizationId' in data:
         org_item = prepare_organization_item(data)
         response = organizations_table.put_item(Item=org_item)
-        logger.info(f"Organization update response: {response}")
 
         if 'members' in data:
             update_members(data['organizationId'], data['members'])
@@ -88,7 +85,6 @@ def handle_put(event):
         existing_member = get_member(data['memberUuid'])
         item = prepare_member_item(data, existing_member)
         response = members_table.put_item(Item=item)
-        logger.info(f"Member update response: {response}")
         return create_response(200, {'message': 'Member updated successfully'})
     else:
         return create_response(400, {'message': 'Invalid data structure'})
