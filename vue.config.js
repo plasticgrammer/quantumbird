@@ -1,5 +1,7 @@
 const { defineConfig } = require('@vue/cli-service')
 const webpack = require('webpack')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+const path = require('path')
 
 module.exports = defineConfig({
   pages: {
@@ -23,6 +25,14 @@ module.exports = defineConfig({
     plugins: [
       new webpack.DefinePlugin({
         __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(process.env.NODE_ENV !== 'production')
+      }),
+      new CopyWebpackPlugin({
+        patterns: [
+          {
+            from: path.resolve(__dirname, 'public/404.html'),
+            to: path.resolve(__dirname, 'dist/404.html')
+          }
+        ]
       })
     ]
   },
