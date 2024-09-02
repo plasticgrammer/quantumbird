@@ -10,11 +10,6 @@
       </div>
     </v-col>
     <v-col cols="12" md="8" class="d-flex align-middle pa-2">
-      <!--
-        :empty-icon="negative ? 'mdi-robot-outline' : 'mdi-star-outline'"
-        :full-icon="negative ? 'mdi-robot-dead' : 'mdi-star-face'"
-        :half-icon="negative ? 'mdi-robot-outline' : 'mdi-star-outline'"
-      -->
       <v-rating
         :model-value="modelValue"
         :item-labels="itemLabels"

@@ -111,6 +111,8 @@
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
             - 報告共有ページに組織名表示<br>
+            - 401エラー対応<br>
+            - 本番環境構築<br>
             - メール到達確認<br>
             - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>

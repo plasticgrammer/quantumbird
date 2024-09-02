@@ -333,7 +333,7 @@ provide('showNotification', showNotification)
   bottom: -10px;
   left: 50%;
   transform: translateX(-50%);
-  transition: margin-left 0.15s ease-in;
+  transition: margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
   animation: float 16s ease-in-out infinite;
   z-index: -2;
