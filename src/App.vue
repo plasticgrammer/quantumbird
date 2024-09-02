@@ -1,5 +1,5 @@
 <template>
-  <v-app id="main" :style="appStyle">
+  <v-app id="main">
     <template v-if="!$route.meta.hideAnimation">
       <div v-for="i in 2" :key="i" class="wave"></div>
       <v-img
@@ -153,7 +153,7 @@
       </v-bottom-navigation>
     </template>
 
-    <v-main :class="{ 'noshift': isRailModeActive }">
+    <v-main :class="{ 'noshift': isRailModeActive }" :style="appStyle">
       <div class="content-wrapper">
         <router-view />
       </div>
