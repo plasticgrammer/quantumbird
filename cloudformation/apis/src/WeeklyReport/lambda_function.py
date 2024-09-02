@@ -219,16 +219,13 @@ def get_member_names(member_uuids):
 
 def get_last_5_weeks():
     today = datetime.now(TIMEZONE)
-    current_week = today.isocalendar()[1]
-    current_year = today.year
+    last_week = today - timedelta(days=today.weekday() + 7)  # 先週の月曜日
     weeks = []
     for i in range(5):
-        week = current_week - i
-        year = current_year
-        if week <= 0:
-            year -= 1
-            week = datetime(year, 12, 28).isocalendar()[1] + week
-        weeks.append(f"{year}-W{week:02d}")
+        week = last_week - timedelta(weeks=i)
+        year = week.year
+        week_number = week.isocalendar()[1]
+        weeks.append(f"{year}-W{week_number:02d}")
     return list(reversed(weeks))
 
 def handle_get_stats_data(event):
@@ -240,7 +237,7 @@ def handle_get_stats_data(event):
     weeks = get_last_5_weeks()
     
     stats_data = {
-        'labels': weeks,
+        'labels': ['5週前', '4週前', '3週前', '2週前', '先週'],
         'datasets': []
     }
 

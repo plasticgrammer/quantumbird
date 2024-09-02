@@ -430,7 +430,7 @@ const fetchStatsData = async () => {
 }
 
 const formatChartData = (data, dataKey) => ({
-  labels: data.labels.map(label => label.split('-')[1]),
+  labels: data.labels,
   datasets: data.datasets.map((dataset, index) => ({
     label: dataset.label,
     data: dataset.data.map(item => item[dataKey]),

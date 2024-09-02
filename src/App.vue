@@ -370,7 +370,7 @@ provide('showNotification', showNotification)
 
 .navigation-drawer {
   z-index: 1000;
-  transition: width 0.3s ease;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #main .v-main.noshift {
