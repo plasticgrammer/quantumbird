@@ -110,8 +110,8 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            - 報告共有ページに組織名表示<br>
             - 報告依頼 再送信<br>
+            - サイドバーPIN状態を保存<br>
             - 401エラー対応<br>
             - 本番環境構築<br>
             - メール到達確認<br>
@@ -214,7 +214,7 @@
                 :color="organization.requestEnabled ? 'success' : 'grey'"
                 class="mx-1"
               >
-                {{ organization.requestEnabled ? 'mdi-timer' : 'mdi-timer-off' }}
+                {{ organization.requestEnabled ? 'mdi-timer-outline' : 'mdi-timer-off-outline' }}
               </v-icon>
               <span class="text-subtitle-1">
                 <strong>{{ organization.requestEnabled ? '有効' : '無効' }}</strong>

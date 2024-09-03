@@ -4,7 +4,7 @@
       <div v-for="i in 2" :key="i" class="wave"></div>
       <v-img
         src="@/assets/images/rakko.png"
-        max-width="50%"
+        max-width="60%"
         width="340"
         class="on-wave mx-auto"
         :style="bgImageStyle"
@@ -149,6 +149,7 @@
           <v-icon size="x-large">
             {{ item.icon }}
           </v-icon>
+          {{ item.title }}
         </v-btn>
       </v-bottom-navigation>
     </template>

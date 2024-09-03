@@ -2,6 +2,17 @@
   <v-container>
     <v-row dense class="pb-4">
       <v-col>
+        <h2 class="organization-name text-blue-grey-darken-1">
+          <v-icon size="large" class="mr-1">
+            mdi-domain
+          </v-icon>
+          {{ organization?.name }}
+        </h2>
+      </v-col>
+    </v-row>
+
+    <v-row dense class="pb-4">
+      <v-col>
         <h3>
           <v-icon size="large" class="mr-1">
             mdi-calendar-multiple-check
@@ -24,6 +35,7 @@
 <script setup>
 import { ref, inject, onMounted } from 'vue'
 import { useCalendar } from '../composables/useCalendar'
+import { getOrganization } from '../services/publicService'
 import { verifyToken } from '../services/secureParameterService'
 import ReviewForm from '../components/ReviewForm.vue'
 
@@ -42,6 +54,8 @@ const {
 const loading = ref(false)
 const organizationId = ref(null)
 const weekString = ref(null)
+const organization = ref(null)
+
 const showNotification = inject('showNotification')
 
 onMounted(async () => {
@@ -50,6 +64,10 @@ onMounted(async () => {
     const result = await verifyToken(props.token)
     organizationId.value = result.organizationId
     weekString.value = result.weekString
+    const org = await getOrganization(organizationId.value)
+    if (org && Object.keys(org).length > 0) {
+      organization.value = org
+    }
   } catch (error) {
     showNotification('キー情報の取得に失敗しました', error)
   } finally {
@@ -57,3 +75,9 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.organization-name {
+  text-shadow: 2px 2px 0 #CFD8DC;
+}
+</style>

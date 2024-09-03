@@ -97,7 +97,7 @@
                       class="mr-2"
                       size="large"
                     >
-                      {{ requestSettings.requestEnabled ? 'mdi-timer' : 'mdi-timer-off' }}
+                      {{ requestSettings.requestEnabled ? 'mdi-timer-outline' : 'mdi-timer-off-outline' }}
                     </v-icon>
                     <span class="text-subtitle-1">
                       <span class="d-none d-sm-inline">報告依頼の自動送信は</span>現在
