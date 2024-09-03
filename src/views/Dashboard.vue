@@ -111,6 +111,7 @@
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
             - 報告共有ページに組織名表示<br>
+            - 報告依頼 再送信<br>
             - 401エラー対応<br>
             - 本番環境構築<br>
             - メール到達確認<br>
@@ -208,13 +209,12 @@
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
             <p class="text-body-2 mb-1">
-              <span>自動報告設定: </span>
+              <span>自動報告依頼設定: </span>
               <v-icon
-                :color="organization.requestEnabled ? 'success' : 'error'"
-                size="small"
+                :color="organization.requestEnabled ? 'success' : 'grey'"
                 class="mx-1"
               >
-                {{ organization.requestEnabled ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                {{ organization.requestEnabled ? 'mdi-timer' : 'mdi-timer-off' }}
               </v-icon>
               <span class="text-subtitle-1">
                 <strong>{{ organization.requestEnabled ? '有効' : '無効' }}</strong>

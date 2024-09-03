@@ -93,10 +93,11 @@
                 <div class="d-flex align-center justify-start">
                   <div class="d-flex align-center">
                     <v-icon
-                      :color="requestSettings.requestEnabled ? 'success' : 'error'"
+                      :color="requestSettings.requestEnabled ? 'success' : 'grey'"
                       class="mr-2"
+                      size="large"
                     >
-                      {{ requestSettings.requestEnabled ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                      {{ requestSettings.requestEnabled ? 'mdi-timer' : 'mdi-timer-off' }}
                     </v-icon>
                     <span class="text-subtitle-1">
                       <span class="d-none d-sm-inline">報告依頼の自動送信は</span>現在
@@ -127,6 +128,7 @@
                   outlined
                   dense
                   hide-details="auto"
+                  :disabled="!requestSettings.requestEnabled"
                 ></v-select>
               </v-col>
               <v-col cols="12" sm="4">
@@ -139,6 +141,7 @@
                   outlined
                   dense
                   hide-details="auto"
+                  :disabled="!requestSettings.requestEnabled"
                   :rules="[v => v !== null || '時間を選択してください']"
                 >
                   <template #prepend-inner>
