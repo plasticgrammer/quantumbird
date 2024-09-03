@@ -149,7 +149,6 @@
           <v-icon size="x-large">
             {{ item.icon }}
           </v-icon>
-          {{ item.title }}
         </v-btn>
       </v-bottom-navigation>
     </template>
@@ -195,7 +194,8 @@ const appStyle = computed(() => ({
 }))
 
 const bgImageStyle = computed(() => ({
-  marginLeft: (isMobile.value ? 0 : (isRailModeActive.value ? 56 : 180)) + 'px !important'
+  marginLeft: (isMobile.value ? 0 : (isRailModeActive.value ? 56 : 180)) + 'px !important',
+  bottom: (isMobile.value ? 30 : -10) + 'px !important'
 }))
 
 const toggleDrawerMode = () => {

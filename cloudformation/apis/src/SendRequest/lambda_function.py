@@ -7,7 +7,7 @@ import urllib.parse
 import decimal
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 import common.publisher
 
 logger = logging.getLogger()
@@ -19,30 +19,26 @@ BASE_URL = os.environ.get('BASE_URL', 'http://localhost:3000')
 stage = os.environ.get('STAGE', 'dev')
 
 dynamodb = boto3.resource('dynamodb')
-organizations_table_name = f'{stage}-Organizations'
-members_table_name = f'{stage}-Members'
-organizations_table = dynamodb.Table(organizations_table_name)
-members_table = dynamodb.Table(members_table_name)
+organizations_table = dynamodb.Table(f'{stage}-Organizations')
+members_table = dynamodb.Table(f'{stage}-Members')
+weekly_reports_table = dynamodb.Table(f'{stage}-WeeklyReports')
 
 def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
     try:
         organization_id = None
-        if isinstance(event, dict):
-            payload = event.get('payload', {})
-            if isinstance(payload, str):
-                payload = json.loads(payload)
-            elif isinstance(payload, dict):
-                organization_id = payload.get('organization_id')
-            if not organization_id:
-                organization_id = event.get('organization_id')
-        elif isinstance(event, str):
-            event_dict = json.loads(event)
-            payload = event_dict.get('payload', {})
-            if isinstance(payload, dict):
-                organization_id = payload.get('organization_id')
-            if not organization_id:
-                organization_id = event_dict.get('organization_id')
+        if 'httpMethod' in event:
+            payload = json.loads(event['body'])
+            organization_id = payload.get('organizationId')
+            weekString = payload.get('weekString')
+        else:
+            organization_id = extract_organization_id(event)
+
+            reportWeek = org.get('reportWeek', 0)
+            if isinstance(reportWeek, decimal.Decimal):
+                reportWeek = int(reportWeek)
+            now = datetime.now(TIMEZONE)
+            weekString = get_string_from_week(now, reportWeek)
 
         if not organization_id:
             raise ValueError("organization_id not found in the event")
@@ -53,24 +49,31 @@ def lambda_handler(event, context):
         if not org:
             raise ValueError(f"Organization not found for ID: {organization_id}")
 
-        response = members_table.query(
-            IndexName='OrganizationIndex',
-            KeyConditionExpression=Key('organizationId').eq(organization_id)
-        )
-        send_request_mail(org, response['Items'])
+        send_request_mail(org, weekString)
 
-        return {
-            'statusCode': 200,
-            'body': json.dumps('Processing completed successfully')
-        }
+        return create_response(200, 'Processing completed successfully')
 
     except Exception as e:
         logger.error(f"Error processing event: {str(e)}", exc_info=True)
-        return {
-            'statusCode': 500,
-            'body': json.dumps(f'Error processing event: {str(e)}')
-        }
+        return create_response(500, f'Error processing event: {str(e)}')
+
+def extract_organization_id(event):
+    if isinstance(event, str):
+        event = json.loads(event)
     
+    if not isinstance(event, dict):
+        return None
+
+    payload = event.get('payload', event)
+    
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except json.JSONDecodeError:
+            return None
+
+    return payload.get('organizationId') or event.get('organizationId')
+
 def get_organization(organization_id):
     try:
         response = organizations_table.get_item(
@@ -83,28 +86,60 @@ def get_organization(organization_id):
         logger.error(f"Error getting organization: {str(e)}", exc_info=True)
         return None
 
-def send_request_mail(organization, members):
+def send_request_mail(organization, weekString):
     organization_id = organization['organizationId']
-    reportWeek = organization.get('reportWeek', 0)
+    response = members_table.query(
+        IndexName='OrganizationIndex',
+        KeyConditionExpression=Key('organizationId').eq(organization_id)
+    )
+    members = response['Items']
 
-    # Decimalを整数に変換
-    if isinstance(reportWeek, decimal.Decimal):
-        reportWeek = int(reportWeek)
+    # 対象週に報告がないメンバーを特定
+    members_without_report = get_members_without_report(organization_id, weekString, members)
 
-    now = datetime.now(TIMEZONE)
-    weekString = get_string_from_week(now, reportWeek)
+    if not members_without_report:
+        logger.info(f"No members without report for week {weekString}")
+        return
 
     sendFrom = common.publisher.get_from_address(organization)
     subject = "【週次報告システム】週次報告をお願いします"
     bodyText = f"組織名：{organization['name']}\n\n"
     bodyText += "お疲れさまです。\n下記リンクより週次報告をお願いします。\n"
-    for m in members:
-        sendTo = [m.get("email")]
-        link = generate_report_link(organization_id, m["memberUuid"], weekString)
+
+    for member in members_without_report:
+        sendTo = [member.get("email")]
+        link = generate_report_link(organization_id, member["memberUuid"], weekString)
 
         logger.info(f"Send mail from: {sendFrom}, to: {sendTo}")
         
         common.publisher.send_mail(sendFrom, sendTo, subject, bodyText + link)
+
+def get_members_without_report(organization_id, week_string, members):
+    # 指定された組織と週のすべてのレポートを取得
+    reports = get_reports_by_organization(organization_id, week_string)
+    
+    # レポートを提出したメンバーのUUIDセットを作成
+    reported_member_uuids = set(report['memberUuid'] for report in reports)
+    
+    # レポートを提出していないメンバーをフィルタリング
+    members_without_report = [
+        member for member in members 
+        if member['memberUuid'] not in reported_member_uuids
+    ]
+    
+    return members_without_report
+
+def get_reports_by_organization(organization_id, week_string):
+    try:
+        response = weekly_reports_table.query(
+            IndexName='OrganizationWeekIndex',
+            KeyConditionExpression=Key('organizationId').eq(organization_id) & Key('weekString').eq(week_string)
+        )
+        items = response['Items']
+        return items
+    except Exception as e:
+        logger.error(f"Error querying reports for org {organization_id}, week {week_string}: {str(e)}", exc_info=True)
+        return []  # Return an empty list instead of raising an exception
 
 def generate_report_link(organization_id, member_uuid, week_string):
     base_url = urllib.parse.urljoin(BASE_URL, "reports")
@@ -152,3 +187,15 @@ def get_string_from_week(current_date, week_offset=0):
     
     # 結果の文字列を生成
     return f"{thursday.year}-W{week_number:02d}"
+
+def create_response(status_code, body):
+    return {
+        'statusCode': status_code,
+        'headers': {
+            "Content-Type": "application/json",
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
+        },
+        'body': json.dumps(body) if body else ''
+    }

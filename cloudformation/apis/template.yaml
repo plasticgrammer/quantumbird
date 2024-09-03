@@ -319,6 +319,15 @@ Resources:
           STAGE: !Ref Stage
       Layers:
         - !Ref CommonLayer
+      Events:
+        SendRequestPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /send-request
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   SecureParameterFunction:
     Type: AWS::Serverless::Function

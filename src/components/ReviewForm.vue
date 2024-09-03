@@ -242,7 +242,7 @@
                       class="ml-8 mt-n2 borderless-textarea"
                     >
                       <template #prepend-inner>
-                        <v-icon size="large" class="mr-1" color="grey">
+                        <v-icon class="mr-1" color="blue-grey-lighten-3">
                           mdi-message
                         </v-icon>
                       </template>
@@ -263,7 +263,7 @@
                   rows="2"
                 >
                   <template #prepend-inner>
-                    <v-icon size="large" class="mr-1" color="grey">
+                    <v-icon size="large" class="mr-1" color="orange">
                       mdi-reply
                     </v-icon>
                   </template>
@@ -280,8 +280,8 @@
             <v-btn
               color="primary"
               variant="elevated" 
+              class="mr-2"
               outlined
-              x-small
               @click="handleApprove(report.memberUuid)"
             >
               <v-icon left x-small class="mr-1">
@@ -293,9 +293,8 @@
               color="warning"
               variant="elevated" 
               :disabled="!newFeedback.trim()"
-              class="ml-2"
+              class="mr-2"
               outlined
-              x-small
               @click="handleFeedback(report.memberUuid)"
             >
               <v-icon left x-small class="mr-1">
@@ -305,6 +304,23 @@
             </v-btn>
           </v-card-actions>
         </v-card>
+      </v-col>
+
+      <v-col 
+        v-if="statusCounts['none'] > 0 && !readonly"
+        cols="12"
+      >
+        <v-btn
+          color="secondary"
+          variant="elevated" 
+          outlined
+          @click="handleResend()"
+        >
+          <v-icon class="mr-1">
+            mdi-send
+          </v-icon>
+          報告要求を再送する（報告なし{{ statusCounts['none'] }}名）
+        </v-btn>
       </v-col>
     </v-row>
   </v-container>
@@ -316,6 +332,7 @@ import { useReport } from '../composables/useReport'
 import { listReports, listMembers } from '../services/publicService'
 import { updateReport, submitFeedback } from '../services/reportService'
 import { generateToken } from '../services/secureParameterService'
+import { sendRequest } from '../services/sendRequestService'
 import RatingItem from '../components/RatingItem.vue'
 
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
@@ -390,10 +407,10 @@ const copyShareUrl = async () => {
     const shareUrl = `${rootUrl}/view/${result.token}`
     
     await navigator.clipboard.writeText(shareUrl)
-    showNotification('コピーに成功しました')
+    showNotification('共有リンクをコピーしました')
   } catch (err) {
     console.error('Failed to copy share URL:', err)
-    showNotification('コピーに失敗しました', 'error')
+    showNotification('共有リンクのコピーに失敗しました', 'error')
   }
 }
 
@@ -474,22 +491,6 @@ const processReports = (fetchedReports, members) => {
   })
 }
 
-const fetchData = async () => {
-  isLoading.value = true
-  error.value = null
-  try {
-    const [fetchedReports, members] = await Promise.all([fetchReports(), fetchMembers()])
-    reports.value = processReports(fetchedReports, members)
-  } catch (err) {
-    console.error('Error in fetchData:', err)
-    error.value = `データの取得に失敗しました: ${err.message}`
-  } finally {
-    isLoading.value = false
-  }
-}
-
-onMounted(fetchData)
-
 const handleFeedback = async (memberUuid) => {
   const report = reports.value.find(r => r.memberUuid === memberUuid)
   if (report && newFeedback.value.trim() !== '') {
@@ -547,6 +548,32 @@ const handleApprove = async (memberUuid) => {
     }
   }
 }
+
+const handleResend = async () => {
+  try {
+    await sendRequest(props.organizationId, props.weekString)
+    showNotification('報告要求を再送しました')
+  } catch (error) {
+    console.error('Failed to approve report:', error)
+    showNotification('報告要求の再送に失敗しました', 'error')
+  }
+}
+
+const fetchData = async () => {
+  isLoading.value = true
+  error.value = null
+  try {
+    const [fetchedReports, members] = await Promise.all([fetchReports(), fetchMembers()])
+    reports.value = processReports(fetchedReports, members)
+  } catch (err) {
+    console.error('Error in fetchData:', err)
+    error.value = `データの取得に失敗しました: ${err.message}`
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(fetchData)
 </script>
 
 <style scoped>

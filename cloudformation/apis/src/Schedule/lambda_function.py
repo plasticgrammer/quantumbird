@@ -57,7 +57,7 @@ def invoke_processing_lambda(organization_id):
     lambda_client = boto3.client('lambda')
     payload = json.dumps({
         'payload': {
-            'organization_id': organization_id
+            'organizationId': organization_id
         }
     })
     logger.info(f"Invoking Lambda with payload: {payload}")

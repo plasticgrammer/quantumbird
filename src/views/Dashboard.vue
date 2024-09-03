@@ -110,7 +110,7 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
-            - 報告依頼 再送信<br>
+            - ボタン名見直し<br>
             - サイドバーPIN状態を保存<br>
             - 401エラー対応<br>
             - 本番環境構築<br>
