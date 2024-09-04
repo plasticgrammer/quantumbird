@@ -26,19 +26,13 @@ weekly_reports_table = dynamodb.Table(f'{stage}-WeeklyReports')
 def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
     try:
+        # organization_idを編集
         organization_id = None
         if 'httpMethod' in event:
             payload = json.loads(event['body'])
             organization_id = payload.get('organizationId')
-            weekString = payload.get('weekString')
         else:
             organization_id = extract_organization_id(event)
-
-            reportWeek = org.get('reportWeek', 0)
-            if isinstance(reportWeek, decimal.Decimal):
-                reportWeek = int(reportWeek)
-            now = datetime.now(TIMEZONE)
-            weekString = get_string_from_week(now, reportWeek)
 
         if not organization_id:
             raise ValueError("organization_id not found in the event")
@@ -49,7 +43,17 @@ def lambda_handler(event, context):
         if not org:
             raise ValueError(f"Organization not found for ID: {organization_id}")
 
-        send_request_mail(org, weekString)
+        # week_stringを編集
+        if 'httpMethod' in event:
+            week_string = payload.get('weekString')
+        else:
+            reportWeek = org.get('reportWeek', 0)
+            if isinstance(reportWeek, decimal.Decimal):
+                reportWeek = int(reportWeek)
+            now = datetime.now(TIMEZONE)
+            week_string = get_string_from_week(now, reportWeek)
+
+        send_request_mail(org, week_string)
 
         return create_response(200, 'Processing completed successfully')
 
@@ -86,7 +90,7 @@ def get_organization(organization_id):
         logger.error(f"Error getting organization: {str(e)}", exc_info=True)
         return None
 
-def send_request_mail(organization, weekString):
+def send_request_mail(organization, week_string):
     organization_id = organization['organizationId']
     response = members_table.query(
         IndexName='OrganizationIndex',
@@ -95,10 +99,10 @@ def send_request_mail(organization, weekString):
     members = response['Items']
 
     # 対象週に報告がないメンバーを特定
-    members_without_report = get_members_without_report(organization_id, weekString, members)
+    members_without_report = get_members_without_report(organization_id, week_string, members)
 
     if not members_without_report:
-        logger.info(f"No members without report for week {weekString}")
+        logger.info(f"No members without report for week {week_string}")
         return
 
     sendFrom = common.publisher.get_from_address(organization)
@@ -108,7 +112,7 @@ def send_request_mail(organization, weekString):
 
     for member in members_without_report:
         sendTo = [member.get("email")]
-        link = generate_report_link(organization_id, member["memberUuid"], weekString)
+        link = generate_report_link(organization_id, member["memberUuid"], week_string)
 
         logger.info(f"Send mail from: {sendFrom}, to: {sendTo}")
         

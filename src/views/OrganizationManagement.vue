@@ -109,7 +109,7 @@
                 </v-col>
                 <v-col cols="12" sm="2" class="d-flex justify-end">
                   <v-btn v-if="editingMember?.id === member.id" icon small @click="handleUpdateMember(member)">
-                    <v-icon>mdi-check</v-icon>
+                    <v-icon color="teal">mdi-check</v-icon>
                   </v-btn>
                   <v-btn v-else icon small @click="setEditingMember(member)">
                     <v-icon>mdi-pencil</v-icon>

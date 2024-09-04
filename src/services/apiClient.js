@@ -38,11 +38,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
       try {
-        // Implement your token refresh logic here
-        // const newToken = await refreshToken()
-        // store.commit('auth/setToken', newToken)
-        // originalRequest.headers['Authorization'] = `Bearer ${newToken}`
-        // return api(originalRequest)
+        const newToken = await store.dispatch('auth/fetchAuthToken')
+        originalRequest.headers['Authorization'] = `Bearer ${newToken}`
+        return api(originalRequest)
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError)
         // Redirect to login or handle authentication failure

@@ -158,7 +158,7 @@
           class="pb-2 mb-4"
         >
           <v-card-text>
-            <v-row align="center">
+            <v-row>
               <v-col cols="9" class="pa-1 pa-md-4">
                 <ProjectSelector
                   v-model="project.name"
@@ -332,18 +332,21 @@
           </div>
         </div>
 
-        <!-- Submit button -->
-        <v-btn
-          color="primary"
-          type="submit"
-          class="mt-6"
-          :disabled="!isFormValid || isReportConfirmed"
-        >
-          <v-icon class="mr-1" left>
-            mdi-check
-          </v-icon>
-          報告を提出する
-        </v-btn>
+        <v-row>
+          <v-col cols="12" class="d-flex justify-end">
+            <v-btn
+              color="primary"
+              type="submit"
+              class="mt-6"
+              :disabled="!isFormValid || isReportConfirmed"
+            >
+              <v-icon class="mr-1" left>
+                mdi-check
+              </v-icon>
+              報告を提出する
+            </v-btn>
+          </v-col>
+        </v-row>
       </v-form>
     </template>
   </v-container>

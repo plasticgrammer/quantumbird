@@ -216,7 +216,7 @@
                   >
                     <v-textarea
                       v-model="feedback.content"
-                      :label="`${ new Date(feedback.createdAt).toLocaleString() }`"
+                      :label="`${ formatDateTimeJp(new Date(feedback.createdAt)) }`"
                       readonly
                       rows="1"
                       auto-grow
@@ -252,7 +252,7 @@
 
                 <v-textarea
                   v-if="report.status !== 'approved' && !readonly"
-                  v-model="newFeedback"
+                  v-model="newFeedbacks[report.memberUuid]"
                   label="新しいフィードバックを入力..."
                   outlined
                   dense
@@ -276,6 +276,19 @@
             v-if="report.status !== 'approved' && report.status !== 'none' && !readonly"
             class="d-print-none pt-0 pb-3"
           >
+            <v-btn
+              color="warning"
+              variant="elevated" 
+              :disabled="!newFeedbacks[report.memberUuid]?.trim()"
+              class="ml-2"
+              outlined
+              @click="handleFeedback(report.memberUuid)"
+            >
+              <v-icon left x-small class="mr-1">
+                mdi-reply
+              </v-icon>
+              フィードバック送信
+            </v-btn>
             <v-spacer />
             <v-btn
               color="primary"
@@ -288,19 +301,6 @@
                 mdi-check-bold
               </v-icon>
               確認済み
-            </v-btn>
-            <v-btn
-              color="warning"
-              variant="elevated" 
-              :disabled="!newFeedback.trim()"
-              class="mr-2"
-              outlined
-              @click="handleFeedback(report.memberUuid)"
-            >
-              <v-icon left x-small class="mr-1">
-                mdi-reply
-              </v-icon>
-              フィードバック送信
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -328,6 +328,7 @@
 
 <script setup>
 import { ref, computed, watchEffect, onMounted, inject } from 'vue'
+import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
 import { listReports, listMembers } from '../services/publicService'
 import { updateReport, submitFeedback } from '../services/reportService'
@@ -335,6 +336,7 @@ import { generateToken } from '../services/secureParameterService'
 import { sendRequest } from '../services/sendRequestService'
 import RatingItem from '../components/RatingItem.vue'
 
+const { formatDateTimeJp } = useCalendar()
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
 const showNotification = inject('showNotification')
 
@@ -356,7 +358,7 @@ const props = defineProps({
 const reports = ref([])
 const isLoading = ref(true)
 const error = ref(null)
-const newFeedback = ref('')
+const newFeedbacks = ref({})
 
 const selectedStatus = ref('all')
 
@@ -493,10 +495,11 @@ const processReports = (fetchedReports, members) => {
 
 const handleFeedback = async (memberUuid) => {
   const report = reports.value.find(r => r.memberUuid === memberUuid)
-  if (report && newFeedback.value.trim() !== '') {
+  const newFeedback = newFeedbacks.value[memberUuid]
+  if (report && newFeedback && newFeedback.trim() !== '') {
     try {
       const feedback = {
-        content: newFeedback.value.trim(),
+        content: newFeedback.trim(),
         createdAt: new Date().toISOString()
       }
       
@@ -514,7 +517,7 @@ const handleFeedback = async (memberUuid) => {
           : r
       )
       // 入力欄をクリア
-      newFeedback.value = ''
+      newFeedbacks.value[memberUuid] = ''
       showNotification('フィードバックを送信しました')
     } catch (error) {
       console.error('Failed to submit feedback:', error)
@@ -565,6 +568,10 @@ const fetchData = async () => {
   try {
     const [fetchedReports, members] = await Promise.all([fetchReports(), fetchMembers()])
     reports.value = processReports(fetchedReports, members)
+    // 各メンバーのフィードバック入力欄を初期化
+    reports.value.forEach(report => {
+      newFeedbacks.value[report.memberUuid] = ''
+    })
   } catch (err) {
     console.error('Error in fetchData:', err)
     error.value = `データの取得に失敗しました: ${err.message}`
@@ -572,7 +579,6 @@ const fetchData = async () => {
     isLoading.value = false
   }
 }
-
 onMounted(fetchData)
 </script>
 

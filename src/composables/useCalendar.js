@@ -143,6 +143,20 @@ export function useCalendar() {
     return `${relativeWeekIndex}週後`
   }
   
+  const formatDateJp = (date) => {
+    const year = date.getFullYear()
+    const month = ('0' + (date.getMonth() + 1)).slice(-2)
+    const day = ('0' + date.getDate()).slice(-2)
+    return `${year}/${month}/${day}`
+  }
+  
+  const formatDateTimeJp = (date) => {
+    const timeOptions = { hour: '2-digit', minute: '2-digit' }
+    const formattedTime = date.toLocaleTimeString('ja-JP', timeOptions)
+  
+    return `${formatDateJp(date)} ${formattedTime}`
+  }
+
   const formatDateRange = (week) => {
     const start = week.startDate
     const end = week.endDate
@@ -165,6 +179,8 @@ export function useCalendar() {
     getPreviousWeekString,
     getCurrentWeekString,
     getWeekJpText,
+    formatDateJp,
+    formatDateTimeJp,
     formatDateRange
   }
 }

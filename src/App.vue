@@ -164,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref, provide, reactive, computed } from 'vue'
+import { ref, provide, reactive, computed, watch, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { useResponsive } from './composables/useResponsive'
@@ -259,6 +259,20 @@ const closeNotification = () => {
   notification.show = false
 }
 
+const showConfirmDialogGlobal = async (title, message) => {
+  try {
+    showConfirmDialog.value = true
+    return await confirmDialog.value?.open(title, message)
+  } catch (error) {
+    console.error('Error showing confirmation dialog:', error)
+  } finally {
+    showConfirmDialog.value = false
+  }
+}
+
+provide('showConfirmDialog', showConfirmDialogGlobal)
+provide('showNotification', showNotification)
+
 const navigateTo = (route, params = {}) => {
   router.push({ ...route, params: { ...route.params, ...params } })
   if (isMobile.value) {
@@ -276,19 +290,18 @@ const handleSignOut = async () => {
   }
 }
 
-const showConfirmDialogGlobal = async (title, message) => {
-  try {
-    showConfirmDialog.value = true
-    return await confirmDialog.value?.open(title, message)
-  } catch (error) {
-    console.error('Error showing confirmation dialog:', error)
-  } finally {
-    showConfirmDialog.value = false
+onMounted(() => {
+  // ローカルストレージからRailModeの状態を読み込む
+  const savedRailMode = localStorage.getItem('railMode')
+  if (savedRailMode !== null) {
+    isRailMode.value = JSON.parse(savedRailMode)
   }
-}
+})
 
-provide('showConfirmDialog', showConfirmDialogGlobal)
-provide('showNotification', showNotification)
+watch(isRailMode, (newValue) => {
+  // RailModeの状態が変更されたときにローカルストレージに保存
+  localStorage.setItem('railMode', JSON.stringify(newValue))
+})
 </script>
 
 <style>
@@ -296,6 +309,7 @@ provide('showNotification', showNotification)
   position: relative;
   background-color: #f1f8fe;
   z-index: 0;
+  min-height: 100vh;
 }
 
 .wave {
