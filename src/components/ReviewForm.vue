@@ -202,7 +202,7 @@
                 <v-alert
                   v-if="report.feedbacks.length" 
                   density="compact"
-                  class="border-thin px-2 mb-3"
+                  class="border-sm px-2 mb-3"
                   color="transparent"
                   border="start"
                   border-color="orange"

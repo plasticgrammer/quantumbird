@@ -4,7 +4,7 @@
       <div v-for="i in 2" :key="i" class="wave"></div>
       <v-img
         src="@/assets/images/rakko.png"
-        max-width="40%"
+        max-width="46%"
         width="340"
         class="on-wave mx-auto"
         :style="bgImageStyle"
