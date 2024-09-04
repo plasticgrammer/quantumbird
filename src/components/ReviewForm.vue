@@ -62,7 +62,7 @@
       >
         <v-card
           :class="{ 'approved-card': report.status === 'approved', 'none-card': report.status === 'none' }"
-          class="cursor-default mt-2"
+          class="default-card cursor-default mt-2"
           hover
           outlined
         >
@@ -587,12 +587,16 @@ onMounted(fetchData)
   padding: 16px 0 24px;
 }
 
+.default-card {
+  background-color: #FAFAFA;
+}
+
 .none-card {
-  background-color: whitesmoke;
+  background-color: #FFEBEE;
 }
 
 .approved-card {
-  background-color: white;
+  background-color: #FAFAFA;
 }
 
 .tasks {
