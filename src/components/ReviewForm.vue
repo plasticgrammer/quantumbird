@@ -176,7 +176,7 @@
 
             <v-card 
               class="mt-4 border-sm"
-              elevation="2"
+              elevation="0"
               variant="flat"
               color="blue-lighten-5"
               title="評価"
@@ -202,13 +202,12 @@
                 <v-alert
                   v-if="report.feedbacks.length" 
                   density="compact"
+                  class="border-thin px-2 mb-3"
+                  color="transparent"
                   border="start"
-                  border-color="warning"
-                  elevation="2"
+                  border-color="orange"
                   outlined
                   dense
-                  class="px-2 mb-3"
-                  color="white"
                 >
                   <div
                     v-for="(feedback, index) in report.feedbacks" :key="index"
@@ -216,7 +215,7 @@
                   >
                     <v-textarea
                       v-model="feedback.content"
-                      :label="`${ formatDateTimeJp(new Date(feedback.createdAt)) }`"
+                      :label="`フィードバック（${ formatDateTimeJp(new Date(feedback.createdAt)) }）`"
                       readonly
                       rows="1"
                       auto-grow
@@ -225,7 +224,7 @@
                       class="borderless-textarea"
                     >
                       <template #prepend-inner>
-                        <v-icon class="mr-1" color="orange">
+                        <v-icon class="mr-1" color="orange" size="large">
                           mdi-reply
                         </v-icon>
                       </template>
@@ -242,7 +241,7 @@
                       class="ml-8 mt-n2 borderless-textarea"
                     >
                       <template #prepend-inner>
-                        <v-icon class="mr-1" color="blue-grey-lighten-3">
+                        <v-icon class="mr-1" color="blue-grey-lighten-2">
                           mdi-message
                         </v-icon>
                       </template>
@@ -588,15 +587,15 @@ onMounted(fetchData)
 }
 
 .default-card {
-  background-color: #FAFAFA;
+  background-color: #fafafa;
 }
 
 .none-card {
-  background-color: #FFEBEE;
+  color: #757575;
 }
 
 .approved-card {
-  background-color: #FAFAFA;
+  background-color: #fafafa;
 }
 
 .tasks {
@@ -609,6 +608,11 @@ onMounted(fetchData)
 
 .v-list-item__subtitle {
   font-size: 0.75rem !important;
+}
+
+.borderless-textarea :deep() .v-field__input {
+  line-height: 2;
+  margin-bottom: 4px;
 }
 
 .borderless-textarea :deep() .v-field__outline {
