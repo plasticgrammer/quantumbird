@@ -168,22 +168,19 @@
           </v-col>
         </v-row>
 
-        <div class="mt-5">
-          <v-btn 
-            color="primary" 
-            type="submit" 
-            :loading="loading"
-            :disabled="!isFormValid || !!editingMember || !isFormChanged"
-          >
-            <v-icon
-              class="mr-1"
-              left
+        <v-row class="mt-2">
+          <v-col cols="12" class="d-flex justify-end">
+            <v-btn 
+              color="primary" 
+              type="submit" 
+              :loading="loading"
+              :disabled="!isFormValid || !!editingMember || !isFormChanged"
             >
-              mdi-check
-            </v-icon>
-            更新する
-          </v-btn>
-        </div>
+              <v-icon class="mr-1">mdi-check</v-icon>
+              更新する
+            </v-btn>
+          </v-col>
+        </v-row>
       </v-form>
     </v-card>
   </v-container>

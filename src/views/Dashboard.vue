@@ -23,10 +23,8 @@
     </v-row>
 
     <v-row v-if="!isLoading" dense>
-      <v-col cols="12">
-        <v-card
-          class="mb-2"
-        >
+      <v-col cols="12" class="mb-2">
+        <v-card class="widget">
           <v-card-title class="text-subtitle-1">
             <v-icon
               small
@@ -96,78 +94,36 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="6">
-        <v-card
-          class="mb-2"
-        >
+      <v-col cols="12" md="6" class="mb-2">
+        <v-card class="widget">
           <v-card-title class="text-subtitle-1">
-            <v-icon
-              small
-              class="mr-1"
-            >
-              mdi-clipboard-check-outline
+            <v-icon small class="mr-1">
+              mdi-chart-line
             </v-icon>
-            やることリスト
+            残業時間の遷移（過去5週間）
           </v-card-title>
-          <v-card-text class="pt-1 pb-3">
-            - ボタン名見直し<br>
-            - サイドバーPIN状態を保存<br>
-            - 本番環境構築<br>
-            - メール到達確認<br>
-            - 報告済みステータスをカレンダーに表示<br>
+          <v-card-text class="pb-1">
+            <OvertimeChart :chart-data="overtimeData" />
           </v-card-text>
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="6">
-        <v-card
-          class="mb-2"
-        >
+      <v-col cols="12" md="6" class="mb-2">
+        <v-card class="widget">
           <v-card-title class="text-subtitle-1">
-            <v-icon
-              small
-              class="mr-1"
-            >
-              mdi-calendar-multiple-check
+            <v-icon small class="mr-1">
+              mdi-chart-line
             </v-icon>
-            【テスト用】メンバーの週次報告
+            ストレス評価の遷移（過去5週間）
           </v-card-title>
-          <v-card-text class="pt-1 pb-3">
-            <v-row>
-              <v-col>
-                <v-select
-                  v-model="selectedMember"
-                  :items="members"
-                  item-title="name"
-                  item-value="memberUuid"
-                  label="メンバー選択"
-                  class="mb-2"
-                  density="comfortable"
-                  variant="outlined"
-                  hide-details
-                ></v-select>
-              </v-col>
-              <v-col>
-                <v-btn
-                  color="black"
-                  variant="outlined"
-                  :href="weeklyReportLink"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  :disabled="!selectedMember"
-                  x-small
-                >
-                  週次報告
-                  <v-icon icon="mdi-open-in-new" end small />
-                </v-btn>
-              </v-col>
-            </v-row>
+          <v-card-text class="pb-1">
+            <StressChart :chart-data="stressData" />
           </v-card-text>
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="6">
-        <v-card class="mb-2">
+      <v-col cols="12" md="6" class="mb-2">
+        <v-card class="widget">
           <v-card-title class="text-subtitle-1">
             <v-icon small class="mr-1">
               mdi-domain
@@ -198,8 +154,8 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="6">
-        <v-card class="mb-2">
+      <v-col cols="12" md="6" class="mb-2">
+        <v-card class="widget">
           <v-card-title class="text-subtitle-1">
             <v-icon small class="mr-1">
               mdi-mail
@@ -240,30 +196,61 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="6">
-        <v-card>
+      <v-col cols="12" md="6" class="mb-2">
+        <v-card class="widget">
           <v-card-title class="text-subtitle-1">
             <v-icon small class="mr-1">
-              mdi-chart-line
+              mdi-clipboard-check-outline
             </v-icon>
-            残業時間の遷移（過去5週間）
+            やることリスト
           </v-card-title>
-          <v-card-text class="pb-1">
-            <OvertimeChart :chart-data="overtimeData" />
+          <v-card-text class="pt-1 pb-3">
+            - ボタン名見直し<br>
+            - 本番環境構築<br>
+            - メール到達確認<br>
+            - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="6">
-        <v-card>
+      <v-col cols="12" md="6" class="mb-2">
+        <v-card class="widget">
           <v-card-title class="text-subtitle-1">
             <v-icon small class="mr-1">
-              mdi-chart-line
+              mdi-calendar-account
             </v-icon>
-            ストレス評価の遷移（過去5週間）
+            メンバーの週次報告（代理入力）
           </v-card-title>
-          <v-card-text class="pb-1">
-            <StressChart :chart-data="stressData" />
+          <v-card-text class="pt-1 pb-3">
+            <v-row>
+              <v-col>
+                <v-select
+                  v-model="selectedMember"
+                  :items="members"
+                  item-title="name"
+                  item-value="memberUuid"
+                  label="メンバー選択"
+                  class="mb-2"
+                  density="comfortable"
+                  variant="outlined"
+                  hide-details
+                ></v-select>
+              </v-col>
+              <v-col>
+                <v-btn
+                  color="black"
+                  variant="outlined"
+                  :href="weeklyReportLink"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  :disabled="!selectedMember"
+                  x-small
+                >
+                  週次報告
+                  <v-icon icon="mdi-open-in-new" end small />
+                </v-btn>
+              </v-col>
+            </v-row>
           </v-card-text>
         </v-card>
       </v-col>
@@ -484,6 +471,10 @@ onMounted(fetchAll)
 </script>
 
 <style scoped>
+.widget {
+  min-height: 165px;
+}
+
 .calendar-small :deep(.v-date-picker-month) {
   height: 240px;
 }

@@ -71,7 +71,7 @@
     >
       <v-card class="text-center">
         <v-card-title class="text-h5 font-weight-bold">
-          週次報告が完了しました
+          週次報告を提出しました
         </v-card-title>
         <v-card-text>
           <v-img

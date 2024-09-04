@@ -153,15 +153,15 @@
           </v-card-text>
         </v-card>
 
-        <v-row class="mt-4">
-          <v-col>
+        <v-row class="mt-2">
+          <v-col cols="12" class="d-flex justify-end">
             <v-btn
               color="primary"
               type="submit"
               :loading="loading"
               :disabled="!isFormValid || !isFormChanged"
             >
-              <v-icon class="mr-1" left> mdi-check </v-icon>
+              <v-icon class="mr-1">mdi-check</v-icon>
               更新する
             </v-btn>
           </v-col>

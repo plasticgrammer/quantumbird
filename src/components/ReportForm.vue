@@ -343,7 +343,7 @@
               <v-icon class="mr-1" left>
                 mdi-check
               </v-icon>
-              報告を提出する
+              報告を{{ isNew ? '提出' : '更新' }}する
             </v-btn>
           </v-col>
         </v-row>
@@ -388,6 +388,7 @@ const report = ref(initialReport(props.organizationId, props.memberUuid, props.w
 const workItemRefs = reactive({})
 const projectNames = ref([])
 const isLoading = ref(false)
+const isNew = ref(true)
 const error = ref(null)
 const previousWeekReport = ref(null)
 const expandedPanel = ref(null)
@@ -513,7 +514,9 @@ const fetchReport = async () => {
       getMemberProjects(props.memberUuid)
     ])
 
+    isNew.value = true
     if (fetchedReport) {
+      isNew.value = false
       report.value = {
         ...fetchedReport,
         issues: fetchedReport.issues || '',
