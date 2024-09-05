@@ -265,14 +265,9 @@
                       hide-details="auto"
                       rows="2"
                     >
-                      <!-- <template #prepend-inner>
-                        <v-icon size="large" class="mr-1" color="orange">
-                          mdi-reply
-                        </v-icon>
-                      </template> -->
                     </v-textarea>
                     <v-btn
-                      color="warning"
+                      color="orange"
                       variant="elevated" 
                       :disabled="!newFeedbacks[report.memberUuid]?.trim()"
                       class="mt-3"
