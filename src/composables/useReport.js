@@ -5,7 +5,7 @@ export function useReport() {
       acc[item.key] = 0
       return acc
     }, {})
-  
+
     return {
       organizationId,
       memberUuid,
@@ -17,7 +17,7 @@ export function useReport() {
       rating: initialRatings
     }
   }
-  
+
   const ratingItems = [
     {
       key: 'achievement',
@@ -38,15 +38,15 @@ export function useReport() {
       negative: true
     }
   ]
-  
+
   const statusOptions = [
     { value: 'all', text: '全て', color: 'indigo' },
     { value: 'none', text: '報告なし', color: 'error' },
-    { value: 'pending', text: '確認待ち', color: 'primary' },
+    { value: 'pending', text: '確認待ち', color: 'success' },
     { value: 'feedback', text: 'フィードバック中', color: 'warning' },
-    { value: 'approved', text: '確認済み', color: 'success' }
+    { value: 'approved', text: '確認済み', color: 'primary' }
   ]
-  
+
   const getStatusText = (status) => {
     const option = statusOptions.find((e) => e.value === status)
     return option ? option.text : ''

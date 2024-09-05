@@ -184,7 +184,7 @@
               <template #prepend>
                 <v-icon icon="mdi-poll"></v-icon>
               </template>
-              <v-card-text>
+              <v-card-text class="px-6">
                 <rating-item
                   v-for="item in ratingItems"
                   :key="item.key"
@@ -609,7 +609,7 @@ onMounted(fetchData)
 }
 
 .feedback-box {
-  border: 1px solid rgb(0 0 0 / .2) !important;
+  border: 1px solid rgb(0 0 0 / 0.2) !important;
   background-color: transparent;
 }
 

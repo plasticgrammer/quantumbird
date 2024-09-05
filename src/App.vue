@@ -395,7 +395,7 @@ watch(isRailMode, (newValue) => {
 @media (max-width: 600px) {
   .content-wrapper {
     max-width: 100%;
-    padding: 8px;
+    padding: 4px;
   }
 }
 </style>

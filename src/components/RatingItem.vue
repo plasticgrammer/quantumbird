@@ -63,4 +63,8 @@ const emit = defineEmits(['update:modelValue'])
 .v-rating__item .v-btn {
   width: 3.2em;
 }
+
+.v-rating__item .v-btn .v-btn__content i {
+  transform: scale(1.2);
+}
 </style>
