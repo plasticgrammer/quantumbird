@@ -344,7 +344,7 @@
           </v-col>
         </v-row>
 
-        <v-row>
+        <v-row class="mt-2">
           <v-col cols="12" class="d-flex justify-end">
             <v-btn
               color="primary"
