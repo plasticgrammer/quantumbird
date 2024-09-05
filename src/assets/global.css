@@ -52,6 +52,21 @@ h3 {
   width: 8px !important;
 }
 
+.borderless-textarea .v-field__input {
+  padding-top: calc(var(--v-field-input-padding-top) + 4px);
+  padding-bottom: calc(var(--v-field-input-padding-bottom) + 4px);
+  margin-bottom: 4px;
+  font-size: 0.875rem;
+}
+
+.borderless-textarea .v-field__outline {
+  display: none;
+}
+
+.borderless-textarea .v-field__overlay {
+  background-color: transparent;
+}
+
 /*
  * app common style
  */

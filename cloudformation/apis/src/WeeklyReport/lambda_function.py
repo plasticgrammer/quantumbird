@@ -359,12 +359,12 @@ def send_feedback_mail(organization, member, week_string, feedback):
         # UTCからJSTに変換
         utc_dt = parse(feedback_created_at)
         jst_dt = utc_dt.astimezone(TIMEZONE)
-
         # 日本語の日付形式で文字列化
         formatted_date = jst_dt.strftime("%Y年%m月%d日 %H:%M")
+        bodyText += f"（{formatted_date}）\n"
 
         bodyText += "------------------------------------------\n"
-        bodyText += f"{feedback_content}\n（{formatted_date}）\n\n"
+        bodyText += f"{feedback_content}\n"
         bodyText += "------------------------------------------\n"
 
         link = generate_report_link(organization['organizationId'], member["memberUuid"], week_string)

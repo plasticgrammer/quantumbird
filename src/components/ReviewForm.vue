@@ -200,22 +200,28 @@
             <v-row class="mt-2">
               <v-col cols="12">
                 <v-alert
-                  v-if="report.feedbacks.length" 
+                  v-if="report.status !== 'approved' || report.feedbacks.length" 
                   density="compact"
-                  class="border-sm px-2 mb-3"
-                  color="transparent"
+                  class="feedback-box px-2"
                   border="start"
                   border-color="orange"
                   outlined
                   dense
                 >
+                  <v-alert-title class="pl-3 pb-2 text-body-1">
+                    <v-icon class="mr-2" color="orange-lighten-2" size="large">
+                      mdi-comment-text
+                    </v-icon>
+                    フィードバック
+                  </v-alert-title>
                   <div
-                    v-for="(feedback, index) in report.feedbacks" :key="index"
+                    v-for="(feedback, index) in report.feedbacks"
+                    :key="index"
                     class="pa-0"
                   >
                     <v-textarea
                       v-model="feedback.content"
-                      :label="`フィードバック（${ formatDateTimeJp(new Date(feedback.createdAt)) }）`"
+                      :label="`${ formatDateTimeJp(new Date(feedback.createdAt)) }`"
                       readonly
                       rows="1"
                       auto-grow
@@ -223,11 +229,6 @@
                       density="comfortable"
                       class="borderless-textarea"
                     >
-                      <template #prepend-inner>
-                        <v-icon class="mr-1" color="orange" size="large">
-                          mdi-reply
-                        </v-icon>
-                      </template>
                     </v-textarea>
                     <v-textarea
                       v-if="!!feedback.replyComment"
@@ -238,35 +239,51 @@
                       auto-grow
                       hide-details
                       density="comfortable"
-                      class="ml-8 mt-n2 borderless-textarea"
+                      class="ml-4 mt-n2 borderless-textarea"
                     >
                       <template #prepend-inner>
-                        <v-icon class="mr-1" color="blue-grey-lighten-2">
-                          mdi-message
+                        <v-icon class="mr-1" color="grey-darken-3" size="large">
+                          mdi-comment-account-outline
                         </v-icon>
                       </template>
                     </v-textarea>
                   </div>
-                </v-alert>
 
-                <v-textarea
-                  v-if="report.status !== 'approved' && !readonly"
-                  v-model="newFeedbacks[report.memberUuid]"
-                  label="新しいフィードバックを入力..."
-                  outlined
-                  dense
-                  class="d-print-none"
-                  clear-icon="mdi-close-circle"
-                  clearable 
-                  hide-details="auto"
-                  rows="2"
-                >
-                  <template #prepend-inner>
-                    <v-icon size="large" class="mr-1" color="orange">
-                      mdi-reply
-                    </v-icon>
-                  </template>
-                </v-textarea>
+                  <div 
+                    v-if="report.status !== 'approved' && !readonly"
+                    class="pl-4 pr-2 py-1 d-print-none"
+                  >
+                    <v-textarea
+                      v-model="newFeedbacks[report.memberUuid]"
+                      label="新しいフィードバックを入力..."
+                      outlined
+                      dense
+                      clear-icon="mdi-close-circle"
+                      clearable 
+                      hide-details="auto"
+                      rows="2"
+                    >
+                      <template #prepend-inner>
+                        <v-icon size="large" class="mr-1" color="orange">
+                          mdi-reply
+                        </v-icon>
+                      </template>
+                    </v-textarea>
+                    <v-btn
+                      color="warning"
+                      variant="elevated" 
+                      :disabled="!newFeedbacks[report.memberUuid]?.trim()"
+                      class="mt-3"
+                      outlined
+                      @click="handleFeedback(report.memberUuid)"
+                    >
+                      <v-icon class="mr-1">
+                        mdi-reply
+                      </v-icon>
+                      フィードバック送信
+                    </v-btn>
+                  </div>
+                </v-alert>
               </v-col>
             </v-row>
           </v-card-text>
@@ -275,19 +292,6 @@
             v-if="report.status !== 'approved' && report.status !== 'none' && !readonly"
             class="d-print-none pt-0 pb-3"
           >
-            <v-btn
-              color="warning"
-              variant="elevated" 
-              :disabled="!newFeedbacks[report.memberUuid]?.trim()"
-              class="ml-2"
-              outlined
-              @click="handleFeedback(report.memberUuid)"
-            >
-              <v-icon left x-small class="mr-1">
-                mdi-reply
-              </v-icon>
-              フィードバック送信
-            </v-btn>
             <v-spacer />
             <v-btn
               color="primary"
@@ -602,24 +606,16 @@ onMounted(fetchData)
   background-color: transparent;
 }
 
+.feedback-box {
+  border: 1px solid rgb(0 0 0 / .2) !important;
+  background-color: transparent;
+}
+
 .v-list-item__title {
   font-size: 0.875rem !important;
 }
 
 .v-list-item__subtitle {
   font-size: 0.75rem !important;
-}
-
-.borderless-textarea :deep() .v-field__input {
-  line-height: 2;
-  margin-bottom: 4px;
-}
-
-.borderless-textarea :deep() .v-field__outline {
-  display: none;
-}
-
-.borderless-textarea :deep() .v-field__overlay {
-  background-color: transparent;
 }
 </style>

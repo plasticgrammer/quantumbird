@@ -97,50 +97,59 @@
 
       <template v-if="report.feedbacks && report.feedbacks.length > 0">
         <v-alert
-          v-for="(feedback, index) in sortedFeedbacks"
-          :key="feedback.id"
-          icon="mdi-message"
           density="compact"
           color="white"
+          class="px-2 pb-3 mb-3"
+          :class="{ 'form-disabled': isReportConfirmed } " 
           border="start"
-          border-color="warning"
+          border-color="orange"
           elevation="2"
           outlined
           dense
-          class="mb-1 custom-feedback-alert"
-          :class="{ 'form-disabled': isReportConfirmed } " 
         >
-          <div>
-            フィードバック（{{ new Date(feedback.createdAt).toLocaleString() }}）:
-          </div>
-          <div class="mt-1">
-            <p>{{ feedback.content }}</p>
-          </div>
-          <template v-if="!!feedback.replyComment || isLatestFeedback(index)">
+          <v-alert-title class="pl-3 pb-2 text-body-1">
+            <v-icon class="mr-2" color="orange-lighten-2" size="large">
+              mdi-comment-text
+            </v-icon>
+            フィードバック
+          </v-alert-title>
+          <div 
+            v-for="(feedback, index) in sortedFeedbacks"
+            :key="feedback.id"
+            class="pa-0"
+          >
             <v-textarea
-              v-model="feedback.replyComment"
-              label="返信コメント"
-              :readonly="!isLatestFeedback(index)"
-              :clearable="isLatestFeedback(index)"
-              rows="2"
+              v-model="feedback.content"
+              :label="`${ formatDateTimeJp(new Date(feedback.createdAt)) }`"
+              readonly
+              rows="1"
               auto-grow
-              outlined
-              dense
               hide-details
-              clear-icon="mdi-close-circle"
-              class="my-2"
+              density="comfortable"
+              class="borderless-textarea"
             >
-              <template #prepend-inner>
-                <v-icon
-                  size="large"
-                  class="mr-1"
-                  color="black"
-                >
-                  mdi-reply
-                </v-icon>
-              </template>
             </v-textarea>
-          </template>
+            <template v-if="!!feedback.replyComment || isLatestFeedback(index)">
+              <v-textarea
+                v-model="feedback.replyComment"
+                label="返信コメント"
+                :readonly="!isLatestFeedback(index)"
+                :clearable="isLatestFeedback(index)"
+                :rows="isLatestFeedback(index) ? 2 : 1"
+                auto-grow
+                hide-details
+                clear-icon="mdi-close-circle"
+                class="ml-4 mr-2 mt-n2"
+                :class="{ 'borderless-textarea': !isLatestFeedback(index) }"
+              >
+                <template #prepend-inner>
+                  <v-icon class="mr-1" color="grey-darken-3" size="large">
+                    mdi-reply
+                  </v-icon>
+                </template>
+              </v-textarea>
+            </template>
+          </div>
         </v-alert>
       </template>
 
@@ -364,7 +373,7 @@ import RatingItem from '../components/RatingItem.vue'
 const { isMobile } = useResponsive()
 const showNotification = inject('showNotification')
 
-const { getPreviousWeekString } = useCalendar()
+const { formatDateTimeJp, getPreviousWeekString } = useCalendar()
 const { initialReport, ratingItems } = useReport()
 
 const props = defineProps({
@@ -689,9 +698,5 @@ const handleSubmit = async () => {
   display: block;
   text-indent: 1em;
   padding-top: 4px;
-}
-
-.custom-feedback-alert :deep() .v-icon {
-  color: orange;
 }
 </style>
