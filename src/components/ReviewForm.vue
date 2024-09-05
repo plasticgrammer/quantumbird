@@ -197,10 +197,12 @@
               </v-card-text>
             </v-card>
 
-            <v-row class="mt-2">
+            <v-row
+              v-if="report.status !== 'approved' || report.feedbacks.length" 
+              class="mt-2"
+            >
               <v-col cols="12">
                 <v-alert
-                  v-if="report.status !== 'approved' || report.feedbacks.length" 
                   density="compact"
                   class="feedback-box px-2"
                   border="start"
@@ -209,8 +211,8 @@
                   dense
                 >
                   <v-alert-title class="pl-3 pb-2 text-body-1">
-                    <v-icon class="mr-2" color="orange-lighten-2" size="large">
-                      mdi-comment-text
+                    <v-icon class="mr-2" color="orange" size="large">
+                      mdi-comment-text-outline
                     </v-icon>
                     フィードバック
                   </v-alert-title>
@@ -251,7 +253,7 @@
 
                   <div 
                     v-if="report.status !== 'approved' && !readonly"
-                    class="pl-4 pr-2 py-1 d-print-none"
+                    class="pl-4 pr-3 py-1 d-print-none"
                   >
                     <v-textarea
                       v-model="newFeedbacks[report.memberUuid]"
@@ -263,11 +265,11 @@
                       hide-details="auto"
                       rows="2"
                     >
-                      <template #prepend-inner>
+                      <!-- <template #prepend-inner>
                         <v-icon size="large" class="mr-1" color="orange">
                           mdi-reply
                         </v-icon>
-                      </template>
+                      </template> -->
                     </v-textarea>
                     <v-btn
                       color="warning"

@@ -95,64 +95,6 @@
         </v-card>
       </template>
 
-      <template v-if="report.feedbacks && report.feedbacks.length > 0">
-        <v-alert
-          density="compact"
-          color="white"
-          class="px-2 pb-3 mb-3"
-          :class="{ 'form-disabled': isReportConfirmed } " 
-          border="start"
-          border-color="orange"
-          elevation="2"
-          outlined
-          dense
-        >
-          <v-alert-title class="pl-3 pb-2 text-body-1">
-            <v-icon class="mr-2" color="orange-lighten-2" size="large">
-              mdi-comment-text
-            </v-icon>
-            フィードバック
-          </v-alert-title>
-          <div 
-            v-for="(feedback, index) in sortedFeedbacks"
-            :key="feedback.id"
-            class="pa-0"
-          >
-            <v-textarea
-              v-model="feedback.content"
-              :label="`${ formatDateTimeJp(new Date(feedback.createdAt)) }`"
-              readonly
-              rows="1"
-              auto-grow
-              hide-details
-              density="comfortable"
-              class="borderless-textarea"
-            >
-            </v-textarea>
-            <template v-if="!!feedback.replyComment || isLatestFeedback(index)">
-              <v-textarea
-                v-model="feedback.replyComment"
-                label="返信コメント"
-                :readonly="!isLatestFeedback(index)"
-                :clearable="isLatestFeedback(index)"
-                :rows="isLatestFeedback(index) ? 2 : 1"
-                auto-grow
-                hide-details
-                clear-icon="mdi-close-circle"
-                class="ml-4 mr-2 mt-n2"
-                :class="{ 'borderless-textarea': !isLatestFeedback(index) }"
-              >
-                <template #prepend-inner>
-                  <v-icon class="mr-1" color="grey-darken-3" size="large">
-                    mdi-reply
-                  </v-icon>
-                </template>
-              </v-textarea>
-            </template>
-          </div>
-        </v-alert>
-      </template>
-
       <v-form
         ref="reportForm"
         class="report-form mt-3 elevation-6"
@@ -341,12 +283,72 @@
           </div>
         </div>
 
+        <v-row 
+          v-if="report.feedbacks && report.feedbacks.length"  
+          class="mt-2"
+        >
+          <v-col cols="12">
+            <v-alert
+              density="compact"
+              class="feedback-box px-2 pb-2"
+              :class="{ 'form-disabled': isReportConfirmed } " 
+              border="start"
+              border-color="orange"
+              outlined
+              dense
+            >
+              <v-alert-title class="pl-3 pb-2 text-body-1">
+                <v-icon class="mr-2" color="orange" size="large">
+                  mdi-comment-text-outline
+                </v-icon>
+                フィードバック
+              </v-alert-title>
+              <div 
+                v-for="(feedback, index) in sortedFeedbacks"
+                :key="feedback.id"
+                class="pa-0"
+              >
+                <v-textarea
+                  v-model="feedback.content"
+                  :label="`${ formatDateTimeJp(new Date(feedback.createdAt)) }`"
+                  readonly
+                  rows="1"
+                  auto-grow
+                  hide-details
+                  density="comfortable"
+                  class="borderless-textarea"
+                >
+                </v-textarea>
+                <template v-if="!!feedback.replyComment || isLatestFeedback(index)">
+                  <v-textarea
+                    v-model="feedback.replyComment"
+                    label="返信コメント"
+                    :readonly="!isLatestFeedback(index)"
+                    :clearable="isLatestFeedback(index)"
+                    :rows="isLatestFeedback(index) ? 2 : 1"
+                    auto-grow
+                    hide-details
+                    clear-icon="mdi-close-circle"
+                    class="ml-4 mr-3"
+                    :class="{ 'borderless-textarea': !isLatestFeedback(index), 'mt-n2': !isLatestFeedback(index), 'my-2': isLatestFeedback(index) }"
+                  >
+                    <template #prepend-inner>
+                      <v-icon class="mr-1" color="grey-darken-3" size="large">
+                        mdi-reply
+                      </v-icon>
+                    </template>
+                  </v-textarea>
+                </template>
+              </div>
+            </v-alert>
+          </v-col>
+        </v-row>
+
         <v-row>
           <v-col cols="12" class="d-flex justify-end">
             <v-btn
               color="primary"
               type="submit"
-              class="mt-6"
               :disabled="!isFormValid || isReportConfirmed"
             >
               <v-icon class="mr-1" left>
@@ -698,5 +700,10 @@ const handleSubmit = async () => {
   display: block;
   text-indent: 1em;
   padding-top: 4px;
+}
+
+.feedback-box {
+  border: 1px solid rgb(0 0 0 / .2) !important;
+  background-color: transparent;
 }
 </style>
