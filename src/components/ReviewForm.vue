@@ -184,7 +184,7 @@
               <template #prepend>
                 <v-icon icon="mdi-poll"></v-icon>
               </template>
-              <v-card-text class="px-6">
+              <v-card-text>
                 <rating-item
                   v-for="item in ratingItems"
                   :key="item.key"
@@ -267,7 +267,7 @@
                     >
                     </v-textarea>
                     <v-btn
-                      color="orange"
+                      color="warning"
                       variant="elevated" 
                       :disabled="!newFeedbacks[report.memberUuid]?.trim()"
                       class="mt-3"
@@ -314,12 +314,12 @@
           color="secondary"
           variant="elevated" 
           outlined
-          @click="handleResend()"
+          @click="handleResend"
         >
-          <v-icon class="mr-1">
+          報告要求を再送する
+          <v-icon class="ml-1">
             mdi-send
           </v-icon>
-          報告要求を再送する（報告なし{{ statusCounts['none'] }}名）
         </v-btn>
       </v-col>
     </v-row>
@@ -339,6 +339,7 @@ import RatingItem from '../components/RatingItem.vue'
 const { formatDateTimeJp } = useCalendar()
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
 const showNotification = inject('showNotification')
+const showConfirmDialog = inject('showConfirmDialog')
 
 const props = defineProps({
   organizationId: {
@@ -359,6 +360,10 @@ const reports = ref([])
 const isLoading = ref(true)
 const error = ref(null)
 const newFeedbacks = ref({})
+
+const unconfirmedCount = computed(() => {
+  return statusCounts.value['none'] || 0
+})
 
 const selectedStatus = ref('all')
 
@@ -527,6 +532,14 @@ const handleFeedback = async (memberUuid) => {
 }
 
 const handleApprove = async (memberUuid) => {
+  const confirmed = await showConfirmDialog(
+    '確認',
+    '報告を確認済みとします。よろしいですか？'
+  )
+  if (!confirmed) {
+    return
+  }
+
   const now = new Date()
   const report = reports.value.find(r => r.memberUuid === memberUuid)
   if (report) {
@@ -553,12 +566,21 @@ const handleApprove = async (memberUuid) => {
 }
 
 const handleResend = async () => {
-  try {
-    await sendRequest(props.organizationId, props.weekString)
-    showNotification('報告要求を再送しました')
-  } catch (error) {
-    console.error('Failed to approve report:', error)
-    showNotification('報告要求の再送に失敗しました', 'error')
+  const confirmed = await showConfirmDialog(
+    '再送確認',
+    `報告要求を再送します。確認なし${unconfirmedCount.value}名に再送されます。よろしいですか？`
+  )
+
+  if (confirmed) {
+    try {
+      await sendRequest(props.organizationId, props.weekString)
+      showNotification('報告要求を再送しました')
+      // 必要に応じて、ここでレポートデータを再取得するなどの処理を追加
+      await fetchData()
+    } catch (error) {
+      console.error('Failed to resend report request:', error)
+      showNotification('報告要求の再送に失敗しました', 'error')
+    }
   }
 }
 

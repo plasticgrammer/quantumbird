@@ -97,7 +97,7 @@
 
       <v-form
         ref="reportForm"
-        class="report-form mt-3 elevation-6"
+        class="report-form mt-3 elevation-6 pa-3 pa-md-5"
         :class="{ 'form-disabled': isReportConfirmed } " 
         @submit.prevent="handleSubmit"
       >
@@ -168,7 +168,7 @@
           </v-card-text>
         </v-card>
         <v-fab
-          class="me-md-5 mt-n4 mt-md-n2"
+          class="me-md-5 mt-n5 mt-md-n2"
           location="top end"
           color="secondary"
           extended
@@ -258,7 +258,7 @@
           <template #prepend>
             <v-icon icon="mdi-poll"></v-icon>
           </template>
-          <v-card-text class="px-6">
+          <v-card-text>
             <rating-item
               v-for="item in ratingItems"
               :key="item.key"
@@ -659,7 +659,6 @@ const handleSubmit = async () => {
 
 .report-form {
   background-color: #f9f9f9;
-  padding: 20px;
   border-radius: 8px;
 }
 

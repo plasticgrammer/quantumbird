@@ -1,5 +1,5 @@
 <template>
-  <v-row class="align-center">
+  <v-row class="align-center px-md-6">
     <v-col cols="8" md="3" class="d-flex align-center">
       <span class="text-body-1">{{ label }}</span>
     </v-col>

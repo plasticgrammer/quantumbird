@@ -160,7 +160,7 @@
       </div>
     </v-main>
 
-    <ConfirmationDialog v-if="showConfirmDialog" ref="confirmDialog" />
+    <ConfirmationDialog ref="confirmDialog" />
   </v-app>
 </template>
 
@@ -179,7 +179,6 @@ const confirmDialog = ref(null)
 const drawer = ref(true)
 const isRailMode = ref(true)
 const isHovered = ref(false)
-const showConfirmDialog = ref(false)
 const showDropdown = ref(false)
 
 const user = computed(() => ({
@@ -261,13 +260,15 @@ const closeNotification = () => {
 }
 
 const showConfirmDialogGlobal = async (title, message) => {
+  if (!confirmDialog.value) {
+    console.error('Confirmation dialog component not found')
+    return false
+  }
   try {
-    showConfirmDialog.value = true
-    return await confirmDialog.value?.open(title, message)
+    return await confirmDialog.value.open(title, message)
   } catch (error) {
     console.error('Error showing confirmation dialog:', error)
-  } finally {
-    showConfirmDialog.value = false
+    return false
   }
 }
 
@@ -397,6 +398,10 @@ watch(isRailMode, (newValue) => {
   .content-wrapper {
     max-width: 100%;
     padding: 4px;
+  }
+
+  .v-container {
+    padding: 8px;
   }
 }
 </style>
