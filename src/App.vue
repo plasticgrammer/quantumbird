@@ -3,6 +3,7 @@
     <template v-if="!$route.meta.hideAnimation">
       <div v-for="i in 2" :key="i" class="wave"></div>
       <v-img
+        v-if="!isMobile"
         src="@/assets/images/rakko.png"
         max-width="46%"
         width="340"
