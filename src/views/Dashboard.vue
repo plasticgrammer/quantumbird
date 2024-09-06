@@ -205,6 +205,7 @@
             やることリスト
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
+            - 初期表示にてナビが一瞬<br>
             - 実行中<br>
             - 本番環境構築<br>
             - メール到達確認<br>
@@ -223,20 +224,19 @@
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
             <v-row>
-              <v-col>
+              <v-col cols="6">
                 <v-select
                   v-model="selectedMember"
                   :items="members"
                   item-title="name"
                   item-value="memberUuid"
                   label="メンバー選択"
-                  class="mb-2"
                   density="comfortable"
                   variant="outlined"
                   hide-details
                 ></v-select>
               </v-col>
-              <v-col>
+              <v-col cols="12">
                 <v-btn
                   color="black"
                   variant="outlined"
