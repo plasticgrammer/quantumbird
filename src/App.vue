@@ -65,7 +65,7 @@
             <v-list-item-title>
               <v-img
                 src="@/assets/logo.png"
-                class="cursor-pointer"
+                class="cursor-pointer ml-n1"
                 @click="navigateTo({ name: 'Overview' })"
               ></v-img>
             </v-list-item-title>
