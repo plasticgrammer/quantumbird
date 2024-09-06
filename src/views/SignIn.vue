@@ -2,7 +2,7 @@
   <v-container>
     <v-card 
       max-width="500" 
-      class="mx-auto mt-5"
+      class="mx-auto mt-6"
     >
       <v-card-title class="mt-1 mb-4">
         <v-icon size="large" class="mr-1">
@@ -44,7 +44,7 @@
               required
             />
             <v-btn
-              color="teal"
+              color="primary"
               type="submit"
               block
               class="mt-4"

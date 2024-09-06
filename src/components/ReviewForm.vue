@@ -36,10 +36,10 @@
           size="small"
           @click="copyShareUrl"
         >
-          <v-icon class="mr-2">
+          共有する
+          <v-icon class="ml-1">
             mdi-share-variant
           </v-icon>
-          共有する
         </v-btn>
       </v-col>
     </v-row>
@@ -499,6 +499,14 @@ const processReports = (fetchedReports, members) => {
 }
 
 const handleFeedback = async (memberUuid) => {
+  const confirmed = await showConfirmDialog(
+    '確認',
+    'フィードバックを送信します。\nよろしいですか？'
+  )
+  if (!confirmed) {
+    return
+  }
+
   const report = reports.value.find(r => r.memberUuid === memberUuid)
   const newFeedback = newFeedbacks.value[memberUuid]
   if (report && newFeedback && newFeedback.trim() !== '') {
@@ -534,7 +542,7 @@ const handleFeedback = async (memberUuid) => {
 const handleApprove = async (memberUuid) => {
   const confirmed = await showConfirmDialog(
     '確認',
-    '報告を確認済みとします。よろしいですか？'
+    '報告を確認済みとします。\nよろしいですか？'
   )
   if (!confirmed) {
     return
@@ -567,8 +575,8 @@ const handleApprove = async (memberUuid) => {
 
 const handleResend = async () => {
   const confirmed = await showConfirmDialog(
-    '再送確認',
-    `報告要求を再送します。確認なし${unconfirmedCount.value}名に再送されます。よろしいですか？`
+    '確認',
+    `報告要求を 確認なし${unconfirmedCount.value}名 に送信します。\nよろしいですか？`
   )
 
   if (confirmed) {

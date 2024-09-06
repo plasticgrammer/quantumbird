@@ -161,6 +161,8 @@
     </v-main>
 
     <ConfirmationDialog ref="confirmDialog" />
+
+    <LoadingOverlay />
   </v-app>
 </template>
 
@@ -170,6 +172,7 @@ import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { useResponsive } from './composables/useResponsive'
 import ConfirmationDialog from './components/ConfirmationDialog.vue'
+import LoadingOverlay from './components/LoadingOverlay.vue'
 
 const { isMobile } = useResponsive()
 

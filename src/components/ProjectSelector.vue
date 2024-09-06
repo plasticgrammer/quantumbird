@@ -100,7 +100,7 @@ const addProjectOption = async (project) => {
 }
 
 const removeProjectOption = async (project) => {
-  const confirmed = await showConfirmDialog('確認', 'プロジェクトリストから削除します。よろしいですか？')
+  const confirmed = await showConfirmDialog('確認', 'プロジェクトリストから削除します。\nよろしいですか？')
   if (!confirmed) {
     return
   }

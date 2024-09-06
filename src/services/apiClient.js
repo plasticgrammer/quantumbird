@@ -1,23 +1,44 @@
-// services/apiClient.js
 import axios from 'axios'
 import store from '@/store'
 
 const stage = process.env.STAGE || 'dev'
 const API_ENDPOINT = `${process.env.VUE_APP_API_ENDPOINT}/${stage}`
 
-// Create a new instance of axios with a custom config
 const api = axios.create({
   baseURL: API_ENDPOINT,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 seconds timeout
+  timeout: 10000,
   withCredentials: false
 })
 
-// Request interceptor for API calls
+let activeRequests = 0
+let loadingTimeout = null
+const LOADING_DELAY = 300 // 300ms delay before showing loading
+
+const startLoading = () => {
+  activeRequests++
+  if (loadingTimeout === null) {
+    loadingTimeout = setTimeout(() => {
+      store.dispatch('setLoading', true)
+    }, LOADING_DELAY)
+  }
+}
+
+const stopLoading = () => {
+  activeRequests--
+  if (activeRequests === 0) {
+    clearTimeout(loadingTimeout)
+    loadingTimeout = null
+    store.dispatch('setLoading', false)
+  }
+}
+
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
+    startLoading()
     const token = store.getters['auth/token']
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`
@@ -25,15 +46,20 @@ api.interceptors.request.use(
     return config
   },
   (error) => {
+    stopLoading()
     console.error('Request interceptor error:', error)
     return Promise.reject(error)
   }
 )
 
-// Response interceptor for API calls
+// Response interceptor
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    stopLoading()
+    return response
+  },
   async (error) => {
+    stopLoading()
     const originalRequest = error.config
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
@@ -43,11 +69,17 @@ api.interceptors.response.use(
         return api(originalRequest)
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError)
-        // Redirect to login or handle authentication failure
         store.dispatch('auth/signOut')
         return Promise.reject(refreshError)
       }
     }
+    console.error(`Error in API call (${originalRequest.method} ${originalRequest.url}):`, error)
+    console.error('Error details:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      config: error.config,
+    })
     return Promise.reject(error)
   }
 )
@@ -74,15 +106,8 @@ export const callApi = async (method, path, data = null, queryParams = null, opt
     if (axios.isCancel(error)) {
       console.log('Request canceled:', error.message)
     } else {
-      console.error(`Error in API call (${method} ${path}):`, error)
-      console.error('Error details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        config: error.config,
-      })
-      // You can implement custom error handling here
-      // For example, showing a notification to the user
+      // Error is already logged in the response interceptor
+      // You can implement additional custom error handling here if needed
     }
     throw error
   }

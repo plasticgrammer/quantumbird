@@ -107,6 +107,7 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
+  //store.dispatch('setLoading', true)
   if (to.matched.some(record => record.meta.requiresAuth)) {
     try {
       const token = await store.dispatch('auth/fetchAuthToken')
@@ -135,6 +136,10 @@ router.beforeEach(async (to, from, next) => {
     // 認証が不要なルートの場合、そのまま進む
     next()
   }
+})
+
+router.afterEach(() => {
+  //store.dispatch('setLoading', false)
 })
 
 export default router

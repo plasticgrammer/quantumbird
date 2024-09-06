@@ -7,7 +7,9 @@
       <v-card-title class="bg-secondary">
         {{ currentTitle }}
       </v-card-title>
-      <v-card-text>{{ currentMessage }}</v-card-text>
+      <v-card-text>
+        <pre class="message-text">{{ currentMessage }}</pre>
+      </v-card-text>
       <v-card-actions>
         <v-spacer />
         <v-btn
@@ -57,3 +59,15 @@ const confirm = () => {
 
 defineExpose({ open })
 </script>
+
+<style scoped>
+.message-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+}
+</style>

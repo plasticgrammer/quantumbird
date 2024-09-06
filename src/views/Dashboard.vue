@@ -13,12 +13,10 @@
         </h3>
       </v-col>
       <v-col cols="2" class="d-flex justify-end align-center pe-3">
-        <v-progress-circular 
-          class="cursor-pointer" 
-          size="26"
-          :indeterminate="isLoading"
+        <v-icon
+          icon="mdi-reload"
           @click="handleReload"
-        ></v-progress-circular>
+        ></v-icon>
       </v-col>
     </v-row>
 
@@ -206,7 +204,6 @@
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
             - 初期表示にてナビが一瞬<br>
-            - 実行中<br>
             - 本番環境構築<br>
             - メール到達確認<br>
             - 報告済みステータスをカレンダーに表示<br>
