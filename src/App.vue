@@ -58,7 +58,7 @@
               <v-icon 
                 v-ripple
                 icon="mdi-menu"
-                class="opacity-100 mr-1"
+                class="opacity-100 mr-1 my-3"
                 @click="toggleDrawerMode"
               ></v-icon>
             </template>
@@ -123,6 +123,19 @@
                   <v-list-item-title class="text-body-2 opacity-60">{{ user.email }}</v-list-item-title>
                 </v-list-item>
                 <v-divider></v-divider>
+                <v-list-item>
+                  <template #prepend>
+                    <v-icon icon="mdi-open-in-new"></v-icon>
+                  </template>
+                  <v-list-item-title>
+                    <a
+                      href="https://forms.gle/suRGEcRXE33xvFu19"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-decoration-none text-white"
+                    >フィードバック</a>
+                  </v-list-item-title>
+                </v-list-item>
                 <v-list-item @click="handleSignOut">
                   <template #prepend>
                     <v-icon icon="mdi-logout-variant"></v-icon>
@@ -138,7 +151,7 @@
       <v-bottom-navigation
         v-else
         bg-color="blue-grey-darken-2"
-        class="d-print-none"
+        class="d-print-none pb-3"
         grow
       >
         <v-btn

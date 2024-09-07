@@ -45,7 +45,8 @@ export default {
         return null
       }
     },
-    async fetchAuthToken({ commit, state }) {
+
+    async fetchAuthToken({ commit, dispatch, state }) {
       // トークンのキャッシュ期限を55分とする（通常、トークンの有効期限は1時間）
       if (state.token && Date.now() - state.lastTokenFetch < 55 * 60 * 1000) {
         return state.token
@@ -57,13 +58,22 @@ export default {
           commit('setToken', token)
           return token
         }
+        // トークンが取得できなかった場合
+        await dispatch('handleAuthFailure')
         return null
       } catch (error) {
         console.error('Error fetching auth token:', error)
-        commit('setToken', null)
+        await dispatch('handleAuthFailure')
         return null
       }
     },
+
+    async handleAuthFailure({ dispatch }) {
+      console.log('Authentication failure, signing out...')
+      await dispatch('signOut')
+      // ここでルーターを使用してログインページにリダイレクトするなどの処理を追加できます
+    },
+
     async signOut({ commit }) {
       try {
         await signOut()
@@ -71,7 +81,8 @@ export default {
         console.log('Successfully signed out')
       } catch (error) {
         console.error('Error signing out:', error)
-        throw error
+        // エラーが発生しても状態をクリアする
+        commit('clearAuthState')
       }
     }
   },

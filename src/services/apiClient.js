@@ -3,6 +3,7 @@ import store from '@/store'
 
 const stage = process.env.STAGE || 'dev'
 const API_ENDPOINT = `${process.env.VUE_APP_API_ENDPOINT}/${stage}`
+const LOADING_DELAY = 300 // 300ms delay before showing loading
 
 const api = axios.create({
   baseURL: API_ENDPOINT,
@@ -15,7 +16,8 @@ const api = axios.create({
 
 let activeRequests = 0
 let loadingTimeout = null
-const LOADING_DELAY = 300 // 300ms delay before showing loading
+let isRefreshing = false
+let failedQueue = []
 
 const startLoading = () => {
   activeRequests++
@@ -52,6 +54,17 @@ api.interceptors.request.use(
   }
 )
 
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  failedQueue = []
+}
+
 // Response interceptor
 api.interceptors.response.use(
   (response) => {
@@ -61,18 +74,35 @@ api.interceptors.response.use(
   async (error) => {
     stopLoading()
     const originalRequest = error.config
+
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then(token => {
+          originalRequest.headers['Authorization'] = `Bearer ${token}`
+          return api(originalRequest)
+        }).catch(err => Promise.reject(err))
+      }
+
       originalRequest._retry = true
+      isRefreshing = true
+
       try {
         const newToken = await store.dispatch('auth/fetchAuthToken')
+        processQueue(null, newToken)
         originalRequest.headers['Authorization'] = `Bearer ${newToken}`
         return api(originalRequest)
       } catch (refreshError) {
+        processQueue(refreshError, null)
         console.error('Token refresh failed:', refreshError)
         store.dispatch('auth/signOut')
         return Promise.reject(refreshError)
+      } finally {
+        isRefreshing = false
       }
     }
+
     console.error(`Error in API call (${originalRequest.method} ${originalRequest.url}):`, error)
     console.error('Error details:', {
       status: error.response?.status,

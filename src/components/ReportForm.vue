@@ -34,7 +34,7 @@
               </v-expansion-panel-title>
               <v-expansion-panel-text>
                 <v-row>
-                  <v-col col="12" md="5" class="pa-2">
+                  <v-col cols="12" md="5" class="pa-2">
                     <v-list class="bg-transparent custom-list">
                       <v-list-item v-for="(project, index) in previousWeekReport.projects" :key="index">
                         <v-list-item-title>
@@ -53,7 +53,7 @@
                       </v-list-item>
                     </v-list>
                   </v-col>
-                  <v-col col="12" md="7">
+                  <v-col cols="12" md="7">
                     <v-textarea
                       v-model="previousWeekReport.issues"
                       label="現状・問題点"
@@ -188,7 +188,7 @@
         </v-fab>
         
         <!-- Overtime section -->
-        <v-row class="mt-3">
+        <v-row class="mt-4 mt-md-2">
           <v-col cols="12" sm="6">
             <v-text-field
               v-model="formattedOvertimeHours"

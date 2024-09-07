@@ -128,8 +128,8 @@
             </v-icon>
             組織情報
           </v-card-title>
-          <v-card-text class="pt-1 pb-3">
-            <p class="text-body-1 mb-1">
+          <v-card-text class="pt-2 pb-3">
+            <p class="text-body-1 mb-2">
               {{ organization.name }}
             </p>
             <p class="text-body-2 mb-1">
