@@ -57,6 +57,7 @@ Resources:
       Name: !Sub "/weekly-report/${Stage}/jwt-secret-key"
       Type: String
       Value: !Sub "{{resolve:secretsmanager:${JwtSecret}:SecretString:JWT_SECRET_KEY}}"
+    DeletionPolicy: Retain
 
   ApiGatewayApi:
     Type: AWS::Serverless::Api

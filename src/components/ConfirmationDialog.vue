@@ -4,7 +4,7 @@
     max-width="400px"
   >
     <v-card>
-      <v-card-title class="bg-secondary">
+      <v-card-title class="bg-primary">
         {{ currentTitle }}
       </v-card-title>
       <v-card-text>

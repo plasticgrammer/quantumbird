@@ -204,6 +204,7 @@
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
             - 本番環境構築<br>
+            - やることリスト<br>
             - メール到達確認<br>
             - 報告済みステータスをカレンダーに表示<br>
           </v-card-text>
