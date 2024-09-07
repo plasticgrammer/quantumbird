@@ -44,7 +44,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          STAGE: ${{ secrets.DEPLOYMENT_STAGE }}
+          VUE_APP_STAGE: ${{ secrets.DEPLOYMENT_STAGE }}
           VUE_APP_AWS_REGION: ap-southeast-2
           VUE_APP_USER_POOL_ID: ${{ secrets.APP_USER_POOL_ID }}
           VUE_APP_USER_POOL_WEB_CLIENT_ID: ${{ secrets.APP_USER_POOL_WEB_CLIENT_ID }}
