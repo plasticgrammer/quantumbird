@@ -46,11 +46,11 @@ export default {
       }
     },
 
-    async fetchAuthToken({ commit, dispatch, state }) {
-      // トークンのキャッシュ期限を55分とする（通常、トークンの有効期限は1時間）
-      if (state.token && Date.now() - state.lastTokenFetch < 55 * 60 * 1000) {
-        return state.token
-      }
+    async fetchAuthToken({ commit, dispatch }) {
+      // // トークンのキャッシュ期限を55分とする（通常、トークンの有効期限は1時間）
+      // if (state.token && Date.now() - state.lastTokenFetch < 55 * 60 * 1000) {
+      //   return state.token
+      // }
       try {
         const { tokens } = await fetchAuthSession()
         if (tokens && tokens.idToken) {

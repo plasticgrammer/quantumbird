@@ -39,7 +39,7 @@
       </template>
     </v-snackbar>
 
-    <template v-if="!$route.meta.hideNavigation">
+    <template v-if="showNavigation">
       <v-navigation-drawer
         v-if="!isMobile"
         v-model="drawer"
@@ -196,6 +196,12 @@ const drawer = ref(true)
 const isRailMode = ref(true)
 const isHovered = ref(false)
 const showDropdown = ref(false)
+const showNavigation = ref(true)
+
+router.beforeEach((to, from, next) => {
+  showNavigation.value = !to.meta.hideNavigation
+  next()
+})
 
 const user = computed(() => ({
   organizationId: store.getters['auth/organizationId'],
