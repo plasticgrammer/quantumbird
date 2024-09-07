@@ -128,17 +128,11 @@
                   </v-list-item>
                 </v-list>
                 <div class="mt-auto">
-                  <v-chip
-                    color="primary"
-                    x-small
-                  >
-                    <v-icon
-                      class="mr-1"
-                      x-small
-                    >
+                  <v-chip color="primary" label>
+                    <v-icon class="mr-1">
                       mdi-clock-outline
                     </v-icon>
-                    残業: {{ report.overtime }}時間
+                    残業: <span :class="{ 'font-weight-bold': report.overtimeHours > 0 }">{{ report.overtimeHours }}時間</span>
                   </v-chip>
                 </div>
               </v-col>
@@ -264,6 +258,7 @@
                       clearable 
                       hide-details="auto"
                       rows="2"
+                      auto-grow
                     >
                     </v-textarea>
                     <v-btn
@@ -483,7 +478,7 @@ const processReports = (fetchedReports, members) => {
       memberId: member.id,
       name: member.name,
       projects: report.projects || [],
-      overtime: report.overtime || 0,
+      overtimeHours: report.overtimeHours || 0,
       achievements: report.achievements || '',
       issues: report.issues || '',
       improvements: report.improvements || '',
@@ -576,7 +571,7 @@ const handleApprove = async (memberUuid) => {
 const handleResend = async () => {
   const confirmed = await showConfirmDialog(
     '確認',
-    `報告要求を 確認なし${unconfirmedCount.value}名 に送信します。\nよろしいですか？`
+    `報告要求を［報告なし${unconfirmedCount.value}名］に送信します。\nよろしいですか？`
   )
 
   if (confirmed) {

@@ -175,7 +175,7 @@
 
     <ConfirmationDialog ref="confirmDialog" />
 
-    <LoadingOverlay />
+    <LoadingOverlay :style="bgImageStyle" />
   </v-app>
 </template>
 

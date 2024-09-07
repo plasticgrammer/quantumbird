@@ -11,6 +11,7 @@ Globals:
     Timeout: 10
     Environment:
       Variables:
+        STAGE: !Ref Stage
         TZ: Asia/Tokyo
         BASE_URL:
           !If [
@@ -58,6 +59,7 @@ Resources:
       Type: String
       Value: !Sub "{{resolve:secretsmanager:${JwtSecret}:SecretString:JWT_SECRET_KEY}}"
     DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
 
   ApiGatewayApi:
     Type: AWS::Serverless::Api
