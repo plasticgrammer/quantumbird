@@ -2,6 +2,37 @@ const { defineConfig } = require('@vue/cli-service')
 const webpack = require('webpack')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const path = require('path')
+const fs = require('fs')
+const dotenv = require('dotenv')
+
+// 環境変数を読み込む関数
+function loadEnv(mode) {
+  const basePath = path.resolve(__dirname, `.env${mode ? `.${mode}` : ``}`)
+  const localPath = `${basePath}.local`
+
+  const load = (envPath) => {
+    try {
+      const env = dotenv.parse(fs.readFileSync(envPath))
+      Object.keys(env).forEach((key) => {
+        if (!process.env[key]) {
+          process.env[key] = env[key]
+        }
+      })
+      console.log(`Loaded env file: ${envPath}`)
+    } catch (err) {
+      // ファイルが存在しない場合はスキップ
+      if (err.code !== 'ENOENT') {
+        console.error(err)
+      }
+    }
+  }
+
+  load(basePath)
+  load(localPath)
+}
+
+// NODE_ENVに基づいて環境変数を読み込む
+loadEnv(process.env.NODE_ENV)
 
 module.exports = defineConfig({
   pages: {
@@ -11,7 +42,7 @@ module.exports = defineConfig({
     }
   },
   publicPath: process.env.NODE_ENV === 'production'
-    ? '/quantumbird'  // GitHubActions対応時には リポジトリ名を入力してください
+    ? '/quantumbird'
     : '/',
   devServer: {
     port: 3000,
@@ -24,7 +55,9 @@ module.exports = defineConfig({
     },
     plugins: [
       new webpack.DefinePlugin({
-        __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(process.env.NODE_ENV !== 'production')
+        __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(process.env.NODE_ENV !== 'production'),
+        // 環境変数をクライアントサイドで利用可能にする
+        'process.env': JSON.stringify(process.env)
       }),
       new CopyWebpackPlugin({
         patterns: [
@@ -40,5 +73,13 @@ module.exports = defineConfig({
     vuetify: {
       // https://github.com/vuetifyjs/vuetify-loader/tree/next/packages/vuetify-loader
     }
-  }
+  },
+  // 環境変数をコンソールに出力（デバッグ用）
+  // chainWebpack: config => {
+  //   config.plugin('define').tap(args => {
+  //     console.log('Current NODE_ENV:', process.env.NODE_ENV)
+  //     console.log('Environment Variables:', process.env)
+  //     return args
+  //   })
+  // }
 })

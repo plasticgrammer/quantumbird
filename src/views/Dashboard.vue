@@ -202,11 +202,35 @@
             </v-icon>
             やることリスト
           </v-card-title>
-          <v-card-text class="pt-1 pb-3">
-            - 本番環境構築<br>
-            - やることリスト<br>
-            - メール到達確認<br>
-            - 報告済みステータスをカレンダーに表示<br>
+          <v-card-text class="pb-4">
+            <div v-if="tasks.length > 0" class="pa-0">
+              <v-checkbox
+                v-for="task in tasks" :key="task.taskId"
+                class="todo-item px-0 py-1"
+                v-model="task.completed"
+                :label="task.title"
+                hide-details
+                density="compact"
+                @change="handleTaskCompletion(task)"
+              >
+                <template v-slot:label>
+                  <span :class="{ 'text-decoration-line-through': task.completed }">
+                    {{ task.title }}
+                  </span>
+                </template>
+              </v-checkbox>
+            </div>
+            <p v-else>タスクがありません</p>
+            <v-text-field
+              v-model="newTaskTitle"
+              label="新しいタスク"
+              hide-details
+              density="compact"
+              class="mt-2"
+              @keyup.enter="addTask"
+              append-inner-icon="mdi-plus"
+              @click:append-inner="addTask"
+            ></v-text-field>
           </v-card-text>
         </v-card>
       </v-col>
@@ -263,6 +287,7 @@ import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
 import { getOrganization } from '../services/organizationService'
 import { getReportStatus, getStatsData } from '../services/reportService'
+import { submitUserTasks, updateUserTasks, deleteUserTasks, listUserTasks } from '../services/userTasksService'
 import Calendar from '../components/Calendar.vue'
 import OvertimeChart from '../components/chart/OvertimeChart.vue'
 import StressChart from '../components/chart/StressChart.vue'
@@ -439,6 +464,87 @@ const getRandomColor = () => {
   return `rgb(${r}, ${g}, ${b})`
 }
 
+const tasks = ref([])
+const newTaskTitle = ref('')
+
+const fetchTasks = async () => {
+  try {
+    const userId = store.getters['auth/cognitoUserSub']
+    if (!userId) {
+      console.error('User ID is not available')
+      return
+    }
+
+    const response = await listUserTasks(userId)
+    if (response && Array.isArray(response)) {
+      tasks.value = response.map(task => ({
+        taskId: task.TaskId,
+        title: task.Title,
+        description: task.Description,
+        status: task.Status,
+        createdAt: task.CreatedAt,
+        updatedAt: task.UpdatedAt,
+        completed: task.Status === '完了'
+      }))
+    } else {
+      tasks.value = []
+    }
+  } catch (err) {
+    console.error('タスクの取得に失敗しました:', err)
+    tasks.value = []
+  }
+}
+
+const addTask = async () => {
+  const userId = store.getters['auth/cognitoUserSub']
+  if (newTaskTitle.value.trim() && userId.value) {
+    try {
+      const newTask = {
+        title: newTaskTitle.value.trim(),
+        userId: userId.value,
+        createdAt: new Date().toISOString(),
+        completed: false
+      }
+      const response = await submitUserTasks(newTask)
+      tasks.value.push(response.data)
+      newTaskTitle.value = ''
+    } catch (error) {
+      console.error('タスクの追加に失敗しました:', error)
+    }
+  }
+}
+
+const handleTaskCompletion = async (task) => {
+  try {
+    if (task.completed) {
+      const today = new Date()
+      const taskDate = new Date(task.createdAt)
+      
+      if (today.toDateString() === taskDate.toDateString()) {
+        // 当日のタスクの場合は、完了状態を更新
+        await updateUserTasks({
+          ...task,
+          completed: true
+        })
+      } else {
+        // 当日以外のタスクの場合は削除
+        const userId = store.getters['auth/cognitoUserSub']
+        await deleteUserTasks(userId.value, task.taskId)
+        tasks.value = tasks.value.filter(t => t.taskId !== task.taskId)
+      }
+    } else {
+      // タスクが未完了に戻された場合
+      await updateUserTasks({
+        ...task,
+        completed: false
+      })
+    }
+  } catch (error) {
+    console.error('タスクの更新に失敗しました:', error)
+    task.completed = !task.completed // エラーの場合、UI上で元の状態に戻す
+  }
+}
+
 const fetchAll = async () => {
   isLoading.value = true
   error.value = null
@@ -447,6 +553,7 @@ const fetchAll = async () => {
       fetchOrganizationInfo(),
       fetchReportStatus(),
       fetchStatsData(),
+      fetchTasks()
     ])
   } catch (err) {
     console.error('Error initializing dashboard:', err)
@@ -506,5 +613,13 @@ onMounted(fetchAll)
 
 .calendar-nav-btn-right {
   right: -30px;
+}
+
+.todo-item :deep() .v-selection-control {
+  min-height: 1.2em !important;
+}
+
+.todo-item :deep() .v-label {
+  padding-left: 8px;
 }
 </style>

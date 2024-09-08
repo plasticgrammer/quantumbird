@@ -1,5 +1,7 @@
+const isProd = process.env.NODE_ENV === 'production'
+
 function getRedirectUrl() {
-  if (process.env.NODE_ENV === 'development') {
+  if (!isProd) {
     // 開発環境では環境変数からポート番号を取得
     const port = process.env.VUE_APP_PORT || process.env.PORT || 8080
     return `http://localhost:${port}/`
@@ -10,7 +12,7 @@ function getRedirectUrl() {
 
 const redirectUrl = getRedirectUrl()
 
-export default {
+const config = {
   Auth: {
     Cognito: {
       region: process.env.VUE_APP_AWS_REGION,
@@ -29,3 +31,5 @@ export default {
     }
   }
 }
+
+export default config

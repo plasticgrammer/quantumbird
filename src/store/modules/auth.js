@@ -6,7 +6,8 @@ export default {
     user: null,
     token: null,
     lastTokenFetch: null,
-    lastUserFetch: null
+    lastUserFetch: null,
+    cognitoUserSub: null
   }),
   mutations: {
     setUser(state, user) {
@@ -17,11 +18,15 @@ export default {
       state.token = token
       state.lastTokenFetch = Date.now()
     },
+    setCognitoUserSub(state, sub) {
+      state.cognitoUserSub = sub
+    },
     clearAuthState(state) {
       state.user = null
       state.token = null
       state.lastTokenFetch = null
       state.lastUserFetch = null
+      state.cognitoUserSub = null
     }
   },
   actions: {
@@ -38,19 +43,17 @@ export default {
           email: attributes.email,
         }
         commit('setUser', userInfo)
+        commit('setCognitoUserSub', attributes.sub)
         return userInfo
       } catch (error) {
         console.error('Error fetching user:', error)
         commit('setUser', null)
+        commit('setCognitoUserSub', null)
         return null
       }
     },
 
     async fetchAuthToken({ commit, dispatch }) {
-      // // トークンのキャッシュ期限を55分とする（通常、トークンの有効期限は1時間）
-      // if (state.token && Date.now() - state.lastTokenFetch < 55 * 60 * 1000) {
-      //   return state.token
-      // }
       try {
         const { tokens } = await fetchAuthSession()
         if (tokens && tokens.idToken) {
@@ -91,6 +94,7 @@ export default {
     name: (state) => state.user?.username,
     email: (state) => state.user?.email,
     isAuthenticated: state => !!state.user,
-    token: state => state.token
+    token: state => state.token,
+    cognitoUserSub: state => state.cognitoUserSub
   }
 }

@@ -368,6 +368,29 @@ Resources:
             Path: /secure/verify
             Method: ANY
 
+  UserTasksFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Stage}-user-tasks"
+      CodeUri: ./src/UserTasks
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Description: ""
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+      Layers:
+        - !Ref CommonLayer
+      Events:
+        ProcUserTasks:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /user-tasks
+            Method: ANY
+            Auth:
+              Authorizer: CognitoAuthorizer
+
   # ------------------------------------------------------------#
   #  Lambda Layer
   # ------------------------------------------------------------#
