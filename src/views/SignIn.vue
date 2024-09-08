@@ -72,35 +72,44 @@
         </template>
 
         <template v-else-if="isSignUp">
-          <v-form @submit.prevent="signUpUser">
+          <v-form ref="signUpForm" @submit.prevent="handleSignUpSubmit">
             <v-text-field
               v-model="signUpEmail"
               label="メールアドレス"
               type="email"
               required
+              :rules="[v => !!v || 'メールアドレスは必須です', v => /.+@.+\..+/.test(v) || '有効なメールアドレスを入力してください']"
             />
             <v-text-field
               v-model="signUpPassword"
               label="パスワード"
               type="password"
               required
+              :rules="[v => !!v || 'パスワードは必須です', v => v.length >= 8 || 'パスワードは8文字以上である必要があります']"
             />
             <v-text-field
               v-model="organizationId"
               label="組織ID"
               required
+              :rules="[
+                v => !!v || '組織IDは必須です',
+                validateOrganizationId
+              ]"
+              @input="clearErrorMessage"
             />
             <v-text-field
               v-model="organizationName"
               label="組織名"
               required
+              :rules="[v => !!v || '組織名は必須です']"
             />
             <v-btn
-              color="success"
+              color="primary"
               type="submit"
               block
               class="mt-4"
               :loading="loading"
+              :disabled="loading"
             >
               サインアップ
             </v-btn>
@@ -186,6 +195,7 @@ const confirmCode = ref('')
 const loading = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
+const signUpForm = ref(null)
 
 // Computed properties
 const isSignIn = computed(() => currentView.value === 'signIn')
@@ -206,6 +216,16 @@ const getToggleButtonText = computed(() => {
   default: return ''
   }
 })
+
+const validateOrganizationId = (value) => {
+  if (!value) return '組織IDは必須です'
+  const alphanumericRegex = /^[a-zA-Z0-9]+$/
+  return alphanumericRegex.test(value) || '組織IDは英数字のみで入力してください'
+}
+
+const clearErrorMessage = () => {
+  errorMessage.value = ''
+}
 
 // Methods
 const handleSignIn = async () => {
@@ -261,15 +281,32 @@ const signInWithGoogle = async () => {
   }
 }
 
+const handleSignUpSubmit = async () => {
+  errorMessage.value = ''
+  const { valid } = await signUpForm.value.validate()
+  
+  if (!valid) {
+    errorMessage.value = 'すべての必須フィールドを正しく入力してください。'
+    return
+  }
+
+  if (!validateOrganizationId(organizationId.value)) {
+    errorMessage.value = '組織IDは英数字のみで入力してください。'
+    return
+  }
+
+  const org = await getOrganization(organizationId.value)
+  if (org) {
+    errorMessage.value = 'この組織IDは既に使用されています。'
+    return
+  }
+
+  await signUpUser()
+}
+
 const signUpUser = async () => {
   loading.value = true
-  errorMessage.value = ''
   try {
-    const org = await getOrganization(organizationId.value)    
-    if (org) {
-      errorMessage.value = 'この組織IDは既に使用されています。'
-      return
-    }
     const { user } = await signUp({
       username: signUpEmail.value,
       password: signUpPassword.value,
@@ -284,9 +321,10 @@ const signUpUser = async () => {
     console.log('サインアップ成功:', user)
     confirmEmail.value = signUpEmail.value
     currentView.value = 'confirm'
+    successMessage.value = '確認コードを送信しました。メールをご確認ください。'
   } catch (error) {
     console.error('サインアップエラー:', error)
-    errorMessage.value = 'サインアップに失敗しました。入力内容を確認してください。'
+    errorMessage.value = error.message || 'サインアップに失敗しました。入力内容を確認してください。'
   } finally {
     loading.value = false
   }
