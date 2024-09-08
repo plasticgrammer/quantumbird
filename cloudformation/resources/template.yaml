@@ -2,16 +2,18 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: "CloudFormation template for creating DynamoDB tables for the Weekly Report System"
 
 Parameters:
-  EnvironmentName:
+  Stage:
     Type: String
-    Default: "dev"
-    Description: "Environment name (e.g., dev, prod)"
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
 
 Resources:
   OrganizationsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub ${EnvironmentName}-Organizations
+      TableName: !Sub ${Stage}-Organizations
       AttributeDefinitions:
         - AttributeName: organizationId
           AttributeType: S
@@ -23,7 +25,7 @@ Resources:
   MembersTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub ${EnvironmentName}-Members
+      TableName: !Sub ${Stage}-Members
       AttributeDefinitions:
         - AttributeName: memberUuid
           AttributeType: S
@@ -46,7 +48,7 @@ Resources:
   WeeklyReportsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub ${EnvironmentName}-WeeklyReports
+      TableName: !Sub ${Stage}-WeeklyReports
       AttributeDefinitions:
         - AttributeName: memberUuid
           AttributeType: S
