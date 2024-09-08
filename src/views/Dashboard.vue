@@ -229,7 +229,7 @@
               hide-details
               density="compact"
               class="mt-2"
-              @keyup.enter="addTask"
+              @keydown.enter="handleNewTaskKeydown($event)"
               append-inner-icon="mdi-plus"
               @click:append-inner="addTask"
             ></v-text-field>
@@ -489,6 +489,13 @@ const fetchTasks = async () => {
   }
 }
 
+const handleNewTaskKeydown = async (event) => {
+  if (event.key === 'Enter' && !event.isComposing) {
+    event.preventDefault()
+    await addTask()
+  }
+}
+
 const addTask = async () => {
   const userId = store.getters['auth/cognitoUserSub']
   if (newTaskTitle.value.trim() && userId) {
@@ -500,7 +507,7 @@ const addTask = async () => {
         completed: false
       }
       const response = await submitUserTasks(newTask)
-      tasks.value.push(response.data)
+      tasks.value.push(response)
       newTaskTitle.value = ''
     } catch (error) {
       console.error('タスクの追加に失敗しました:', error)

@@ -5,12 +5,15 @@ from boto3.dynamodb.conditions import Key
 from decimal import Decimal
 import os
 import uuid
-import datetime
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 print('Loading function')
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+TIMEZONE = ZoneInfo(os.environ.get('TZ', 'UTC'))
 
 # Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb')
@@ -55,7 +58,7 @@ def handle_post(event):
     data = json.loads(event['body'])
     item = prepare_task_item(user_id, data)
     response = tasks_table.put_item(Item=item)
-    return create_response(201, {'message': 'Task created successfully', 'task': item})
+    return create_response(201, item)
 
 def handle_put(event):
     user_id = event['requestContext']['authorizer']['claims']['sub']
@@ -67,7 +70,7 @@ def handle_put(event):
         return create_response(404, {'message': f"Task with id {data['taskId']} not found"})
     item = prepare_task_item(user_id, data, existing_task)
     response = tasks_table.put_item(Item=item)
-    return create_response(200, {'message': 'Task updated successfully', 'task': item})
+    return create_response(200, item)
 
 def handle_delete(event):
     user_id = event['requestContext']['authorizer']['claims']['sub']
@@ -81,7 +84,8 @@ def prepare_task_item(user_id, task_data, existing_task=None):
     if existing_task is None:
         existing_task = {}
 
-    current_time = datetime.datetime.now().isoformat()
+    now = datetime.now(TIMEZONE)
+    current_time = now.isoformat()
     
     updated_task = {
         'userId': user_id,
