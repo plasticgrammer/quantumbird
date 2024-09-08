@@ -205,7 +205,9 @@
           <v-card-text class="pb-4">
             <div v-if="tasks.length > 0" class="pa-0">
               <v-checkbox
-                v-for="task in tasks" :key="task.taskId"
+                v-for="task in tasks"
+                :key="task.taskId"
+                color="info"
                 class="todo-item px-0 py-1"
                 v-model="task.completed"
                 :label="task.title"
@@ -477,15 +479,7 @@ const fetchTasks = async () => {
 
     const response = await listUserTasks(userId)
     if (response && Array.isArray(response)) {
-      tasks.value = response.map(task => ({
-        taskId: task.TaskId,
-        title: task.Title,
-        description: task.Description,
-        status: task.Status,
-        createdAt: task.CreatedAt,
-        updatedAt: task.UpdatedAt,
-        completed: task.Status === '完了'
-      }))
+      tasks.value = response
     } else {
       tasks.value = []
     }
@@ -497,11 +491,11 @@ const fetchTasks = async () => {
 
 const addTask = async () => {
   const userId = store.getters['auth/cognitoUserSub']
-  if (newTaskTitle.value.trim() && userId.value) {
+  if (newTaskTitle.value.trim() && userId) {
     try {
       const newTask = {
         title: newTaskTitle.value.trim(),
-        userId: userId.value,
+        userId: userId,
         createdAt: new Date().toISOString(),
         completed: false
       }
@@ -529,7 +523,7 @@ const handleTaskCompletion = async (task) => {
       } else {
         // 当日以外のタスクの場合は削除
         const userId = store.getters['auth/cognitoUserSub']
-        await deleteUserTasks(userId.value, task.taskId)
+        await deleteUserTasks(userId, task.taskId)
         tasks.value = tasks.value.filter(t => t.taskId !== task.taskId)
       }
     } else {

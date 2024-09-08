@@ -84,12 +84,12 @@ def prepare_task_item(user_id, task_data, existing_task=None):
     current_time = datetime.datetime.now().isoformat()
     
     updated_task = {
-        'UserId': user_id,
-        'TaskId': task_data.get('taskId', existing_task.get('TaskId', str(uuid.uuid4()))),
-        'Title': task_data.get('title', existing_task.get('Title')),
-        'Done': task_data.get('status', existing_task.get('Done', False)),
-        'CreatedAt': existing_task.get('CreatedAt', current_time),
-        'UpdatedAt': current_time
+        'userId': user_id,
+        'taskId': task_data.get('taskId', existing_task.get('taskId', str(uuid.uuid4()))),
+        'title': task_data.get('title', existing_task.get('title')),
+        'completed': task_data.get('completed', existing_task.get('completed', False)),
+        'createdAt': existing_task.get('createdAt', current_time),
+        'updatedAt': current_time
     }
     return {k: v for k, v in updated_task.items() if v is not None}
 
@@ -97,8 +97,8 @@ def get_task(user_id, task_id):
     try:
         response = tasks_table.get_item(
             Key={
-                'UserId': user_id,
-                'TaskId': task_id
+                'userId': user_id,
+                'taskId': task_id
             }
         )
         return response.get('Item')
@@ -109,10 +109,10 @@ def get_task(user_id, task_id):
 def list_tasks(user_id):
     try:
         response = tasks_table.query(
-            KeyConditionExpression=Key('UserId').eq(user_id)
+            KeyConditionExpression=Key('userId').eq(user_id)
         )
         tasks = response['Items']
-        sorted_tasks = sorted(tasks, key=lambda x: x.get('CreatedAt', ''))
+        sorted_tasks = sorted(tasks, key=lambda x: x.get('createdAt', ''))
         return sorted_tasks
     except Exception as e:
         logger.error(f"Error listing tasks: {str(e)}", exc_info=True)
@@ -122,8 +122,8 @@ def delete_task(user_id, task_id):
     try:
         tasks_table.delete_item(
             Key={
-                'UserId': user_id,
-                'TaskId': task_id
+                'userId': user_id,
+                'taskId': task_id
             }
         )
     except Exception as e:

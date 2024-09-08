@@ -78,14 +78,14 @@ Resources:
       TableName: !Sub ${Stage}-UserTasks
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: UserId
+        - AttributeName: userId
           AttributeType: S
-        - AttributeName: TaskId
+        - AttributeName: taskId
           AttributeType: S
       KeySchema:
-        - AttributeName: UserId
+        - AttributeName: userId
           KeyType: HASH
-        - AttributeName: TaskId
+        - AttributeName: taskId
           KeyType: RANGE
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
