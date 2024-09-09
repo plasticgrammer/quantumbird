@@ -220,7 +220,7 @@
                 :key="task.taskId"
                 v-model="task.completed"
                 color="info"
-                class="todo-item px-0 py-1"
+                class="todo-item pa-0"
                 :label="task.title"
                 hide-details
                 density="compact"
@@ -323,7 +323,7 @@ const dayOfWeekToNumber = {
 const organizationId = store.getters['auth/organizationId']
 const isAdmin = ref(true)
 const calendarWeeks = createWeeks(6)
-const weekIndex = ref(calendarWeeks.length - 1)
+const weekIndex = ref(calendarWeeks.length - 2) // 先週
 
 const organization = ref(null)
 const reportStatus = ref({

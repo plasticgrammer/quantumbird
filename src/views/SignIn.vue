@@ -219,7 +219,7 @@ const getToggleButtonText = computed(() => {
 
 const validateOrganizationId = (value) => {
   if (!value) return '組織IDは必須です'
-  const alphanumericRegex = /^[a-zA-Z0-9]+$/
+  const alphanumericRegex = /^[a-zA-Z0-9_-]+$/
   return alphanumericRegex.test(value) || '組織IDは英数字のみで入力してください'
 }
 
