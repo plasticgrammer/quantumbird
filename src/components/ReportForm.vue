@@ -347,6 +347,19 @@
         <v-row class="mt-2">
           <v-col cols="12" class="d-flex justify-end">
             <v-btn
+              v-if="!isNew"
+              color="grey"
+              variant="outlined"
+              :disabled="isReportConfirmed"
+              @click="handleUndo"
+            >
+              <v-icon class="mr-1" left>
+                mdi-undo
+              </v-icon>
+              元に戻す
+            </v-btn>
+            <span class="mx-2"></span>
+            <v-btn
               color="primary"
               type="submit"
               :disabled="!isFormValid || isReportConfirmed"
@@ -374,6 +387,7 @@ import RatingItem from '../components/RatingItem.vue'
 
 const { isMobile } = useResponsive()
 const showNotification = inject('showNotification')
+const showConfirmDialog = inject('showConfirmDialog')
 
 const { formatDateTimeJp, getPreviousWeekString } = useCalendar()
 const { initialReport, ratingItems } = useReport()
@@ -601,9 +615,28 @@ const removeEmptyWorkItems = (projects) => {
   }))
 }
 
+const handleUndo = async () => {
+  const confirmed = await showConfirmDialog(
+    '確認',
+    '変更を元に戻します。\nよろしいですか？'
+  )
+  if (!confirmed) {
+    return
+  }
+
+  await fetchReport()
+}
+
 const handleSubmit = async () => {
   if (isReportConfirmed.value) {
     showNotification('確認済みの報告書は編集できません。', true)
+    return
+  }
+  const confirmed = await showConfirmDialog(
+    '確認',
+    `報告を${ isNew.value ? '提出' : '更新' }します。\nよろしいですか？`
+  )
+  if (!confirmed) {
     return
   }
 
