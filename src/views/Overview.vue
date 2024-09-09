@@ -39,7 +39,7 @@
             </v-btn>
           </p>
           <p v-else-if="reportStatus['pending']">
-            今週分の確認待ちの報告があります。<br>
+            先週分の確認待ちの報告があります。<br>
             <v-badge 
               color="info"
               :content="reportStatus['pending']"
@@ -95,7 +95,7 @@ const store = useStore()
 const organizationId = store.getters['auth/organizationId']
 const weekString = ref('')
 
-const { getCurrentWeekString } = useCalendar()
+const { getPreviousWeekString } = useCalendar()
 
 const isLoading = ref(true)
 const error = ref(null)
@@ -114,8 +114,8 @@ const fetchOrganizationInfo = async () => {
 
 const fetchReportStatus = async () => {
   try {
-    weekString.value = getCurrentWeekString()
-    const status = await getReportStatus(organizationId, getCurrentWeekString())
+    weekString.value = getPreviousWeekString()
+    const status = await getReportStatus(organizationId, weekString.value)
     reportStatus.value = {
       ...status,
       reportedCount: status.pending + status.inFeedback + status.confirmed,

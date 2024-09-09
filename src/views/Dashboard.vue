@@ -238,6 +238,7 @@
               v-model="newTaskTitle"
               label="新しいタスク"
               hide-details
+              single-line
               density="compact"
               class="mt-2"
               append-inner-icon="mdi-plus"

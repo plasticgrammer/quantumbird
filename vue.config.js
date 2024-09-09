@@ -57,7 +57,7 @@ module.exports = defineConfig({
       new webpack.DefinePlugin({
         __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(process.env.NODE_ENV !== 'production'),
         // 環境変数をクライアントサイドで利用可能にする
-        'process.env': JSON.stringify(process.env)
+        //'process.env': JSON.stringify(process.env)
       }),
       new CopyWebpackPlugin({
         patterns: [
