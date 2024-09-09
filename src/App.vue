@@ -20,7 +20,7 @@
       width="90%"
       class="mx-auto"
     >
-      <div class="d-flex align-center py-1">
+      <div class="text-subtitle-1 d-flex align-center py-1">
         <v-icon
           :icon="getNotificationIcon"
           class="mr-2"

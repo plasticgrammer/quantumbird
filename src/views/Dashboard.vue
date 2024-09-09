@@ -196,26 +196,37 @@
 
       <v-col cols="12" md="6" class="mb-2">
         <v-card class="widget">
-          <v-card-title class="text-subtitle-1">
-            <v-icon small class="mr-1">
-              mdi-clipboard-check-outline
-            </v-icon>
-            やることリスト
+          <v-card-title class="text-subtitle-1 d-flex justify-space-between align-center">
+            <div class="mb-1">
+              <v-icon small class="mr-1">
+                mdi-clipboard-check-outline
+              </v-icon>
+              やることリスト
+            </div>
+            <v-btn
+              v-if="hasCompletedTasks"
+              color="error"
+              size="small"
+              variant="outlined"
+              @click="clearCompletedTasks"
+            >
+              完了済み削除
+            </v-btn>
           </v-card-title>
           <v-card-text class="pb-4">
             <div v-if="tasks.length > 0" class="pa-0">
               <v-checkbox
                 v-for="task in tasks"
                 :key="task.taskId"
+                v-model="task.completed"
                 color="info"
                 class="todo-item px-0 py-1"
-                v-model="task.completed"
                 :label="task.title"
                 hide-details
                 density="compact"
                 @change="handleTaskCompletion(task)"
               >
-                <template v-slot:label>
+                <template #label>
                   <span :class="{ 'text-decoration-line-through': task.completed }">
                     {{ task.title }}
                   </span>
@@ -229,9 +240,9 @@
               hide-details
               density="compact"
               class="mt-2"
-              @keydown.enter="handleNewTaskKeydown($event)"
               append-inner-icon="mdi-plus"
               @click:append-inner="addTask"
+              @keydown.enter="handleNewTaskKeydown($event)"
             ></v-text-field>
           </v-card-text>
         </v-card>
@@ -468,6 +479,7 @@ const getRandomColor = () => {
 
 const tasks = ref([])
 const newTaskTitle = ref('')
+const hasCompletedTasks = computed(() => tasks.value.some(task => task.completed))
 
 const fetchTasks = async () => {
   try {
@@ -517,32 +529,32 @@ const addTask = async () => {
 
 const handleTaskCompletion = async (task) => {
   try {
-    if (task.completed) {
-      const today = new Date()
-      const taskDate = new Date(task.createdAt)
-      
-      if (today.toDateString() === taskDate.toDateString()) {
-        // 当日のタスクの場合は、完了状態を更新
-        await updateUserTasks({
-          ...task,
-          completed: true
-        })
-      } else {
-        // 当日以外のタスクの場合は削除
-        const userId = store.getters['auth/cognitoUserSub']
-        await deleteUserTasks(userId, task.taskId)
-        tasks.value = tasks.value.filter(t => t.taskId !== task.taskId)
-      }
-    } else {
-      // タスクが未完了に戻された場合
-      await updateUserTasks({
-        ...task,
-        completed: false
-      })
-    }
+    await updateUserTasks({
+      ...task,
+      completed: task.completed
+    })
   } catch (error) {
     console.error('タスクの更新に失敗しました:', error)
     task.completed = !task.completed // エラーの場合、UI上で元の状態に戻す
+  }
+}
+
+const clearCompletedTasks = async () => {
+  const userId = store.getters['auth/cognitoUserSub']
+  if (!userId) {
+    console.error('User ID is not available')
+    return
+  }
+
+  const completedTasks = tasks.value.filter(task => task.completed)
+  
+  error.value = null
+  try {
+    await Promise.all(completedTasks.map(task => deleteUserTasks(userId, task.taskId)))
+    tasks.value = tasks.value.filter(task => !task.completed)
+  } catch (err) {
+    console.error('完了済みタスクの削除に失敗しました:', err)
+    error.value = '完了済みタスクの削除中にエラーが発生しました。'
   }
 }
 
