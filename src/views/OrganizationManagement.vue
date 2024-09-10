@@ -195,6 +195,7 @@ const store = useStore()
 const form = ref(null)
 const showConfirmDialog = inject('showConfirmDialog')
 const showNotification = inject('showNotification')
+const showError = inject('showError')
 
 const state = reactive({
   organization: {
@@ -345,7 +346,7 @@ const formManagement = {
       state.originalOrganization = JSON.parse(JSON.stringify(organization.value))
       isFormChanged.value = false
     } catch (error) {
-      showNotification('組織の保存に失敗しました', error.message || '不明なエラーが発生しました')
+      showError('組織の保存に失敗しました', error)
     }
   }
 }
@@ -365,7 +366,7 @@ onMounted(async () => {
       }
       await formManagement.validateForm()
     } catch (error) {
-      showNotification('組織情報の取得に失敗しました', error.message || '不明なエラーが発生しました')
+      showError('組織情報の取得に失敗しました', error)
     } finally {
       loading.value = false
     }

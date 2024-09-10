@@ -56,7 +56,7 @@ const organizationId = ref(null)
 const weekString = ref(null)
 const organization = ref(null)
 
-const showNotification = inject('showNotification')
+const showError = inject('showError')
 
 onMounted(async () => {
   loading.value = true
@@ -71,9 +71,9 @@ onMounted(async () => {
     loading.value = false
   } catch (error) {
     if (error?.response?.data === 'Token has expired') {
-      showNotification('リンクの有効期限が切れています', 'error')
+      showError('リンクの有効期限が切れています', error)
     } else {
-      showNotification('キー情報の取得に失敗しました', 'error', error)
+      showError('キー情報の取得に失敗しました', error)
     }
   }
 })

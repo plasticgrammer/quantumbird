@@ -8,6 +8,8 @@ import base64
 import struct
 from functools import lru_cache
 
+EXP_DAYS = 14
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -29,7 +31,7 @@ def generate_short_token(event):
     secret = get_secret()
     
     now = int(datetime.now(timezone.utc).timestamp())
-    exp = now + 24 * 60 * 60
+    exp = now + 24 * 60 * 60 * EXP_DAYS
     
     payload = struct.pack('>I', exp) + data['organizationId'].encode() + b'\0' + data['weekString'].encode()
     

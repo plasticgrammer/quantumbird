@@ -390,6 +390,7 @@ import RatingItem from '../components/RatingItem.vue'
 
 const { isMobile } = useResponsive()
 const showNotification = inject('showNotification')
+const showError = inject('showError')
 const showConfirmDialog = inject('showConfirmDialog')
 
 const { formatDateTimeJp, getPreviousWeekString } = useCalendar()
@@ -417,7 +418,6 @@ const workItemRefs = reactive({})
 const projectNames = ref([])
 const isLoading = ref(false)
 const isNew = ref(true)
-const error = ref(null)
 const previousWeekReport = ref(null)
 const expandedPanel = ref(null)
 
@@ -533,7 +533,6 @@ const removeProject = (projectIndex) => {
 
 const fetchReport = async () => {
   isLoading.value = true
-  error.value = null
   try {
     const previousWeekString = getPreviousWeekString(props.weekString)
     const [fetchedReport, fetchedPrevReport, memberProjects] = await Promise.all([
@@ -561,8 +560,7 @@ const fetchReport = async () => {
     }
     projectNames.value = memberProjects
   } catch (err) {
-    console.error('Failed to fetch report or member projects:', err)
-    error.value = '報告書またはプロジェクトリストの取得に失敗しました。'
+    showError('報告書またはプロジェクトリストの取得に失敗しました。', err)
   } finally {
     isLoading.value = false
   }
@@ -579,7 +577,7 @@ const validateReport = () => {
   // Check if there's at least one project
   if (report.value.projects.length === 0) {
     isValid = false
-    showNotification('少なくとも1つのプロジェクトを追加してください。', true)
+    showNotification('少なくとも1つのプロジェクトを追加してください。', 'info')
   }
 
   // Check each project and its work items
@@ -632,12 +630,24 @@ const handleUndo = async () => {
 
 const handleSubmit = async () => {
   if (isReportConfirmed.value) {
-    showNotification('確認済みの報告書は編集できません。', true)
+    showNotification('確認済みの報告書は編集できません。', 'info')
     return
   }
 
   const isValid = validateReport()
   if (!isValid) {
+    return
+  }
+  // Remove empty work items before submission
+  const cleanedReport = {
+    ...report.value,
+    projects: removeEmptyWorkItems(report.value.projects),
+    status: 'pending'
+  }
+
+  // Additional check to ensure each project has at least one work item
+  if (cleanedReport.projects.some(project => project.workItems.length === 0)) {
+    showNotification('各プロジェクトに少なくとも1つの作業内容が必要です。', 'info')
     return
   }
   
@@ -650,26 +660,11 @@ const handleSubmit = async () => {
   }
 
   try {
-    // Remove empty work items before submission
-    const cleanedReport = {
-      ...report.value,
-      projects: removeEmptyWorkItems(report.value.projects),
-      status: 'pending'
-    }
-
-    // Additional check to ensure each project has at least one work item
-    if (cleanedReport.projects.some(project => project.workItems.length === 0)) {
-      showNotification('各プロジェクトに少なくとも1つの作業内容が必要です。', true)
-      return
-    }
-
     await submitReport(cleanedReport)
-    //showNotification('報告を提出しました。')
     emit('report-submitted')
 
   } catch (error) {
-    console.error('Failed to submit report:', error)
-    showNotification('報告の提出に失敗しました。', true)
+    showError('報告の提出に失敗しました。', error)
   }
 }
 </script>

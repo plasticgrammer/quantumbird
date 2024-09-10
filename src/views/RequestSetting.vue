@@ -185,6 +185,7 @@ const loading = ref(false)
 const isFormValid = ref(false)
 const organization = ref(null)
 const showNotification = inject('showNotification')
+const showError = inject('showError')
 
 // Composable for email verification logic
 const useEmailVerification = () => {
@@ -220,26 +221,24 @@ const useEmailVerification = () => {
         showNotification('メールアドレスの検証が保留中です。メールボックスを確認してください。', 'info')
       }
     } catch (error) {
-      console.error('Error checking email verification:', error)
       emailVerificationStatus.value = 'Error'
-      showNotification('メールアドレスの検証状態の確認中にエラーが発生しました。', 'error')
+      showError('メールアドレスの検証状態の確認中にエラーが発生しました。', error)
     }
   }
 
   const verifyEmail = async (email) => {
     if (!email) {
-      showNotification('メールアドレスを入力してください。', 'error')
+      showError('メールアドレスを入力してください。')
       return
     }
 
     verifyingEmail.value = true
     try {
       await verifyEmailAddress(email)
-      showNotification('検証メールを送信しました。メールを確認して検証を完了してください。', 'success')
+      showNotification('検証メールを送信しました。メールを確認して検証を完了してください。', 'info')
       await checkEmailVerificationStatus(email)
     } catch (error) {
-      console.error('Error verifying email:', error)
-      showNotification('メールアドレスの検証に失敗しました。', 'error')
+      showError('メールアドレスの検証に失敗しました。', error)
     } finally {
       verifyingEmail.value = false
     }
@@ -327,7 +326,7 @@ const handleSubmit = async () => {
 
   await checkEmailVerificationStatus(requestSettings.sender)
   if (emailVerificationStatus.value !== 'Success') {
-    showNotification('送信元メールアドレスが検証されていません。設定を保存できません。', 'error')
+    showError('送信元メールアドレスが検証されていません。設定を保存できません。')
     return
   }
 
@@ -337,7 +336,7 @@ const handleSubmit = async () => {
     showNotification('報告依頼設定を更新しました')
     originalSettings.value = JSON.parse(JSON.stringify(requestSettings))
   } catch (error) {
-    showNotification('報告依頼設定の保存に失敗しました', error.message || '不明なエラーが発生しました')
+    showError('報告依頼設定の保存に失敗しました', error)
   }
 }
 
@@ -360,7 +359,7 @@ onMounted(async () => {
       await checkEmailVerificationStatus(requestSettings.sender)
     }
   } catch (error) {
-    showNotification('報告依頼設定の取得に失敗しました', error.message || '不明なエラーが発生しました')
+    showError('報告依頼設定の取得に失敗しました', error)
   } finally {
     loading.value = false
   }

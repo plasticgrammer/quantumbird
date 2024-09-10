@@ -338,6 +338,7 @@ import RatingItem from '../components/RatingItem.vue'
 const { formatDateTimeJp } = useCalendar()
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
 const showNotification = inject('showNotification')
+const showError = inject('showError')
 const showConfirmDialog = inject('showConfirmDialog')
 
 const props = defineProps({
@@ -415,17 +416,14 @@ const copyShareUrl = async () => {
     await navigator.clipboard.writeText(shareUrl)
     showNotification('共有リンクをコピーしました')
   } catch (err) {
-    console.error('Failed to copy share URL:', err)
-    showNotification('共有リンクのコピーに失敗しました', 'error')
+    showError('共有リンクのコピーに失敗しました', err)
   }
 }
 
 const fetchReports = async () => {
   try {
     const fetchedReports = await listReports(props.organizationId, props.weekString)
-    
     if (!fetchedReports) {
-      console.error('No reports data received')
       return []
     }
 
@@ -532,8 +530,7 @@ const handleFeedback = async (memberUuid) => {
       newFeedbacks.value[memberUuid] = ''
       showNotification('フィードバックを送信しました')
     } catch (error) {
-      console.error('Failed to submit feedback:', error)
-      showNotification('フィードバックの送信に失敗しました', 'error')
+      showError('フィードバックの送信に失敗しました', error)
     }
   }
 }
@@ -566,8 +563,7 @@ const handleApprove = async (memberUuid) => {
           : r
       )
     } catch (error) {
-      console.error('Failed to approve report:', error)
-      showNotification('報告の承認に失敗しました', 'error')
+      showError('報告の承認に失敗しました', error)
     }
   }
 }
@@ -585,8 +581,7 @@ const handleResend = async () => {
       // 必要に応じて、ここでレポートデータを再取得するなどの処理を追加
       await fetchData()
     } catch (error) {
-      console.error('Failed to resend report request:', error)
-      showNotification('報告要求の再送に失敗しました', 'error')
+      showError('報告要求の再送に失敗しました', error)
     }
   }
 }

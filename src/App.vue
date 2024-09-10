@@ -279,6 +279,10 @@ const showNotification = (message, type, error = false) => {
   }
 }
 
+const showError = (message, error) => {
+  showNotification(message, 'error', error)
+}
+
 const closeNotification = () => {
   notification.show = false
 }
@@ -298,6 +302,7 @@ const showConfirmDialogGlobal = async (title, message) => {
 
 provide('showConfirmDialog', showConfirmDialogGlobal)
 provide('showNotification', showNotification)
+provide('showError', showError)
 
 const navigateTo = (route, params = {}) => {
   router.push({ ...route, params: { ...route.params, ...params } })
@@ -311,8 +316,7 @@ const handleSignOut = async () => {
     await store.dispatch('auth/signOut')
     router.push({ name: 'SignIn' })
   } catch (error) {
-    console.error('Sign out error:', error)
-    showNotification('サインアウトに失敗しました', 'error')
+    showError('サインアウトに失敗しました', error)
   }
 }
 
