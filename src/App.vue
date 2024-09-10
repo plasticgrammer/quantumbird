@@ -1,6 +1,6 @@
 <template>
   <v-app id="main">
-    <template v-if="!$route.meta.hideAnimation">
+    <template v-if="showAnimation">
       <div v-for="i in 2" :key="i" class="wave"></div>
       <v-img
         v-if="!isMobile"
@@ -196,9 +196,11 @@ const drawer = ref(true)
 const isRailMode = ref(true)
 const isHovered = ref(false)
 const showDropdown = ref(false)
+const showAnimation = ref(true)
 const showNavigation = ref(true)
 
 router.beforeEach((to, from, next) => {
+  showAnimation.value = !to.meta.hideAnimation
   showNavigation.value = !to.meta.hideNavigation
   next()
 })

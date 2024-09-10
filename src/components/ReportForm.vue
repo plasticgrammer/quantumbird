@@ -11,12 +11,13 @@
       <template v-if="isReportConfirmed">
         <v-alert
           type="info"
+          color="blue-grey"
           icon="mdi-information"
           border="start"
           elevation="2"
           class="mt-2 mb-6"
         >
-          この報告は確認済みです。編集はできません。
+          この報告は管理者が確認済みです。編集はできません。
         </v-alert>
       </template>
 
@@ -344,13 +345,15 @@
           </v-col>
         </v-row>
 
-        <v-row class="mt-2">
+        <v-row 
+          v-if="!isReportConfirmed"
+          class="mt-2"
+        >
           <v-col cols="12" class="d-flex justify-end">
             <v-btn
               v-if="!isNew"
               color="grey"
               variant="outlined"
-              :disabled="isReportConfirmed"
               @click="handleUndo"
             >
               <v-icon class="mr-1" left>
@@ -362,7 +365,7 @@
             <v-btn
               color="primary"
               type="submit"
-              :disabled="!isFormValid || isReportConfirmed"
+              :disabled="!isFormValid"
             >
               <v-icon class="mr-1" left>
                 mdi-check

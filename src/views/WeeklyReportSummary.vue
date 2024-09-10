@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container v-if="!loading">
     <v-row dense class="pb-3">
       <v-col>
         <h3 class="organization-name text-blue-grey-darken-1">
@@ -68,10 +68,13 @@ onMounted(async () => {
     if (org && Object.keys(org).length > 0) {
       organization.value = org
     }
-  } catch (error) {
-    showNotification('キー情報の取得に失敗しました', error)
-  } finally {
     loading.value = false
+  } catch (error) {
+    if (error?.response?.data === 'Token has expired') {
+      showNotification('リンクの有効期限が切れています', 'error')
+    } else {
+      showNotification('キー情報の取得に失敗しました', 'error', error)
+    }
   }
 })
 </script>
