@@ -3,7 +3,7 @@ import store from '@/store'
 
 const stage = process.env.VUE_APP_STAGE || 'dev'
 const API_ENDPOINT = `${process.env.VUE_APP_API_ENDPOINT}/${stage}`
-const LOADING_DELAY = 300 // 300ms delay before showing loading
+const LOADING_DELAY = 600 // ms delay before showing loading
 
 const api = axios.create({
   baseURL: API_ENDPOINT,

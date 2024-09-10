@@ -22,7 +22,7 @@ export function useReport() {
     {
       key: 'achievement',
       label: 'タスク目標の達成度',
-      itemLabels: ['大幅遅延', '', '', '', '期待以上'],
+      itemLabels: ['課題あり', '', '', '', '理想以上'],
       negative: false
     },
     {

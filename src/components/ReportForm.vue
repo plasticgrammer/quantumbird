@@ -110,7 +110,7 @@
         >
           <v-card-text>
             <v-row>
-              <v-col cols="9" class="pa-1 pa-md-4">
+              <v-col cols="9" md="8" class="pa-1 pa-md-4">
                 <ProjectSelector
                   v-model="project.name"
                   :project-names="projectNames"
@@ -119,7 +119,7 @@
                   @project-list-changed="updateProjectList"
                 />
               </v-col>
-              <v-col cols="3" class="d-flex justify-end">
+              <v-col cols="3" md="4" class="d-flex justify-end">
                 <v-btn
                   icon
                   x-small
@@ -618,7 +618,7 @@ const removeEmptyWorkItems = (projects) => {
 const handleUndo = async () => {
   const confirmed = await showConfirmDialog(
     '確認',
-    '変更を元に戻します。\nよろしいですか？'
+    '変更を元に戻します。よろしいですか？'
   )
   if (!confirmed) {
     return
@@ -632,17 +632,17 @@ const handleSubmit = async () => {
     showNotification('確認済みの報告書は編集できません。', true)
     return
   }
-  const confirmed = await showConfirmDialog(
-    '確認',
-    `報告を${ isNew.value ? '提出' : '更新' }します。\nよろしいですか？`
-  )
-  if (!confirmed) {
-    return
-  }
 
   const isValid = validateReport()
-
   if (!isValid) {
+    return
+  }
+  
+  const confirmed = await showConfirmDialog(
+    '確認',
+    `この内容で報告を${ isNew.value ? '提出' : '更新' }します。よろしいですか？`
+  )
+  if (!confirmed) {
     return
   }
 

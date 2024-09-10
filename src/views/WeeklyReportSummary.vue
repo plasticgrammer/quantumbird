@@ -1,17 +1,17 @@
 <template>
   <v-container>
-    <v-row dense class="pb-4">
+    <v-row dense class="pb-3">
       <v-col>
-        <h2 class="organization-name text-blue-grey-darken-1">
+        <h3 class="organization-name text-blue-grey-darken-1">
           <v-icon size="large" class="mr-1">
             mdi-domain
           </v-icon>
           {{ organization?.name }}
-        </h2>
+        </h3>
       </v-col>
     </v-row>
 
-    <v-row dense class="pb-4">
+    <v-row dense class="pl-3 pb-4">
       <v-col>
         <h3>
           <v-icon size="large" class="mr-1">
@@ -75,9 +75,3 @@ onMounted(async () => {
   }
 })
 </script>
-
-<style scoped>
-.organization-name {
-  text-shadow: 2px 2px 0 #CFD8DC;
-}
-</style>

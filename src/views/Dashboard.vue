@@ -195,58 +195,7 @@
       </v-col>
 
       <v-col cols="12" md="6" class="mb-2">
-        <v-card class="widget">
-          <v-card-title class="text-subtitle-1 d-flex justify-space-between align-center">
-            <div class="mb-1">
-              <v-icon small class="mr-1">
-                mdi-clipboard-check-outline
-              </v-icon>
-              やることリスト
-            </div>
-            <v-btn
-              v-if="hasCompletedTasks"
-              color="error"
-              size="small"
-              variant="outlined"
-              @click="clearCompletedTasks"
-            >
-              完了済み削除
-            </v-btn>
-          </v-card-title>
-          <v-card-text class="pb-4">
-            <div v-if="tasks.length > 0" class="pa-0">
-              <v-checkbox
-                v-for="task in tasks"
-                :key="task.taskId"
-                v-model="task.completed"
-                color="info"
-                class="todo-item pa-0"
-                :label="task.title"
-                hide-details
-                density="compact"
-                @change="handleTaskCompletion(task)"
-              >
-                <template #label>
-                  <span :class="{ 'text-decoration-line-through': task.completed }">
-                    {{ task.title }}
-                  </span>
-                </template>
-              </v-checkbox>
-            </div>
-            <p v-else>タスクがありません</p>
-            <v-text-field
-              v-model="newTaskTitle"
-              label="新しいタスク"
-              hide-details
-              single-line
-              density="compact"
-              class="mt-2"
-              append-inner-icon="mdi-plus"
-              @click:append-inner="addTask"
-              @keydown.enter="handleNewTaskKeydown($event)"
-            ></v-text-field>
-          </v-card-text>
-        </v-card>
+        <TodoListCard />
       </v-col>
 
       <v-col cols="12" md="6" class="mb-2">
@@ -301,10 +250,10 @@ import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
 import { getOrganization } from '../services/organizationService'
 import { getReportStatus, getStatsData } from '../services/reportService'
-import { submitUserTasks, updateUserTasks, deleteUserTasks, listUserTasks } from '../services/userTasksService'
 import Calendar from '../components/Calendar.vue'
 import OvertimeChart from '../components/chart/OvertimeChart.vue'
 import StressChart from '../components/chart/StressChart.vue'
+import TodoListCard from '../components/widget/TodoListCard.vue'
 
 const store = useStore()
 const router = useRouter()
@@ -324,7 +273,7 @@ const dayOfWeekToNumber = {
 const organizationId = store.getters['auth/organizationId']
 const isAdmin = ref(true)
 const calendarWeeks = createWeeks(6)
-const weekIndex = ref(calendarWeeks.length - 2) // 先週
+const weekIndex = ref(null)
 
 const organization = ref(null)
 const reportStatus = ref({
@@ -413,17 +362,6 @@ const formatDate = (date) => {
   return `${year}-${month}-${day} (${weekday})  ${hour}:${minute}`
 }
 
-const fetchOrganizationInfo = async () => {
-  try {
-    const org = await getOrganization(organizationId)
-    organization.value = org
-  } catch (err) {
-    console.error('Failed to fetch organization info:', err)
-    error.value = '組織情報の取得に失敗しました: ' + err.message
-    throw err
-  }
-}
-
 const fetchReportStatus = async () => {
   try {
     const status = await getReportStatus(organizationId, weekString.value)
@@ -435,18 +373,6 @@ const fetchReportStatus = async () => {
   } catch (err) {
     console.error('Failed to fetch report status:', err)
     error.value = '報告状況の取得に失敗しました: ' + err.message
-    throw err
-  }
-}
-
-const fetchStatsData = async () => {
-  try {
-    const data = await getStatsData(organizationId)
-    overtimeData.value = formatChartData(data, 'overtimeHours')
-    stressData.value = formatChartData(data, 'stress')
-  } catch (err) {
-    console.error('Failed to fetch stats data:', err)
-    error.value = '統計データの取得に失敗しました: ' + err.message
     throw err
   }
 }
@@ -478,97 +404,24 @@ const getRandomColor = () => {
   return `rgb(${r}, ${g}, ${b})`
 }
 
-const tasks = ref([])
-const newTaskTitle = ref('')
-const hasCompletedTasks = computed(() => tasks.value.some(task => task.completed))
-
-const fetchTasks = async () => {
-  try {
-    const userId = store.getters['auth/cognitoUserSub']
-    if (!userId) {
-      console.error('User ID is not available')
-      return
-    }
-
-    const response = await listUserTasks(userId)
-    if (response && Array.isArray(response)) {
-      tasks.value = response
-    } else {
-      tasks.value = []
-    }
-  } catch (err) {
-    console.error('タスクの取得に失敗しました:', err)
-    tasks.value = []
-  }
-}
-
-const handleNewTaskKeydown = async (event) => {
-  if (event.key === 'Enter' && !event.isComposing) {
-    event.preventDefault()
-    await addTask()
-  }
-}
-
-const addTask = async () => {
-  const userId = store.getters['auth/cognitoUserSub']
-  if (newTaskTitle.value.trim() && userId) {
-    try {
-      const newTask = {
-        title: newTaskTitle.value.trim(),
-        userId: userId,
-        createdAt: new Date().toISOString(),
-        completed: false
-      }
-      const response = await submitUserTasks(newTask)
-      tasks.value.push(response)
-      newTaskTitle.value = ''
-    } catch (error) {
-      console.error('タスクの追加に失敗しました:', error)
-    }
-  }
-}
-
-const handleTaskCompletion = async (task) => {
-  try {
-    await updateUserTasks({
-      ...task,
-      completed: task.completed
-    })
-  } catch (error) {
-    console.error('タスクの更新に失敗しました:', error)
-    task.completed = !task.completed // エラーの場合、UI上で元の状態に戻す
-  }
-}
-
-const clearCompletedTasks = async () => {
-  const userId = store.getters['auth/cognitoUserSub']
-  if (!userId) {
-    console.error('User ID is not available')
-    return
-  }
-
-  const completedTasks = tasks.value.filter(task => task.completed)
-  
-  error.value = null
-  try {
-    await Promise.all(completedTasks.map(task => deleteUserTasks(userId, task.taskId)))
-    tasks.value = tasks.value.filter(task => !task.completed)
-  } catch (err) {
-    console.error('完了済みタスクの削除に失敗しました:', err)
-    error.value = '完了済みタスクの削除中にエラーが発生しました。'
-  }
-}
-
 const fetchAll = async () => {
   isLoading.value = true
   error.value = null
   try {
-    await Promise.all([
-      fetchOrganizationInfo(),
-      fetchReportStatus(),
-      fetchStatsData(),
-      fetchTasks()
+    const [orgInfo, reportStatus, statsData] = await Promise.all([
+      getOrganization(organizationId),
+      getReportStatus(organizationId, weekString.value),
+      getStatsData(organizationId)
     ])
+    
+    organization.value = orgInfo
+    reportStatus.value = {
+      ...reportStatus,
+      reportedCount: reportStatus.pending + reportStatus.inFeedback + reportStatus.confirmed,
+      totalCount: reportStatus.totalCount || 0,
+    }
+    overtimeData.value = formatChartData(statsData, 'overtimeHours')
+    stressData.value = formatChartData(statsData, 'stress')
   } catch (err) {
     console.error('Error initializing dashboard:', err)
     error.value = 'ダッシュボードの初期化に失敗しました: ' + err.message
@@ -585,7 +438,10 @@ const handleReload = () => {
 watch(weekIndex, fetchReportStatus)
 
 // Lifecycle hooks
-onMounted(fetchAll)
+onMounted(() => {
+  weekIndex.value = calendarWeeks.length - 2// 先週
+  fetchAll()
+})
 </script>
 
 <style scoped>
@@ -627,13 +483,5 @@ onMounted(fetchAll)
 
 .calendar-nav-btn-right {
   right: -30px;
-}
-
-.todo-item :deep() .v-selection-control {
-  min-height: 1.2em !important;
-}
-
-.todo-item :deep() .v-label {
-  padding-left: 8px;
 }
 </style>
