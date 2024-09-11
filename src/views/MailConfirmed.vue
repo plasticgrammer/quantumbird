@@ -1,0 +1,57 @@
+<template>
+  <v-container v-if="!loading">
+    <v-row dense class="pb-3">
+      <v-col>
+        <v-card 
+          class="mt-6 mx-auto pa-2 text-center"
+          max-width="640"
+        >
+          <v-card-title class="text-h5">
+            メールアドレスを確認済みとしました
+          </v-card-title>
+          <v-card-text>
+            <p class="text-body-1 text-blue-accent-4">
+              {{ email }}
+            </p>
+            <v-img
+              src="@/assets/images/toraneko.png"
+              max-width="240"
+              class="mx-auto mt-0 mb-5"
+              :aspect-ratio="1"
+            ></v-img>
+            <p class="text-body-1">
+              報告要求のメールが配信されるまでお待ちください。
+            </p>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
+</template>
+
+<script setup>
+import { ref, inject, onMounted } from 'vue'
+import { verifyEmail } from '../services/memberService'
+
+const props = defineProps({
+  memberUuid: {
+    type: String,
+    required: true
+  }
+})
+
+const loading = ref(false)
+const email = ref('')
+const showError = inject('showError')
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    const result = await verifyEmail(props.memberUuid)
+    email.value = result.email
+    loading.value = false
+  } catch (error) {
+    showError('メール確認済み更新に失敗しました', error)
+  }
+})
+</script>

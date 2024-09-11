@@ -13,7 +13,6 @@ print('Loading function')
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb')
 stage = os.environ.get('STAGE', 'dev')
 members_table_name = f'{stage}-Members'
@@ -77,16 +76,27 @@ def handle_post(event):
 def handle_put(event):
     data = json.loads(event['body'])
     if 'memberUuid' in data:
-        if 'projects' in data:
-            update_member_projects(data['memberUuid'], data['projects'])
+        member_uuid = data['memberUuid']
+        member = get_member(member_uuid)
+        
+        if member is None:
+            return create_response(404, {'message': f'Member with UUID {member_uuid} not found'})
+
+        if 'verifyEmail' in data:
+            member['emailConfirmed'] = True
+            response = members_table.put_item(Item=member)
+            return create_response(200, {
+                'message': 'Member email verified successfully',
+                'email': member['email']
+            })
+        elif 'projects' in data:
+            update_member_projects(member_uuid, data['projects'])
             return create_response(200, {'message': 'Member projects updated successfully'})
         else:
             item = prepare_member_item(data)
             response = members_table.put_item(Item=item)
             logger.info(f"Member update response: {response}")
             return create_response(200, {'message': 'Member updated successfully'})
-    elif 'verifyEmail' in data:
-        return handle_verify_email(data)
     else:
         return create_response(400, {'message': 'Invalid data structure'})
 
@@ -115,7 +125,10 @@ def get_member(member_uuid):
                 'memberUuid': member_uuid
             }
         )
-        return response.get('Item')
+        item = response.get('Item')
+        if item is None:
+            logger.warning(f"Member with UUID {member_uuid} not found")
+        return item
     except Exception as e:
         logger.error(f"Error getting member: {str(e)}", exc_info=True)
         raise e
@@ -171,16 +184,6 @@ def delete_member(member_uuid):
     except Exception as e:
         logger.error(f"Error deleting member: {str(e)}", exc_info=True)
         raise e
-
-def handle_verify_email(data):
-    if 'memberUuid' in data:
-        member = get_member(data['memberUuid'])
-        member['mailConfirmed'] = True
-        response = members_table.put_item(Item=member)
-        logger.info(f"Member update response: {response}")
-        return create_response(200, {'message': 'Member email verified successfully'})
-    else:
-        return create_response(400, {'message': 'Invalid data structure'})
 
 def create_response(status_code, body):
     return {

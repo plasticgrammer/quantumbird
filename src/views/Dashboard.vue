@@ -175,7 +175,7 @@
             </p>
             <p v-if="organization.requestEnabled && nextRequestDateTime" class="text-body-2 mb-1">
               <span class="mr-2">次回報告依頼日時: </span>
-              <span class="text-subtitle-1">{{ formatDate(nextRequestDateTime) }}</span>
+              <span class="text-subtitle-1">{{ formatFullDateTimeJp(nextRequestDateTime) }}</span>
             </p>
             <v-btn
               v-if="isAdmin"
@@ -257,7 +257,7 @@ import TodoListCard from '../components/widget/TodoListCard.vue'
 
 const store = useStore()
 const router = useRouter()
-const { createWeeks, getStringFromWeek } = useCalendar()
+const { createWeeks, getStringFromWeek, formatFullDateTimeJp } = useCalendar()
 const { statusOptions } = useReport()
 
 const dayOfWeekToNumber = {
@@ -344,23 +344,6 @@ const nextRequestDateTime = computed(() => {
   
   return nextDate
 })
-
-const formatDate = (date) => {
-  if (!(date instanceof Date)) {
-    console.error('Invalid date object:', date)
-    return ''
-  }
-  
-  const weekdays = ['日', '月', '火', '水', '木', '金', '土']
-  const year = date.getFullYear()
-  const month = date.getMonth() + 1 // getMonth() returns 0-11
-  const day = date.getDate()
-  const weekday = weekdays[date.getDay()]
-  const hour = date.getHours().toString().padStart(2, '0')
-  const minute = date.getMinutes().toString().padStart(2, '0')
-
-  return `${year}-${month}-${day} (${weekday})  ${hour}:${minute}`
-}
 
 const fetchReportStatus = async () => {
   try {

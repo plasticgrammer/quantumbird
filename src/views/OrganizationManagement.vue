@@ -99,7 +99,7 @@
                     :error-messages="editingMember?.id === member.id ? editValidationErrors.email : ''"
                   >
                     <template #append>
-                      <v-icon v-if="member.mailConfirmed" v-tooltip:top="'メール確認済み'" color="success">
+                      <v-icon v-if="member.emailConfirmed" v-tooltip:top="'メール確認済み'" color="success">
                         mdi-email-check-outline
                       </v-icon>
                       <v-icon v-else v-tooltip:top="'メール確認中'">

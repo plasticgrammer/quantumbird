@@ -37,8 +37,8 @@ export function useCalendar() {
     const endDate = new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000)
     endDate.setHours(23, 59, 59, 999)
     return {
-      startDate, 
-      endDate, 
+      startDate,
+      endDate,
       weekOffset,
       days
     }
@@ -47,20 +47,20 @@ export function useCalendar() {
   function getWeekOffset(weekStartDate) {
     // 現在の日付を取得
     const today = new Date()
-    
+
     // 現在の週の月曜日を取得
     const currentWeekMonday = new Date(today)
     currentWeekMonday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1))
     currentWeekMonday.setHours(0, 0, 0, 0)
-  
+
     // 引数で渡された週の月曜日の時間をリセット
     weekStartDate.setHours(0, 0, 0, 0)
-  
+
     // 週の差分を計算
     const diffTime = weekStartDate.getTime() - currentWeekMonday.getTime()
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
     const weekOffset = Math.floor(diffDays / 7)
-  
+
     return weekOffset
   }
 
@@ -113,7 +113,7 @@ export function useCalendar() {
     const weekNumber = Math.floor(1 + (date - firstThursday) / (7 * 24 * 60 * 60 * 1000))
     return `${year}-W${weekNumber.toString().padStart(2, '0')}`
   }
-  
+
   const getWeekFromString = (weekString) => {
     const [year, weekNumber] = weekString.split('-W').map(Number)
     const firstThursday = new Date(year, 0, 4)
@@ -146,18 +146,34 @@ export function useCalendar() {
     if (relativeWeekIndex < 0) return `${Math.abs(relativeWeekIndex)}週前`
     return `${relativeWeekIndex}週後`
   }
-  
+
+  const formatFullDateTimeJp = (date) => {
+    if (!(date instanceof Date)) {
+      return ''
+    }
+
+    const weekdays = ['日', '月', '火', '水', '木', '金', '土']
+    const year = date.getFullYear()
+    const month = date.getMonth() + 1 // getMonth() returns 0-11
+    const day = date.getDate()
+    const weekday = weekdays[date.getDay()]
+    const hour = date.getHours().toString().padStart(2, '0')
+    const minute = date.getMinutes().toString().padStart(2, '0')
+
+    return `${year}/${month}/${day} (${weekday})  ${hour}:${minute}`
+  }
+
   const formatDateJp = (date) => {
     const year = date.getFullYear()
     const month = ('0' + (date.getMonth() + 1)).slice(-2)
     const day = ('0' + date.getDate()).slice(-2)
     return `${year}/${month}/${day}`
   }
-  
+
   const formatDateTimeJp = (date) => {
     const timeOptions = { hour: '2-digit', minute: '2-digit' }
     const formattedTime = date.toLocaleTimeString('ja-JP', timeOptions)
-  
+
     return `${formatDateJp(date)} ${formattedTime}`
   }
 
@@ -185,6 +201,7 @@ export function useCalendar() {
     getWeekJpText,
     formatDateJp,
     formatDateTimeJp,
+    formatFullDateTimeJp,
     formatDateRange
   }
 }

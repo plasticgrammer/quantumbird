@@ -7,6 +7,7 @@ import WeeklyReport from '../views/WeeklyReport.vue'
 import WeeklyReview from '../views/WeeklyReview.vue'
 import WeeklyReportSummary from '../views/WeeklyReportSummary.vue'
 import OrganizationManagement from '../views/OrganizationManagement.vue'
+import MailConfirmed from '../views/MailConfirmed.vue'
 import RequestSetting from '../views/RequestSetting.vue'
 
 const routes = [
@@ -96,6 +97,13 @@ const routes = [
     path: '/view/:token',
     name: 'WeeklyReportSummary',
     component: WeeklyReportSummary,
+    props: true,
+    meta: { hideNavigation: true, hideAnimation: true }
+  },
+  {
+    path: '/mail/:memberUuid',
+    name: 'MailConfirmed',
+    component: MailConfirmed,
     props: true,
     meta: { hideNavigation: true, hideAnimation: true }
   },

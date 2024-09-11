@@ -3,6 +3,7 @@ import logging
 import boto3
 from boto3.dynamodb.conditions import Key
 from decimal import Decimal
+import urllib.parse
 import os
 import uuid
 import common.publisher
@@ -12,9 +13,11 @@ print('Loading function')
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+stage = os.environ.get('STAGE', 'dev')
+BASE_URL = os.environ.get('BASE_URL', 'http://localhost:3000')
+
 # Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb')
-stage = os.environ.get('STAGE', 'dev')
 organizations_table_name = f'{stage}-Organizations'
 members_table_name = f'{stage}-Members'
 organizations_table = dynamodb.Table(organizations_table_name)
@@ -175,30 +178,34 @@ def update_members(organization_id, members):
     org = get_organization(organization_id)
 
     existing_members = list_members(organization_id)
-    existing_members_dict = {m['id']: m for m in existing_members if 'id' in m}
+    existing_members_dict = {m['memberUuid']: m for m in existing_members if 'memberUuid' in m}
 
     for member in members:
-        existing_member = existing_members_dict.get(member.get('id'))
+        existing_member = existing_members_dict.get(member.get('memberUuid'))
         member_item = prepare_member_item(member, existing_member)
         member_item['organizationId'] = organization_id
 
-        if existing_member is None:
+        is_new_member = existing_member is None
+        email_changed = existing_member and existing_member.get('email') != member_item.get('email')
+
+        if is_new_member or email_changed:
             try:
+                if not member_item.get('email'):
+                    logger.warning(f"No email address for member: {member_item.get('id', 'Unknown ID')}")
+                    continue
                 send_registor_mail(org, member_item)
+                logger.info(f"Sent {'registration' if is_new_member else 'update'} email to member {member_item.get('id')}")
             except Exception as e:
-                logger.error(f"Failed to send registration email to new member {member_item.get('id')}: {str(e)}")
-        elif existing_member.get('email') != member_item.get('email'):
-            try:
-                send_registor_mail(org, member_item)
-            except Exception as e:
-                logger.error(f"Failed to send update email to member {member_item.get('id')}: {str(e)}")
+                logger.error(f"Failed to send {'registration' if is_new_member else 'update'} email to member {member_item.get('id')}: {str(e)}")
+                # ここでエラーを再発生させるか、適切に処理することを検討
 
         members_table.put_item(Item=member_item)
-        if member.get('id') in existing_members_dict:
-            del existing_members_dict[member.get('id')]
 
-    for member_id in existing_members_dict:
-        delete_member_by_id(organization_id, member_id)
+    # 削除されたメンバーの処理
+    current_member_uuids = {m.get('memberUuid') for m in members if 'memberUuid' in m}
+    for member_uuid in existing_members_dict:
+        if member_uuid not in current_member_uuids:
+            delete_member(member_uuid)
 
 def send_registor_mail(organization, member):
     sendFrom = common.publisher.get_from_address(organization)
@@ -206,6 +213,14 @@ def send_registor_mail(organization, member):
     bodyText = "週次報告システムの送信先に登録されました。\n"
     bodyText += f"組織名：{organization['name']}\n\n"
     bodyText += "※本メールは、登録した際に配信される自動配信メールです。\n"
+
+    base_url = urllib.parse.urljoin(BASE_URL, "mail")
+    path_params = [urllib.parse.quote(member['memberUuid'])]    
+    # URLの構築
+    url = f"{base_url}/{'/'.join(path_params)}"    
+    bodyText += "\n到達確認のため下記リンクをクリックしてください。\n"
+    bodyText += url
+
     if member.get('email'):
         common.publisher.send_mail(sendFrom, [member['email']], subject, bodyText)
     else:
