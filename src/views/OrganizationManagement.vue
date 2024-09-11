@@ -12,7 +12,7 @@
     </v-row>
 
     <v-card 
-      class="organization-card"
+      class="organization-card px-md-6"
       outlined
     >
       <v-form
@@ -20,7 +20,7 @@
         v-model="isFormValid"
         @submit.prevent="handleSubmit"
       >
-        <v-row class="mt-2">
+        <v-row class="mt-2 px-3">
           <v-col cols="12" sm="3">
             <v-text-field
               v-model="organization.organizationId"
@@ -57,6 +57,7 @@
             v-for="member in organization.members" 
             :key="member.id"
             variant="flat"
+            class="rounded-0"
           >
             <v-card-text class="member-row px-3 py-1">
               <v-row>
@@ -123,7 +124,7 @@
           </v-card>
         </v-card>
 
-        <v-row class="mt-4 mx-3 align-center">
+        <v-row class="mt-4 mx-0 mx-md-3 align-center">
           <v-col cols="12" sm="2" class="px-1">
             <v-text-field
               v-model="newMember.id"
@@ -396,7 +397,7 @@ const { validateForm, handleSubmit } = formManagement
 .organization-card {
   background-color: white;
   border-radius: 0.5rem;
-  padding: 0.5em 1.5em 1em;
+  padding: 0.5em 1em 1em;
   position: relative;
 }
 

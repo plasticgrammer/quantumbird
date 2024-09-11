@@ -91,60 +91,53 @@
 
         <template #append>
           <v-divider />
-          <div class="dropdown-container">
-            <v-list>
+          <v-list>
+            <v-list-item
+              :title="user.email"
+              :subtitle="user.organizationId"
+              class="dense-list-item"
+              prepend-icon="mdi-account-circle"
+            >
+              <template #append>
+                <v-btn
+                  :icon="showDropdown ? 'mdi-menu-up' : 'mdi-menu-down'"
+                  class="mr-n2"
+                  size="x-small"
+                  variant="text"
+                ></v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
+          <v-menu
+            v-model="showDropdown"
+            activator="parent"
+            location="top"
+          >
+            <v-list class="pa-0 bg-blue-grey-darken-1">
+              <v-list-item>
+                <v-list-item-title class="text-body-2 opacity-60">{{ user.email }}</v-list-item-title>
+              </v-list-item>
+              <v-divider></v-divider>
               <v-list-item
-                :title="user.email"
-                :subtitle="user.organizationId"
-                class="dense-list-item"
+                prepend-icon="mdi-open-in-new"
               >
-                <template #prepend>
-                  <v-avatar>
-                    <v-icon icon="mdi-account-circle"></v-icon>
-                  </v-avatar>
-                </template>
-                <template #append>
-                  <v-btn
-                    :icon="showDropdown ? 'mdi-menu-up' : 'mdi-menu-down'"
-                    class="mr-n2"
-                    size="x-small"
-                    variant="text"
-                  ></v-btn>
-                </template>
+                <v-list-item-title>
+                  <a
+                    href="https://forms.gle/suRGEcRXE33xvFu19"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-decoration-none text-white"
+                  >フィードバック</a>
+                </v-list-item-title>
+              </v-list-item>
+              <v-list-item
+                prepend-icon="mdi-logout-variant"
+                @click="handleSignOut"
+              >
+                <v-list-item-title>サインアウト</v-list-item-title>
               </v-list-item>
             </v-list>
-            <v-menu
-              v-model="showDropdown"
-              activator="parent"
-              location="top"
-            >
-              <v-list class="pa-0 bg-blue-grey-darken-1">
-                <v-list-item>
-                  <v-list-item-title class="text-body-2 opacity-60">{{ user.email }}</v-list-item-title>
-                </v-list-item>
-                <v-divider></v-divider>
-                <v-list-item>
-                  <template #prepend>
-                    <v-icon icon="mdi-open-in-new"></v-icon>
-                  </template>
-                  <v-list-item-title>
-                    <a
-                      href="https://forms.gle/suRGEcRXE33xvFu19"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="text-decoration-none text-white"
-                    >フィードバック</a>
-                  </v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="handleSignOut">
-                  <template #prepend>
-                    <v-icon icon="mdi-logout-variant"></v-icon>
-                  </template>
-                  <v-list-item-title>サインアウト</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-          </div>
+          </v-menu>
         </template>
       </v-navigation-drawer>
 
