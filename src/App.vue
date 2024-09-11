@@ -91,7 +91,7 @@
 
         <template #append>
           <v-divider />
-          <v-list>
+          <v-list nav>
             <v-list-item
               :title="user.email"
               :subtitle="user.organizationId"

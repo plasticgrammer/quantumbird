@@ -75,6 +75,15 @@ api.interceptors.response.use(
     stopLoading()
     const originalRequest = error.config
 
+    // ネットワークエラーに対する再試行ロジック
+    if (!error.response) {
+      if (!originalRequest._networkRetry) {
+        originalRequest._networkRetry = true
+        console.log('Network error detected. Retrying in 1 second...')
+        return new Promise(resolve => setTimeout(() => resolve(api(originalRequest)), 1000))
+      }
+    }
+    
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

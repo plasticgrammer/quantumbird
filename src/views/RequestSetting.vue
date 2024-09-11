@@ -23,11 +23,10 @@
               label="送信元メールアドレス"
               outlined
               dense
-              hide-details
+              hide-details="auto"
               :rules="emailRules"
               :color="emailVerificationStatus === 'Success' ? 'success' : ''"
               :error="emailVerificationStatus === 'Failed'"
-              @input="debouncedCheckEmailVerification"
             >
               <template #append>
                 <v-icon 
@@ -42,8 +41,8 @@
           <v-col cols="12" md="6">
             <div class="d-flex align-center mt-2">
               <v-btn
-                v-if="emailVerificationStatus !== 'Success' && emailVerificationStatus !== 'Checking'"
-                color="success"
+                v-if="isValidEmail(requestSettings.sender) && emailVerificationStatus !== 'Success' && emailVerificationStatus !== 'Checking'"
+                color="secondary"
                 small
                 prepend-icon="mdi-card-account-mail"
                 :loading="verifyingEmail"
@@ -172,97 +171,89 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, inject } from 'vue'
+import { ref, reactive, computed, watch, onMounted, inject } from 'vue'
 import { useStore } from 'vuex'
 import { getOrganization, updateOrganization } from '../services/organizationService'
 import { checkEmailVerification, verifyEmailAddress } from '../services/sesService'
 
 const store = useStore()
 const organizationId = store.getters['auth/organizationId']
-
+const organization = ref(null)
 const form = ref(null)
 const loading = ref(false)
 const isFormValid = ref(false)
-const organization = ref(null)
 const showNotification = inject('showNotification')
 const showError = inject('showError')
 
-// Composable for email verification logic
+const isValidEmail = (email) => {
+  // RFC 5322に基づくメールアドレス検証の正規表現
+  const emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+  return emailRegex.test(email)
+}
+
 const useEmailVerification = () => {
-  const emailVerificationStatus = ref('Pending')
-  const verifyingEmail = ref(false)
+  const status = ref('Pending')
+  const verifying = ref(false)
 
-  const emailVerificationStatusColor = computed(() => {
-    const colors = { Success: 'success', Failed: 'error', Pending: 'grey', Checking: 'grey', Error: 'error' }
-    return colors[emailVerificationStatus.value] || 'grey'
-  })
+  const statusColor = computed(() => ({
+    Success: 'success', Failed: 'error', Pending: 'grey', Checking: 'grey', Error: 'error'
+  }[status.value] || 'grey'))
 
-  const emailVerificationStatusIcon = computed(() => {
-    const icons = { Success: 'mdi-check-circle', Failed: 'mdi-alert-circle', Pending: 'mdi-progress-clock', Checking: 'mdi-progress-clock', Error: 'mdi-alert' }
-    return icons[emailVerificationStatus.value] || 'mdi-progress-clock'
-  })
+  const statusIcon = computed(() => ({
+    Success: 'mdi-check-circle', Failed: 'mdi-alert-circle', Pending: 'mdi-progress-clock',
+    Checking: 'mdi-progress-clock', Error: 'mdi-alert'
+  }[status.value] || 'mdi-progress-clock'))
 
-  const emailVerificationStatusText = computed(() => {
-    const texts = { Success: '検証済み', Failed: '未検証', Pending: '検証中', Checking: '検証中', Error: 'エラー' }
-    return texts[emailVerificationStatus.value] || '検証中'
-  })
+  const statusText = computed(() => ({
+    Success: '検証済み', Failed: '未検証', Pending: '検証中', Checking: '検証中', Error: 'エラー'
+  }[status.value] || '検証中'))
 
-  const checkEmailVerificationStatus = async (email) => {
-    if (!email) {
-      emailVerificationStatus.value = 'Pending'
+  const check = async (email) => {
+    if (!email || !isValidEmail(email)) {
+      status.value = 'Failed'
       return
     }
-
     try {
-      emailVerificationStatus.value = 'Checking'
+      status.value = 'Checking'
       const result = await checkEmailVerification(email)
-      emailVerificationStatus.value = result.status
+      status.value = result.status
       if (result.status === 'Pending') {
         showNotification('メールアドレスの検証が保留中です。メールボックスを確認してください。', 'info')
       }
     } catch (error) {
-      emailVerificationStatus.value = 'Error'
+      status.value = 'Error'
       showError('メールアドレスの検証状態の確認中にエラーが発生しました。', error)
     }
   }
 
-  const verifyEmail = async (email) => {
-    if (!email) {
-      showError('メールアドレスを入力してください。')
+  const verify = async (email) => {
+    if (!email || !isValidEmail(email)) {
+      showError('有効なメールアドレスを入力してください。')
       return
     }
-
-    verifyingEmail.value = true
+    verifying.value = true
     try {
       await verifyEmailAddress(email)
       showNotification('検証メールを送信しました。メールを確認して検証を完了してください。', 'info')
-      await checkEmailVerificationStatus(email)
+      await check(email)
     } catch (error) {
       showError('メールアドレスの検証に失敗しました。', error)
     } finally {
-      verifyingEmail.value = false
+      verifying.value = false
     }
   }
 
-  return {
-    emailVerificationStatus,
-    emailVerificationStatusColor,
-    emailVerificationStatusIcon,
-    emailVerificationStatusText,
-    checkEmailVerificationStatus,
-    verifyEmail,
-    verifyingEmail,
-  }
+  return { status, statusColor, statusIcon, statusText, check, verify, verifying }
 }
 
 const {
-  emailVerificationStatus,
-  emailVerificationStatusColor,
-  emailVerificationStatusIcon,
-  emailVerificationStatusText,
-  checkEmailVerificationStatus,
-  verifyEmail,
-  verifyingEmail,
+  status: emailVerificationStatus,
+  statusColor: emailVerificationStatusColor,
+  statusIcon: emailVerificationStatusIcon,
+  statusText: emailVerificationStatusText,
+  check: checkEmailVerificationStatus,
+  verify: verifyEmail,
+  verifying: verifyingEmail,
 } = useEmailVerification()
 
 const requestSettings = reactive({
@@ -276,14 +267,13 @@ const requestSettings = reactive({
 
 const originalSettings = ref(null)
 
-const isFormChanged = computed(() => {
-  if (!originalSettings.value) return false
-  return JSON.stringify(requestSettings) !== JSON.stringify(originalSettings.value)
-})
+const isFormChanged = computed(() =>
+  originalSettings.value && JSON.stringify(requestSettings) !== JSON.stringify(originalSettings.value)
+)
 
 const emailRules = [
   v => !!v || 'メールアドレスは必須です',
-  v => /.+@.+\..+/.test(v) || '有効なメールアドレスを入力してください',
+  v => isValidEmail(v) || '有効なメールアドレスを入力してください',
 ]
 
 const senderNameRules = [
@@ -302,10 +292,10 @@ const daysOfWeek = [
 ]
 
 const hours = computed(() =>
-  Array.from({ length: 24 }, (_, i) => ({
-    text: `${i.toString().padStart(2, '0')}:00`,
-    value: `${i.toString().padStart(2, '0')}:00`,
-  }))
+  Array.from({ length: 24 }, (_, i) => {
+    const time = `${i.toString().padStart(2, '0')}:00`
+    return { text: time, value: time }
+  })
 )
 
 const reportWeekOptions = [
@@ -313,23 +303,26 @@ const reportWeekOptions = [
   { text: '当週', value: 0 },
 ]
 
-const debouncedCheckEmailVerification = (() => {
-  let timeout
-  return () => {
-    clearTimeout(timeout)
-    timeout = setTimeout(() => checkEmailVerificationStatus(requestSettings.sender), 500)
+watch(() => requestSettings.sender, (newValue, oldValue) => {
+  if (newValue !== oldValue) {
+    if (isValidEmail(newValue)) {
+      const timeoutId = setTimeout(() => checkEmailVerificationStatus(newValue), 500)
+      return () => clearTimeout(timeoutId)
+    } else {
+      emailVerificationStatus.value = 'Failed'
+    }
   }
-})()
+})
 
 const handleSubmit = async () => {
   if (!isFormValid.value || !isFormChanged.value) return
-
+  
   await checkEmailVerificationStatus(requestSettings.sender)
   if (emailVerificationStatus.value !== 'Success') {
     showError('送信元メールアドレスが検証されていません。設定を保存できません。')
     return
   }
-
+  
   try {
     const org = { ...organization.value, ...requestSettings }
     await updateOrganization(org)
@@ -355,7 +348,6 @@ onMounted(async () => {
         reportWeek: result.reportWeek || -1,
       })
       originalSettings.value = JSON.parse(JSON.stringify(requestSettings))
-      
       await checkEmailVerificationStatus(requestSettings.sender)
     }
   } catch (error) {
@@ -363,10 +355,6 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
-
-onUnmounted(() => {
-  // Clean up is handled by the closure in debouncedCheckEmailVerification
 })
 </script>
 
