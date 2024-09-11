@@ -121,9 +121,28 @@ const handleKeyDown = async (event) => {
   if (event.key === 'Enter' && !event.isComposing) {
     event.preventDefault()
     const inputValue = (props.modelValue ?? '').trim()
-    if (inputValue && !internalProjectNames.value.includes(inputValue)) {
-      await addProjectOption(inputValue)
+    if (inputValue) {
+      if (!internalProjectNames.value.includes(inputValue)) {
+        await addProjectOption(inputValue)
+      } else {
+        // プロジェクトが既に登録済みの場合、次の適切な入力項目にフォーカスを移動
+        moveFocusToNextInput(event.target)
+      }
     }
+  }
+}
+
+const moveFocusToNextInput = (currentElement) => {
+  const form = currentElement.closest('form')
+  if (!form) return
+
+  const focusableElements = Array.from(form.querySelectorAll(
+    'input:not([disabled]):not([readonly]), select:not([disabled]):not([readonly]), textarea:not([disabled]):not([readonly])'
+  )).filter(el => !el.classList.contains('v-select__selections') && !el.parentElement.classList.contains('v-list-item'))
+
+  const currentIndex = focusableElements.indexOf(currentElement)
+  if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
+    focusableElements[currentIndex + 1].focus()
   }
 }
 </script>

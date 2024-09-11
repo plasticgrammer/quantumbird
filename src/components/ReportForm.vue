@@ -57,7 +57,7 @@
                   <v-col cols="12" md="7">
                     <v-textarea
                       v-model="previousWeekReport.issues"
-                      label="現状・問題点"
+                      label="現状と問題点"
                       outlined
                       readonly
                       auto-grow
@@ -68,7 +68,7 @@
 
                     <v-textarea
                       v-model="previousWeekReport.improvements"
-                      label="改善点"
+                      label="改善したいこと"
                       outlined
                       readonly
                       auto-grow
@@ -123,13 +123,11 @@
               <v-col cols="3" md="4" class="d-flex justify-end">
                 <v-btn
                   icon
-                  x-small
                   class="project-delete-btn"
+                  tabindex="-1"
                   @click="removeProject(projectIndex)"
                 >
-                  <v-icon small>
-                    mdi-delete-outline
-                  </v-icon>
+                  <v-icon>mdi-delete-outline</v-icon>
                 </v-btn>
               </v-col>
             </v-row>
@@ -144,18 +142,15 @@
                     :ref="el => setWorkItemRef(el, projectIndex, itemIndex)"
                     v-model="item.content"
                     :label="`作業内容 ${itemIndex + 1}`"
-                    dense
-                    outlined
+                    class="work-item-input pl-2 pl-md-5"
+                    required
                     hide-details="auto"
                     :error-messages="projectErrors[projectIndex]?.workItems[itemIndex]"
-                    required
-                    class="work-item-input pl-2 pl-md-5"
                     @keydown="handleKeyDown($event, project, itemIndex)"
                   >
                     <template #append>
                       <v-icon 
                         :color="item.content ? 'grey darken-2' : 'grey lighten-1'"
-                        small
                         tabindex="-1"
                         @click="removeWorkItem(project, itemIndex)"
                       >
@@ -483,9 +478,13 @@ const setWorkItemRef = (el, projectIndex, itemIndex) => {
 const handleKeyDown = async (event, project, itemIndex) => {
   if (event.key === 'Enter' && !event.isComposing) {
     event.preventDefault()
-    if (project.workItems[itemIndex].content.trim() !== '') {
+    const isLastItem = itemIndex === project.workItems.length - 1
+    
+    if (isLastItem && project.workItems[itemIndex].content.trim() !== '') {
       await addWorkItem(project)
       focusNewWorkItem(project, itemIndex + 1)
+    } else {
+      focusNextField(project, itemIndex)
     }
   }
 }
@@ -500,6 +499,27 @@ const focusNewWorkItem = (project, newIndex) => {
   nextTick(() => {
     if (workItemRefs[projectIndex] && workItemRefs[projectIndex][newIndex]) {
       workItemRefs[projectIndex][newIndex].focus()
+    }
+  })
+}
+
+const focusNextField = (project, currentIndex) => {
+  const projectIndex = report.value.projects.indexOf(project)
+  const nextIndex = currentIndex + 1
+  
+  nextTick(() => {
+    if (workItemRefs[projectIndex] && workItemRefs[projectIndex][nextIndex]) {
+      workItemRefs[projectIndex][nextIndex].focus()
+    } else {
+      // If there's no next work item, focus on the next available input field
+      const form = document.querySelector('.report-form')
+      const inputs = form.querySelectorAll('input, textarea, select')
+      const currentInput = workItemRefs[projectIndex][currentIndex]
+      const currentInputIndex = Array.from(inputs).indexOf(currentInput)
+      
+      if (currentInputIndex !== -1 && currentInputIndex < inputs.length - 1) {
+        inputs[currentInputIndex + 1].focus()
+      }
     }
   })
 }

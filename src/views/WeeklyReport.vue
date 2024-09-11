@@ -92,7 +92,7 @@
               </v-btn>
             </v-col>
             <v-col cols="auto" class="mx-2">
-              <v-btn color="#B00020" prepend-icon="mdi-close" variant="elevated" @click="handleClose">
+              <v-btn color="error" prepend-icon="mdi-close" variant="elevated" @click="handleClose">
                 終了する
               </v-btn>
             </v-col>
