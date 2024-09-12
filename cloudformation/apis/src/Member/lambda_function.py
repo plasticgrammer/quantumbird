@@ -26,6 +26,8 @@ def lambda_handler(event, context):
 
         if resource == '/member/project' and http_method == 'GET':
             return handle_get_projects(event)
+        elif resource == '/member/mail' and http_method == 'PUT':
+            return handle_put_email_confirmed(event)
         elif resource == '/member':
             if http_method == 'GET':
                 return handle_get(event)
@@ -82,14 +84,7 @@ def handle_put(event):
         if member is None:
             return create_response(404, {'message': f'Member with UUID {member_uuid} not found'})
 
-        if 'verifyEmail' in data:
-            member['emailConfirmed'] = True
-            response = members_table.put_item(Item=member)
-            return create_response(200, {
-                'message': 'Member email verified successfully',
-                'email': member['email']
-            })
-        elif 'projects' in data:
+        if 'projects' in data:
             update_member_projects(member_uuid, data['projects'])
             return create_response(200, {'message': 'Member projects updated successfully'})
         else:
@@ -97,6 +92,23 @@ def handle_put(event):
             response = members_table.put_item(Item=item)
             logger.info(f"Member update response: {response}")
             return create_response(200, {'message': 'Member updated successfully'})
+    else:
+        return create_response(400, {'message': 'Invalid data structure'})
+
+def handle_put_email_confirmed(event):
+    data = json.loads(event['body'])
+    if 'memberUuid' in data:
+        member_uuid = data['memberUuid']
+        member = get_member(member_uuid)        
+        if member is None:
+            return create_response(404, {'message': f'Member with UUID {member_uuid} not found'})
+
+        member['emailConfirmed'] = True
+        response = members_table.put_item(Item=member)
+        return create_response(200, {
+            'message': 'Member email verified successfully',
+            'email': member['email']
+        })
     else:
         return create_response(400, {'message': 'Invalid data structure'})
 

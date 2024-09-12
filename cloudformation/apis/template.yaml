@@ -205,6 +205,12 @@ Resources:
             Method: get
             Auth:
               Authorizer: CognitoAuthorizer
+        ConfirmedMail:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /member/mail
+            Method: put
 
   WeeklyReportFunction:
     Type: AWS::Serverless::Function

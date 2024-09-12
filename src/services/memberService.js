@@ -35,5 +35,5 @@ export const listMembers = async (organizationId) => {
 }
 
 export const verifyEmail = async (memberUuid) => {
-  return apiClient.put(BASE_PATH, { verifyEmail: true, memberUuid })
+  return apiClient.put(`${BASE_PATH}/mail`, { verifyEmail: true, memberUuid })
 }

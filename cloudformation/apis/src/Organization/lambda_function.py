@@ -214,7 +214,7 @@ def send_registor_mail(organization, member):
     bodyText += f"組織名：{organization['name']}\n\n"
     bodyText += "※本メールは、登録した際に配信される自動配信メールです。\n"
 
-    base_url = urllib.parse.urljoin(BASE_URL, "mail")
+    base_url = urllib.parse.urljoin(BASE_URL, "member/mail")
     path_params = [urllib.parse.quote(member['memberUuid'])]    
     # URLの構築
     url = f"{base_url}/{'/'.join(path_params)}"    

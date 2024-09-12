@@ -101,7 +101,7 @@ const routes = [
     meta: { hideNavigation: true, hideAnimation: true }
   },
   {
-    path: '/mail/:memberUuid',
+    path: '/member/mail/:memberUuid',
     name: 'MailConfirmed',
     component: MailConfirmed,
     props: true,
