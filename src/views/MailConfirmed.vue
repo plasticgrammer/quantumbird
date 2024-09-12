@@ -23,6 +23,11 @@
               報告要求のメールが配信されるまでお待ちください。
             </p>
           </v-card-text>
+          <v-card-actions class="justify-center">
+            <v-btn color="error" prepend-icon="mdi-close" variant="outlined" @click="handleClose">
+              閉じる
+            </v-btn>
+          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
@@ -43,6 +48,10 @@ const props = defineProps({
 const loading = ref(false)
 const email = ref('')
 const showError = inject('showError')
+
+const handleClose = () => {
+  window.close()
+}
 
 onMounted(async () => {
   loading.value = true
