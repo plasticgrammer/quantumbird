@@ -188,16 +188,29 @@ def update_members(organization_id, members):
         is_new_member = existing_member is None
         email_changed = existing_member and existing_member.get('email') != member_item.get('email')
 
-        if is_new_member or email_changed:
+        if is_new_member:
+            member_item['emailConfirmed'] = False
+            try:
+                if not member_item.get('email'):
+                    logger.warning(f"No email address for new member: {member_item.get('id', 'Unknown ID')}")
+                    continue
+                send_registor_mail(org, member_item)
+                logger.info(f"Sent registration email to new member {member_item.get('id')}")
+            except Exception as e:
+                logger.error(f"Failed to send registration email to new member {member_item.get('id')}: {str(e)}")
+        elif email_changed:
+            member_item['emailConfirmed'] = False
             try:
                 if not member_item.get('email'):
                     logger.warning(f"No email address for member: {member_item.get('id', 'Unknown ID')}")
                     continue
                 send_registor_mail(org, member_item)
-                logger.info(f"Sent {'registration' if is_new_member else 'update'} email to member {member_item.get('id')}")
+                logger.info(f"Sent update email to member {member_item.get('id')} due to email change")
             except Exception as e:
-                logger.error(f"Failed to send {'registration' if is_new_member else 'update'} email to member {member_item.get('id')}: {str(e)}")
-                # ここでエラーを再発生させるか、適切に処理することを検討
+                logger.error(f"Failed to send update email to member {member_item.get('id')}: {str(e)}")
+        else:
+            # メールアドレスが変更されていない場合、emailConfirmedの状態を保持
+            member_item['emailConfirmed'] = existing_member.get('emailConfirmed', False)
 
         members_table.put_item(Item=member_item)
 
