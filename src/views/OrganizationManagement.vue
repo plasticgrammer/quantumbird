@@ -100,7 +100,7 @@
                   >
                     <template #append>
                       <v-icon v-if="member.emailConfirmed" v-tooltip:top="'メール確認済み'" color="success">
-                        mdi-email-check-outline
+                        mdi-check-circle
                       </v-icon>
                       <v-icon v-else v-tooltip:top="'メール確認中'">
                         mdi-email-search-outline
@@ -313,7 +313,7 @@ const memberManagement = {
   },
 
   async handleDeleteMember(memberId) {
-    const confirmed = await showConfirmDialog('確認', '本当にこのメンバーを削除しますか？')
+    const confirmed = await showConfirmDialog('確認', '本当にこのメンバーを削除しますか？\n（更新するまでは確定されません）')
     if (confirmed) {
       organization.value.members = organization.value.members.filter((member) => member.id !== memberId)
       formManagement.handleFormChange()
