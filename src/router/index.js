@@ -9,6 +9,7 @@ import WeeklyReportSummary from '../views/WeeklyReportSummary.vue'
 import OrganizationManagement from '../views/OrganizationManagement.vue'
 import MailConfirmed from '../views/MailConfirmed.vue'
 import RequestSetting from '../views/RequestSetting.vue'
+import NotFound from '../views/NotFound.vue'
 
 const routes = [
   {
@@ -107,6 +108,12 @@ const routes = [
     props: true,
     meta: { hideNavigation: true, hideAnimation: true }
   },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: NotFound,
+    meta: { hideNavigation: true, hideAnimation: true }
+  }
 ]
 
 const router = createRouter({

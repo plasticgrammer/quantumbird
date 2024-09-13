@@ -23,7 +23,7 @@
               報告要求のメールが配信されるまでお待ちください。
             </p>
           </v-card-text>
-          <v-card-actions class="justify-center">
+          <v-card-actions v-if="canClose" class="justify-center">
             <v-btn color="error" prepend-icon="mdi-close" variant="outlined" @click="handleClose">
               閉じる
             </v-btn>
@@ -48,9 +48,18 @@ const props = defineProps({
 const loading = ref(false)
 const email = ref('')
 const showError = inject('showError')
+const canClose = ref(false)
 
 const handleClose = () => {
   window.close()
+}
+
+const checkCloseAvailability = () => {
+  try {
+    canClose.value = window.opener !== null && !window.opener.closed
+  } catch (e) {
+    canClose.value = false
+  }
 }
 
 onMounted(async () => {
@@ -59,6 +68,7 @@ onMounted(async () => {
     const result = await verifyEmail(props.memberUuid)
     email.value = result.email
     loading.value = false
+    checkCloseAvailability()
   } catch (error) {
     showError('メール確認済み更新に失敗しました', error)
   }
