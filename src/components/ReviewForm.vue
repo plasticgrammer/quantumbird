@@ -1,5 +1,10 @@
 <template>
   <v-container class="review-form-container">
+    <ScrollNavigation 
+      v-if="filteredReports.length > 0" 
+      :report-refs="reportRefs" 
+    />
+
     <v-row 
       v-if="reports.length && !readonly"
       class="d-print-none mt-2"
@@ -56,16 +61,22 @@
     </v-row>
     <v-row v-else>
       <v-col
-        v-for="report in filteredReports"
-        :key="report.memberUuid"
         cols="12"
       >
         <v-card
+          v-for="(report, index) in filteredReports"
+          :key="report.memberUuid"
+          :ref="el => { 
+            if (el) {
+              reportRefs[index] = el;
+              console.log(`Report ref set for index ${index}:`, el);
+            }
+          }"
           :class="{ 'approved-card': report.status === 'approved', 'none-card': report.status === 'none' }"
           class="default-card cursor-default mt-2"
           hover
           outlined
-        >
+        > 
           <v-card-title class="d-flex justify-space-between align-center py-2">
             <span class="text-h6 font-weight-bold">
               <v-icon size="x-large" class="mr-1">
@@ -108,8 +119,8 @@
                   class="tasks pa-0 mb-3"
                 >
                   <v-list-item
-                    v-for="(project, index) in report.projects"
-                    :key="index"
+                    v-for="(project, projectIndex) in report.projects"
+                    :key="projectIndex"
                     class="px-2 py-2"
                   >
                     <v-list-item-title>
@@ -215,8 +226,8 @@
                     フィードバック
                   </v-alert-title>
                   <div
-                    v-for="(feedback, index) in report.feedbacks"
-                    :key="index"
+                    v-for="(feedback, feedbackIndex) in report.feedbacks"
+                    :key="feedbackIndex"
                     class="pa-0"
                   >
                     <v-textarea
@@ -334,6 +345,7 @@ import { updateReport, submitFeedback } from '../services/reportService'
 import { generateToken } from '../services/secureParameterService'
 import { sendRequest } from '../services/sendRequestService'
 import RatingItem from '../components/RatingItem.vue'
+import ScrollNavigation from '../components/ScrollNavigation.vue'
 
 const { formatDateTimeJp } = useCalendar()
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
@@ -603,7 +615,25 @@ const fetchData = async () => {
     isLoading.value = false
   }
 }
-onMounted(fetchData)
+
+const reportRefs = ref([])
+
+const initReportRefs = () => {
+  reportRefs.value = new Array(filteredReports.value.length).fill(null)
+  console.log('reportRefs initialized:', reportRefs.value)
+}
+
+watchEffect(() => {
+  if (filteredReports.value.length > 0) {
+    initReportRefs()
+  }
+})
+
+onMounted(() => {
+  fetchData().then(() => {
+    initReportRefs()
+  })
+})
 </script>
 
 <style scoped>
