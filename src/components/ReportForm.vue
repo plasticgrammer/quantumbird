@@ -376,6 +376,7 @@
 
 <script setup>
 import { ref, computed, nextTick, reactive, inject, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { getReport, submitReport, getMemberProjects } from '../services/publicService'
 import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
@@ -383,6 +384,7 @@ import { useResponsive } from '../composables/useResponsive'
 import ProjectSelector from './ProjectSelector.vue'
 import RatingItem from '../components/RatingItem.vue'
 
+const route = useRoute()
 const { isMobile } = useResponsive()
 const showNotification = inject('showNotification')
 const showError = inject('showError')
@@ -551,6 +553,21 @@ const removeProject = (projectIndex) => {
   report.value.projects.splice(projectIndex, 1)
 }
 
+const scrollToFeedback = () => {
+  const feedbackElement = document.querySelector('.feedback-box')
+  if (feedbackElement) {
+    feedbackElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+}
+
+const checkAndScrollToFeedback = () => {
+  if (route.query.feedback === 'true' && report.value.feedbacks?.length > 0) {
+    nextTick(() => {
+      scrollToFeedback()
+    })
+  }
+}
+
 const fetchReport = async () => {
   isLoading.value = true
   try {
@@ -586,7 +603,10 @@ const fetchReport = async () => {
   }
 }
 
-onMounted(fetchReport)
+onMounted(async () => {
+  await fetchReport()
+  checkAndScrollToFeedback()
+})
 
 const validateReport = () => {
   let isValid = true

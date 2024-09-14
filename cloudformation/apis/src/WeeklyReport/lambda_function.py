@@ -363,6 +363,7 @@ def send_feedback_mail(organization, member, week_string, feedback):
         bodyText += "------------------------------------------\n"
 
         link = generate_report_link(organization['organizationId'], member["memberUuid"], week_string)
+        link += '?feedback=true'
         bodyText += f"詳細はこちら: {link}"
         
         member_email = member.get('email')
