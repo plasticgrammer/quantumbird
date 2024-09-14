@@ -3,10 +3,11 @@ import boto3
 import json
 import logging
 import jwt
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 import base64
 import struct
 from functools import lru_cache
+from common.utils import create_response
 
 EXP_DAYS = 14
 
@@ -81,7 +82,7 @@ def verify_short_token(event):
         return create_response(400, 'Invalid token')
 
 def lambda_handler(event, context):
-    logger.info(f"Received event: {json.dumps(event)}")
+    #logger.info(f"Received event: {json.dumps(event)}")
     try:
         http_method = event['httpMethod']
         resource = event['resource']
@@ -109,15 +110,3 @@ def parse_body(event):
     else:
         logger.warning("No body found in event")
         return {}
-
-def create_response(status_code, body):
-    return {
-        'statusCode': status_code,
-        'headers': {
-            "Content-Type": "application/json",
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
-        },
-        'body': json.dumps(body) if body else ''
-    }

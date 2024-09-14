@@ -2,11 +2,11 @@ import json
 import logging
 import boto3
 from boto3.dynamodb.conditions import Key
-from decimal import Decimal
 import os
 import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from common.utils import create_response
 
 print('Loading function')
 
@@ -22,7 +22,7 @@ tasks_table_name = f'{stage}-UserTasks'
 tasks_table = dynamodb.Table(tasks_table_name)
 
 def lambda_handler(event, context):
-    logger.info(f"Received event: {json.dumps(event)}")
+    #logger.info(f"Received event: {json.dumps(event)}")
     try:
         http_method = event['httpMethod']
         resource = event['resource']
@@ -133,20 +133,3 @@ def delete_task(user_id, task_id):
     except Exception as e:
         logger.error(f"Error deleting task: {str(e)}", exc_info=True)
         raise e
-
-def create_response(status_code, body):
-    return {
-        'statusCode': status_code,
-        'headers': {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
-        },
-        'body': json.dumps(body, default=decimal_default_proc)
-    }
-
-def decimal_default_proc(obj):
-    if isinstance(obj, Decimal):
-        return float(obj)
-    raise TypeError

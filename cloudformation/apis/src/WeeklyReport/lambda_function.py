@@ -6,10 +6,10 @@ import os
 import urllib.parse
 from decimal import Decimal
 from datetime import datetime, timedelta
-from dateutil import tz
 from dateutil.parser import parse
 from zoneinfo import ZoneInfo
 import common.publisher
+from common.utils import create_response
 
 print('Loading function')
 
@@ -39,7 +39,7 @@ def float_to_decimal(obj):
     return obj
 
 def lambda_handler(event, context):
-    logger.info(f"Received event: {json.dumps(event)}")
+    #logger.info(f"Received event: {json.dumps(event)}")
     try:
         http_method = event['httpMethod']
         resource = event['resource']
@@ -295,11 +295,6 @@ def get_previous_week_string():
     last_week = today - timedelta(weeks=1)
     return f"{last_week.year}-W{last_week.isocalendar()[1]:02d}"
 
-def decimal_default_proc(obj):
-    if isinstance(obj, Decimal):
-        return float(obj)
-    raise TypeError
-
 def handle_submit_feedback(event):
     params = json.loads(event['body'])
     member_uuid = params.get('memberUuid')
@@ -414,15 +409,3 @@ def get_member(member_uuid):
     except Exception as e:
         logger.error(f"Error getting member: {str(e)}", exc_info=True)
         return None
-
-def create_response(status_code, body):
-    return {
-        'statusCode': status_code,
-        'headers': {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
-        },
-        'body': json.dumps(body, default=decimal_default_proc)
-    }

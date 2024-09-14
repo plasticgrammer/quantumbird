@@ -275,6 +275,8 @@ Resources:
                 - ses:GetIdentityVerificationAttributes
                 - ses:VerifyEmailIdentity
               Resource: "*"
+      Layers:
+        - !Ref CommonLayer
       Events:
         CheckEmailApi:
           Type: Api

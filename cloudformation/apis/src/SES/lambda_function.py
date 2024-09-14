@@ -2,6 +2,7 @@ import json
 import logging
 import boto3
 from botocore.exceptions import ClientError
+from common.utils import create_response
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -9,7 +10,7 @@ logger.setLevel(logging.INFO)
 ses = boto3.client('ses')
 
 def lambda_handler(event, context):
-    logger.info(f"Received event: {json.dumps(event)}")
+    #logger.info(f"Received event: {json.dumps(event)}")
     try:
         http_method = event['httpMethod']
         resource = event['resource']
@@ -81,15 +82,3 @@ def handle_verify_email_address(event):
             'status': 'Error',
             'message': str(e)
         })
-
-def create_response(status_code, body):
-    return {
-        'statusCode': status_code,
-        'headers': {
-            "Content-Type": "application/json",
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
-        },
-        'body': json.dumps(body) if body else ''
-    }

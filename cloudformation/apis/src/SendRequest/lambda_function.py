@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from boto3.dynamodb.conditions import Key, Attr
 import common.publisher
+from common.utils import create_response
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -24,7 +25,7 @@ members_table = dynamodb.Table(f'{stage}-Members')
 weekly_reports_table = dynamodb.Table(f'{stage}-WeeklyReports')
 
 def lambda_handler(event, context):
-    logger.info(f"Received event: {json.dumps(event)}")
+    #logger.info(f"Received event: {json.dumps(event)}")
     try:
         # organization_idを編集
         organization_id = None
@@ -191,15 +192,3 @@ def get_string_from_week(current_date, week_offset=0):
     
     # 結果の文字列を生成
     return f"{thursday.year}-W{week_number:02d}"
-
-def create_response(status_code, body):
-    return {
-        'statusCode': status_code,
-        'headers': {
-            "Content-Type": "application/json",
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
-        },
-        'body': json.dumps(body) if body else ''
-    }
