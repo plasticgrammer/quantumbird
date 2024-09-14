@@ -201,6 +201,7 @@ watch(() => props.reportRefs, () => {
   align-items: center;
   justify-content: center;
   height: 40px; /* ボタンとチップの高さを統一 */
+  margin-top: 2px;
 }
 
 .nav-btn {

@@ -1,7 +1,8 @@
 <template>
   <v-container class="review-form-container">
     <ScrollNavigation 
-      v-if="filteredReports.length > 0" 
+      v-if="filteredReports.length > 0"
+      class="d-none d-md-flex"
       :report-refs="reportRefs" 
     />
 
@@ -35,7 +36,7 @@
           </v-chip-group>
         </v-card>
       </v-col>
-      <v-col cols="12" md="2" class="text-end">
+      <v-col cols="12" md="2" class="text-end d-none d-md-block">
         <v-btn
           color="secondary"
           size="small"
@@ -187,7 +188,7 @@
               class="mt-4 border-sm"
               elevation="0"
               variant="flat"
-              color="blue-lighten-5"
+              color="#e6f3ff"
               title="評価"
             >
               <template #prepend>
@@ -642,7 +643,7 @@ onMounted(() => {
 }
 
 .default-card {
-  background-color: #fafafa;
+  background-color: #f1f8fe;
 }
 
 .none-card {
@@ -650,7 +651,7 @@ onMounted(() => {
 }
 
 .approved-card {
-  background-color: #fafafa;
+  background-color: #f1f8fe;
 }
 
 .tasks {

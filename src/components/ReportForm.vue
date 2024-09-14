@@ -248,7 +248,7 @@
           class="mt-2 border-sm"
           elevation="0"
           variant="flat"
-          color="blue-lighten-5"
+          color="#e6f3ff"
           title="評価"
         >
           <template #prepend>
@@ -709,7 +709,7 @@ const handleSubmit = async () => {
 }
 
 .report-form {
-  background-color: #f9f9f9;
+  background-color: #f1f8fe;
   border-radius: 8px;
 }
 
