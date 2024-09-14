@@ -308,6 +308,14 @@ Resources:
           STAGE: !Ref Stage
       Layers:
         - !Ref CommonLayer
+      Events:
+        HourlySchedule:
+          Type: Schedule
+          Properties:
+            Name: !Sub "${Stage}-wrs-mail-trigger"
+            Description: "Trigger ScheduleFunction every hour"
+            Schedule: "cron(0 * * * ? *)"
+            Enabled: true
 
   SendRequestFunction:
     Type: AWS::Serverless::Function

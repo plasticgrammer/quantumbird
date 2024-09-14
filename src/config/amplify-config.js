@@ -1,16 +1,4 @@
-const isProd = process.env.NODE_ENV === 'production'
-
-function getRedirectUrl() {
-  if (!isProd) {
-    // 開発環境では環境変数からポート番号を取得
-    const port = process.env.VUE_APP_PORT || process.env.PORT || 8080
-    return `http://localhost:${port}/`
-  }
-  // 本番環境では現在のホストを使用
-  return `${window.location.protocol}//${window.location.host}/`
-}
-
-const redirectUrl = getRedirectUrl()
+import { redirectUrl } from './environment'
 
 const config = {
   Auth: {

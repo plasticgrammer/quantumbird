@@ -166,6 +166,14 @@
       </div>
     </v-main>
 
+    <!-- <v-footer 
+      v-if="!isMobile"
+      class="bg-blue-grey justify-end opacity-40 py-2"
+    >
+      <v-btn color="white" variant="text">利用規約</v-btn>
+      <v-btn color="white" variant="text">プライバシーポリシー</v-btn>
+    </v-footer> -->
+
     <ConfirmationDialog ref="confirmDialog" />
 
     <LoadingOverlay :style="bgImageStyle" />

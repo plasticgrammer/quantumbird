@@ -11,7 +11,6 @@ import './assets/global.css'
 // Amplify の設定
 try {
   Amplify.configure(amplifyConfig, { ssr: true })
-  console.log('Amplify configured successfully')
 } catch (error) {
   console.error('Failed to configure Amplify:', error)
 }

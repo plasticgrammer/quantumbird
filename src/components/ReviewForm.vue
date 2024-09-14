@@ -67,12 +67,7 @@
         <v-card
           v-for="(report, index) in filteredReports"
           :key="report.memberUuid"
-          :ref="el => { 
-            if (el) {
-              reportRefs[index] = el;
-              console.log(`Report ref set for index ${index}:`, el);
-            }
-          }"
+          :ref="el => { if (el) reportRefs[index] = el }"
           :class="{ 'approved-card': report.status === 'approved', 'none-card': report.status === 'none' }"
           class="default-card cursor-default mt-2"
           hover
@@ -347,8 +342,9 @@ import { generateToken } from '../services/secureParameterService'
 import { sendRequest } from '../services/sendRequestService'
 import RatingItem from '../components/RatingItem.vue'
 import ScrollNavigation from '../components/ScrollNavigation.vue'
+import { rootUrl } from '../config/environment'
 
-const { formatDateTimeJp } = useCalendar()
+const { formatDateTimeJp, formatDateJp, getWeekFromString } = useCalendar()
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
 const showNotification = inject('showNotification')
 const showError = inject('showError')
@@ -408,25 +404,12 @@ const copyShareUrl = async () => {
     const params = { organizationId: props.organizationId, weekString: props.weekString }
     const result = await generateToken(params)
     
-    // ルートURLを取得する関数
-    const getRootUrl = () => {
-      const { protocol, host, pathname } = window.location
-      const pathSegments = pathname.split('/').filter(segment => segment !== '')
-      
-      // GitHub Pages の場合、最初のセグメントがリポジトリ名
-      const repoName = pathSegments[0]
-      
-      // 開発環境の場合は window.location.origin をそのまま使用
-      // 本番環境（GitHub Pages）の場合は、リポジトリ名を含めたパスを使用
-      return process.env.NODE_ENV === 'production' 
-        ? `${protocol}//${host}/${repoName}`
-        : `${protocol}//${host}`
-    }
-
-    const rootUrl = getRootUrl()
     const shareUrl = `${rootUrl}/view/${result.token}`
+    const week = getWeekFromString(props.weekString)
+    const comment = `報告期間：${formatDateJp(week.startDate)}〜${formatDateJp(week.endDate)}\n（リンクは2週間有効です）`
+    const shareText = `${shareUrl}\n${comment}`
     
-    await navigator.clipboard.writeText(shareUrl)
+    await navigator.clipboard.writeText(shareText)
     showNotification('共有リンクをコピーしました')
   } catch (err) {
     showError('共有リンクのコピーに失敗しました', err)
@@ -621,7 +604,6 @@ const reportRefs = ref([])
 
 const initReportRefs = () => {
   reportRefs.value = new Array(filteredReports.value.length).fill(null)
-  console.log('reportRefs initialized:', reportRefs.value)
 }
 
 watchEffect(() => {
@@ -643,7 +625,7 @@ onMounted(() => {
 }
 
 .default-card {
-  background-color: #f1f8fe;
+  background-color: #f6fbff;
 }
 
 .none-card {
@@ -651,7 +633,7 @@ onMounted(() => {
 }
 
 .approved-card {
-  background-color: #f1f8fe;
+  background-color: #f6fbff;
 }
 
 .tasks {

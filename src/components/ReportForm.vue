@@ -709,7 +709,7 @@ const handleSubmit = async () => {
 }
 
 .report-form {
-  background-color: #f1f8fe;
+  background-color: #f6fbff;
   border-radius: 8px;
 }
 
