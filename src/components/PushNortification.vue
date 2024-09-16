@@ -61,25 +61,13 @@ onMounted(async () => {
   await checkSubscription()
 })
 
-const isIOSSafari = async () => {
-  const ua = window.navigator.userAgent
-  const iOS = !!ua.match(/iPad/i) || !!ua.match(/iPhone/i)
-  const webkit = !!ua.match(/WebKit/i)
-  const iOSSafari = iOS && webkit && !ua.match(/CriOS/i) && !ua.match(/FxiOS/i)
-  
-  // iOS 13以降のiPadはユーザーエージェントがMacのように見えるため、追加チェック
-  const isIPadOS = navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /MacIntel/.test(navigator.platform)
-  
-  return iOSSafari || isIPadOS
-}
-
 const canUseServiceWorker = () => {
   return 'serviceWorker' in navigator && 
          navigator.serviceWorker.controller !== null
 }
 
 const initializeServiceWorker = async () => {
-  if (canUseServiceWorker() && !isIOSSafari()) {
+  if (canUseServiceWorker()) {
     try {
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
         scope: '/'
@@ -91,10 +79,8 @@ const initializeServiceWorker = async () => {
       isServiceWorkerReady.value = true
     } catch (error) {
       console.error('Service Worker registration failed:', error)
-      showError('Service Workerの登録に失敗しました。ページを再読み込みしてください。')
+      //showError('Service Workerの登録に失敗しました。ページを再読み込みしてください。')
     }
-  } else if (isIOSSafari()) {
-    console.log('iOS SafariではService Workerの一部機能が制限されています。')
   } else {
     showError('このブラウザはService Workerをサポートしていません。')
   }

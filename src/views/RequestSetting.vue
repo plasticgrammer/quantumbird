@@ -169,7 +169,7 @@
     </v-card>
 
     <v-card class="mt-3">
-      <v-card-title>ベータ版：報告通知設定</v-card-title>
+      <v-card-title class="text-subtitle-1">ベータ版：報告通知設定</v-card-title>
       <v-card-text>
         <PushNortification></PushNortification>
       </v-card-text>
