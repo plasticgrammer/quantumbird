@@ -62,7 +62,9 @@ onMounted(async () => {
 })
 
 const initializeServiceWorker = async () => {
-  if ('serviceWorker' in navigator) {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  if ('serviceWorker' in navigator && !(isIOS && isSafari)) {
     try {
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
         scope: '/'
@@ -76,6 +78,8 @@ const initializeServiceWorker = async () => {
       console.error('Service Worker registration failed:', error)
       showError('Service Workerの登録に失敗しました。ページを再読み込みしてください。')
     }
+  } else if (isIOS && isSafari) {
+    console.log('iOS SafariではService Workerの一部機能が制限されています。')
   } else {
     showError('このブラウザはService Workerをサポートしていません。')
   }
