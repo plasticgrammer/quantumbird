@@ -2,6 +2,9 @@
   "name": "weekly-report",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "serve": "vue-cli-service serve",
     "serve:prod": "vue-cli-service serve --mode production",
@@ -15,6 +18,7 @@
     "axios": "^1.7.5",
     "chart.js": "^4.4.3",
     "core-js": "^3.8.3",
+    "firebase": "^10.13.1",
     "roboto-fontface": "*",
     "vue": "^3.2.13",
     "vue-router": "^4.4.0",

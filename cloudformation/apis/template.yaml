@@ -36,6 +36,9 @@ Parameters:
       - prod
   UserPoolArn:
     Type: String
+  WebPushPlatformApplicationArn:
+    Type: String
+    Default: "arn:aws:sns:ap-northeast-1:394014491996:app/GCM/fluxweek"
 
 Conditions:
   IsProd: !Equals [!Ref Stage, "prod"]
@@ -96,6 +99,11 @@ Resources:
       CodeUri: ./src/Public
       Policies:
         - AmazonDynamoDBFullAccess
+        - Statement:
+            - Effect: Allow
+              Action:
+                - sns:Publish
+              Resource: !Ref WebPushPlatformApplicationArn
       Description: ""
       Environment:
         Variables:
@@ -159,10 +167,16 @@ Resources:
                 - ses:SendRawEmail
                 - ses:SendEmail
               Resource: "*"
+            - Effect: Allow
+              Action:
+                - sns:GetPlatformApplicationAttributes
+                - sns:CreatePlatformEndpoint
+              Resource: !Ref WebPushPlatformApplicationArn
       Description: ""
       Environment:
         Variables:
           STAGE: !Ref Stage
+          WEB_PUSH_PLATFORM_ARN: !Ref WebPushPlatformApplicationArn
       Layers:
         - !Ref CommonLayer
       Events:
@@ -171,6 +185,14 @@ Resources:
           Properties:
             RestApiId: !Ref ApiGatewayApi
             Path: /organization
+            Method: ANY
+            Auth:
+              Authorizer: CognitoAuthorizer
+        ProcPushSubscription:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /organization/push-subscription
             Method: ANY
             Auth:
               Authorizer: CognitoAuthorizer

@@ -344,9 +344,7 @@ def send_feedback_mail(organization, member, week_string, feedback):
     try:
         sendFrom = common.publisher.get_from_address(organization)
         subject = "【週次報告システム】管理者からのフィードバックがあります"
-
         bodyText = f"組織名：{organization['name']}\n\n"
-        bodyText += "管理者からのフィードバックがありました。\n"
 
         feedback_content = feedback.get('content')
         feedback_created_at = feedback.get('createdAt')
@@ -356,8 +354,8 @@ def send_feedback_mail(organization, member, week_string, feedback):
         jst_dt = utc_dt.astimezone(TIMEZONE)
         # 日本語の日付形式で文字列化
         formatted_date = jst_dt.strftime("%Y年%m月%d日 %H:%M")
-        bodyText += f"（{formatted_date}）\n"
 
+        bodyText += f"管理者からのフィードバックがありました。（{formatted_date}）\n"
         bodyText += "------------------------------------------\n"
         bodyText += f"{feedback_content}\n"
         bodyText += "------------------------------------------\n"

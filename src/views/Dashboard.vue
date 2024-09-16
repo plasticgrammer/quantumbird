@@ -204,7 +204,7 @@
             <v-icon small class="mr-1">
               mdi-calendar-account
             </v-icon>
-            メンバーの週次報告（代理入力）
+            メンバーの週次報告
           </v-card-title>
           <v-card-text class="pt-1 pb-3">
             <v-row>
@@ -230,7 +230,7 @@
                   :disabled="!selectedMember"
                   x-small
                 >
-                  週次報告
+                  週次報告（代理入力）
                   <v-icon icon="mdi-open-in-new" end small />
                 </v-btn>
               </v-col>

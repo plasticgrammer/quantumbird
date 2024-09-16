@@ -28,3 +28,11 @@ export const getOrganization = async (organizationId) => {
 export const listOrganizations = async () => {
   return apiClient.get(BASE_PATH)
 }
+
+export const registerPushSubscription = async (fcmToken, organizationId, adminId) => {
+  return apiClient.post(`${BASE_PATH}/push-subscription`, { fcmToken, organizationId, adminId })
+}
+
+export const removePushSubscription = async (organizationId, adminId) => {
+  return apiClient.delete(`${BASE_PATH}/push-subscription`, { organizationId, adminId })
+}

@@ -1,11 +1,12 @@
 import json
 import logging
 import boto3
-from boto3.dynamodb.conditions import Key
 import urllib.parse
 import os
 import uuid
 import common.publisher
+from botocore.exceptions import ClientError
+from boto3.dynamodb.conditions import Key
 from common.utils import create_response
 
 print('Loading function')
@@ -15,6 +16,10 @@ logger.setLevel(logging.INFO)
 
 stage = os.environ.get('STAGE', 'dev')
 BASE_URL = os.environ.get('BASE_URL', 'http://localhost:3000')
+WEB_PUSH_PLATFORM_ARN = os.environ['WEB_PUSH_PLATFORM_ARN']
+
+# SNSクライアント
+sns_client = boto3.client('sns')
 
 # Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb')
@@ -29,16 +34,22 @@ def lambda_handler(event, context):
         http_method = event['httpMethod']
         resource = event['resource']
 
-        if http_method == 'GET':
-            return handle_get(event)
-        elif http_method == 'POST':
-            return handle_post(event)
-        elif http_method == 'PUT':
-            return handle_put(event)
-        elif http_method == 'DELETE':
-            return handle_delete(event)
-        else:
-            return create_response(400, {'message': f'Unsupported method: {http_method}'})
+        if resource == '/organization':
+            if http_method == 'GET':
+                return handle_get(event)
+            elif http_method == 'POST':
+                return handle_post(event)
+            elif http_method == 'PUT':
+                return handle_put(event)
+            elif http_method == 'DELETE':
+                return handle_delete(event)
+        elif resource == '/organization/push-subscription':
+            if http_method == 'POST':
+                return handle_push_subscription(event)
+            elif http_method == 'DELETE':
+                return handle_remove_subscription(event)
+
+        return create_response(400, {'message': f'Unsupported resource or method: {http_method} {resource}'})
     except Exception as e:
         logger.error(f"Error: {str(e)}", exc_info=True)
         return create_response(500, {'message': f'Internal server error: {str(e)}'})
@@ -281,3 +292,108 @@ def delete_member_by_id(organization_id, member_id):
     if items:
         member_uuid = items[0]['memberUuid']
         members_table.delete_item(Key={'memberUuid': member_uuid})
+
+def handle_push_subscription(event):
+    try:
+        body = json.loads(event['body'])
+        fcm_token = body['fcmToken']
+        organization_id = body['organizationId']
+        admin_id = body['adminId']
+
+        logger.info(f"Handling push subscription for organization {organization_id}, admin {admin_id}")
+
+        endpoint_arn = create_sns_endpoint(fcm_token, organization_id, admin_id)
+        logger.info(f"Created SNS endpoint: {endpoint_arn}")
+
+        update_result = update_organization_subscription(organization_id, admin_id, endpoint_arn)
+        logger.info(f"Update result: {update_result}")
+
+        return create_response(200, {'message': 'Subscription saved successfully', 'endpointArn': endpoint_arn})
+    except ValueError as e:
+        logger.error(f"Invalid request data: {str(e)}")
+        return create_response(400, {'message': f"Invalid request data: {str(e)}"})
+    except ClientError as e:
+        logger.error(f"AWS service error: {str(e)}")
+        return create_response(500, {'message': f"AWS service error: {str(e)}"})
+    except Exception as e:
+        logger.error(f"Unexpected error in handle_push_subscription: {str(e)}", exc_info=True)
+        return create_response(500, {'message': f"Internal server error: {str(e)}"})
+
+def create_sns_endpoint(fcm_token, organization_id, admin_id):
+    try:
+        response = sns_client.create_platform_endpoint(
+            PlatformApplicationArn=WEB_PUSH_PLATFORM_ARN,
+            Token=fcm_token,
+            CustomUserData=json.dumps({
+                'organizationId': organization_id,
+                'adminId': admin_id
+            })
+        )
+        return response['EndpointArn']
+    except ClientError as e:
+        logger.error(f"Failed to create SNS endpoint: {str(e)}")
+        raise
+
+def update_organization_subscription(organization_id, admin_id, endpoint_arn):
+    try:
+        # まず、adminSubscriptions 属性が存在するか確認
+        response = organizations_table.update_item(
+            Key={'organizationId': organization_id},
+            UpdateExpression="SET adminSubscriptions.#adminId = :endpoint",
+            ConditionExpression="attribute_exists(adminSubscriptions)",
+            ExpressionAttributeNames={'#adminId': admin_id},
+            ExpressionAttributeValues={':endpoint': endpoint_arn},
+            ReturnValues="UPDATED_NEW"
+        )
+        logger.info(f"Successfully updated subscription for organization {organization_id}, admin {admin_id}")
+        return response
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+            # adminSubscriptions 属性が存在しない場合、新しく作成
+            try:
+                response = organizations_table.update_item(
+                    Key={'organizationId': organization_id},
+                    UpdateExpression="SET adminSubscriptions = :subscriptions",
+                    ExpressionAttributeValues={
+                        ':subscriptions': {admin_id: endpoint_arn}
+                    },
+                    ReturnValues="UPDATED_NEW"
+                )
+                logger.info(f"Created new adminSubscriptions for organization {organization_id}, admin {admin_id}")
+                return response
+            except ClientError as inner_e:
+                logger.error(f"Failed to create adminSubscriptions: {str(inner_e)}")
+                raise
+        else:
+            logger.error(f"Failed to update organization subscription: {str(e)}")
+            raise
+
+def handle_remove_subscription(event):
+    try:
+        params = event.get('queryStringParameters', {}) or {}
+        organization_id = params['organizationId']
+        admin_id = params['adminId']
+
+        remove_organization_subscription(organization_id, admin_id)
+
+        return create_response(200, {'message': 'Subscription removed successfully'})
+    except ValueError as e:
+        logger.error(f"Invalid request data: {str(e)}")
+        return create_response(400, {'message': str(e)})
+    except ClientError as e:
+        logger.error(f"AWS service error: {str(e)}")
+        return create_response(500, {'message': 'Failed to remove subscription'})
+    except Exception as e:
+        logger.error(f"Unexpected error in handle_remove_subscription: {str(e)}", exc_info=True)
+        return create_response(500, {'message': 'Internal server error'})
+
+def remove_organization_subscription(organization_id, admin_id):
+    try:
+        organizations_table.update_item(
+            Key={'organizationId': organization_id},
+            UpdateExpression="REMOVE adminSubscriptions.#adminId",
+            ExpressionAttributeNames={'#adminId': admin_id}
+        )
+    except ClientError as e:
+        logger.error(f"Failed to remove organization subscription: {str(e)}")
+        raise

@@ -12,6 +12,9 @@ print('Loading function')
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+# SNSクライアント
+sns_client = boto3.client('sns')
+
 # Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb')
 stage = os.environ.get('STAGE', 'dev')
@@ -96,6 +99,10 @@ def handle_post(event):
     item = prepare_item(report_data)
     response = weekly_reports_table.put_item(Item=item)
     logger.info(f"DynamoDB response: {response}")
+    
+    # 組織の管理者に通知を送信
+    send_push_notification_to_admins(item['organizationId'], 'new_report', item)
+
     return create_response(201, 'Weekly report created successfully')
 
 def handle_put(event):
@@ -114,6 +121,10 @@ def handle_put(event):
         updated_item = prepare_item(report_data, existing_report)
         response = weekly_reports_table.put_item(Item=updated_item)
         logger.info(f"DynamoDB response: {response}")
+        
+        # 組織の管理者に通知を送信
+        send_push_notification_to_admins(updated_item['organizationId'], 'updated_report', updated_item)
+
         return create_response(200, 'Weekly report updated successfully')
     except Exception as e:
         logger.error(f"Error updating report: {str(e)}", exc_info=True)
@@ -301,3 +312,59 @@ def handle_post_organization(event):
         return create_response(201, {'message': 'Organization created successfully'})
     else:
         return create_response(400, {'message': 'Invalid data structure'})
+
+def send_push_notification_to_admins(organization_id, notification_type, report_data):
+    try:
+        organization = organizations_table.get_item(Key={'organizationId': organization_id})
+        admin_subscriptions = organization['Item'].get('adminSubscriptions', {})
+        
+        notification = {
+            'type': notification_type,
+            'reportData': {
+                'memberUuid': report_data['memberUuid'],
+                'weekString': report_data['weekString'],
+                'status': report_data['status']
+            }
+        }
+        
+        for admin_id, endpoint_arn in admin_subscriptions.items():
+            try:
+                sns_client.publish(
+                    TargetArn=endpoint_arn,
+                    Message=json.dumps({
+                        'default': json.dumps(notification),
+                        'GCM': json.dumps({
+                            'notification': {
+                                'title': 'レポート更新',
+                                'body': f'{notification_type}: {report_data["weekString"]}',
+                                #'click_action': 'FLUTTER_NOTIFICATION_CLICK', # Flutterアプリの場合
+                                'sound': 'default'
+                            },
+                            'data': {
+                                'type': notification_type,
+                                'weekString': report_data['weekString'],
+                                'status': report_data['status'],
+                                'memberUuid': report_data['memberUuid']
+                            }
+                        })
+                    }),
+                    MessageStructure='json'
+                )
+            except Exception as e:
+                logger.error(f"Error sending push notification to admin {admin_id}: {e}")
+                # エンドポイントが無効な場合は削除
+                if 'EndpointDisabled' in str(e):
+                    remove_admin_subscription(organization_id, admin_id)
+    
+    except Exception as e:
+        logger.error(f"Error in send_push_notification_to_admins: {str(e)}", exc_info=True)
+
+def remove_admin_subscription(organization_id, admin_id):
+    try:
+        organizations_table.update_item(
+            Key={'organizationId': organization_id},
+            UpdateExpression="REMOVE adminSubscriptions.#adminId",
+            ExpressionAttributeNames={'#adminId': admin_id}
+        )
+    except Exception as e:
+        logger.error(f"Error removing admin subscription: {str(e)}")

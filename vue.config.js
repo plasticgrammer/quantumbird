@@ -64,6 +64,10 @@ module.exports = defineConfig({
           {
             from: path.resolve(__dirname, 'public/404.html'),
             to: path.resolve(__dirname, 'dist/404.html')
+          },
+          {
+            from: path.resolve(__dirname, 'public/firebase-messaging-sw.js'),
+            to: path.resolve(__dirname, 'dist/firebase-messaging-sw.js')
           }
         ]
       })

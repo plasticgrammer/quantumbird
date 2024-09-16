@@ -167,6 +167,13 @@
         </v-row>
       </v-form>
     </v-card>
+
+    <v-card class="mt-3">
+      <v-card-title>ベータ版：報告通知設定</v-card-title>
+      <v-card-text>
+        <PushNortification></PushNortification>
+      </v-card-text>
+    </v-card>
   </v-container>
 </template>
 
@@ -175,6 +182,7 @@ import { ref, reactive, computed, watch, onMounted, inject } from 'vue'
 import { useStore } from 'vuex'
 import { getOrganization, updateOrganization } from '../services/organizationService'
 import { checkEmailVerification, verifyEmailAddress } from '../services/sesService'
+import PushNortification from '../components/PushNortification.vue'
 
 const store = useStore()
 const organizationId = store.getters['auth/organizationId']
