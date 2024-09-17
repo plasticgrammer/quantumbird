@@ -377,7 +377,7 @@
 <script setup>
 import { ref, computed, nextTick, reactive, inject, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getReport, submitReport, getMemberProjects } from '../services/publicService'
+import { getReport, submitReport, updateReport, getMemberProjects } from '../services/publicService'
 import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
 import { useResponsive } from '../composables/useResponsive'
@@ -700,7 +700,11 @@ const handleSubmit = async () => {
   }
 
   try {
-    await submitReport(cleanedReport)
+    if (isNew.value) {
+      await submitReport(cleanedReport)
+    } else {
+      await updateReport(cleanedReport)
+    }
     emit('report-submitted')
 
   } catch (error) {

@@ -25,7 +25,7 @@
           </template>
         </v-switch>
         <div v-else-if="notificationStatus === 'denied'">
-          <span class="mx-2">プッシュ通知が拒否されています。</span>
+          <span class="text-error mx-2">プッシュ通知が拒否されています。</span>
           <v-btn
             color="grey"
             small

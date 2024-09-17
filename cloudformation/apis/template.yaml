@@ -135,6 +135,12 @@ Resources:
             RestApiId: !Ref ApiGatewayApi
             Path: /public/weekly-report
             Method: POST
+        WeeklyReportPut:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /public/weekly-report
+            Method: PUT
         GetMemberGet:
           Type: Api
           Properties:

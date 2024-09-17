@@ -25,6 +25,10 @@ export const submitReport = async (report) => {
   return apiClient.post(`${BASE_PATH}/weekly-report`, report)
 }
 
+export const updateReport = async (report) => {
+  return apiClient.put(`${BASE_PATH}/weekly-report`, report)
+}
+
 export const listReports = async (organizationId, weekString) => {
   return apiClient.get(`${BASE_PATH}/weekly-report`, { organizationId, weekString })
 }
