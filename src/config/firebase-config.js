@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app'
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyAxggCyq9kG85KgqxRyHTBA4LeZ73K_wFY',
+  apiKey: process.env.VUE_APP_FIREBASE_API_KEY,
   authDomain: 'fluxweek-b9d9a.firebaseapp.com',
   projectId: 'fluxweek-b9d9a',
   storageBucket: 'fluxweek-b9d9a.appspot.com',
