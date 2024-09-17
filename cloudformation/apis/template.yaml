@@ -384,6 +384,8 @@ Resources:
       Environment:
         Variables:
           JWT_SECRET_PARAMETER: !Ref JwtSecretParameter
+      Layers:
+        - !Ref CommonLayer
       Policies:
         - SSMParameterReadPolicy:
             ParameterName: !Ref JwtSecretParameter

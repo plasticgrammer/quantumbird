@@ -39,11 +39,11 @@ def lambda_handler(event, context):
         elif http_method == 'POST' and resource == '/public/organization':
             return handle_post_organization(event)
         elif http_method == 'GET' and resource == '/public/weekly-report':
-            return handle_get(event)
+            return handle_get_report(event)
         elif http_method == 'POST' and resource == '/public/weekly-report':
-            return handle_post(event)
+            return handle_post_report(event)
         elif http_method == 'PUT' and resource == '/public/weekly-report':
-            return handle_put(event)
+            return handle_put_report(event)
         elif http_method == 'GET' and resource == '/public/member':
             return handle_get_member(event)
         elif http_method == 'PUT' and resource == '/public/member':
@@ -56,7 +56,7 @@ def lambda_handler(event, context):
         logger.error(f"Error: {str(e)}", exc_info=True)
         return create_response(500, f'Internal server error: {str(e)}')
 
-def handle_get(event):
+def handle_get_report(event):
     params = event.get('queryStringParameters', {}) or {}
     if not params:
         return create_response(400, 'Missing query parameters')
@@ -94,7 +94,7 @@ def get_reports_by_organization(organization_id, week_string):
         logger.error(f"Error querying reports: {str(e)}", exc_info=True)
         raise e
 
-def handle_post(event):
+def handle_post_report(event):
     report_data = json.loads(event['body'])
     item = prepare_item(report_data)
     response = weekly_reports_table.put_item(Item=item)
@@ -105,7 +105,7 @@ def handle_post(event):
 
     return create_response(201, 'Weekly report created successfully')
 
-def handle_put(event):
+def handle_put_report(event):
     report_data = json.loads(event['body'])
     member_uuid = report_data.get('memberUuid')
     week_string = report_data.get('weekString')
