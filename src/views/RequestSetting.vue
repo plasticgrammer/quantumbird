@@ -46,7 +46,7 @@
                 small
                 prepend-icon="mdi-card-account-mail"
                 :loading="verifyingEmail"
-                @click="verifyEmail"
+                @click="verifyEmail(requestSettings.sender)"
               >
                 メールアドレスを検証する
               </v-btn>
