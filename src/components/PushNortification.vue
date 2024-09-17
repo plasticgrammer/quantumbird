@@ -1,41 +1,48 @@
 <template>
   <v-container class="pa-0">
     <v-row align="center" justify="start" no-gutters>
-      <v-col cols="auto" class="ml-2 mr-4">
-        <div v-if="notificationStatus === 'default' || notificationStatus === 'granted'">
-          <v-icon
-            :color="isSubscribed ? 'success' : 'grey'"
-            class="mr-1"
-            size="large"
-          >
-            {{ isSubscribed ? 'mdi-bell-outline' : 'mdi-bell-off-outline' }}
-          </v-icon>
-          {{ isSubscribed ? 'プッシュ通知: ON' : 'プッシュ通知: OFF' }}
-        </div>
-        <div v-else-if="notificationStatus === 'denied'">
-          プッシュ通知が拒否されています。
-        </div>
-      </v-col>
       <v-col cols="auto">
         <v-switch
           v-if="notificationStatus === 'default' || notificationStatus === 'granted'"
           v-model="isSubscribed"
           color="primary"
-          :error="hasError"
-          :error-messages="errorMessage"
-          hide-details="auto"
+          hide-details
           inset
           :disabled="!isServiceWorkerReady"
           @click="togglePushNotification"
-        ></v-switch>
-        <v-btn
-          v-else-if="notificationStatus === 'denied'"
-          color="secondary"
-          small
-          @click="showInstructions"
         >
-          設定変更方法を表示
-        </v-btn>
+          <template #prepend>
+            <div v-if="notificationStatus === 'default' || notificationStatus === 'granted'">
+              <v-icon
+                :color="isSubscribed ? 'success' : 'grey'"
+                class="mr-1"
+                size="large"
+              >
+                {{ isSubscribed ? 'mdi-bell-outline' : 'mdi-bell-off-outline' }}
+              </v-icon>
+              {{ isSubscribed ? 'プッシュ通知: 有効' : 'プッシュ通知: 無効' }}
+            </div>
+          </template>
+        </v-switch>
+        <div v-else-if="notificationStatus === 'denied'">
+          <span class="mx-2">プッシュ通知が拒否されています。</span>
+          <v-btn
+            color="grey"
+            small
+            @click="showInstructions"
+          >
+            設定変更方法を表示
+          </v-btn>
+        </div>
+      </v-col>
+      <v-col v-if="hasError" cols="auto">
+        <div class="v-input--error">
+          <div class="v-messages">
+            <div class="v-messages__message pl-4">
+              {{ errorMessage }}
+            </div>
+          </div>
+        </div>    
       </v-col>
     </v-row>
   </v-container>
@@ -65,8 +72,7 @@ onMounted(async () => {
 })
 
 const canUseServiceWorker = () => {
-  return 'serviceWorker' in navigator && 
-         navigator.serviceWorker.controller !== null
+  return 'serviceWorker' in navigator
 }
 
 const setError = (message) => {
@@ -82,11 +88,13 @@ const clearError = () => {
 const initializeServiceWorker = async () => {
   if (canUseServiceWorker()) {
     try {
-      await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
         scope: '/'
       })
-      // Service Workerがアクティブになるのを待つ
-      await navigator.serviceWorker.ready
+      console.log('Service Worker registered successfully:', registration)
+      
+      // Service Workerの準備を待つ
+      await waitForServiceWorkerReady()
       isServiceWorkerReady.value = true
       clearError()
     } catch (error) {
@@ -96,6 +104,18 @@ const initializeServiceWorker = async () => {
   } else {
     setError('このブラウザはService Workerをサポートしていません。')
   }
+}
+
+const waitForServiceWorkerReady = () => {
+  return new Promise((resolve) => {
+    if (navigator.serviceWorker.controller) {
+      resolve()
+    } else {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        resolve()
+      })
+    }
+  })
 }
 
 const checkNotificationStatus = async () => {
@@ -135,6 +155,11 @@ const togglePushNotification = async () => {
 }
 
 const subscribeToPush = async () => {
+  if (!isServiceWorkerReady.value) {
+    setError('Service Workerの準備ができていません。しばらく待ってから再試行してください。')
+    return
+  }
+  
   try {
     const messaging = getMessaging(app)
     const fcmToken = await getToken(messaging)
@@ -148,7 +173,7 @@ const subscribeToPush = async () => {
     }
   } catch (error) {
     console.error('Failed to subscribe to push notifications:', error)
-    setError('プッシュ通知の購読に失敗しました。Service Workerが正しく動作していることを確認してください。')
+    setError(`プッシュ通知の購読に失敗しました: ${error.message}`)
   }
 }
 
