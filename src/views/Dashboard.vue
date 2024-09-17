@@ -64,8 +64,8 @@
                   :content="statusCounts['pending'] || ''"
                 >
                   <v-btn 
-                    v-if="isAdmin" color="black" variant="outlined"
-                    :to="{ name: 'WeeklyReview', params: { weekString } }" x-small
+                    color="black" variant="outlined"
+                    :to="{ name: 'WeeklyReview', params: { weekString } }"
                   >
                     <v-icon class="mr-1" small left>
                       mdi-calendar-multiple-check
@@ -136,12 +136,8 @@
               メンバー: {{ memberCount }} 人
             </p>
             <v-btn
-              v-if="isAdmin"
-              color="black"
-              variant="outlined"
+              color="black" variant="outlined" class="mt-3"
               :to="{ name: 'OrganizationManagement' }"
-              class="mt-3"
-              x-small
             >
               <v-icon class="mr-1" small>
                 mdi-domain
@@ -178,12 +174,8 @@
               <span class="text-subtitle-1">{{ formatFullDateTimeJp(nextRequestDateTime) }}</span>
             </p>
             <v-btn
-              v-if="isAdmin"
-              color="black"
-              variant="outlined"
+              color="black" variant="outlined" class="mt-3"
               :to="{ name: 'RequestSetting' }"
-              class="mt-3"
-              x-small
             >
               <v-icon class="mr-1" small>
                 mdi-mail
@@ -271,7 +263,6 @@ const dayOfWeekToNumber = {
 }
 
 const organizationId = store.getters['auth/organizationId']
-const isAdmin = ref(true)
 const calendarWeeks = createWeeks(6)
 const weekIndex = ref(null)
 
@@ -374,8 +365,8 @@ const formatChartData = (data, dataKey) => ({
 const getColor = (index) => {
   const colorPalette = [
     'rgb(54, 162, 235)', 'rgb(75, 192, 192)', 'rgb(199, 199, 199)', 
-    'rgb(255, 99, 132)', 'rgb(255, 206, 86)', 'rgb(153, 102, 255)', 
-    'rgb(255, 159, 64)', 'rgb(83, 102, 255)'
+    'rgb(255, 99, 132)', 'rgb(153, 102, 255)', 'rgb(255, 159, 64)', 
+    'rgb(83, 102, 255)', 'rgb(255, 206, 86)'
   ]
   return index < colorPalette.length ? colorPalette[index] : getRandomColor()
 }

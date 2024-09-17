@@ -8,7 +8,7 @@
       min-height="100"
       color="blue-lighten-5"
     >
-      <v-card-text class="text-center">
+      <v-card-text class="text-center text-body-1">
         <div v-if="!isLoading">
           <p v-if="organization.members.length == 0">
             最初に組織情報の登録が必要です。<br>
@@ -93,14 +93,13 @@ import { getReportStatus } from '../services/reportService'
 
 const store = useStore()
 const organizationId = store.getters['auth/organizationId']
-const weekString = ref('')
-
 const { getPreviousWeekString } = useCalendar()
 
 const isLoading = ref(true)
 const error = ref(null)
 const organization = ref('')
 const reportStatus = ref('')
+const weekString = ref('')
 
 const fetchOrganizationInfo = async () => {
   try {

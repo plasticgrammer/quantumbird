@@ -191,6 +191,7 @@
 import { reactive, toRefs, ref, onMounted, inject, computed, watch } from 'vue'
 import { useStore } from 'vuex'
 import { submitOrganization, updateOrganization, getOrganization } from '../services/organizationService'
+import { isValidEmail } from '../utils/string-utils'
 
 const store = useStore()
 const form = ref(null)
@@ -226,11 +227,6 @@ const { organization, newMember, editingMember, loading, isNew, isFormValid, isF
 
 // Inline definition of useOrganizationValidation
 const useOrganizationValidation = (organization, newMember, validationErrors) => {
-  const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return re.test(email)
-  }
-
   const validateMember = (member, errors) => {
     let isValid = true
 
@@ -244,7 +240,7 @@ const useOrganizationValidation = (organization, newMember, validationErrors) =>
     if (!member.email.trim()) {
       errors.email = 'メールアドレスは必須です'
       isValid = false
-    } else if (!validateEmail(member.email)) {
+    } else if (!isValidEmail(member.email)) {
       errors.email = '有効なメールアドレスを入力してください'
       isValid = false
     } else {

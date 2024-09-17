@@ -46,10 +46,7 @@ const props = defineProps({
   }
 })
 
-const { 
-  getWeekFromString,
-  formatDateRange
-} = useCalendar()
+const { getWeekFromString, formatDateRange } = useCalendar()
 
 const loading = ref(false)
 const organizationId = ref(null)

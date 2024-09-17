@@ -322,6 +322,9 @@ const handleSignOut = async () => {
 }
 
 onMounted(() => {
+  // 事前ロード
+  const img = new Image()
+  img.src = require('@/assets/images/rakko.png')
   // ローカルストレージからRailModeの状態を読み込む
   const savedRailMode = localStorage.getItem('railMode')
   if (savedRailMode !== null) {

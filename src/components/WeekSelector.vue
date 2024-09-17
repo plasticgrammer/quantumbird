@@ -51,10 +51,7 @@ const props = defineProps({
 
 const emit = defineEmits(['select-week', 'reset'])
 
-const {
-  calendarWeeks,
-  getWeekJpText
-} = useCalendar()
+const { calendarWeeks, getWeekJpText } = useCalendar()
 
 const internalSelectedWeek = ref(props.selectedWeek)
 const isHovering = ref(false)

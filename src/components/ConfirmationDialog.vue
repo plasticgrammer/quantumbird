@@ -23,7 +23,7 @@
           color="primary"
           @click="confirm"
         >
-          確認
+          実行
         </v-btn>
       </v-card-actions>
     </v-card>

@@ -376,14 +376,13 @@ const unconfirmedCount = computed(() => {
 
 const selectedStatus = ref('all')
 
-// watchをwatchEffectに変更
 watchEffect(() => {
   if (selectedStatus.value === undefined) {
     selectedStatus.value = 'all'
   }
 })
 
-// メモ化されたステータスカウントを最適化
+// メモ化されたステータスカウント
 const statusCounts = computed(() => {
   return reports.value.reduce((counts, report) => {
     counts[report.status]++
@@ -391,14 +390,13 @@ const statusCounts = computed(() => {
   }, { all: reports.value.length, none: 0, pending: 0, feedback: 0, approved: 0 })
 })
 
-// メモ化されたフィルタリングを最適化
+// メモ化されたフィルタリング
 const filteredReports = computed(() => 
   selectedStatus.value === 'all' 
     ? reports.value 
     : reports.value.filter(report => report.status === selectedStatus.value)
 )
 
-// copyShareUrl メソッドを最適化
 const copyShareUrl = async () => {
   try {
     const params = { organizationId: props.organizationId, weekString: props.weekString }

@@ -184,6 +184,7 @@
 import { ref, reactive, computed, watch, onMounted, inject } from 'vue'
 import { useStore } from 'vuex'
 import { getOrganization, updateOrganization } from '../services/organizationService'
+import { isValidEmail } from '../utils/string-utils'
 import { checkEmailVerification, verifyEmailAddress } from '../services/sesService'
 import PushNortification from '../components/PushNortification.vue'
 
@@ -195,12 +196,6 @@ const loading = ref(false)
 const isFormValid = ref(false)
 const showNotification = inject('showNotification')
 const showError = inject('showError')
-
-const isValidEmail = (email) => {
-  // RFC 5322に基づくメールアドレス検証の正規表現
-  const emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-  return emailRegex.test(email)
-}
 
 const useEmailVerification = () => {
   const status = ref('Pending')

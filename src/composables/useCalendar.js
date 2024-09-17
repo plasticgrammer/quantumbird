@@ -1,4 +1,3 @@
-// src/composables/useCalendar.js
 import { computed } from 'vue'
 
 export function useCalendar() {
