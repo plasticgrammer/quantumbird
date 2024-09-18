@@ -11,10 +11,7 @@ self.addEventListener('push', function (event) {
       const title = notificationData.title || 'New Notification'
       const options = {
         body: notificationData.body || '',
-        icon: [
-          '/apple-touch-icon.png',
-          '/favicon-32x32.png'
-        ],
+        icon: '/apple-touch-icon.png',
         data: customData
         //badge: '/favicon-32x32.png'
       }
@@ -35,9 +32,9 @@ self.addEventListener('push', function (event) {
 function getNotificationTitle(data) {
   switch (data.type) {
     case 'new_report':
-      return '新しいレポートが提出されました'
+      return '新しい週次報告が登録されました'
     case 'updated_report':
-      return 'レポートが更新されました'
+      return '週次報告が更新されました'
     default:
       return '通知'
   }
@@ -53,5 +50,5 @@ self.addEventListener('notificationclick', function (event) {
     // URLにweekStringパラメータを追加
     url += `/${encodeURIComponent(weekString)}`
   }  
-  event.waitUntil(clients.openWindow())
+  event.waitUntil(clients.openWindow(url))
 })
