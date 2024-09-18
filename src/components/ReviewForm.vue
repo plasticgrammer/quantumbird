@@ -629,6 +629,10 @@ onMounted(() => {
   background-color: #f6fbff;
 }
 
+.default-card + .default-card {
+  margin-top: 24px !important;
+}
+
 .tasks {
   background-color: transparent;
 }

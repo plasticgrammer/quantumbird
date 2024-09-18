@@ -14,13 +14,13 @@
           <template #prepend>
             <div v-if="notificationStatus === 'default' || notificationStatus === 'granted'">
               <v-icon
-                :color="isSubscribed ? 'success' : 'grey'"
+                :color="iconColor"
                 class="mr-1"
                 size="large"
               >
-                {{ isSubscribed ? 'mdi-bell-outline' : (isServiceWorkerReady ? 'mdi-bell-off-outline' : 'mdi-progress-clock') }}
+                {{ iconName }}
               </v-icon>
-              {{ isSubscribed ? 'プッシュ通知: 有効' : 'プッシュ通知: 無効' }}
+              {{ statusText }}
             </div>
           </template>
         </v-switch>
@@ -49,7 +49,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, watchEffect, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { app } from '../config/firebase-config'
 import { getMessaging, getToken } from 'firebase/messaging'
@@ -65,10 +65,30 @@ const errorMessage = ref('')
 const organizationId = store.getters['auth/organizationId']
 const adminId = store.getters['auth/cognitoUserSub']
 
+const iconName = computed(() => {
+  if (!isServiceWorkerReady.value) return 'mdi-progress-clock'
+  return isSubscribed.value ? 'mdi-bell-outline' : 'mdi-bell-off-outline'
+})
+
+const iconColor = computed(() => {
+  if (!isServiceWorkerReady.value) return 'grey'
+  return isSubscribed.value ? 'success' : 'grey'
+})
+
+const statusText = computed(() => {
+  if (!isServiceWorkerReady.value) return 'Service Worker初期化中'
+  return isSubscribed.value ? 'プッシュ通知: 有効' : 'プッシュ通知: 無効'
+})
+
+watchEffect(async () => {
+  if (isServiceWorkerReady.value) {
+    await checkNotificationStatus()
+    await checkSubscription()
+  }
+})
+
 onMounted(async () => {
   await initializeServiceWorker()
-  await checkNotificationStatus()
-  await checkSubscription()
 })
 
 const canUseServiceWorker = () => {
