@@ -4,7 +4,7 @@
       <div v-for="i in 2" :key="i" class="wave"></div>
       <v-img
         v-if="!isMobile"
-        src="@/assets/images/rakko.png"
+        src="@/assets/images/rakko.webp"
         max-width="46%"
         width="340"
         class="on-wave mx-auto"
@@ -324,7 +324,7 @@ const handleSignOut = async () => {
 onMounted(() => {
   // 事前ロード
   const img = new Image()
-  img.src = require('@/assets/images/rakko.png')
+  img.src = require('@/assets/images/rakko.webp')
   // ローカルストレージからRailModeの状態を読み込む
   const savedRailMode = localStorage.getItem('railMode')
   if (savedRailMode !== null) {
@@ -353,9 +353,10 @@ watch(isRailMode, (newValue) => {
   left: 0;
   width: 300%;
   height: 200px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 200'%3E%3Cdefs%3E%3ClinearGradient id='waveGradient' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%2364B5F6;stop-opacity:0.6' /%3E%3Cstop offset='100%25' style='stop-color:%2364B5F6;stop-opacity:0.78' /%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 50c200 0 250 50 400 50 150 0 200-50 400-50v150H0z' fill='url(%23waveGradient)'/%3E%3C/svg%3E");
+  background: url("./assets/wave.svg");
   animation: wave 96s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
   transform: translate3d(0, 0, 0);
+  will-change: transform;
   z-index: -1;
 }
 
