@@ -91,15 +91,25 @@ const scrollToReport = (direction) => {
   let newIndex = currentIndex.value + direction
   if (newIndex >= 0 && newIndex < props.reportRefs.length) {
     const targetEl = getElement(props.reportRefs[newIndex])
-    if (targetEl && typeof targetEl.scrollIntoView === 'function') {
+    if (targetEl && typeof targetEl.getBoundingClientRect === 'function') {
       isManualScrolling.value = true
       lastManualScrollTime.value = Date.now()
-      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      
+      // スクロール位置を計算
+      const targetRect = targetEl.getBoundingClientRect()
+      const scrollPosition = Math.max(0, window.scrollY + targetRect.top - 10) // 余白を追加
+
+      // スムーズスクロールを実行
+      window.scrollTo({
+        top: scrollPosition,
+        behavior: 'smooth'
+      })
+
       setTimeout(() => {
         currentIndex.value = newIndex
         setTimeout(() => {
           isManualScrolling.value = false
-        }, 1000) // スクロールアニメーション完了後、1秒間はスクロールイベントを無視
+        }, 1000)
       }, 500)
     }
   }

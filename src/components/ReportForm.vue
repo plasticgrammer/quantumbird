@@ -233,11 +233,12 @@
           :error-messages="formErrors.issues"
         />
 
-        <v-text-field
+        <v-textarea
           v-model="report.improvements"
           label="改善したいこと"
+          rows="1"
+          auto-grow
           outlined
-          dense
           clear-icon="mdi-close-circle"
           clearable 
           :error-messages="formErrors.improvements"

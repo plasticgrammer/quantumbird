@@ -79,7 +79,9 @@ h3 {
 }
 
 .small-text-area textarea {
-  font-size: 0.875rem;
+  font-size: 0.925rem;
+  line-height: 1.7;
+  letter-spacing: 0.009375em !important;
 }
 
 .status-chip {
