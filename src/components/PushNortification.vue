@@ -18,7 +18,7 @@
                 class="mr-1"
                 size="large"
               >
-                {{ isSubscribed ? 'mdi-bell-outline' : 'mdi-bell-off-outline' }}
+                {{ isSubscribed ? 'mdi-bell-outline' : (isServiceWorkerReady ? 'mdi-bell-off-outline' : 'mdi-progress-clock') }}
               </v-icon>
               {{ isSubscribed ? 'プッシュ通知: 有効' : 'プッシュ通知: 無効' }}
             </div>
@@ -197,7 +197,7 @@ const saveSubscription = async (fcmToken) => {
   try {
     const response = await registerPushSubscription(fcmToken, organizationId, adminId)
     await storeToken(fcmToken)
-    console.log('FCM token saved on server:', response.data)
+    console.log('FCM token saved on server:', response.endpointArn)
   } catch (error) {
     console.error('Failed to save FCM token on server:', error)
     throw error

@@ -5,6 +5,7 @@ self.addEventListener('push', function (event) {
 
     // FCMから受け取ったデータ構造に合わせて処理
     const notificationData = payload.notification
+    const customData = payload.data || {}
 
     if (notificationData) {
       const title = notificationData.title || 'New Notification'
@@ -14,6 +15,7 @@ self.addEventListener('push', function (event) {
           '/apple-touch-icon.png',
           '/favicon-32x32.png'
         ],
+        data: customData
         //badge: '/favicon-32x32.png'
       }
 
@@ -43,5 +45,13 @@ function getNotificationTitle(data) {
 
 self.addEventListener('notificationclick', function (event) {
   event.notification.close()
-  event.waitUntil(clients.openWindow('/admin/reports'))
+
+  const customData = event.notification.data || {}
+  const weekString = customData.weekString || ''
+  let url = '/admin/reports'
+  if (weekString) {
+    // URLにweekStringパラメータを追加
+    url += `/${encodeURIComponent(weekString)}`
+  }  
+  event.waitUntil(clients.openWindow())
 })

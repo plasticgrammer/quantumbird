@@ -492,7 +492,7 @@ const processReports = (fetchedReports, members) => {
 const handleFeedback = async (memberUuid) => {
   const confirmed = await showConfirmDialog(
     '確認',
-    'フィードバックを送信します。\nよろしいですか？'
+    'フィードバックを送信します。よろしいですか？'
   )
   if (!confirmed) {
     return
@@ -532,7 +532,7 @@ const handleFeedback = async (memberUuid) => {
 const handleApprove = async (memberUuid) => {
   const confirmed = await showConfirmDialog(
     '確認',
-    '報告を確認済みとします。\nよろしいですか？'
+    '報告を確認済みとします。よろしいですか？'
   )
   if (!confirmed) {
     return
@@ -572,8 +572,6 @@ const handleResend = async () => {
     try {
       await sendRequest(props.organizationId, props.weekString)
       showNotification('報告要求を再送しました')
-      // 必要に応じて、ここでレポートデータを再取得するなどの処理を追加
-      await fetchData()
     } catch (error) {
       showError('報告要求の再送に失敗しました', error)
     }
@@ -622,14 +620,11 @@ onMounted(() => {
   padding: 16px 0 24px;
 }
 
-.default-card {
-  background-color: #f6fbff;
-}
-
 .none-card {
   color: #757575;
 }
 
+.default-card,
 .approved-card {
   background-color: #f6fbff;
 }
