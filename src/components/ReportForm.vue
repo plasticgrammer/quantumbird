@@ -551,7 +551,14 @@ const addProject = () => {
 }
 
 const removeProject = (projectIndex) => {
-  report.value.projects.splice(projectIndex, 1)
+  if (report.value.projects.length === 1) {
+    // 最後のプロジェクトの場合、プロジェクト名をクリアし、1つの空の作業項目を残す
+    report.value.projects[0].name = ''
+    report.value.projects[0].workItems = [{ content: '' }]
+  } else {
+    // それ以外の場合、通常通りプロジェクトを削除する
+    report.value.projects.splice(projectIndex, 1)
+  }
 }
 
 const scrollToFeedback = () => {
@@ -618,7 +625,6 @@ const validateReport = () => {
   // Check if there's at least one project
   if (report.value.projects.length === 0) {
     isValid = false
-    showNotification('少なくとも1つのプロジェクトを追加してください。', 'info')
   }
 
   // Check each project and its work items
@@ -677,6 +683,7 @@ const handleSubmit = async () => {
 
   const isValid = validateReport()
   if (!isValid) {
+    showError('入力に誤りがあります。赤字箇所を確認してください。')
     return
   }
   // Remove empty work items before submission

@@ -12,7 +12,7 @@ export default createVuetify({
         colors: {
           primary: '#039BE5',
           secondary: '#00ACC1',
-          error: '#C51162'
+          error: '#B71C1C'
         },
       },
     },
