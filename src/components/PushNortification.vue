@@ -109,7 +109,7 @@ const clearError = () => {
 const initializeServiceWorker = async () => {
   if (canUseServiceWorker()) {
     try {
-      const baseUrl = contextPath
+      const baseUrl = process.env.VUE_APP_PUBLIC_PATH || contextPath
       const swPath = `${baseUrl}firebase-messaging-sw.js`
       const registration = await navigator.serviceWorker.register(swPath, {
         scope: baseUrl

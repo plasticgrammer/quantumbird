@@ -42,9 +42,10 @@ jobs:
           }" > src/config/amplify-config.js
 
       - name: Build
-        run: npm run build
+        run: |
+          export NODE_ENV=production
+          npm run build
         env:
-          NODE_ENV: production
           VUE_APP_PUBLIC_PATH: /quantumbird/
           VUE_APP_STAGE: ${{ secrets.DEPLOYMENT_STAGE }}
           VUE_APP_AWS_REGION: ap-northeast-1
