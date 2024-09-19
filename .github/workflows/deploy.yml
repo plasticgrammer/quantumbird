@@ -42,7 +42,9 @@ jobs:
           }" > src/config/amplify-config.js
 
       - name: Build
-        run: npm run build
+        run: |
+          export NODE_ENV=production
+          npm run build
         env:
           VUE_APP_STAGE: ${{ secrets.DEPLOYMENT_STAGE }}
           VUE_APP_AWS_REGION: ap-northeast-1
