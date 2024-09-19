@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { contextPath } from '../config/environment'
 import store from '../store'
 import SignIn from '../views/SignIn.vue'
 import Overview from '../views/Overview.vue'
@@ -117,7 +118,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(contextPath),
   routes
 })
 

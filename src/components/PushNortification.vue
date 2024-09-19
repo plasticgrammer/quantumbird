@@ -52,7 +52,7 @@
 import { ref, computed, watchEffect, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { app } from '../config/firebase-config'
-import { rootUrl } from '../config/environment'
+import { contextPath } from '../config/environment'
 import { getMessaging, getToken } from 'firebase/messaging'
 import { registerPushSubscription, removePushSubscription } from '../services/organizationService'
 
@@ -109,7 +109,7 @@ const clearError = () => {
 const initializeServiceWorker = async () => {
   if (canUseServiceWorker()) {
     try {
-      const baseUrl = rootUrl.endsWith('/') ? rootUrl : `${rootUrl}/`
+      const baseUrl = contextPath
       const swPath = `${baseUrl}firebase-messaging-sw.js`
       const registration = await navigator.serviceWorker.register(swPath, {
         scope: baseUrl

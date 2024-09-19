@@ -26,6 +26,7 @@ function getRootUrl() {
 
 export const redirectUrl = getRedirectUrl()
 export const rootUrl = getRootUrl()
+export const contextPath = isProd ? '/quantumbird/' : '/'
 
 const config = {
   isProd,
