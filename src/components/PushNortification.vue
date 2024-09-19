@@ -50,7 +50,6 @@
 
 <script setup>
 import { ref, computed, watchEffect, onMounted } from 'vue'
-import { publicPath } from '@vue/cli-service'
 import { useStore } from 'vuex'
 import { app } from '../config/firebase-config'
 import { getMessaging, getToken } from 'firebase/messaging'
@@ -109,7 +108,7 @@ const clearError = () => {
 const initializeServiceWorker = async () => {
   if (canUseServiceWorker()) {
     try {
-      const baseUrl = publicPath.endsWith('/') ? publicPath : `${publicPath}/`
+      const baseUrl = process.env.VUE_APP_PUBLIC_PATH || '/'
       const swPath = `${baseUrl}firebase-messaging-sw.js`
       const registration = await navigator.serviceWorker.register(swPath, {
         scope: baseUrl
