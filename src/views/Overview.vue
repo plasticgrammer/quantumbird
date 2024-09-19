@@ -1,86 +1,88 @@
 <template>
   <v-container class="content-container">
-    <v-card 
-      class="mx-auto mt-8 mb-12 border-md d-flex align-center"
-      elevation="0"
-      variant="flat"
+    <v-alert
+      icon="mdi-comment-text"
+      class="mx-auto mt-8 mb-12 border-md text-center"
+      color="blue-lighten-5"
       max-width="600"
       min-height="100"
-      color="blue-lighten-5"
+      variant="flat"
+      closable
     >
-      <v-card-text class="text-center text-body-1">
-        <div v-if="!isLoading">
-          <p v-if="organization.members.length == 0">
-            最初に組織情報の登録が必要です。<br>
-            <v-btn
+      <v-container 
+        v-if="!isLoading"
+        class="text-body-1"
+      >
+        <p v-if="organization.members.length == 0">
+          最初に組織情報の登録が必要です。<br>
+          <v-btn
+            color="black"
+            variant="outlined"
+            :to="{ name: 'OrganizationManagement' }"
+            class="mt-3"
+          >
+            <v-icon class="mr-1" small>
+              mdi-domain
+            </v-icon>
+            組織情報管理
+          </v-btn>
+        </p>
+        <p v-else-if="!organization.requestEnabled">
+          報告依頼の自動送信がオフとなっています。<br>
+          <v-btn
+            color="black"
+            variant="outlined"
+            :to="{ name: 'RequestSetting' }"
+            class="mt-3"
+          >
+            <v-icon class="mr-1" small>
+              mdi-mail
+            </v-icon>
+            報告依頼設定
+          </v-btn>
+        </p>
+        <p v-else-if="reportStatus['pending']">
+          先週分の確認待ちの報告があります。<br>
+          <v-badge 
+            color="info"
+            :content="reportStatus['pending']"
+            class="mt-3"
+          >
+            <v-btn 
               color="black"
               variant="outlined"
-              :to="{ name: 'OrganizationManagement' }"
-              class="mt-3"
+              :to="{ name: 'WeeklyReview', params: { weekString } }" 
             >
-              <v-icon class="mr-1" small>
-                mdi-domain
+              <v-icon class="mr-1" small left>
+                mdi-calendar-multiple-check
               </v-icon>
-              組織情報管理
+              週次報告レビュー
             </v-btn>
-          </p>
-          <p v-else-if="!organization.requestEnabled">
-            報告依頼の自動送信がオフとなっています。<br>
-            <v-btn
-              color="black"
-              variant="outlined"
-              :to="{ name: 'RequestSetting' }"
-              class="mt-3"
-            >
-              <v-icon class="mr-1" small>
-                mdi-mail
-              </v-icon>
-              報告依頼設定
-            </v-btn>
-          </p>
-          <p v-else-if="reportStatus['pending']">
-            先週分の確認待ちの報告があります。<br>
-            <v-badge 
-              color="info"
-              :content="reportStatus['pending']"
-              class="mt-3"
-            >
-              <v-btn 
-                color="black"
-                variant="outlined"
-                :to="{ name: 'WeeklyReview', params: { weekString } }" 
-              >
-                <v-icon class="mr-1" small left>
-                  mdi-calendar-multiple-check
-                </v-icon>
-                週次報告レビュー
-              </v-btn>
-            </v-badge>
-          </p>
-          <p v-else>
-            各種状況を確認してください。<br>
-            <v-btn
-              color="black"
-              variant="outlined"
-              :to="{ name: 'Dashboard' }"
-              class="mt-3"
-            >
-              <v-icon class="mr-1" small>
-                mdi-view-dashboard
-              </v-icon>
-              ダッシュボード
-            </v-btn>
-          </p>
-        </div>
-        <div v-else>
-          <v-progress-circular 
-            size="42"
-            width="8"
-            indeterminate
-          ></v-progress-circular>
-        </div>
-      </v-card-text>
-    </v-card>
+          </v-badge>
+        </p>
+        <p v-else>
+          各種状況を確認してください。<br>
+          <v-btn
+            color="black"
+            variant="outlined"
+            :to="{ name: 'Dashboard' }"
+            class="mt-3"
+          >
+            <v-icon class="mr-1" small>
+              mdi-view-dashboard
+            </v-icon>
+            ダッシュボード
+          </v-btn>
+        </p>
+      </v-container>
+      <div v-else>
+        <v-progress-circular 
+          size="42"
+          width="8"
+          indeterminate
+        ></v-progress-circular>
+      </div>
+    </v-alert>
   </v-container>
 </template>
 
