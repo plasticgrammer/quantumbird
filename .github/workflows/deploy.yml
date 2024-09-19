@@ -44,6 +44,7 @@ jobs:
       - name: Build
         run: |
           export NODE_ENV=production
+          export BASE_URL=/quantumbird/
           npm run build
         env:
           VUE_APP_STAGE: ${{ secrets.DEPLOYMENT_STAGE }}
