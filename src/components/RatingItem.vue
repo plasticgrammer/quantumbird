@@ -6,7 +6,7 @@
     <v-col cols="4" md="1" class="d-flex justify-center align-center pa-0">
       <div class="text-h5 mr-5">
         {{ modelValue || '-' }}
-        <span class="text-body-1">/ {{ length }}</span>
+        <span class="text-body-1">/ {{ props.itemLabels.length }}</span>
       </div>
     </v-col>
     <v-col cols="12" md="8" class="d-flex align-middle pa-2">
