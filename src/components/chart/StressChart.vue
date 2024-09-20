@@ -31,16 +31,24 @@ const createChartOptions = () => ({
   scales: {
     y: {
       beginAtZero: false,
-      min: 1,
-      max: 5,
+      min: 0.8, // 1よりも少し下に設定
+      max: 5.2, // 5よりも少し上に設定
       ticks: {
         stepSize: 1,
         precision: 0,
-        callback: (value) => value === 1 ? '余裕' : value === 5 ? '極限' : ''
+        callback: (value) => {
+          if (value === 1) return '余裕'
+          if (value === 5) return '極限'
+          return ''
+        },
+        includeBounds: false
       },
       title: {
         display: true,
         text: 'ストレス評価'
+      },
+      grid: {
+        color: (context) => context.tick.value === 5 ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.1)'
       }
     }
   }

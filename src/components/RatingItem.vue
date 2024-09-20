@@ -15,9 +15,9 @@
         :item-labels="itemLabels"
         :length="length"
         :readonly="readonly"
-        :empty-icon="negative ? 'mdi-emoticon-neutral-outline' : 'mdi-emoticon-neutral-outline'"
-        :full-icon="negative ? 'mdi-emoticon-dead' : 'mdi-emoticon'"
-        :half-icon="negative ? 'mdi-emoticon-neutral-outline' : 'mdi-emoticon-neutral-outline'"
+        :empty-icon="'mdi-emoticon-neutral-outline'"
+        :full-icon="fullIcon"
+        :half-icon="'mdi-emoticon-neutral-outline'"
         :active-color="negative ? 'blue-lighten-1' : 'orange-accent-3'" 
         size="x-large"
         density="compact"
@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps({
   label: {
@@ -54,7 +54,16 @@ const props = defineProps({
   },
 })
 
-const length = ref(props.itemLabels.length)
+const fullIcon = computed(() => {
+  const half = (props.itemLabels.length + 1) / 2
+  if (props.modelValue === half) {
+    return 'mdi-emoticon-neutral'
+  } else if (props.negative ^ (props.modelValue < half)) {
+    return 'mdi-emoticon-dead'
+  } else {
+    return 'mdi-emoticon'
+  }
+})
 
 const emit = defineEmits(['update:modelValue'])
 </script>
