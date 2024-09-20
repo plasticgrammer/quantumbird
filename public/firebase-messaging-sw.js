@@ -29,23 +29,17 @@ self.addEventListener('push', function (event) {
   }
 })
 
-function getNotificationTitle(data) {
-  switch (data.type) {
-    case 'new_report':
-      return '新しい週次報告が登録されました'
-    case 'updated_report':
-      return '週次報告が更新されました'
-    default:
-      return '通知'
-  }
+function getContextPath() {
+  return self.registration.scope.replace(self.location.origin, '')
 }
 
 self.addEventListener('notificationclick', function (event) {
   event.notification.close()
 
+  const contextPath = getContextPath()
   const customData = event.notification.data || {}
   const weekString = customData.weekString || ''
-  let url = '/admin/reports'
+  let url = `${contextPath}admin/reports`
   if (weekString) {
     // URLにweekStringパラメータを追加
     url += `/${encodeURIComponent(weekString)}`
