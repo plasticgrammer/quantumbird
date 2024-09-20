@@ -3,10 +3,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, computed } from 'vue'
-import { Chart, registerables } from 'chart.js'
-
-Chart.register(...registerables)
+import { watch, nextTick, computed } from 'vue'
+import { useChart } from './chartUtils'
 
 const props = defineProps({
   chartData: {
@@ -22,9 +20,6 @@ const props = defineProps({
     default: '残業時間'
   }
 })
-
-const chartRef = ref(null)
-let chartInstance = null
 
 // データの最大値を計算
 const maxDataValue = computed(() => {
@@ -61,46 +56,15 @@ const createChartOptions = () => ({
   }
 })
 
-const createChart = () => {
-  const ctx = chartRef.value.getContext('2d')
-  return new Chart(ctx, {
-    type: 'line',
-    data: props.chartData,
-    options: createChartOptions()
-  })
-}
-
-const initChart = () => {
-  if (chartRef.value && props.chartData) {
-    try {
-      chartInstance = createChart()
-    } catch (error) {
-      console.error('Failed to create chart:', error)
-    }
-  }
-}
-
-const updateChart = () => {
-  if (chartInstance) {
-    chartInstance.data = props.chartData
-    chartInstance.options = createChartOptions()
-    chartInstance.update()
-  } else {
-    initChart()
-  }
-}
-
-onMounted(() => {
-  if (props.chartData) {
-    nextTick(initChart)
-  }
-})
+const { chartRef, initChart, updateChart } = useChart('line', createChartOptions)
 
 watch([() => props.chartData, () => props.yAxisTitle], ([newData, newTitle], [oldData, oldTitle]) => {
   if (JSON.stringify(newData) !== JSON.stringify(oldData) || newTitle !== oldTitle) {
-    nextTick(updateChart)
+    nextTick(() => updateChart(props.chartData))
   }
 }, { deep: true })
+
+nextTick(() => initChart(props.chartData))
 </script>
 
 <style scoped>

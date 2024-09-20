@@ -347,7 +347,6 @@ watch(isRailMode, (newValue) => {
 }
 
 .wave {
-  /* blue-lighten-2 64B5F6 */
   position: fixed;
   bottom: 0;
   left: 0;
