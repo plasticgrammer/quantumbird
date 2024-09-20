@@ -11,7 +11,7 @@
     >
       <v-container 
         v-if="!isLoading"
-        class="text-body-1"
+        class="text-body-1 px-0"
       >
         <p v-if="organization.members.length == 0">
           最初に組織情報の登録が必要です。<br>

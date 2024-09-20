@@ -49,6 +49,15 @@
         </v-btn>
       </v-col>
     </v-row>
+    <v-row v-else>
+      <v-col>
+        <v-skeleton-loader
+          type="chip@3"
+          class="bg-transparent"
+          :loading="true"
+        ></v-skeleton-loader>
+      </v-col>
+    </v-row>
 
     <v-row v-if="isLoading">
       <v-col v-for="i in 3" :key="i" cols="12">
@@ -56,14 +65,12 @@
           type="avatar, text, ossein, paragraph, text, actions"
           :loading="true"
           elevation="4"
-          class="mt-2"
+          class="mt-1"
         ></v-skeleton-loader>
       </v-col>
     </v-row>
     <v-row v-else>
-      <v-col
-        cols="12"
-      >
+      <v-col cols="12">
         <v-card
           v-for="(report, index) in filteredReports"
           :key="report.memberUuid"

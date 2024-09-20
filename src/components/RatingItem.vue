@@ -13,7 +13,7 @@
       <v-rating
         :model-value="modelValue"
         :item-labels="itemLabels"
-        :length="length"
+        :length="itemLabels.length"
         :readonly="readonly"
         :empty-icon="'mdi-emoticon-neutral-outline'"
         :full-icon="fullIcon"
