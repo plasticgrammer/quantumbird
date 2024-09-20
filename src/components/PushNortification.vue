@@ -2,6 +2,7 @@
   <v-container class="pa-0">
     <v-row align="center" justify="start" no-gutters>
       <v-col cols="auto">
+        <v-text-field v-model="baseUrl" label="コンテキストパス"></v-text-field>
         <v-switch
           v-if="notificationStatus === 'default' || notificationStatus === 'granted'"
           v-model="isSubscribed"
@@ -62,6 +63,7 @@ const notificationStatus = ref('default')
 const isServiceWorkerReady = ref(false)
 const hasError = ref(false)
 const errorMessage = ref('')
+const baseUrl = ref(contextPath)
 
 const organizationId = store.getters['auth/organizationId']
 const adminId = store.getters['auth/cognitoUserSub']
@@ -109,10 +111,9 @@ const clearError = () => {
 const initializeServiceWorker = async () => {
   if (canUseServiceWorker()) {
     try {
-      const baseUrl = process.env.VUE_APP_PUBLIC_PATH || contextPath
-      const swPath = `${baseUrl}firebase-messaging-sw.js`
+      const swPath = `${baseUrl.value}firebase-messaging-sw.js`
       const registration = await navigator.serviceWorker.register(swPath, {
-        scope: baseUrl
+        scope: baseUrl.value
       })
       console.log('Service Worker registered successfully:', registration)
       
