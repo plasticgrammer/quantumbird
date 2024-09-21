@@ -6,20 +6,15 @@ Chart.register(...registerables)
 
 export function useChart(chartType, createChartOptions) {
   const chartRef = ref(null)
-  let chartInstance = null
   const selectedDatasetIndex = ref(null)
 
-  const updateDatasetVisibility = () => {
+  const updateDatasetVisibility = (chartInstance) => {
     if (!chartInstance) return
 
     const datasets = chartInstance.data.datasets
     datasets.forEach((dataset, index) => {
       const meta = chartInstance.getDatasetMeta(index)
-      if (selectedDatasetIndex.value === null) {
-        meta.hidden = false
-      } else {
-        meta.hidden = index !== selectedDatasetIndex.value
-      }
+      meta.hidden = selectedDatasetIndex.value !== null && index !== selectedDatasetIndex.value
     })
     chartInstance.update()
   }
@@ -30,23 +25,31 @@ export function useChart(chartType, createChartOptions) {
       ...createChartOptions().plugins,
       legend: {
         ...createChartOptions().plugins?.legend,
-        onClick: (event, legendItem) => {
+        onClick: (event, legendItem, chart) => {
           const index = legendItem.datasetIndex
           
-          if (selectedDatasetIndex.value === index) {
-            selectedDatasetIndex.value = null
-          } else {
-            selectedDatasetIndex.value = index
-          }
+          selectedDatasetIndex.value = selectedDatasetIndex.value === index ? null : index
 
-          updateDatasetVisibility()
+          updateDatasetVisibility(chart)
         }
       }
     }
   })
 
   const createChart = (data) => {
+    if (!chartRef.value) {
+      throw new Error('Chart reference is not available')
+    }
+
     const ctx = chartRef.value.getContext('2d')
+    if (!ctx) {
+      throw new Error('Unable to get 2D context from canvas')
+    }
+
+    if (!data || !Array.isArray(data.datasets) || !Array.isArray(data.labels)) {
+      throw new Error('Invalid chart data format')
+    }
+
     return new Chart(ctx, {
       type: chartType,
       data: data,
@@ -54,34 +57,29 @@ export function useChart(chartType, createChartOptions) {
     })
   }
 
-  const initChart = (data) => {
-    if (chartRef.value && data) {
-      try {
-        chartInstance = createChart(data)
-        selectedDatasetIndex.value = null
-        updateDatasetVisibility()
-      } catch (error) {
-        console.error('Failed to create chart:', error)
-      }
+  const updateChart = (chartInstance, data) => {
+    if (!chartInstance) {
+      throw new Error('Chart instance is not available')
     }
-  }
 
-  const updateChart = (data) => {
-    if (chartInstance) {
-      chartInstance.data = data
-      chartInstance.options = getChartOptions()
-      if (selectedDatasetIndex.value !== null && selectedDatasetIndex.value >= data.datasets.length) {
-        selectedDatasetIndex.value = null
-      }
-      updateDatasetVisibility()
-    } else {
-      initChart(data)
+    if (!data || !Array.isArray(data.datasets) || !Array.isArray(data.labels)) {
+      throw new Error('Invalid chart data format')
     }
+
+    chartInstance.data = data
+    chartInstance.options = getChartOptions()
+    
+    if (selectedDatasetIndex.value !== null && selectedDatasetIndex.value >= data.datasets.length) {
+      selectedDatasetIndex.value = null
+    }
+    
+    updateDatasetVisibility(chartInstance)
+    chartInstance.update()
   }
 
   return {
     chartRef,
-    initChart,
+    createChart,
     updateChart
   }
 }

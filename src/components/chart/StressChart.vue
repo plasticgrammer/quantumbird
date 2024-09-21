@@ -3,19 +3,23 @@
 </template>
 
 <script setup>
-import { watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useChart } from './chartUtils'
 
 const props = defineProps({
   chartData: {
     type: Object,
     required: true,
-    default: () => ({
-      labels: [],
-      datasets: []
-    })
+    validator: (value) => {
+      return value && Array.isArray(value.labels) && Array.isArray(value.datasets)
+    }
   }
 })
+
+const emit = defineEmits(['error'])
+
+const isMounted = ref(false)
+const chartInstance = ref(null)
 
 const createChartOptions = () => ({
   responsive: true,
@@ -31,8 +35,8 @@ const createChartOptions = () => ({
   scales: {
     y: {
       beginAtZero: false,
-      min: 0.8, // 1よりも少し下に設定
-      max: 5.2, // 5よりも少し上に設定
+      min: 0.8,
+      max: 5.2,
       ticks: {
         stepSize: 1,
         precision: 0,
@@ -54,15 +58,47 @@ const createChartOptions = () => ({
   }
 })
 
-const { chartRef, initChart, updateChart } = useChart('line', createChartOptions)
+const { chartRef, createChart, updateChart } = useChart('line', createChartOptions)
+
+const initChart = (data) => {
+  if (isMounted.value && chartRef.value) {
+    try {
+      chartInstance.value = createChart(data)
+    } catch (error) {
+      console.error('Error initializing chart:', error)
+      emit('error', error)
+    }
+  }
+}
+
+const updateChartData = (data) => {
+  if (isMounted.value && chartInstance.value) {
+    try {
+      updateChart(chartInstance.value, data)
+    } catch (error) {
+      console.error('Error updating chart:', error)
+      emit('error', error)
+    }
+  }
+}
 
 watch(() => props.chartData, (newData, oldData) => {
   if (JSON.stringify(newData) !== JSON.stringify(oldData)) {
-    nextTick(() => updateChart(props.chartData))
+    nextTick(() => updateChartData(newData))
   }
 }, { deep: true })
 
-nextTick(() => initChart(props.chartData))
+onMounted(() => {
+  isMounted.value = true
+  nextTick(() => initChart(props.chartData))
+})
+
+onUnmounted(() => {
+  isMounted.value = false
+  if (chartInstance.value) {
+    chartInstance.value.destroy()
+  }
+})
 </script>
 
 <style scoped>

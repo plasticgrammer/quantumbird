@@ -4,6 +4,8 @@ const CopyWebpackPlugin = require('copy-webpack-plugin')
 const path = require('path')
 const fs = require('fs')
 const dotenv = require('dotenv')
+const TerserPlugin = require('terser-webpack-plugin')
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
 
 // 環境変数を読み込む関数
 function loadEnv(mode) {
@@ -20,12 +22,11 @@ function loadEnv(mode) {
       })
       console.log(`Loaded env file: ${envPath}`)
     } catch (err) {
-      // ファイルが存在しない場合はスキップ
       if (err.code !== 'ENOENT') {
         console.error(err)
       }
     }
-  }
+  };
 
   load(basePath)
   load(localPath)
@@ -41,9 +42,7 @@ module.exports = defineConfig({
       title: 'Fluxweek'
     }
   },
-  publicPath: process.env.NODE_ENV === 'production'
-    ? '/quantumbird'
-    : '/',
+  publicPath: process.env.NODE_ENV === 'production' ? '/quantumbird' : '/',
   devServer: {
     port: 3000,
   },
@@ -51,13 +50,23 @@ module.exports = defineConfig({
   configureWebpack: {
     optimization: {
       usedExports: true,
-      sideEffects: true,
+      sideEffects: false,
+      minimize: process.env.NODE_ENV === 'production', // 本番環境でのみミニファイを有効に
+      minimizer: [
+        new TerserPlugin({
+          // Terserの設定（必要に応じてカスタマイズ）
+          terserOptions: {
+            compress: {
+              drop_console: true, // console.logを削除
+            },
+          },
+        }),
+        new CssMinimizerPlugin(), // CSSのミニファイ
+      ],
     },
     plugins: [
       new webpack.DefinePlugin({
         __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(process.env.NODE_ENV !== 'production'),
-        // 環境変数をクライアントサイドで利用可能にする
-        //'process.env': JSON.stringify(process.env)
       }),
       new CopyWebpackPlugin({
         patterns: [
@@ -75,15 +84,7 @@ module.exports = defineConfig({
   },
   pluginOptions: {
     vuetify: {
-      // https://github.com/vuetifyjs/vuetify-loader/tree/next/packages/vuetify-loader
+      // Vuetifyの設定
     }
-  },
-  // 環境変数をコンソールに出力（デバッグ用）
-  // chainWebpack: config => {
-  //   config.plugin('define').tap(args => {
-  //     console.log('Current NODE_ENV:', process.env.NODE_ENV)
-  //     console.log('Environment Variables:', process.env)
-  //     return args
-  //   })
-  // }
-})
+  }
+});

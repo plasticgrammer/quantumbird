@@ -1,13 +1,13 @@
 <template>
   <v-container class="content-container">
     <v-alert
-      icon="mdi-comment-text"
+      :icon="isMobile ? undefined : 'mdi-comment-text'"
       class="mx-auto mt-8 mb-12 border-md text-center"
       color="blue-lighten-5"
       max-width="600"
       min-height="100"
       variant="flat"
-      closable
+      :closable="!isMobile"
     >
       <v-container 
         v-if="!isLoading"
@@ -90,12 +90,14 @@
 import { ref, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useCalendar } from '../composables/useCalendar'
+import { useResponsive } from '../composables/useResponsive'
 import { getOrganization } from '../services/organizationService'
 import { getReportStatus } from '../services/reportService'
 
 const store = useStore()
 const organizationId = store.getters['auth/organizationId']
 const { getPreviousWeekString } = useCalendar()
+const { isMobile } = useResponsive()
 
 const isLoading = ref(true)
 const error = ref(null)

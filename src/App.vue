@@ -1,15 +1,17 @@
 <template>
   <v-app id="main">
     <template v-if="showAnimation">
-      <div v-for="i in 2" :key="i" class="wave"></div>
-      <v-img
-        v-if="!isMobile"
-        src="@/assets/images/rakko.webp"
-        max-width="46%"
-        width="340"
-        class="on-wave mx-auto"
-        :style="bgImageStyle"
-      ></v-img>
+      <div class="wave-container">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <v-img
+          v-if="!isMobile"
+          src="@/assets/images/rakko.webp"
+          width="340"
+          class="on-wave mx-auto"
+          :style="bgImageStyle"
+        ></v-img>
+      </div>
     </template>
 
     <v-snackbar
@@ -188,10 +190,10 @@ import { useResponsive } from './composables/useResponsive'
 import ConfirmationDialog from './components/ConfirmationDialog.vue'
 import LoadingOverlay from './components/LoadingOverlay.vue'
 
-const { isMobile } = useResponsive()
-
 const store = useStore()
 const router = useRouter()
+const { isMobile } = useResponsive()
+
 const confirmDialog = ref(null)
 const drawer = ref(true)
 const isRailMode = ref(true)
@@ -346,21 +348,30 @@ watch(isRailMode, (newValue) => {
   min-height: 100vh;
 }
 
-.wave {
+.wave-container {
   position: fixed;
   bottom: 0;
   left: 0;
-  width: 300%;
+  width: 100%;
   height: 200px;
-  background: url("./assets/wave.svg");
-  animation: wave 96s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
-  transform: translate3d(0, 0, 0);
-  will-change: transform;
+  overflow: hidden;
   z-index: -1;
 }
 
+.wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  background: url("./assets/wave.svg") repeat-x;
+  animation: wave 48s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
 .wave:nth-of-type(2) {
-  animation: wave 60s cubic-bezier(0.36, 0.45, 0.63, 0.53) reverse infinite;
+  animation: wave 30s cubic-bezier(0.36, 0.45, 0.63, 0.53) reverse infinite;
   opacity: 0.7;
   z-index: -3;
 }

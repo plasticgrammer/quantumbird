@@ -101,7 +101,15 @@
             残業時間の遷移（過去5週間）
           </v-card-title>
           <v-card-text class="pb-1">
-            <OvertimeChart :chart-data="overtimeData" />
+            <Suspense v-if="isOvertimeDataReady">
+              <template #default>
+                <OvertimeChart :chart-data="overtimeData" />
+              </template>
+              <template #fallback>
+                <div>Loading chart...</div>
+              </template>
+            </Suspense>
+            <div v-else>Preparing overtime data...</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -115,7 +123,15 @@
             ストレス評価の遷移（過去5週間）
           </v-card-title>
           <v-card-text class="pb-1">
-            <StressChart :chart-data="stressData" />
+            <Suspense v-if="isStressDataReady">
+              <template #default>
+                <StressChart :chart-data="stressData" />
+              </template>
+              <template #fallback>
+                <div>Loading chart...</div>
+              </template>
+            </Suspense>
+            <div v-else>Preparing stress data...</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -235,7 +251,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, defineAsyncComponent, nextTick } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { useCalendar } from '../composables/useCalendar'
@@ -243,9 +259,9 @@ import { useReport } from '../composables/useReport'
 import { getOrganization } from '../services/organizationService'
 import { getReportStatus, getStatsData } from '../services/reportService'
 import Calendar from '../components/Calendar.vue'
-import OvertimeChart from '../components/chart/OvertimeChart.vue'
-import StressChart from '../components/chart/StressChart.vue'
-import TodoListCard from '../components/widget/TodoListCard.vue'
+const OvertimeChart = defineAsyncComponent(() => import('../components/chart/OvertimeChart.vue'))
+const StressChart = defineAsyncComponent(() => import('../components/chart/StressChart.vue'))
+const TodoListCard = defineAsyncComponent(() => import('../components/widget/TodoListCard.vue'))
 
 const store = useStore()
 const router = useRouter()
@@ -275,9 +291,10 @@ const reportStatus = ref({
   totalCount: 0,
 })
 const selectedMember = ref(null)
-
 const isLoading = ref(true)
 const error = ref(null)
+const isOvertimeDataReady = ref(false)
+const isStressDataReady = ref(false)
 
 const overtimeData = ref({ labels: [], datasets: [] })
 const stressData = ref({ labels: [], datasets: [] })
@@ -378,14 +395,13 @@ const getRandomColor = () => {
   return `rgb(${r}, ${g}, ${b})`
 }
 
-const fetchAll = async () => {
+const fetchInitial = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const [orgInfo, reportStatus, statsData] = await Promise.all([
+    const [orgInfo, reportStatus] = await Promise.all([
       getOrganization(organizationId),
-      getReportStatus(organizationId, weekString.value),
-      getStatsData(organizationId)
+      getReportStatus(organizationId, weekString.value)
     ])
     
     organization.value = orgInfo
@@ -394,8 +410,6 @@ const fetchAll = async () => {
       reportedCount: reportStatus.pending + reportStatus.inFeedback + reportStatus.confirmed,
       totalCount: reportStatus.totalCount || 0,
     }
-    overtimeData.value = formatChartData(statsData, 'overtimeHours')
-    stressData.value = formatChartData(statsData, 'stress')
   } catch (err) {
     console.error('Error initializing dashboard:', err)
     error.value = 'ダッシュボードの初期化に失敗しました: ' + err.message
@@ -404,8 +418,24 @@ const fetchAll = async () => {
   }
 }
 
+const fetchSecondary = async () => {
+  try {
+    const statsData = await getStatsData(organizationId)
+    overtimeData.value = formatChartData(statsData, 'overtimeHours')
+    stressData.value = formatChartData(statsData, 'stress')
+    isOvertimeDataReady.value = true
+    isStressDataReady.value = true
+  } catch (err) {
+    console.error('Error fetching secondary data:', err)
+    error.value = '追加データの取得に失敗しました: ' + err.message
+  }
+}
+
 const handleReload = () => {
-  fetchAll()
+  fetchInitial()
+  nextTick(() => {
+    fetchSecondary()
+  })
 }
 
 // Watchers
@@ -414,7 +444,10 @@ watch(weekIndex, fetchReportStatus)
 // Lifecycle hooks
 onMounted(() => {
   weekIndex.value = calendarWeeks.length - 2// 先週
-  fetchAll()
+  fetchInitial()
+  nextTick(() => {
+    fetchSecondary()
+  })
 })
 </script>
 

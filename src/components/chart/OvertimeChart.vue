@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { watch, nextTick, computed } from 'vue'
+import { ref, watch, nextTick, computed, onMounted, onUnmounted } from 'vue'
 import { useChart } from './chartUtils'
 
 const props = defineProps({
@@ -56,15 +56,51 @@ const createChartOptions = () => ({
   }
 })
 
-const { chartRef, initChart, updateChart } = useChart('line', createChartOptions)
+const chartInstance = ref(null)
+const isMounted = ref(false)
 
-watch([() => props.chartData, () => props.yAxisTitle], ([newData, newTitle], [oldData, oldTitle]) => {
-  if (JSON.stringify(newData) !== JSON.stringify(oldData) || newTitle !== oldTitle) {
-    nextTick(() => updateChart(props.chartData))
+const { chartRef, createChart, updateChart } = useChart('line', createChartOptions)
+
+const initChart = (data) => {
+  if (isMounted.value && chartRef.value) {
+    chartInstance.value = createChart(data)
+  }
+}
+
+const updateChartData = (data) => {
+  if (isMounted.value && chartInstance.value) {
+    updateChart(chartInstance.value, data)
+  }
+}
+
+watch(() => props.chartData, (newData, oldData) => {
+  if (JSON.stringify(newData) !== JSON.stringify(oldData)) {
+    nextTick(() => updateChartData(newData))
   }
 }, { deep: true })
 
-nextTick(() => initChart(props.chartData))
+watch(() => props.yAxisTitle, (newTitle, oldTitle) => {
+  if (newTitle !== oldTitle) {
+    nextTick(() => {
+      if (chartInstance.value) {
+        chartInstance.value.options.scales.y.title.text = newTitle
+        chartInstance.value.update()
+      }
+    })
+  }
+})
+
+onMounted(() => {
+  isMounted.value = true
+  nextTick(() => initChart(props.chartData))
+})
+
+onUnmounted(() => {
+  isMounted.value = false
+  if (chartInstance.value) {
+    chartInstance.value.destroy()
+  }
+})
 </script>
 
 <style scoped>
