@@ -4,7 +4,7 @@
       <span class="text-body-1">{{ label }}</span>
     </v-col>
     <v-col cols="4" md="1" class="d-flex justify-center align-center pa-0">
-      <div class="text-h5 mr-5">
+      <div class="text-h5 mr-5 text-no-wrap">
         {{ modelValue || '-' }}
         <span class="text-body-1">/ {{ props.itemLabels.length }}</span>
       </div>

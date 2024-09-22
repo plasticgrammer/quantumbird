@@ -8,15 +8,37 @@ export function useChart(chartType, createChartOptions) {
   const chartRef = ref(null)
   const selectedDatasetIndex = ref(null)
 
-  const updateDatasetVisibility = (chartInstance) => {
-    if (!chartInstance) return
+  const updateDatasetVisibility = (instance) => {
+    if (!instance) {
+      console.error('Instance is undefined in updateDatasetVisibility')
+      return
+    }
 
-    const datasets = chartInstance.data.datasets
-    datasets.forEach((dataset, index) => {
-      const meta = chartInstance.getDatasetMeta(index)
-      meta.hidden = selectedDatasetIndex.value !== null && index !== selectedDatasetIndex.value
-    })
-    chartInstance.update()
+    // Check if the instance is a Chart object
+    if (instance instanceof Chart) {
+      if (!instance.data || !Array.isArray(instance.data.datasets)) {
+        console.error('Invalid chart data structure', instance.data)
+        return
+      }
+
+      const datasets = instance.data.datasets
+      datasets.forEach((dataset, index) => {
+        const meta = instance.getDatasetMeta(index)
+        if (meta) {
+          meta.hidden = selectedDatasetIndex.value !== null && index !== selectedDatasetIndex.value
+        } else {
+          console.warn(`Dataset meta not found for index ${index}`)
+        }
+      })
+      instance.update('none') // アニメーションなしで更新
+    } else {
+      // Handle Legend click
+      if (instance.chart && instance.chart instanceof Chart) {
+        updateDatasetVisibility(instance.chart)
+      } else {
+        console.error('Invalid Legend instance or missing chart reference', instance)
+      }
+    }
   }
 
   const getChartOptions = () => ({
@@ -25,12 +47,12 @@ export function useChart(chartType, createChartOptions) {
       ...createChartOptions().plugins,
       legend: {
         ...createChartOptions().plugins?.legend,
-        onClick: (event, legendItem, chart) => {
+        onClick: (event, legendItem, legend) => {
           const index = legendItem.datasetIndex
-          
+
           selectedDatasetIndex.value = selectedDatasetIndex.value === index ? null : index
 
-          updateDatasetVisibility(chart)
+          updateDatasetVisibility(legend)
         }
       }
     }
@@ -58,8 +80,8 @@ export function useChart(chartType, createChartOptions) {
   }
 
   const updateChart = (chartInstance, data) => {
-    if (!chartInstance) {
-      throw new Error('Chart instance is not available')
+    if (!chartInstance || !(chartInstance instanceof Chart)) {
+      throw new Error('Invalid Chart instance')
     }
 
     if (!data || !Array.isArray(data.datasets) || !Array.isArray(data.labels)) {
@@ -68,13 +90,12 @@ export function useChart(chartType, createChartOptions) {
 
     chartInstance.data = data
     chartInstance.options = getChartOptions()
-    
+
     if (selectedDatasetIndex.value !== null && selectedDatasetIndex.value >= data.datasets.length) {
       selectedDatasetIndex.value = null
     }
-    
+
     updateDatasetVisibility(chartInstance)
-    chartInstance.update()
   }
 
   return {

@@ -371,15 +371,18 @@ def update_organization_subscription(organization_id, admin_id, endpoint_arn):
 def handle_remove_subscription(event):
     try:
         params = event.get('queryStringParameters', {}) or {}
-        organization_id = params['organizationId']
-        admin_id = params['adminId']
+        organization_id = params.get('organizationId')
+        admin_id = params.get('adminId')
 
-        remove_organization_subscription(organization_id, admin_id)
+        if not organization_id or not admin_id:
+            return create_response(400, {'message': 'Missing required parameters: organizationId or adminId'})
 
-        return create_response(200, {'message': 'Subscription removed successfully'})
-    except ValueError as e:
-        logger.error(f"Invalid request data: {str(e)}")
-        return create_response(400, {'message': str(e)})
+        result = remove_organization_subscription(organization_id, admin_id)
+
+        if result is None:
+            return create_response(200, {'message': 'Subscription was already removed or did not exist'})
+        else:
+            return create_response(200, {'message': 'Subscription removed successfully'})
     except ClientError as e:
         logger.error(f"AWS service error: {str(e)}")
         return create_response(500, {'message': 'Failed to remove subscription'})
@@ -389,11 +392,19 @@ def handle_remove_subscription(event):
 
 def remove_organization_subscription(organization_id, admin_id):
     try:
-        organizations_table.update_item(
+        response = organizations_table.update_item(
             Key={'organizationId': organization_id},
             UpdateExpression="REMOVE adminSubscriptions.#adminId",
-            ExpressionAttributeNames={'#adminId': admin_id}
+            ConditionExpression="attribute_exists(adminSubscriptions) AND attribute_exists(adminSubscriptions.#adminId)",
+            ExpressionAttributeNames={'#adminId': admin_id},
+            ReturnValues="UPDATED_OLD"
         )
+        logger.info(f"Successfully removed subscription for organization {organization_id}, admin {admin_id}")
+        return response
     except ClientError as e:
-        logger.error(f"Failed to remove organization subscription: {str(e)}")
-        raise
+        if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+            logger.warning(f"Subscription not found for organization {organization_id}, admin {admin_id}")
+            return None
+        else:
+            logger.error(f"Failed to remove organization subscription: {str(e)}")
+            raise

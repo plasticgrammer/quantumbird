@@ -3,6 +3,7 @@ import logging
 import boto3
 from boto3.dynamodb.conditions import Key
 import os
+import time
 import urllib.parse
 from decimal import Decimal
 from datetime import datetime, timedelta
@@ -124,6 +125,8 @@ def handle_delete(event):
 
 
 def prepare_item(report_data, existing_report=None):
+    current_time = int(time.time())
+
     item = {
         'memberUuid': report_data.get('memberUuid'),
         'weekString': report_data.get('weekString'),
@@ -136,6 +139,7 @@ def prepare_item(report_data, existing_report=None):
         'status': report_data.get('status'),
         'feedbacks': report_data.get('feedbacks', []),
         'approvedAt': report_data.get('approvedAt'),
+        'createdAt': current_time
     }
     
     if existing_report:

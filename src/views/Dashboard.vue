@@ -14,11 +14,13 @@
         </h3>
       </v-col>
       <v-col cols="2" class="d-flex justify-end align-center pe-3">
-        <v-icon
+        <v-btn
           icon="mdi-reload"
           aria-label="データを更新"
+          class="opacity-80"
+          density="comfortable"
           @click="handleReload"
-        ></v-icon>
+        ></v-btn>
       </v-col>
     </v-row>
 
