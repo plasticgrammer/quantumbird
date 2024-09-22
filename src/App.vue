@@ -1,5 +1,5 @@
 <template>
-  <v-app id="main">
+  <v-app id="main" aria-label="Main application">
     <template v-if="showAnimation">
       <div class="wave-container">
         <div class="wave"></div>
@@ -10,10 +10,12 @@
           width="340"
           class="on-wave mx-auto"
           :style="bgImageStyle"
+          alt="Cute sea otter mascot floating on waves"
         ></v-img>
       </div>
     </template>
 
+    <!-- Notification snackbar -->
     <v-snackbar
       v-model="notification.show"
       :color="notification.type"
@@ -21,12 +23,15 @@
       location="top"
       width="90%"
       class="mx-auto"
+      role="alert"
+      aria-live="assertive"
     >
       <div class="text-subtitle-1 d-flex align-center py-1">
         <v-icon
           :icon="getNotificationIcon"
           class="mr-2"
           color="white"
+          aria-hidden="true"
         />
         {{ notification.message }}
       </div>
@@ -35,12 +40,14 @@
           color="white"
           variant="text"
           icon="mdi-close"
+          aria-label="Close notification"
           @click="closeNotification"
         >
         </v-btn>
       </template>
     </v-snackbar>
 
+    <!-- Navigation drawer -->
     <template v-if="showNavigation">
       <v-navigation-drawer
         v-if="!isMobile"
@@ -51,16 +58,20 @@
         :width="235"
         color="blue-grey-darken-2"
         class="navigation-drawer d-print-none"
+        aria-label="Main navigation"
         @mouseenter="isHovered = true"
         @mouseleave="isHovered = false"
       >
-        <v-list>
+        <v-list role="menu">
           <v-list-item class="dense-list-item pr-2">
             <template #prepend>
               <v-icon 
                 v-ripple
                 icon="mdi-menu"
                 class="opacity-100 mr-1 my-3"
+                role="button"
+                aria-label="Toggle drawer mode"
+                tabindex="0"
                 @click="toggleDrawerMode"
               ></v-icon>
             </template>
@@ -68,29 +79,39 @@
               <v-img
                 src="@/assets/logo.png"
                 class="cursor-pointer ml-n1"
+                alt="Company logo"
+                role="link"
+                aria-label="Go to Overview"
+                tabindex="0"
                 @click="navigateTo({ name: 'Overview' })"
               ></v-img>
             </v-list-item-title>
             <template #append>
               <v-icon 
                 :icon="isRailMode ? 'mdi-format-horizontal-align-right' : 'mdi-format-horizontal-align-left'"
+                role="button"
+                :aria-label="isRailMode ? 'Expand drawer' : 'Collapse drawer'"
+                tabindex="0"
                 @click="toggleDrawerMode"
               ></v-icon>
             </template>
           </v-list-item>
         </v-list>
         <v-divider></v-divider>
-        <v-list nav>
+        <v-list nav role="menu">
           <v-list-item
             v-for="item in navigationItems"
             :key="item.value"
             :prepend-icon="item.icon"
             :title="item.title"
             :value="item.value"
+            role="menuitem"
+            :aria-label="item.title"
             @click="navigateTo(item.route)"
           />
         </v-list>
 
+        <!-- User menu -->
         <template #append>
           <v-divider />
           <v-list nav>
@@ -106,6 +127,9 @@
                   class="mr-n2"
                   size="x-small"
                   variant="text"
+                  aria-haspopup="true"
+                  :aria-expanded="showDropdown"
+                  aria-label="Toggle user menu"
                 ></v-btn>
               </template>
             </v-list-item>
@@ -143,26 +167,31 @@
         </template>
       </v-navigation-drawer>
 
+      <!-- Mobile bottom navigation -->
       <v-bottom-navigation
         v-else
         bg-color="blue-grey-darken-2"
         class="d-print-none pb-3"
         grow
+        role="navigation"
+        aria-label="Mobile navigation"
       >
         <v-btn
           v-for="item in navigationItems"
           :key="item.value"
           :value="item.value"
+          :aria-label="item.title"
           @click="navigateTo(item.route)"
         >
-          <v-icon size="x-large">
+          <v-icon size="x-large" aria-hidden="true">
             {{ item.icon }}
           </v-icon>
         </v-btn>
       </v-bottom-navigation>
     </template>
 
-    <v-main :class="{ 'noshift': isRailModeActive }" :style="appStyle">
+    <!-- Main content area -->
+    <v-main :class="{ 'noshift': isRailModeActive }" :style="appStyle" role="main">
       <div class="content-wrapper">
         <router-view />
       </div>
@@ -176,19 +205,20 @@
       <v-btn color="white" variant="text">プライバシーポリシー</v-btn>
     </v-footer> -->
 
+    <!-- Confirmation dialog and loading overlay -->
     <ConfirmationDialog ref="confirmDialog" />
-
     <LoadingOverlay :style="bgImageStyle" />
   </v-app>
 </template>
 
 <script setup>
-import { ref, provide, reactive, computed, watch, onMounted } from 'vue'
+import { ref, provide, reactive, computed, watch, onMounted, defineAsyncComponent } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { useResponsive } from './composables/useResponsive'
-import ConfirmationDialog from './components/ConfirmationDialog.vue'
-import LoadingOverlay from './components/LoadingOverlay.vue'
+
+const ConfirmationDialog = defineAsyncComponent(() => import('./components/ConfirmationDialog.vue'))
+const LoadingOverlay = defineAsyncComponent(() => import('./components/LoadingOverlay.vue'))
 
 const store = useStore()
 const router = useRouter()
@@ -326,12 +356,10 @@ const handleSignOut = async () => {
 onMounted(() => {
   // 事前ロード
   const img = new Image()
-  img.src = require('@/assets/images/rakko.webp')
+  img.src = new URL('@/assets/images/rakko.webp', import.meta.url).href
   // ローカルストレージからRailModeの状態を読み込む
   const savedRailMode = localStorage.getItem('railMode')
-  if (savedRailMode !== null) {
-    isRailMode.value = JSON.parse(savedRailMode)
-  }
+  isRailMode.value = savedRailMode !== null ? JSON.parse(savedRailMode) : true
 })
 
 watch(isRailMode, (newValue) => {
@@ -364,7 +392,7 @@ watch(isRailMode, (newValue) => {
   left: 0;
   width: 200%;
   height: 100%;
-  background: url("./assets/wave.svg") repeat-x;
+  background: url('./assets/wave.svg') repeat-x;
   animation: wave 48s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
   transform: translate3d(0, 0, 0);
   will-change: transform;

@@ -6,6 +6,7 @@
           <v-icon 
             size="large" 
             class="mr-1"
+            aria-hidden="true"
           >
             mdi-view-dashboard
           </v-icon>
@@ -15,6 +16,7 @@
       <v-col cols="2" class="d-flex justify-end align-center pe-3">
         <v-icon
           icon="mdi-reload"
+          aria-label="データを更新"
           @click="handleReload"
         ></v-icon>
       </v-col>
@@ -27,6 +29,7 @@
             <v-icon
               small
               class="mr-1"
+              aria-hidden="true"
             >
               mdi-calendar-multiple-check
             </v-icon>
@@ -46,6 +49,7 @@
                       icon="mdi-arrow-left-thick"
                       size="small"
                       fab
+                      aria-label="前の週へ"
                       @click="weekIndex = Math.max(0, weekIndex - 1)"
                     ></v-btn>
                     <v-btn
@@ -54,6 +58,7 @@
                       icon="mdi-arrow-right-thick"
                       size="small"
                       fab
+                      aria-label="次の週へ"
                       @click="weekIndex = Math.min(calendarWeeks.length - 1, weekIndex + 1)"
                     ></v-btn>
                   </v-container>
@@ -66,8 +71,9 @@
                   <v-btn 
                     color="black" variant="outlined"
                     :to="{ name: 'WeeklyReview', params: { weekString } }"
+                    aria-label="週次報告レビューへ移動"
                   >
-                    <v-icon class="mr-1" small left>
+                    <v-icon class="mr-1" small left aria-hidden="true">
                       mdi-calendar-multiple-check
                     </v-icon>
                     週次報告レビュー
@@ -95,7 +101,7 @@
       <v-col cols="12" md="6" class="mb-2">
         <v-card class="widget">
           <v-card-title class="text-subtitle-1">
-            <v-icon small class="mr-1">
+            <v-icon small class="mr-1" aria-hidden="true">
               mdi-chart-line
             </v-icon>
             残業時間の遷移（過去5週間）
@@ -106,10 +112,10 @@
                 <OvertimeChart :chart-data="overtimeData" />
               </template>
               <template #fallback>
-                <div>Loading chart...</div>
+                <div aria-live="polite">残業時間チャートを読み込み中...</div>
               </template>
             </Suspense>
-            <div v-else>Preparing overtime data...</div>
+            <div v-else aria-live="polite">残業時間データを準備中...</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -117,7 +123,7 @@
       <v-col cols="12" md="6" class="mb-2">
         <v-card class="widget">
           <v-card-title class="text-subtitle-1">
-            <v-icon small class="mr-1">
+            <v-icon small class="mr-1" aria-hidden="true">
               mdi-chart-line
             </v-icon>
             ストレス評価の遷移（過去5週間）
@@ -128,10 +134,10 @@
                 <StressChart :chart-data="stressData" />
               </template>
               <template #fallback>
-                <div>Loading chart...</div>
+                <div aria-live="polite">ストレス評価チャートを読み込み中...</div>
               </template>
             </Suspense>
-            <div v-else>Preparing stress data...</div>
+            <div v-else aria-live="polite">ストレス評価データを準備中...</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -139,7 +145,7 @@
       <v-col cols="12" md="6" class="mb-2">
         <v-card class="widget">
           <v-card-title class="text-subtitle-1">
-            <v-icon small class="mr-1">
+            <v-icon small class="mr-1" aria-hidden="true">
               mdi-domain
             </v-icon>
             組織情報
@@ -154,8 +160,9 @@
             <v-btn
               color="black" variant="outlined" class="mt-3"
               :to="{ name: 'OrganizationManagement' }"
+              aria-label="組織情報管理ページへ移動"
             >
-              <v-icon class="mr-1" small>
+              <v-icon class="mr-1" small aria-hidden="true">
                 mdi-domain
               </v-icon>
               組織情報管理
@@ -167,7 +174,7 @@
       <v-col cols="12" md="6" class="mb-2">
         <v-card class="widget">
           <v-card-title class="text-subtitle-1">
-            <v-icon small class="mr-1">
+            <v-icon small class="mr-1" aria-hidden="true">
               mdi-mail
             </v-icon>
             報告依頼
@@ -178,6 +185,7 @@
               <v-icon
                 :color="organization.requestEnabled ? 'success' : 'grey'"
                 class="mx-1"
+                aria-hidden="true"
               >
                 {{ organization.requestEnabled ? 'mdi-timer-outline' : 'mdi-timer-off-outline' }}
               </v-icon>
@@ -192,8 +200,9 @@
             <v-btn
               color="black" variant="outlined" class="mt-3"
               :to="{ name: 'RequestSetting' }"
+              aria-label="報告依頼設定ページへ移動"
             >
-              <v-icon class="mr-1" small>
+              <v-icon class="mr-1" small aria-hidden="true">
                 mdi-mail
               </v-icon>
               報告依頼設定
@@ -209,7 +218,7 @@
       <v-col cols="12" md="6" class="mb-2">
         <v-card class="widget">
           <v-card-title class="text-subtitle-1">
-            <v-icon small class="mr-1">
+            <v-icon small class="mr-1" aria-hidden="true">
               mdi-calendar-account
             </v-icon>
             メンバーの週次報告
@@ -237,9 +246,10 @@
                   rel="noopener noreferrer"
                   :disabled="!selectedMember"
                   x-small
+                  aria-label="選択したメンバーの週次報告ページを新しいタブで開く"
                 >
                   週次報告（代理入力）
-                  <v-icon icon="mdi-open-in-new" end small />
+                  <v-icon icon="mdi-open-in-new" end small aria-hidden="true" />
                 </v-btn>
               </v-col>
             </v-row>
