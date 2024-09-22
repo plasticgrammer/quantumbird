@@ -271,9 +271,16 @@ import { useReport } from '../composables/useReport'
 import { getOrganization } from '../services/organizationService'
 import { getReportStatus, getStatsData } from '../services/reportService'
 import Calendar from '../components/Calendar.vue'
-const OvertimeChart = defineAsyncComponent(() => import('../components/chart/OvertimeChart.vue'))
-const StressChart = defineAsyncComponent(() => import('../components/chart/StressChart.vue'))
-const TodoListCard = defineAsyncComponent(() => import('../components/widget/TodoListCard.vue'))
+
+const OvertimeChart = defineAsyncComponent(() => 
+  import(/* webpackChunkName: "widget" */ '../components/chart/OvertimeChart.vue')
+)
+const StressChart = defineAsyncComponent(() => 
+  import(/* webpackChunkName: "widget" */ '../components/chart/StressChart.vue')
+)
+const TodoListCard = defineAsyncComponent(() => 
+  import(/* webpackChunkName: "widget" */ '../components/widget/TodoListCard.vue')
+)
 
 const store = useStore()
 const router = useRouter()

@@ -49,7 +49,7 @@
         </v-btn>
       </v-col>
     </v-row>
-    <v-row v-else>
+    <v-row v-if="isLoading && !readonly">
       <v-col>
         <v-skeleton-loader
           type="chip@3"

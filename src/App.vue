@@ -11,6 +11,7 @@
           class="on-wave mx-auto"
           :style="bgImageStyle"
           alt="Cute sea otter mascot floating on waves"
+          loading="lazy"
         ></v-img>
       </div>
     </template>
@@ -83,6 +84,7 @@
                 role="link"
                 aria-label="Go to Overview"
                 tabindex="0"
+                loading="lazy"
                 @click="navigateTo({ name: 'Overview' })"
               ></v-img>
             </v-list-item-title>
