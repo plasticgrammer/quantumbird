@@ -49,7 +49,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watchEffect, onMounted } from 'vue'
+import { ref, computed, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useStore } from 'vuex'
 import { app } from '../config/firebase-config'
 import { contextPath } from '../config/environment'
@@ -92,54 +92,86 @@ onMounted(async () => {
   await initializeServiceWorker()
 })
 
-const canUseServiceWorker = () => {
-  return 'serviceWorker' in navigator
-}
-
-const setError = (message) => {
-  hasError.value = true
-  errorMessage.value = message
-}
-
-const clearError = () => {
-  hasError.value = false
-  errorMessage.value = ''
-}
+onUnmounted(() => {
+  clearInterval(statusCheckInterval)
+})
 
 const initializeServiceWorker = async () => {
-  if (canUseServiceWorker()) {
+  if ('serviceWorker' in navigator) {
     try {
+      console.log('Registering Service Worker...')
       const swPath = `${contextPath}firebase-messaging-sw.js`
       const registration = await navigator.serviceWorker.register(swPath, {
         scope: contextPath
       })
       console.log('Service Worker registered successfully:', registration)
       
-      // Service Workerの準備を待つ
-      await waitForServiceWorkerReady()
+      console.log('Waiting for registration to become ready...')
+      await registration.ready
+      console.log('Registration is ready')
+      
+      console.log('Waiting for Service Worker to become ready...')
+      await Promise.race([
+        waitForServiceWorkerReady(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Service Worker ready timeout')), 15000))
+      ])
+      console.log('Service Worker is ready')
+      
       isServiceWorkerReady.value = true
       clearError()
     } catch (error) {
-      console.error('Service Worker registration failed:', error)
-      setError('Service Workerの登録に失敗しました。ページを再読み込みしてください。')
+      console.error('Service Worker initialization failed:', error)
+      setError(`Service Workerの初期化に失敗しました: ${error.message}`)
+      isServiceWorkerReady.value = false
     }
   } else {
+    console.warn('This browser does not support Service Workers')
     setError('このブラウザはService Workerをサポートしていません。')
+    isServiceWorkerReady.value = false
   }
 }
 
 const waitForServiceWorkerReady = () => {
   return new Promise((resolve) => {
-    if (navigator.serviceWorker.controller) {
-      resolve()
-    } else {
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
+    const checkController = () => {
+      if (navigator.serviceWorker.controller) {
+        console.log('Service Worker is now controlling the page')
         resolve()
-      })
+      } else {
+        console.log('Service Worker is not yet controlling the page, waiting...')
+        setTimeout(checkController, 1000)
+      }
     }
+
+    navigator.serviceWorker.ready.then((registration) => {
+      console.log('Service Worker is ready:', registration)
+      checkController()
+    })
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.log('Service Worker controller changed')
+      checkController()
+    })
   })
 }
 
+// Service Workerの状態を定期的にチェックする関数
+const checkServiceWorkerStatus = () => {
+  if (navigator.serviceWorker.controller) {
+    console.log('Service Worker controller:', navigator.serviceWorker.controller.state)
+  } else {
+    console.log('No Service Worker controller')
+  }
+  
+  navigator.serviceWorker.getRegistrations().then(registrations => {
+    console.log('Service Worker registrations:', registrations)
+  })
+}
+
+// 状態チェックを5秒ごとに実行
+const statusCheckInterval = setInterval(checkServiceWorkerStatus, 5000)
+
+// Notification Subscription
 const checkNotificationStatus = async () => {
   if ('Notification' in window) {
     notificationStatus.value = Notification.permission
@@ -177,11 +209,6 @@ const togglePushNotification = async () => {
 }
 
 const subscribeToPush = async () => {
-  if (!isServiceWorkerReady.value) {
-    setError('Service Workerの準備ができていません。しばらく待ってから再試行してください。')
-    return
-  }
-  
   try {
     const messaging = getMessaging(app)
     const registration = await navigator.serviceWorker.getRegistration(contextPath)
@@ -237,6 +264,7 @@ const deleteSubscription = async () => {
   }
 }
 
+// Token Storage
 const storeToken = async (fcmToken) => {
   localStorage.setItem('fcmToken', fcmToken)
 }
@@ -249,6 +277,18 @@ const removeStoredToken = async () => {
   localStorage.removeItem('fcmToken')
 }
 
+// Error Handling
+const setError = (message) => {
+  hasError.value = true
+  errorMessage.value = message
+}
+
+const clearError = () => {
+  hasError.value = false
+  errorMessage.value = ''
+}
+
+// UI Helper
 const showInstructions = () => {
   alert(`ブラウザの通知設定を変更する方法:
     1. ブラウザの設定/環境設定を開きます。

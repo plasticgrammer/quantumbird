@@ -340,16 +340,17 @@
 </template>
 
 <script setup>
-import { ref, computed, watchEffect, onMounted, inject } from 'vue'
+import { ref, computed, watchEffect, onMounted, inject, defineAsyncComponent } from 'vue'
 import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
 import { listReports, listMembers } from '../services/publicService'
 import { updateReport, submitFeedback } from '../services/reportService'
 import { generateToken } from '../services/secureParameterService'
 import { sendRequest } from '../services/sendRequestService'
-import RatingItem from '../components/RatingItem.vue'
-import ScrollNavigation from '../components/ScrollNavigation.vue'
 import { rootUrl } from '../config/environment'
+
+const RatingItem = defineAsyncComponent(() => import('../components/RatingItem.vue'))
+const ScrollNavigation = defineAsyncComponent(() => import('../components/ScrollNavigation.vue'))
 
 const { formatDateTimeJp, formatDateJp, getWeekFromString } = useCalendar()
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
@@ -468,27 +469,19 @@ const fetchMembers = async () => {
   }
 }
 
-// fetchData メソッドを最適化
 const processReports = (fetchedReports, members) => {
   const statusOrder = { none: 0, pending: 1, feedback: 2, approved: 3 }
+  const memberMap = new Map(members.map(m => [m.memberUuid, m]))
   
-  return members.map(member => {
-    const report = fetchedReports.find(r => r.memberUuid === member.memberUuid) || {}
+  return fetchedReports.map(report => {
+    const member = memberMap.get(report.memberUuid) || {}
     return {
-      memberUuid: member.memberUuid,
-      weekString: props.weekString,
-      organizationId: props.organizationId,
+      ...report,
       memberId: member.id,
       name: member.name,
       projects: report.projects || [],
-      overtimeHours: report.overtimeHours || 0,
-      achievements: report.achievements || '',
-      issues: report.issues || '',
-      improvements: report.improvements || '',
-      rating: report.rating || {},
       status: report.status || 'none',
-      feedbacks: report.feedbacks || [],
-      approvedAt: report.approvedAt || null
+      // その他のフィールド
     }
   }).sort((a, b) => {
     if (a.status === b.status) return a.memberId.localeCompare(b.memberId)

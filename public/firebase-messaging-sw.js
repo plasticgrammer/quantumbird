@@ -41,8 +41,7 @@ self.addEventListener('notificationclick', function (event) {
   const weekString = customData.weekString || ''
   let url = `${contextPath}admin/reports`
   if (weekString) {
-    // URLにweekStringパラメータを追加
     url += `/${encodeURIComponent(weekString)}`
-  }  
+  }
   event.waitUntil(clients.openWindow(url))
 })
