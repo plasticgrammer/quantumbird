@@ -8,12 +8,13 @@ self.addEventListener('push', function (event) {
     const customData = payload.data || {}
 
     if (notificationData) {
+      const contextPath = getContextPath()
       const title = notificationData.title || 'New Notification'
       const options = {
         body: notificationData.body || '',
-        icon: '/apple-touch-icon.png',
+        icon: `${contextPath}apple-touch-icon.png`,
         data: customData
-        //badge: '/favicon-32x32.png'
+        //badge: '${contextPath}favicon-32x32.png'
       }
 
       event.waitUntil(

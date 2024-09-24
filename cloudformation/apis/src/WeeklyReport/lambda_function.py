@@ -149,17 +149,47 @@ def prepare_item(report_data, existing_report=None):
     
     return item
 
-def get_reports_by_organization(organization_id, week_string):
+def get_organization_members(organization_id):
+    try:
+        response = members_table.query(
+            IndexName='OrganizationIndex',  # 適切なインデックス名に変更してください
+            KeyConditionExpression=Key('organizationId').eq(organization_id)
+        )
+        return response.get('Items', [])
+    except Exception as e:
+        logger.error(f"Error fetching members for organization {organization_id}: {str(e)}", exc_info=True)
+        return []
+
+def get_existing_reports(organization_id, week_string):
     try:
         response = weekly_reports_table.query(
             IndexName='OrganizationWeekIndex',
             KeyConditionExpression=Key('organizationId').eq(organization_id) & Key('weekString').eq(week_string)
         )
-        items = response['Items']
-        return items
+        return {item['memberUuid']: item for item in response.get('Items', [])}
     except Exception as e:
-        logger.error(f"Error querying reports for org {organization_id}, week {week_string}: {str(e)}", exc_info=True)
-        return []  # Return an empty list instead of raising an exception
+        logger.error(f"Error fetching reports for org {organization_id}, week {week_string}: {str(e)}", exc_info=True)
+        return {}
+
+def get_reports_by_organization(organization_id, week_string):
+    members = get_organization_members(organization_id)
+    existing_reports = get_existing_reports(organization_id, week_string)
+    
+    reports = []
+    for member in members:
+        member_uuid = member['memberUuid']
+        if member_uuid in existing_reports:
+            reports.append(existing_reports[member_uuid])
+        else:
+            reports.append({
+                'memberUuid': member_uuid,
+                'organizationId': organization_id,
+                'weekString': week_string,
+                'status': 'none',
+                # 他の必要なフィールドをここに追加
+            })
+    
+    return reports
 
 def get_report(member_uuid, week_string):
     try:

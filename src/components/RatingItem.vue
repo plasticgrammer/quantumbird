@@ -18,7 +18,7 @@
         :empty-icon="'mdi-emoticon-neutral-outline'"
         :full-icon="fullIcon"
         :half-icon="'mdi-emoticon-neutral-outline'"
-        :active-color="negative ? 'blue-lighten-1' : 'orange-accent-3'" 
+        :active-color="activeIconColor" 
         size="x-large"
         density="compact"
         color="grey-lighten-2"
@@ -62,6 +62,17 @@ const fullIcon = computed(() => {
     return 'mdi-emoticon-dead'
   } else {
     return 'mdi-emoticon'
+  }
+})
+
+const activeIconColor = computed(() => {
+  const half = (props.itemLabels.length + 1) / 2
+  if (props.modelValue === half) {
+    return 'deep-purple-lighten-3'
+  } else if (props.negative ^ (props.modelValue < half)) {
+    return 'blue-lighten-1'
+  } else {
+    return 'orange-accent-3'
   }
 })
 

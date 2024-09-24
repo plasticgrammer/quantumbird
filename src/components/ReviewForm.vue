@@ -269,7 +269,7 @@
                   >
                     <v-textarea
                       v-model="newFeedbacks[report.memberUuid]"
-                      label="新しいフィードバックを入力..."
+                      placeholder="新しいフィードバックを入力..."
                       outlined
                       dense
                       clear-icon="mdi-close-circle"
