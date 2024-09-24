@@ -471,17 +471,21 @@ const fetchMembers = async () => {
 
 const processReports = (fetchedReports, members) => {
   const statusOrder = { none: 0, pending: 1, feedback: 2, approved: 3 }
-  const memberMap = new Map(members.map(m => [m.memberUuid, m]))
+  const reportMap = new Map(fetchedReports.map(r => [r.memberUuid, r]))
   
-  return fetchedReports.map(report => {
-    const member = memberMap.get(report.memberUuid) || {}
+  return members.map(member => {
+    const report = reportMap.get(member.memberUuid) || {
+      memberUuid: member.memberUuid,
+      status: 'none',
+      projects: [],
+    }
+
     return {
       ...report,
       memberId: member.id,
       name: member.name,
       projects: report.projects || [],
       status: report.status || 'none',
-      // その他のフィールド
     }
   }).sort((a, b) => {
     if (a.status === b.status) return a.memberId.localeCompare(b.memberId)

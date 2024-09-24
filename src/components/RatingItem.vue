@@ -68,11 +68,11 @@ const fullIcon = computed(() => {
 const activeIconColor = computed(() => {
   const half = (props.itemLabels.length + 1) / 2
   if (props.modelValue === half) {
-    return 'deep-purple-lighten-3'
+    return 'blue-grey-lighten-3'
   } else if (props.negative ^ (props.modelValue < half)) {
-    return 'blue-lighten-1'
+    return 'blue-lighten-2'
   } else {
-    return 'orange-accent-3'
+    return 'orange-accent-2'
   }
 })
 
