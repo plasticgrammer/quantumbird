@@ -188,7 +188,7 @@
           <v-col cols="12" sm="6">
             <v-text-field
               v-model="formattedOvertimeHours"
-              label="残業時間"
+              label="残業時間（週単位）"
               type="number"
               min="0"
               max="99"
@@ -235,7 +235,7 @@
 
         <v-textarea
           v-model="report.improvements"
-          label="改善したいこと"
+          label="改善したいこと（任意）"
           rows="1"
           auto-grow
           outlined

@@ -82,14 +82,14 @@ def handle_get(event):
         return create_response(400, 'Invalid query parameters')
 
 def handle_post(event):
-    report_data = json.loads(event['body'])
+    report_data = json.loads(event['body'], parse_float=Decimal)
     item = prepare_item(report_data)
     response = weekly_reports_table.put_item(Item=item)
     logger.info(f"DynamoDB response: {response}")
     return create_response(201, 'Weekly report created successfully')
 
 def handle_put(event):
-    report_data = json.loads(event['body'])
+    report_data = json.loads(event['body'], parse_float=Decimal)
     member_uuid = report_data.get('memberUuid')
     week_string = report_data.get('weekString')
 
@@ -127,18 +127,21 @@ def handle_delete(event):
 def prepare_item(report_data, existing_report=None):
     current_time = int(time.time())
 
+    # Convert float values to Decimal
+    converted_data = float_to_decimal(report_data)
+
     item = {
-        'memberUuid': report_data.get('memberUuid'),
-        'weekString': report_data.get('weekString'),
-        'organizationId': report_data.get('organizationId'),
-        'projects': report_data.get('projects'),
-        'overtimeHours': report_data.get('overtimeHours'),
-        'issues': report_data.get('issues'),
-        'improvements': report_data.get('improvements'),
-        'rating': report_data.get('rating', {}),
-        'status': report_data.get('status'),
-        'feedbacks': report_data.get('feedbacks', []),
-        'approvedAt': report_data.get('approvedAt'),
+        'memberUuid': converted_data.get('memberUuid'),
+        'weekString': converted_data.get('weekString'),
+        'organizationId': converted_data.get('organizationId'),
+        'projects': converted_data.get('projects'),
+        'overtimeHours': converted_data.get('overtimeHours'),
+        'issues': converted_data.get('issues'),
+        'improvements': converted_data.get('improvements'),
+        'rating': converted_data.get('rating', {}),
+        'status': converted_data.get('status'),
+        'feedbacks': converted_data.get('feedbacks', []),
+        'approvedAt': converted_data.get('approvedAt'),
         'createdAt': current_time
     }
     
