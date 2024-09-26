@@ -66,14 +66,18 @@ const fullIcon = computed(() => {
 })
 
 const activeIconColor = computed(() => {
-  const half = (props.itemLabels.length + 1) / 2
-  if (props.modelValue === half) {
-    return props.negative ? 'blue-lighten-3' : 'deep-orange-lighten-3'
-  } else if (props.negative ^ (props.modelValue < half)) {
-    return 'blue-lighten-1'
-  } else {
-    return 'deep-orange-lighten-1'
+  const { itemLabels, modelValue, negative } = props
+  const length = itemLabels.length
+  const half = (length + 1) / 2
+
+  if (modelValue === half) {
+    return 'deep-purple-lighten-4'
   }
+
+  const isNegativeSide = negative !== (modelValue < half)
+  const baseColor = isNegativeSide ? 'blue' : 'deep-orange'
+  const intensity = modelValue < half ? modelValue : (length + 1) - modelValue
+  return `${baseColor}-lighten-${intensity}`
 })
 
 const emit = defineEmits(['update:modelValue'])
