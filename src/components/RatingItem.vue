@@ -55,10 +55,11 @@ const props = defineProps({
 })
 
 const fullIcon = computed(() => {
-  const half = (props.itemLabels.length + 1) / 2
-  if (props.modelValue === half) {
+  const { itemLabels, modelValue, negative } = props
+  const half = (itemLabels.length + 1) / 2
+  if (modelValue === 0 || modelValue === half) {
     return 'mdi-emoticon-neutral'
-  } else if (props.negative ^ (props.modelValue < half)) {
+  } else if (negative ^ (modelValue < half)) {
     return 'mdi-emoticon-dead'
   } else {
     return 'mdi-emoticon'
@@ -70,8 +71,8 @@ const activeIconColor = computed(() => {
   const length = itemLabels.length
   const half = (length + 1) / 2
 
-  if (modelValue === half) {
-    return 'deep-purple-lighten-4'
+  if (modelValue === 0 || modelValue === half) {
+    return '#D8A9E0'
   }
 
   const isNegativeSide = negative !== (modelValue < half)

@@ -65,7 +65,6 @@
           type="avatar, text, ossein, paragraph, text, actions"
           :loading="true"
           elevation="4"
-          class="mt-1"
         ></v-skeleton-loader>
       </v-col>
     </v-row>
