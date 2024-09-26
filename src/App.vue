@@ -173,7 +173,7 @@
       <v-bottom-navigation
         v-else
         bg-color="blue-grey-darken-2"
-        class="d-print-none pb-3"
+        class="d-print-none"
         grow
         role="navigation"
         aria-label="Mobile navigation"
@@ -183,6 +183,7 @@
           :key="item.value"
           :value="item.value"
           :aria-label="item.title"
+          class="pb-3"
           @click="navigateTo(item.route)"
         >
           <v-icon size="x-large" aria-hidden="true">

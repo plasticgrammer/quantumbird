@@ -62,6 +62,7 @@ const notificationStatus = ref('default')
 const isServiceWorkerReady = ref(false)
 const hasError = ref(false)
 const errorMessage = ref('')
+const statusCheckInterval = ref(null)
 
 const organizationId = store.getters['auth/organizationId']
 const adminId = store.getters['auth/cognitoUserSub']
@@ -90,10 +91,13 @@ watchEffect(async () => {
 
 onMounted(async () => {
   await initializeServiceWorker()
+  statusCheckInterval.value = setInterval(checkServiceWorkerStatus, 5000)
 })
 
 onUnmounted(() => {
-  clearInterval(statusCheckInterval)
+  if (statusCheckInterval.value) {
+    clearInterval(statusCheckInterval.value)
+  }
 })
 
 const initializeServiceWorker = async () => {
@@ -155,23 +159,22 @@ const waitForServiceWorkerReady = () => {
   })
 }
 
-// Service Workerの状態を定期的にチェックする関数
 const checkServiceWorkerStatus = () => {
   if (navigator.serviceWorker.controller) {
     console.log('Service Worker controller:', navigator.serviceWorker.controller.state)
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      console.log('Service Worker registrations:', registrations)
+      if (registrations.length > 0) {
+        console.log('Service Worker is registered. Stopping periodic checks.')
+        clearInterval(statusCheckInterval.value)
+        statusCheckInterval.value = null
+      }
+    })
   } else {
     console.log('No Service Worker controller')
   }
-  
-  navigator.serviceWorker.getRegistrations().then(registrations => {
-    console.log('Service Worker registrations:', registrations)
-  })
 }
 
-// 状態チェックを5秒ごとに実行
-const statusCheckInterval = setInterval(checkServiceWorkerStatus, 5000)
-
-// Notification Subscription
 const checkNotificationStatus = async () => {
   if ('Notification' in window) {
     notificationStatus.value = Notification.permission
@@ -264,7 +267,6 @@ const deleteSubscription = async () => {
   }
 }
 
-// Token Storage
 const storeToken = async (fcmToken) => {
   localStorage.setItem('fcmToken', fcmToken)
 }
@@ -277,7 +279,6 @@ const removeStoredToken = async () => {
   localStorage.removeItem('fcmToken')
 }
 
-// Error Handling
 const setError = (message) => {
   hasError.value = true
   errorMessage.value = message
@@ -288,7 +289,6 @@ const clearError = () => {
   errorMessage.value = ''
 }
 
-// UI Helper
 const showInstructions = () => {
   alert(`ブラウザの通知設定を変更する方法:
     1. ブラウザの設定/環境設定を開きます。
