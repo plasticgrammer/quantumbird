@@ -25,45 +25,76 @@
       @report-submitted="handleReportSubmitted"
     />
     
-    <v-speed-dial
-      location="bottom right"
-      transition="fade-transition"
+    <v-btn-group
+      v-if="member"
+      color="#b2d7ef"
+      density="comfortable"
+      rounded="pill"
+      divided
+      class="me-1 d-none d-md-flex v-btn-group"
     >
-      <template #activator="{ props: activatorProps }">
-        <v-fab
-          v-if="member"
-          v-bind="activatorProps"
-          color="surface-variant"
-          variant="tonal"
-          class="me-1 d-none d-md-flex"
-          location="top end"
-          size="large"
-          extended
-          sticky
-          app
+      <v-btn
+        class="pe-2"
+        prepend-icon="mdi-account-circle"
+        variant="flat"
+      >
+        <div class="text-none font-weight-regular">
+          {{ member.name }} さん
+        </div>
+        <v-dialog
+          activator="parent"
+          max-width="500"
         >
-          <template #prepend>
-            <v-icon size="x-large">
-              mdi-account-circle
-            </v-icon>
+          <template #default="{ isActive }">
+            <v-card rounded="lg">
+              <v-card-title class="d-flex justify-space-between align-center">
+                <div class="text-h5 text-medium-emphasis ps-2">
+                  {{ member.name }} さんの情報
+                </div>
+                <v-btn
+                  icon="mdi-close"
+                  variant="text"
+                  @click="isActive.value = false"
+                ></v-btn>
+              </v-card-title>
+              <v-divider class="mb-4"></v-divider>
+              <v-card-text>
+                <div class="text-medium-emphasis mb-4">
+                  週次報告システムへようこそ。<br>こちらでは必要な情報を提供できるよう検討中です。
+                </div>
+              </v-card-text>
+              <v-divider class="mt-2"></v-divider>
+              <v-card-actions class="my-2 d-flex justify-end">
+                <v-btn
+                  class="text-none"
+                  rounded="xl"
+                  text="閉じる"
+                  @click="isActive.value = false"
+                ></v-btn>
+              </v-card-actions>
+            </v-card>
           </template>
-          <span class="ml-n1 text-body-2">
-            {{ member.name }} さん
-          </span>
-        </v-fab>
-      </template>
-      <v-list key="1" class="px-3">
-        <a
-          href="https://forms.gle/suRGEcRXE33xvFu19"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-decoration-none"
+        </v-dialog>
+      </v-btn>
+      <v-btn size="small" icon>
+        <v-icon icon="mdi-menu-down"></v-icon>
+        <v-menu
+          activator="parent"
+          location="bottom end"
+          transition="fade-transition"
         >
-          フィードバック
-          <v-icon icon="mdi-open-in-new" class="ml-1" size="x-small" end />
-        </a>
-      </v-list>
-    </v-speed-dial>
+          <v-list density="compact" min-width="250" rounded="lg" slim>
+            <v-list-item
+              prepend-icon="mdi-comment-quote-outline"
+              title="フィードバック"
+              link
+              @click="openFeedbackForm"
+            ></v-list-item>
+            <!-- 追加のメニュー項目をここに配置できます -->
+          </v-list>
+        </v-menu>
+      </v-btn>
+    </v-btn-group>
 
     <v-dialog 
       v-model="isReportSubmitted" 
@@ -182,6 +213,10 @@ const handleClose = () => {
   window.close()
 }
 
+const openFeedbackForm = () => {
+  window.open('https://forms.gle/suRGEcRXE33xvFu19', '_blank', 'noopener,noreferrer')
+}
+
 watch(() => props.weekString, (newWeekParam) => {
   if (newWeekParam) {
     const week = getWeekFromString(newWeekParam)
@@ -210,3 +245,18 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.v-btn-group {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+}
+
+@media (max-width: 600px) {
+  .v-btn-group {
+    display: none;
+  }
+}
+</style>
