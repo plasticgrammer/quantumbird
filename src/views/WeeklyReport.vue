@@ -27,9 +27,10 @@
     
     <v-btn-group
       v-if="member"
-      color="#b2d7ef"
+      color="#f6fbff"
       density="comfortable"
       rounded="pill"
+      elevation="2"
       divided
       class="me-1 d-none d-md-flex v-btn-group"
     >
@@ -83,14 +84,13 @@
           location="bottom end"
           transition="fade-transition"
         >
-          <v-list density="compact" min-width="250" rounded="lg" slim>
+          <v-list density="compact" min-width="210" rounded="lg" slim>
             <v-list-item
               prepend-icon="mdi-comment-quote-outline"
               title="フィードバック"
               link
               @click="openFeedbackForm"
             ></v-list-item>
-            <!-- 追加のメニュー項目をここに配置できます -->
           </v-list>
         </v-menu>
       </v-btn>

@@ -12,16 +12,33 @@
           @click="togglePushNotification"
         >
           <template #prepend>
-            <div v-if="notificationStatus === 'default' || notificationStatus === 'granted'">
-              <v-icon
-                :color="iconColor"
-                class="mr-1"
-                size="large"
+            <v-tooltip
+              location="bottom"
+              :open-on-hover="true"
+              :open-on-focus="true"
+              :close-delay="3000"
+            >
+              <template #activator="{ props: tooltipProps }">
+                <v-icon
+                  v-bind="tooltipProps"
+                  :color="iconColor"
+                  class="mr-1"
+                  size="large"
+                >
+                  {{ iconName }}
+                </v-icon>
+              </template>
+              <div>isServiceWorkerReady: {{ isServiceWorkerReady }}<br>isSubscribed: {{ isSubscribed }}<br>notificationStatus: {{ notificationStatus }}</div>
+              <v-btn
+                v-if="isServiceWorkerReady" 
+                icon="mdi-reload"
+                color="error"
+                density="comfortable"
+                @click="resetServiceWorker"
               >
-                {{ iconName }}
-              </v-icon>
-              {{ statusText }}
-            </div>
+              </v-btn>
+            </v-tooltip>
+            {{ statusText }}
           </template>
         </v-switch>
         <div v-else-if="notificationStatus === 'denied'">
@@ -42,14 +59,19 @@
               {{ errorMessage }}
             </div>
           </div>
-        </div>    
+        </div>
+      </v-col>
+      <v-col v-if="!isOnline" cols="auto">
+        <v-chip color="warning" small>
+          オフライン
+        </v-chip>
       </v-col>
     </v-row>
   </v-container>
 </template>
 
 <script setup>
-import { ref, computed, watchEffect, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useStore } from 'vuex'
 import { app } from '../config/firebase-config'
 import { contextPath } from '../config/environment'
@@ -62,43 +84,72 @@ const notificationStatus = ref('default')
 const isServiceWorkerReady = ref(false)
 const hasError = ref(false)
 const errorMessage = ref('')
+const isOnline = ref(navigator.onLine)
 const statusCheckInterval = ref(null)
 
 const organizationId = store.getters['auth/organizationId']
 const adminId = store.getters['auth/cognitoUserSub']
 
 const iconName = computed(() => {
-  if (!isServiceWorkerReady.value) return 'mdi-progress-clock'
-  return isSubscribed.value ? 'mdi-bell-outline' : 'mdi-bell-off-outline'
+  console.log('Computing iconName, isServiceWorkerReady:', isServiceWorkerReady.value)
+  return isServiceWorkerReady.value ? (isSubscribed.value ? 'mdi-bell-outline' : 'mdi-bell-off-outline') : 'mdi-progress-clock'
 })
 
 const iconColor = computed(() => {
-  if (!isServiceWorkerReady.value) return 'grey'
-  return isSubscribed.value ? 'success' : 'grey'
+  console.log('Computing iconColor, isServiceWorkerReady:', isServiceWorkerReady.value)
+  return isServiceWorkerReady.value ? (isSubscribed.value ? 'success' : 'grey') : 'grey'
 })
 
 const statusText = computed(() => {
-  if (!isServiceWorkerReady.value) return 'Service Worker初期化中'
-  return isSubscribed.value ? 'プッシュ通知: 有効' : 'プッシュ通知: 無効'
+  console.log('Computing statusText, isServiceWorkerReady:', isServiceWorkerReady.value)
+  return isServiceWorkerReady.value ? (isSubscribed.value ? 'プッシュ通知: 有効' : 'プッシュ通知: 無効') : 'Service Worker初期化中'
 })
 
-watchEffect(async () => {
-  if (isServiceWorkerReady.value) {
+watch(isServiceWorkerReady, async (newValue) => {
+  console.log('isServiceWorkerReady changed:', newValue)
+  if (newValue) {
     await checkNotificationStatus()
     await checkSubscription()
+    // 強制的に再描画をトリガー
+    await nextTick()
   }
 })
 
-onMounted(async () => {
-  await initializeServiceWorker()
-  statusCheckInterval.value = setInterval(checkServiceWorkerStatus, 5000)
+watch(isServiceWorkerReady, (newValue) => {
+  console.log('isServiceWorkerReady changed:', newValue)
+  if (newValue) {
+    checkNotificationStatus()
+    checkSubscription()
+  }
+})
+
+onMounted(() => {
+  window.addEventListener('online', updateOnlineStatus)
+  window.addEventListener('offline', updateOnlineStatus)
+
+  nextTick(async () => {
+    try {
+      await initializeServiceWorker()
+      console.log('Service Worker initialization completed')
+      console.log('Final isServiceWorkerReady value:', isServiceWorkerReady.value)
+    } catch (error) {
+      console.error('Failed to initialize Service Worker:', error)
+    }
+  })
 })
 
 onUnmounted(() => {
+  window.removeEventListener('online', updateOnlineStatus)
+  window.removeEventListener('offline', updateOnlineStatus)
   if (statusCheckInterval.value) {
     clearInterval(statusCheckInterval.value)
   }
 })
+
+const updateOnlineStatus = () => {
+  isOnline.value = navigator.onLine
+  console.log('Online status updated:', isOnline.value)
+}
 
 const initializeServiceWorker = async () => {
   if ('serviceWorker' in navigator) {
@@ -109,24 +160,22 @@ const initializeServiceWorker = async () => {
         scope: contextPath
       })
       console.log('Service Worker registered successfully:', registration)
-      
-      console.log('Waiting for registration to become ready...')
-      await registration.ready
-      console.log('Registration is ready')
-      
-      console.log('Waiting for Service Worker to become ready...')
-      await Promise.race([
-        waitForServiceWorkerReady(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Service Worker ready timeout')), 15000))
-      ])
-      console.log('Service Worker is ready')
+
+      await waitForServiceWorkerReady(registration)
       
       isServiceWorkerReady.value = true
+      console.log('isServiceWorkerReady set to true')
       clearError()
+      
+      // 強制的に再評価をトリガー
+      await nextTick()
+      console.log('After nextTick, isServiceWorkerReady:', isServiceWorkerReady.value)
+      
     } catch (error) {
       console.error('Service Worker initialization failed:', error)
-      setError(`Service Workerの初期化に失敗しました: ${error.message}`)
+      setError(`Service Workerの初期化に失敗しました: ${error.message}。ページを再読み込みしてください。`)
       isServiceWorkerReady.value = false
+      showReloadPrompt()
     }
   } else {
     console.warn('This browser does not support Service Workers')
@@ -135,55 +184,74 @@ const initializeServiceWorker = async () => {
   }
 }
 
-const waitForServiceWorkerReady = () => {
-  return new Promise((resolve) => {
-    const checkController = () => {
-      if (navigator.serviceWorker.controller) {
-        console.log('Service Worker is now controlling the page')
+const showReloadPrompt = () => {
+  if (confirm('Service Workerの初期化に失敗しました。ページを再読み込みしますか？')) {
+    window.location.reload()
+  }
+}
+
+const waitForServiceWorkerReady = async (registration) => {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('Service Worker ready timeout'))
+    }, 30000)
+
+    const checkState = () => {
+      console.log('Checking Service Worker state...')
+      console.log('Registration state:', registration.installing, registration.waiting, registration.active)
+      console.log('Controller:', navigator.serviceWorker.controller)
+
+      if (registration.active && navigator.serviceWorker.controller) {
+        console.log('Service Worker is active and controlling the page')
+        clearTimeout(timeout)
         resolve()
       } else {
-        console.log('Service Worker is not yet controlling the page, waiting...')
-        setTimeout(checkController, 1000)
+        console.log('Service Worker is not yet ready, waiting...')
+        setTimeout(checkState, 1000)
       }
     }
 
-    navigator.serviceWorker.ready.then((registration) => {
-      console.log('Service Worker is ready:', registration)
-      checkController()
+    registration.addEventListener('updatefound', () => {
+      console.log('Service Worker update found')
+      checkState()
     })
 
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       console.log('Service Worker controller changed')
-      checkController()
+      checkState()
     })
+
+    checkState()
   })
 }
 
-const checkServiceWorkerStatus = () => {
-  if (navigator.serviceWorker.controller) {
-    console.log('Service Worker controller:', navigator.serviceWorker.controller.state)
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-      console.log('Service Worker registrations:', registrations)
-      if (registrations.length > 0) {
-        console.log('Service Worker is registered. Stopping periodic checks.')
-        clearInterval(statusCheckInterval.value)
-        statusCheckInterval.value = null
-      }
-    })
-  } else {
-    console.log('No Service Worker controller')
-  }
-}
+// const checkServiceWorkerStatus = () => {
+//   if (navigator.serviceWorker.controller) {
+//     console.log('Service Worker controller:', navigator.serviceWorker.controller.state)
+//     navigator.serviceWorker.getRegistrations().then(registrations => {
+//       console.log('Service Worker registrations:', registrations)
+//       if (registrations.length > 0) {
+//         console.log('Service Worker is registered. Stopping periodic checks.')
+//         clearInterval(statusCheckInterval.value)
+//         statusCheckInterval.value = null
+//       }
+//     })
+//   } else {
+//     console.log('No Service Worker controller')
+//   }
+// }
 
 const checkNotificationStatus = async () => {
   if ('Notification' in window) {
     notificationStatus.value = Notification.permission
+    console.log('Notification status checked:', notificationStatus.value)
   }
 }
 
 const checkSubscription = async () => {
   const token = await getStoredToken()
   isSubscribed.value = !!token
+  console.log('Subscription checked, isSubscribed:', isSubscribed.value)
 }
 
 const togglePushNotification = async () => {
@@ -282,11 +350,13 @@ const removeStoredToken = async () => {
 const setError = (message) => {
   hasError.value = true
   errorMessage.value = message
+  console.error('Error set:', message)
 }
 
 const clearError = () => {
   hasError.value = false
   errorMessage.value = ''
+  console.log('Error cleared')
 }
 
 const showInstructions = () => {
@@ -296,5 +366,25 @@ const showInstructions = () => {
     3. サイトの設定（または権限）を見つけます。
     4. 通知の設定を探し、このサイトの権限を「許可」に変更します。
     5. ページを再読み込みしてください。`)
+}
+
+const clearServiceWorkerCache = async () => {
+  if ('caches' in window) {
+    const cacheNames = await caches.keys()
+    await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)))
+    console.log('Service Worker caches cleared')
+  }
+}
+
+const resetServiceWorker = async () => {
+  if ('serviceWorker' in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations()
+    for (let registration of registrations) {
+      await registration.unregister()
+    }
+    await clearServiceWorkerCache()
+    console.log('Service Worker reset complete')
+    window.location.reload()
+  }
 }
 </script>

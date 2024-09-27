@@ -88,6 +88,19 @@ def handle_post(event):
     logger.info(f"DynamoDB response: {response}")
     return create_response(201, 'Weekly report created successfully')
 
+def get_report(member_uuid, week_string):
+    try:
+        response = weekly_reports_table.get_item(
+            Key={
+                'memberUuid': member_uuid,
+                'weekString': week_string
+            }
+        )
+        return response.get('Item')
+    except Exception as e:
+        logger.error(f"Error getting report: {str(e)}", exc_info=True)
+        return None
+
 def handle_put(event):
     report_data = json.loads(event['body'], parse_float=Decimal)
     member_uuid = report_data.get('memberUuid')
