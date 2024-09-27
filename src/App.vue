@@ -147,16 +147,11 @@
               </v-list-item>
               <v-divider></v-divider>
               <v-list-item
-                prepend-icon="mdi-open-in-new"
+                prepend-icon="mdi-comment-quote-outline"
+                title="フィードバック"
+                link
+                @click="openFeedbackForm"
               >
-                <v-list-item-title>
-                  <a
-                    href="https://forms.gle/suRGEcRXE33xvFu19"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="text-decoration-none text-white"
-                  >フィードバック</a>
-                </v-list-item-title>
               </v-list-item>
               <v-list-item
                 prepend-icon="mdi-logout-variant"
@@ -219,6 +214,7 @@ import { ref, provide, reactive, computed, watch, onMounted, defineAsyncComponen
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { useResponsive } from './composables/useResponsive'
+import { feedbackUrl } from './config/environment'
 
 const ConfirmationDialog = defineAsyncComponent(() => import('./components/ConfirmationDialog.vue'))
 const LoadingOverlay = defineAsyncComponent(() => import('./components/LoadingOverlay.vue'))
@@ -345,6 +341,10 @@ const navigateTo = (route, params = {}) => {
   if (isMobile.value) {
     drawer.value = false
   }
+}
+
+const openFeedbackForm = () => {
+  window.open(feedbackUrl, '_blank', 'noopener,noreferrer')
 }
 
 const handleSignOut = async () => {

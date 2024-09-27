@@ -27,11 +27,13 @@ function getRootUrl() {
 export const redirectUrl = getRedirectUrl()
 export const rootUrl = getRootUrl()
 export const contextPath = isProd ? '/quantumbird/' : '/'
+export const feedbackUrl = 'https://forms.gle/suRGEcRXE33xvFu19'
 
 const config = {
   isProd,
   redirectUrl,
-  rootUrl
+  rootUrl,
+  feedbackUrl
 }
 
 export default config

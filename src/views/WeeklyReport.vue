@@ -140,6 +140,7 @@ import { useRouter } from 'vue-router'
 import WeekSelector from '../components/WeekSelector.vue'
 import ReportForm from '../components/ReportForm.vue'
 import { useCalendar } from '../composables/useCalendar'
+import { feedbackUrl } from '../config/environment'
 import { getMember } from '../services/publicService'
 
 const props = defineProps({
@@ -214,7 +215,7 @@ const handleClose = () => {
 }
 
 const openFeedbackForm = () => {
-  window.open('https://forms.gle/suRGEcRXE33xvFu19', '_blank', 'noopener,noreferrer')
+  window.open(feedbackUrl, '_blank', 'noopener,noreferrer')
 }
 
 watch(() => props.weekString, (newWeekParam) => {
