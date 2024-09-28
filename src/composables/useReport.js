@@ -20,10 +20,10 @@ export function useReport() {
 
   const ratingItems = [
     {
-      key: 'achievement',
-      label: 'タスク目標の達成度',
-      itemLabels: ['課題あり', '', '', '', '理想以上'],
-      negative: false
+      key: 'stress',
+      label: 'ストレス度',
+      itemLabels: ['余裕あり', '', '', '', '極限状態'],
+      negative: true
     },
     {
       key: 'disability',
@@ -32,10 +32,10 @@ export function useReport() {
       negative: true
     },
     {
-      key: 'stress',
-      label: 'ストレス度',
-      itemLabels: ['余裕あり', '', '', '', '極限状態'],
-      negative: true
+      key: 'achievement',
+      label: 'タスク目標の達成度',
+      itemLabels: ['課題あり', '', '', '', '理想以上'],
+      negative: false
     }
   ]
 

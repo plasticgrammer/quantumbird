@@ -473,6 +473,7 @@ onMounted(() => {
 <style scoped>
 .widget {
   min-height: 165px;
+  border-radius: 12px;
 }
 
 .calendar-small :deep(.v-date-picker-month) {

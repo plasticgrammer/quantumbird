@@ -141,14 +141,14 @@
                   </v-list-item>
                 </v-list>
                 <div class="mt-auto">
-                  <v-chip color="blue-accent-4" class="pt-1 text-body-1 border-thin" label>
+                  <v-chip color="blue-darken-2" class="text-body-1 border-thin py-1" label>
                     <div v-if="report.overtimeHours == 0" class="text-grey">
-                      <v-icon class="mb-1 mr-1">mdi-clock-outline</v-icon>
+                      <v-icon class="mr-1">mdi-clock-outline</v-icon>
                       <span>残業なし</span>
                     </div>
                     <div v-else>
-                      <v-icon class="mb-1 mr-1">mdi-clock-outline</v-icon>
-                      残業:<span>{{ report.overtimeHours }}時間</span>
+                      <v-icon class="mr-1">mdi-clock-outline</v-icon>
+                      <span>残業:{{ report.overtimeHours }}時間</span>
                     </div>
                   </v-chip>
                 </div>
