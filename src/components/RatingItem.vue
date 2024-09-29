@@ -72,7 +72,7 @@ const activeIconColor = computed(() => {
   const half = (length + 1) / 2
 
   if (modelValue === 0 || modelValue === half) {
-    return '#D8A9E0'
+    return negative ? 'blue-lighten-3' : 'deep-orange-lighten-3' //'#D8A9E0'
   }
 
   const isNegativeSide = negative !== (modelValue < half)

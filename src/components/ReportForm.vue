@@ -57,7 +57,7 @@
                   <v-col cols="12" md="7">
                     <v-textarea
                       v-model="previousWeekReport.issues"
-                      label="現状と問題点"
+                      label="振り返りと課題点"
                       outlined
                       readonly
                       auto-grow
@@ -68,7 +68,7 @@
 
                     <v-textarea
                       v-model="previousWeekReport.improvements"
-                      label="改善したいこと"
+                      label="次の目標、改善したいこと"
                       outlined
                       readonly
                       auto-grow
@@ -223,19 +223,20 @@
         <!-- Issues and improvements section -->
         <v-textarea
           v-model="report.issues"
-          label="現状と問題点"
+          label="振り返りと課題点"
           required
           rows="3"
           auto-grow
           outlined
           clear-icon="mdi-close-circle"
           clearable 
+          counter
           :error-messages="formErrors.issues"
         />
 
         <v-textarea
           v-model="report.improvements"
-          label="改善したいこと（任意）"
+          label="次の目標、改善したいこと"
           rows="1"
           auto-grow
           outlined

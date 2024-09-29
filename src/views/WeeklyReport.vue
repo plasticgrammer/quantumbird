@@ -38,44 +38,11 @@
         class="pe-2"
         prepend-icon="mdi-account-circle"
         variant="flat"
+        @click="openMemberInfoDialog"
       >
         <div class="text-none font-weight-regular">
           {{ member.name }} さん
         </div>
-        <v-dialog
-          activator="parent"
-          max-width="500"
-        >
-          <template #default="{ isActive }">
-            <v-card rounded="lg">
-              <v-card-title class="d-flex justify-space-between align-center">
-                <div class="text-h5 text-medium-emphasis ps-2">
-                  {{ member.name }} さんの情報
-                </div>
-                <v-btn
-                  icon="mdi-close"
-                  variant="text"
-                  @click="isActive.value = false"
-                ></v-btn>
-              </v-card-title>
-              <v-divider class="mb-4"></v-divider>
-              <v-card-text>
-                <div class="text-medium-emphasis mb-4">
-                  週次報告システムへようこそ。<br>こちらでは必要な情報を提供できるよう検討中です。
-                </div>
-              </v-card-text>
-              <v-divider class="mt-2"></v-divider>
-              <v-card-actions class="my-2 d-flex justify-end">
-                <v-btn
-                  class="text-none"
-                  rounded="xl"
-                  text="閉じる"
-                  @click="isActive.value = false"
-                ></v-btn>
-              </v-card-actions>
-            </v-card>
-          </template>
-        </v-dialog>
       </v-btn>
       <v-btn size="small" icon>
         <v-icon icon="mdi-menu-down"></v-icon>
@@ -95,6 +62,12 @@
         </v-menu>
       </v-btn>
     </v-btn-group>
+
+    <MemberInfoDialog
+      v-if="member"
+      ref="memberInfoDialog"
+      v-model:member="member"
+    />
 
     <v-dialog 
       v-model="isReportSubmitted" 
@@ -135,13 +108,15 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import WeekSelector from '../components/WeekSelector.vue'
 import ReportForm from '../components/ReportForm.vue'
 import { useCalendar } from '../composables/useCalendar'
 import { feedbackUrl } from '../config/environment'
 import { getMember } from '../services/publicService'
+
+const MemberInfoDialog = defineAsyncComponent(() => import('../components/MemberInfoDialog.vue'))
 
 const props = defineProps({
   organizationId: {
@@ -165,6 +140,11 @@ const selectedWeek = ref(null)
 const isValidWeek = ref(true)
 const isReportSubmitted = ref(false)
 const member = ref(null)
+const memberInfoDialog = ref(null)
+
+const openMemberInfoDialog = () => {
+  memberInfoDialog.value.openDialog()
+}
 
 const handleWeekSelection = (week) => {
   selectedWeek.value = week

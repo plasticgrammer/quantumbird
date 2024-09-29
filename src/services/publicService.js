@@ -46,6 +46,11 @@ export const getMemberProjects = async (memberUuid) => {
   return result || []
 }
 
+export const updateMemberGoal = async (memberUuid, goal) => {
+  await apiClient.put(`${BASE_PATH}/member`, { memberUuid, goal })
+  return true
+}
+
 export const updateMemberProjects = async (memberUuid, projects) => {
   await apiClient.put(`${BASE_PATH}/member`, { memberUuid, projects })
   return true

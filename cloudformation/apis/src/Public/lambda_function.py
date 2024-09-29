@@ -3,6 +3,7 @@ import logging
 import boto3
 from boto3.dynamodb.conditions import Key
 import os
+import uuid
 import time
 from decimal import Decimal
 from zoneinfo import ZoneInfo
@@ -233,7 +234,9 @@ def handle_put_member(event):
             update_member_projects(data['memberUuid'], data['projects'])
             return create_response(200, {'message': 'Member projects updated successfully'})
         else:
-            item = prepare_member_item(data)
+            member = get_member(data['memberUuid'])
+            member.update(data)
+            item = prepare_member_item(member)
             response = members_table.put_item(Item=item)
             logger.info(f"Member update response: {response}")
             return create_response(200, {'message': 'Member updated successfully'})
@@ -249,6 +252,7 @@ def prepare_member_item(member_data):
         'organizationId': member_data['organizationId'],
         'name': member_data.get('name'),
         'email': member_data.get('email'),
+        'goal': member_data.get('goal'),
         'projects': member_data.get('projects', [])
     }
 
