@@ -393,7 +393,6 @@ const formatChartData = (data, dataKey) => ({
     label: dataset.label,
     data: dataset.data.map(item => item[dataKey]),
     borderColor: getColor(index),
-    tension: 0.1,
     fill: false,
   })),
 })

@@ -48,6 +48,7 @@
         <span
           v-if="shouldShowMonth(day, weekIndex, dayIndex)"
           class="month"
+          :style="{ fontSize: monthFontSize }"
         >
           {{ formatShortMonth(day) }}
         </span>
@@ -58,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref, toRefs } from 'vue'
+import { ref, toRefs, onMounted, onUnmounted, computed } from 'vue'
 import { useCalendar } from '../composables/useCalendar'
 
 const props = defineProps({
@@ -118,6 +119,27 @@ const weekdays = [
 
 // getWeekKey is an alias for getStringFromWeek
 const getWeekKey = getStringFromWeek
+
+const containerWidth = ref(0)
+const monthFontSize = computed(() => {
+  return containerWidth.value >= 600 ? '1em' : '0.75em'
+})
+
+const updateContainerWidth = () => {
+  const container = document.querySelector('.week-row')
+  if (container) {
+    containerWidth.value = container.offsetWidth
+  }
+}
+
+onMounted(() => {
+  updateContainerWidth()
+  window.addEventListener('resize', updateContainerWidth)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateContainerWidth)
+})
 </script>
 
 <style scoped>
@@ -127,7 +149,7 @@ const getWeekKey = getStringFromWeek
   height: 3em;
   transition: all 0.2s ease-out;
   transition-delay: var(--fade-delay, 0s);
-} 
+}
 
 /* 要素が追加される直前の状態（enter-from）と、削除される直後の状態（leave-to） */
 .week-transition-enter-from,
@@ -213,11 +235,11 @@ const getWeekKey = getStringFromWeek
 }
 
 .day.saturday {
-  color: #0000FF;
+  color: #0000ff;
 }
 
 .day.sunday {
-  color: #FF0000;
+  color: #ff0000;
 }
 
 .date {
@@ -228,7 +250,6 @@ const getWeekKey = getStringFromWeek
   position: absolute;
   top: 2px;
   left: 6px;
-  font-size: 0.75em;
   color: navy;
 }
 </style>

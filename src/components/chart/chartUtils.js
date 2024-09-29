@@ -4,6 +4,10 @@ import { Chart, registerables } from 'chart.js'
 // Register all Chart.js components
 Chart.register(...registerables)
 
+// グローバルデフォルト設定
+Chart.defaults.datasets.line.tension = 0.3
+Chart.defaults.datasets.line.pointRadius = 0
+
 export function useChart(chartType, createChartOptions) {
   const chartRef = ref(null)
   const selectedDatasetIndex = ref(null)
