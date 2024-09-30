@@ -56,7 +56,7 @@
         :rail="isRailModeActive"
         permanent
         location="left"
-        :width="235"
+        :width="255"
         color="blue-grey-darken-2"
         class="navigation-drawer d-print-none"
         aria-label="Main navigation"
@@ -79,8 +79,8 @@
             <v-list-item-title>
               <v-img
                 src="@/assets/logo.png"
-                class="cursor-pointer ml-n1"
-                alt="Company logo"
+                class="cursor-pointer mr-2"
+                alt="application logo"
                 role="link"
                 aria-label="Go to Overview"
                 tabindex="0"
@@ -105,12 +105,13 @@
             v-for="item in navigationItems"
             :key="item.value"
             :prepend-icon="item.icon"
-            :title="item.title"
             :value="item.value"
             role="menuitem"
             :aria-label="item.title"
             @click="navigateTo(item.route)"
-          />
+          >
+            <v-list-item-title class="pl-2">{{ item.title }}</v-list-item-title>
+          </v-list-item>
         </v-list>
 
         <!-- User menu -->
@@ -250,7 +251,7 @@ const appStyle = computed(() => ({
 }))
 
 const bgImageStyle = computed(() => ({
-  marginLeft: (isMobile.value || router.currentRoute.value.meta.hideNavigation ? 20 : (isRailModeActive.value ? 56 : 180)) + 'px !important',
+  marginLeft: (isMobile.value || router.currentRoute.value.meta.hideNavigation ? 20 : (isRailModeActive.value ? 56 : 200)) + 'px !important',
   bottom: (isMobile.value ? 30 : -10) + 'px !important'
 }))
 

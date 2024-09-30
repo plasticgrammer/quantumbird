@@ -533,10 +533,13 @@ const handleFeedback = async (memberUuid) => {
 }
 
 const handleApprove = async (memberUuid) => {
-  const confirmed = await showConfirmDialog(
-    '確認',
-    '報告を確認済みとします。よろしいですか？'
-  )
+  let confirmMessage = ''
+  if (newFeedbacks[memberUuid]?.trim() !== '') {
+    confirmMessage = 'フィードバックが未送信です。\nフィードバックの入力を破棄して、報告を確認済みとします。よろしいですか？'
+  } else {
+    confirmMessage = '報告を確認済みとします。よろしいですか？'
+  }
+  const confirmed = await showConfirmDialog('確認', confirmMessage)
   if (!confirmed) {
     return
   }

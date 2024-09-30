@@ -114,10 +114,10 @@
                 <OvertimeChart :chart-data="overtimeData" />
               </template>
               <template #fallback>
-                <div aria-live="polite">残業時間チャートを読み込み中...</div>
+                <div aria-live="polite">読み込み中...</div>
               </template>
             </Suspense>
-            <div v-else aria-live="polite">残業時間データを準備中...</div>
+            <div v-else aria-live="polite">準備中...</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -136,10 +136,10 @@
                 <StressChart :chart-data="stressData" />
               </template>
               <template #fallback>
-                <div aria-live="polite">ストレス評価チャートを読み込み中...</div>
+                <div aria-live="polite">読み込み中...</div>
               </template>
             </Suspense>
-            <div v-else aria-live="polite">ストレス評価データを準備中...</div>
+            <div v-else aria-live="polite">準備中...</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -197,7 +197,7 @@
             </p>
             <p v-if="organization.requestEnabled && nextRequestDateTime" class="text-body-2 mb-1">
               <span class="mr-2">次回報告依頼日時: </span>
-              <span class="text-subtitle-1">{{ formatFullDateTimeJp(nextRequestDateTime) }}</span>
+              <span class="text-subtitle-1">{{ nextRequestDateTimeString }}</span>
             </p>
             <v-btn
               color="black" variant="outlined" class="mt-3"
@@ -314,7 +314,7 @@ const isLoading = ref(true)
 const error = ref(null)
 const isOvertimeDataReady = ref(false)
 const isStressDataReady = ref(false)
-
+const nextRequestDateTimeString = ref('')
 const overtimeData = ref({ labels: [], datasets: [] })
 const stressData = ref({ labels: [], datasets: [] })
 
@@ -371,6 +371,14 @@ const nextRequestDateTime = computed(() => {
   
   return nextDate
 })
+
+const updateNextRequestDateTimeString = async () => {
+  if (nextRequestDateTime.value) {
+    nextRequestDateTimeString.value = formatFullDateTimeJp(nextRequestDateTime.value)
+  } else {
+    nextRequestDateTimeString.value = ''
+  }
+}
 
 const fetchReportStatus = async () => {
   try {
@@ -458,6 +466,7 @@ const handleReload = () => {
 
 // Watchers
 watch(weekIndex, fetchReportStatus)
+watch(nextRequestDateTime, updateNextRequestDateTimeString, { immediate: true })
 
 // Lifecycle hooks
 onMounted(() => {
