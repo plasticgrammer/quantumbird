@@ -534,7 +534,7 @@ const handleFeedback = async (memberUuid) => {
 
 const handleApprove = async (memberUuid) => {
   let confirmMessage = ''
-  if (newFeedbacks[memberUuid]?.trim() !== '') {
+  if (newFeedbacks.value[memberUuid]?.trim() !== '') {
     confirmMessage = 'フィードバックが未送信です。\nフィードバックの入力を破棄して、報告を確認済みとします。よろしいですか？'
   } else {
     confirmMessage = '報告を確認済みとします。よろしいですか？'

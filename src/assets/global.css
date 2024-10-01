@@ -70,6 +70,10 @@ h3 {
 /*
  * app common style
  */
+.logo-font {
+  font-family: 'Agbalumo';
+}
+
 .work-items-list {
   padding-left: 24px;
 }

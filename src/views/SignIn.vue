@@ -5,6 +5,9 @@
       class="mx-auto mt-6"
     >
       <v-card-title class="mt-1 mb-4">
+        <div class="text-center mb-5">
+          <h1 class="logo-font">fluxweek</h1>
+        </div>
         <v-icon size="large" class="mr-1">
           mdi-bird
         </v-icon>
