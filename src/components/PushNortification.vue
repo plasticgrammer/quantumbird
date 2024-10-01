@@ -17,6 +17,7 @@
               :open-on-hover="true"
               :open-on-focus="true"
               :close-delay="3000"
+              class="d-flex flex-row"
             >
               <template #activator="{ props: tooltipProps }">
                 <v-icon
@@ -28,15 +29,21 @@
                   {{ iconName }}
                 </v-icon>
               </template>
-              <div>isServiceWorkerReady: {{ isServiceWorkerReady }}<br>isSubscribed: {{ isSubscribed }}<br>notificationStatus: {{ notificationStatus }}</div>
-              <v-btn
-                v-if="isServiceWorkerReady" 
-                icon="mdi-reload"
-                color="error"
-                density="comfortable"
-                @click="resetServiceWorker"
-              >
-              </v-btn>
+              <div class="d-flex align-center">
+                <div class="mr-2">
+                  isServiceWorkerReady: {{ isServiceWorkerReady }}<br>
+                  isSubscribed: {{ isSubscribed }}<br>
+                  notificationStatus: {{ notificationStatus }}
+                </div>
+                <v-btn
+                  v-if="isServiceWorkerReady" 
+                  icon="mdi-reload"
+                  color="error"
+                  density="comfortable"
+                  @click="resetServiceWorker"
+                >
+                </v-btn>
+              </div>
             </v-tooltip>
             {{ statusText }}
           </template>
