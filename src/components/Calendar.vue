@@ -1,6 +1,6 @@
 <template>
   <v-row
-    class="weekdays"
+    class="weekdays align-center"
     no-gutters
   >
     <v-col class="week-number-header">
@@ -22,7 +22,7 @@
       v-for="(week, weekIndex) in calendarWeeks"
       :key="getWeekKey(week)" 
       no-gutters
-      class="week-row"
+      class="week-row align-center"
       :class="{ 
         'selected': isSelected(week), 
         'hovered': isHovered(week),
@@ -197,7 +197,7 @@ onUnmounted(() => {
   font-weight: bold;
   background-color: #e0e0e0;
   border-right: 1px solid #ccc;
-  font-size: 1.1em;
+  font-size: 1.2em;
   max-width: 80px;
   min-width: 60px;
 }

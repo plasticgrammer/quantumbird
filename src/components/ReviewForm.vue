@@ -327,7 +327,7 @@
           outlined
           @click="handleResend"
         >
-          報告要求を再送する
+          報告要求を送信する
           <v-icon class="ml-1">
             mdi-send
           </v-icon>
@@ -576,9 +576,9 @@ const handleResend = async () => {
   if (confirmed) {
     try {
       await sendRequest(props.organizationId, props.weekString)
-      showNotification('報告要求を再送しました')
+      showNotification('報告要求を送信しました')
     } catch (error) {
-      showError('報告要求の再送に失敗しました', error)
+      showError('報告要求の送信に失敗しました', error)
     }
   }
 }
