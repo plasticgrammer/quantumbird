@@ -189,24 +189,39 @@
               elevation="0"
               variant="flat"
               color="#e6f3ff"
-              title="評価"
             >
-              <template #prepend>
-                <v-icon icon="mdi-poll"></v-icon>
-              </template>
+              <v-card-title class="d-flex justify-space-between align-center">
+                <div class="d-flex align-center">
+                  <v-icon icon="mdi-poll" class="mr-2"></v-icon>
+                  評価
+                </div>
+                <v-btn
+                  v-if="hasLastWeekRating(report)"
+                  color="info"
+                  small
+                  @mousedown="showLastWeekRating(report.memberUuid)"
+                  @mouseup="hideLastWeekRating(report.memberUuid)"
+                  @mouseleave="hideLastWeekRating(report.memberUuid)"
+                  @touchstart.prevent="showLastWeekRating(report.memberUuid)"
+                  @touchend="hideLastWeekRating(report.memberUuid)"
+                >
+                  先週の評価を表示
+                </v-btn>
+              </v-card-title>
               <v-card-text>
                 <rating-item
                   v-for="item in ratingItems"
                   :key="item.key"
-                  v-model="report.rating[item.key]"
+                  :model-value="getCurrentRating(report, item.key)"
                   :label="item.label"
                   :item-labels="item.itemLabels"
                   :negative="item.negative"
                   :readonly="true"
+                  :comparison="getComparisonRating(report, item.key)"
                 />
               </v-card-text>
             </v-card>
-
+            
             <v-row
               v-if="(report.status !== 'approved' && !readonly) || report.feedbacks.length" 
               class="mt-2"
@@ -350,7 +365,7 @@ import { rootUrl } from '../config/environment'
 const RatingItem = defineAsyncComponent(() => import('../components/RatingItem.vue'))
 const ScrollNavigation = defineAsyncComponent(() => import('../components/ScrollNavigation.vue'))
 
-const { formatDateTimeJp, formatDateJp, getWeekFromString } = useCalendar()
+const { formatDateTimeJp, formatDateJp, getWeekFromString, getPreviousWeekString } = useCalendar()
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
 const showNotification = inject('showNotification')
 const showError = inject('showError')
@@ -375,6 +390,8 @@ const reports = ref([])
 const isLoading = ref(true)
 const error = ref(null)
 const newFeedbacks = ref({})
+const lastWeekRatings = ref({})
+const showingLastWeekRating = ref({})
 
 const unconfirmedCount = computed(() => {
   return statusCounts.value['none'] || 0
@@ -420,24 +437,39 @@ const copyShareUrl = async () => {
   }
 }
 
-const fetchReports = async () => {
+const hasLastWeekRating = (report) => {
+  return !!lastWeekRatings.value[report.memberUuid]
+}
+
+const showLastWeekRating = (memberUuid) => {
+  showingLastWeekRating.value[memberUuid] = true
+}
+
+const hideLastWeekRating = (memberUuid) => {
+  showingLastWeekRating.value[memberUuid] = false
+}
+
+const getCurrentRating = (report, key) => {
+  return showingLastWeekRating.value[report.memberUuid] && lastWeekRatings.value[report.memberUuid] 
+    ? lastWeekRatings.value[report.memberUuid][key] 
+    : report.rating[key]
+}
+
+const getComparisonRating = (report, key) => {
+  if (!showingLastWeekRating.value[report.memberUuid] && lastWeekRatings.value[report.memberUuid]) {
+    return lastWeekRatings.value[report.memberUuid][key]
+  }
+  return null
+}
+
+const fetchReports = async (weekString) => {
   try {
-    const fetchedReports = await listReports(props.organizationId, props.weekString)
+    const fetchedReports = await listReports(props.organizationId, weekString)
     if (!fetchedReports) {
       return []
     }
 
-    if (!Array.isArray(fetchedReports)) {
-      console.error('Fetched reports is not an array:', fetchedReports)
-      return []
-    }
-
     return fetchedReports.map(report => {
-      if (!report || typeof report !== 'object') {
-        console.error('Invalid report object:', report)
-        return null
-      }
-
       return {
         ...report,
         projects: Array.isArray(report.projects)
@@ -587,12 +619,24 @@ const fetchData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const [fetchedReports, members] = await Promise.all([fetchReports(), fetchMembers()])
+    const previousWeekString = getPreviousWeekString(props.weekString)
+    const [fetchedReports, fetchedPrevReports, members] = await Promise.all([
+      fetchReports(props.weekString), 
+      fetchReports(previousWeekString), 
+      fetchMembers()
+    ])
     reports.value = processReports(fetchedReports, members)
-    // 各メンバーのフィードバック入力欄を初期化
+    // 各メンバーのフィードバック入力欄とLastWeekRating表示状態を初期化
     reports.value.forEach(report => {
       newFeedbacks.value[report.memberUuid] = ''
+      showingLastWeekRating.value[report.memberUuid] = false
     })
+    lastWeekRatings.value = fetchedPrevReports.reduce((acc, report) => {
+      if (report.rating) {
+        acc[report.memberUuid] = report.rating
+      }
+      return acc
+    }, {})    
   } catch (err) {
     console.error('Error in fetchData:', err)
     error.value = `データの取得に失敗しました: ${err.message}`
