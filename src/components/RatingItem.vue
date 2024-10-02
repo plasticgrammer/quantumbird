@@ -3,30 +3,33 @@
     <v-col cols="8" md="3" class="d-flex align-center">
       <span class="text-body-1">{{ label }}</span>
     </v-col>
-    <v-col cols="4" md="1" class="d-flex justify-center align-center pa-0">
+    <v-col cols="4" md="2" class="d-flex justify-center align-center pa-0">
       <div class="text-h5 mr-5 text-no-wrap">
         {{ modelValue || '-' }}
-        <span class="text-body-1">/ {{ props.itemLabels.length }}</span>
-        <v-tooltip v-if="false && comparison !== null" location="bottom" :close-delay="1000">
-          <template #activator="{ props: tooltipProps }">
-            <v-icon
-              v-bind="tooltipProps"
-              :color="comparisonColor"
-              size="x-small"
-              class="mx-3"
-            >
-              {{ comparisonIcon }}
-            </v-icon>
-          </template>
-          前回評価: {{ comparison }}
-        </v-tooltip>
+        <span class="text-body-1">/ {{ length }}</span>
+        <span v-if="readonly">
+          <v-tooltip v-if="comparison !== null" location="bottom" :close-delay="500">
+            <template #activator="{ props: tooltipProps }">
+              <v-icon
+                v-bind="tooltipProps"
+                :color="comparisonColor"
+                class="fluctuation-icon ml-3"
+                :aria-label="comparisonLabel"
+              >
+                {{ comparisonIcon }}
+              </v-icon>
+            </template>
+            前回評価: {{ comparison }}<br>
+            {{ comparisonLabel }}
+          </v-tooltip>
+        </span>
       </div>
     </v-col>
-    <v-col cols="12" md="8" class="d-flex align-middle pa-2">
+    <v-col cols="12" md="7" class="d-flex align-middle pa-2">
       <v-rating
         :model-value="modelValue"
         :item-labels="itemLabels"
-        :length="itemLabels.length"
+        :length="length"
         :readonly="readonly"
         :empty-icon="'mdi-emoticon-neutral-outline'"
         :full-icon="fullIcon"
@@ -35,6 +38,7 @@
         size="x-large"
         density="compact"
         color="grey-lighten-2"
+        :aria-label="`${label}の評価: ${modelValue}/${length}`"
         @update:model-value="emit('update:modelValue', $event)"
       ></v-rating>
     </v-col>
@@ -42,7 +46,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { useRatingLogic } from '@/composables/useRatingLogic'
 
 const props = defineProps({
   label: {
@@ -71,43 +75,17 @@ const props = defineProps({
   }
 })
 
-const fullIcon = computed(() => {
-  const { itemLabels, modelValue, negative } = props
-  const half = (itemLabels.length + 1) / 2
-  if (modelValue === 0 || modelValue === half) {
-    return 'mdi-emoticon-neutral'
-  } else if (negative ^ (modelValue < half)) {
-    return 'mdi-emoticon-dead'
-  } else {
-    return 'mdi-emoticon'
-  }
-})
-
-const activeIconColor = computed(() => {
-  const { itemLabels, modelValue, negative } = props
-  const length = itemLabels.length
-  const half = (length + 1) / 2
-
-  if (modelValue === 0 || modelValue === half) {
-    return negative ? 'blue-lighten-3' : 'deep-orange-lighten-3' //'#D8A9E0'
-  }
-
-  const isNegativeSide = negative !== (modelValue < half)
-  const baseColor = isNegativeSide ? 'blue' : 'deep-orange'
-  const intensity = modelValue < half ? modelValue : (length + 1) - modelValue
-  return `${baseColor}-lighten-${intensity}`
-})
-
-const comparisonIcon = computed(() => {
-  if (props.comparison === null || props.modelValue === props.comparison) return 'mdi-minus'
-  return props.modelValue > props.comparison ? 'mdi-arrow-up' : 'mdi-arrow-down'
-})
-
-const comparisonColor = computed(() => {
-  return 'blue-grey-lighten-2'
-})
-
 const emit = defineEmits(['update:modelValue'])
+
+const {
+  length,
+  fullIcon,
+  activeIconColor,
+  comparisonIcon,
+  comparisonColor,
+  comparisonLabel
+} = useRatingLogic(props)
+
 </script>
 
 <style>
@@ -117,5 +95,11 @@ const emit = defineEmits(['update:modelValue'])
 
 .v-rating__item .v-btn .v-btn__content i {
   transform: scale(1.2);
+}
+</style>
+
+<style scoped>
+.fluctuation-icon {
+  font-size: .875em;
 }
 </style>

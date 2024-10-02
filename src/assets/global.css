@@ -67,6 +67,10 @@ h3 {
   background-color: transparent;
 }
 
+.v-tooltip>.v-overlay__content {
+  background-color: #546E7A;
+}
+
 /*
  * app common style
  */
