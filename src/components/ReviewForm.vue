@@ -86,21 +86,30 @@
               </v-icon>
               {{ report.name }}
             </span>
-            <v-chip
-              :color="getStatusColor(report.status)"
-              label
-              x-small
-              class="status-chip ml-2"
+            <v-tooltip
+              :disabled="report.status !== 'approved'"
+              location="bottom"
+              :close-delay="1500"
             >
-              <v-icon
-                v-if="report.status === 'approved'"
-                class="mr-1"
-                x-small
-              >
-                mdi-check-circle-outline
-              </v-icon>
-              {{ getStatusText(report.status) }}
-            </v-chip>
+              <template #activator="{ props: tooltipProps }">
+                <v-chip
+                  v-bind="tooltipProps"
+                  :color="getStatusColor(report.status)"
+                  label
+                  x-small
+                  class="status-chip ml-2"
+                >
+                  <v-icon
+                    v-if="report.status === 'approved'"
+                    class="mr-1"
+                  >
+                    mdi-check-circle-outline
+                  </v-icon>
+                  {{ getStatusText(report.status) }}
+                </v-chip>
+              </template>
+              <span>{{ formatDateTimeJp(new Date(report.approvedAt)) }}</span>
+            </v-tooltip>
           </v-card-title>
 
           <v-card-text

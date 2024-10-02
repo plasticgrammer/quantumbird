@@ -261,7 +261,7 @@ def handle_get_stats_data(event):
                     members[member_uuid] = {
                         'data': [{
                             'week': w,
-                            'overtimeHours': 0,
+                            'overtimeHours': None,
                             'achievement': None,
                             'disability': None,
                             'stress': None
