@@ -199,23 +199,11 @@
               variant="flat"
               color="#e6f3ff"
             >
-              <v-card-title class="d-flex justify-space-between align-center">
+              <v-card-title>
                 <div class="d-flex align-center">
                   <v-icon icon="mdi-poll" class="mr-2"></v-icon>
                   評価
                 </div>
-                <v-btn
-                  v-if="hasLastWeekRating(report)"
-                  color="info"
-                  small
-                  @mousedown="showLastWeekRating(report.memberUuid)"
-                  @mouseup="hideLastWeekRating(report.memberUuid)"
-                  @mouseleave="hideLastWeekRating(report.memberUuid)"
-                  @touchstart.prevent="showLastWeekRating(report.memberUuid)"
-                  @touchend="hideLastWeekRating(report.memberUuid)"
-                >
-                  先週の評価を表示
-                </v-btn>
               </v-card-title>
               <v-card-text>
                 <rating-item
@@ -400,7 +388,6 @@ const isLoading = ref(true)
 const error = ref(null)
 const newFeedbacks = ref({})
 const lastWeekRatings = ref({})
-const showingLastWeekRating = ref({})
 
 const unconfirmedCount = computed(() => {
   return statusCounts.value['none'] || 0
@@ -446,26 +433,12 @@ const copyShareUrl = async () => {
   }
 }
 
-const hasLastWeekRating = (report) => {
-  return !!lastWeekRatings.value[report.memberUuid]
-}
-
-const showLastWeekRating = (memberUuid) => {
-  showingLastWeekRating.value[memberUuid] = true
-}
-
-const hideLastWeekRating = (memberUuid) => {
-  showingLastWeekRating.value[memberUuid] = false
-}
-
 const getCurrentRating = (report, key) => {
-  return showingLastWeekRating.value[report.memberUuid] && lastWeekRatings.value[report.memberUuid] 
-    ? lastWeekRatings.value[report.memberUuid][key] 
-    : report.rating[key]
+  return report.rating[key]
 }
 
 const getComparisonRating = (report, key) => {
-  if (!showingLastWeekRating.value[report.memberUuid] && lastWeekRatings.value[report.memberUuid]) {
+  if (lastWeekRatings.value[report.memberUuid]) {
     return lastWeekRatings.value[report.memberUuid][key]
   }
   return null
@@ -638,7 +611,6 @@ const fetchData = async () => {
     // 各メンバーのフィードバック入力欄とLastWeekRating表示状態を初期化
     reports.value.forEach(report => {
       newFeedbacks.value[report.memberUuid] = ''
-      showingLastWeekRating.value[report.memberUuid] = false
     })
     lastWeekRatings.value = fetchedPrevReports.reduce((acc, report) => {
       if (report.rating) {

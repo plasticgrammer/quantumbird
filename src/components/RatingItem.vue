@@ -7,6 +7,19 @@
       <div class="text-h5 mr-5 text-no-wrap">
         {{ modelValue || '-' }}
         <span class="text-body-1">/ {{ props.itemLabels.length }}</span>
+        <v-tooltip v-if="false && comparison !== null" location="bottom" :close-delay="1000">
+          <template #activator="{ props: tooltipProps }">
+            <v-icon
+              v-bind="tooltipProps"
+              :color="comparisonColor"
+              size="x-small"
+              class="mx-3"
+            >
+              {{ comparisonIcon }}
+            </v-icon>
+          </template>
+          前回評価: {{ comparison }}
+        </v-tooltip>
       </div>
     </v-col>
     <v-col cols="12" md="8" class="d-flex align-middle pa-2">
@@ -52,6 +65,10 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  comparison: {
+    type: Number,
+    default: null
+  }
 })
 
 const fullIcon = computed(() => {
@@ -79,6 +96,15 @@ const activeIconColor = computed(() => {
   const baseColor = isNegativeSide ? 'blue' : 'deep-orange'
   const intensity = modelValue < half ? modelValue : (length + 1) - modelValue
   return `${baseColor}-lighten-${intensity}`
+})
+
+const comparisonIcon = computed(() => {
+  if (props.comparison === null || props.modelValue === props.comparison) return 'mdi-minus'
+  return props.modelValue > props.comparison ? 'mdi-arrow-up' : 'mdi-arrow-down'
+})
+
+const comparisonColor = computed(() => {
+  return 'blue-grey-lighten-2'
 })
 
 const emit = defineEmits(['update:modelValue'])
