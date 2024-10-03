@@ -1,6 +1,6 @@
 <template>
   <v-dialog v-model="dialog" max-width="600px">
-    <v-card color="blue-lighten-5">
+    <v-card color="blue-lighten-5" min-height="470px">
       <v-card-text class="pt-0">
         <v-img
           src="@/assets/images/toraneko.png"
@@ -21,7 +21,7 @@
                 <p>準備ができたら「開始」ボタンをクリックしてください。</p>
               </v-card-text>
             </v-card>
-            <v-btn color="secondary" block class="mt-4" @click="startCheck">
+            <v-btn color="secondary" block class="mt-6" @click="startCheck">
               開始
             </v-btn>
           </v-window-item>
@@ -54,10 +54,10 @@
               :value="index + 1"
             >
               <v-card
-                max-width="460px"
+                max-width="500px"
                 class="mx-auto my-1 px-6 bg-plain"
               >
-                <v-card-title class="text-body-1 text-center">{{ question }}</v-card-title>
+                <v-card-title class="text-body-1 text-center">Q{{ index + 1 }}. {{ question }}</v-card-title>
                 <v-card-text class="text-center pb-0">
                   <v-rating 
                     v-model="answers[index]" 
@@ -81,11 +81,11 @@
           <v-card flat>
             <v-card-title class="text-h5">チェック結果</v-card-title>
             <v-card-text>
-              <p class="text-deep-purple-accent-4">あなたのストレスレベル:<span class="text-h5 ml-2"> {{ stressLevel }}</span> / 5</p>
+              <p class="text-deep-purple-accent-4">あなたのストレスレベル:<span class="text-h4 ml-2"> {{ stressLevel }}</span> / 5.0</p>
               <p>{{ getStressLevelDescription() }}</p>
             </v-card-text>
           </v-card>
-          <v-btn color="secondary" block class="mt-4" @click="closeDialog">
+          <v-btn color="secondary" block class="mt-6" @click="closeDialog">
             閉じる
           </v-btn>
         </div>
