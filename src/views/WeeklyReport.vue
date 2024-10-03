@@ -53,6 +53,12 @@
         >
           <v-list density="compact" min-width="210" rounded="lg" slim>
             <v-list-item
+              prepend-icon="mdi-emoticon-outline"
+              title="ストレスチェック"
+              link
+              @click="openStressCheckDialog"
+            ></v-list-item>
+            <v-list-item
               prepend-icon="mdi-comment-quote-outline"
               title="フィードバック"
               link
@@ -67,6 +73,11 @@
       v-if="member"
       ref="memberInfoDialog"
       v-model:member="member"
+    />
+
+    <StressCheckDialog
+      ref="stressCheckDialog"
+      @stress-level-updated="handleStressLevelUpdate"
     />
 
     <v-dialog 
@@ -117,6 +128,7 @@ import { feedbackUrl } from '../config/environment'
 import { getMember } from '../services/publicService'
 
 const MemberInfoDialog = defineAsyncComponent(() => import('../components/MemberInfoDialog.vue'))
+const StressCheckDialog = defineAsyncComponent(() => import('../components/StressCheckDialog.vue'))
 
 const props = defineProps({
   organizationId: {
@@ -141,9 +153,19 @@ const isValidWeek = ref(true)
 const isReportSubmitted = ref(false)
 const member = ref(null)
 const memberInfoDialog = ref(null)
+const stressCheckDialog = ref(null)
 
 const openMemberInfoDialog = () => {
   memberInfoDialog.value.openDialog()
+}
+
+const openStressCheckDialog = () => {
+  stressCheckDialog.value.openDialog()
+}
+
+const handleStressLevelUpdate = (level) => {
+  console.log('Stress level updated:', level)
+  // ここでストレスレベルを保存したり、他の処理を行ったりできます
 }
 
 const handleWeekSelection = (week) => {

@@ -78,6 +78,10 @@ h3 {
   font-family: 'Agbalumo';
 }
 
+.bg-plain {
+  background-color: #f6fbff;
+}
+
 .work-items-list {
   padding-left: 24px;
 }
