@@ -39,13 +39,14 @@
         density="compact"
         color="grey-lighten-2"
         :aria-label="`${label}の評価: ${modelValue}/${length}`"
-        @update:model-value="emit('update:modelValue', $event)"
+        @update:model-value="handleModelValueUpdate"
       ></v-rating>
     </v-col>
   </v-row>
 </template>
 
 <script setup>
+import { watch, onMounted } from 'vue'
 import { useRatingLogic } from '@/composables/useRatingLogic'
 
 const props = defineProps({
@@ -83,9 +84,22 @@ const {
   activeIconColor,
   comparisonIcon,
   comparisonColor,
-  comparisonLabel
+  comparisonLabel,
+  updateActiveIcon
 } = useRatingLogic(props)
 
+const handleModelValueUpdate = (newValue) => {
+  updateActiveIcon(newValue)
+  emit('update:modelValue', newValue)
+}
+
+watch(() => props.modelValue, (newValue) => {
+  updateActiveIcon(newValue)
+})
+
+onMounted(() => {
+  updateActiveIcon(props.modelValue)
+})
 </script>
 
 <style>

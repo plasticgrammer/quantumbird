@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const RATING_CONSTANTS = {
   NEUTRAL_ICON: 'mdi-emoticon-neutral',
@@ -22,27 +22,34 @@ export function useRatingLogic(props) {
   const { modelValue, itemLabels, comparison, negative } = props
   const length = computed(() => itemLabels.length)
   const half = computed(() => (length.value + 1) / 2)
+  
+  const fullIcon = ref(RATING_CONSTANTS.NEUTRAL_ICON)
+  const activeIconColor = ref(props.negative ? RATING_CONSTANTS.NEUTRAL_COLOR_NEGATIVE : RATING_CONSTANTS.NEUTRAL_COLOR_POSITIVE)
 
-  const fullIcon = computed(() => {
-    if (modelValue === 0 || modelValue === half.value) {
+  const calcFullIcon = (value) => {
+    if (value === 0 || value === half.value) {
       return RATING_CONSTANTS.NEUTRAL_ICON
-    } else if (negative ^ (modelValue < half.value)) {
+    } else if (negative ^ (value < half.value)) {
       return RATING_CONSTANTS.NEGATIVE_ICON
     } else {
       return RATING_CONSTANTS.POSITIVE_ICON
     }
-  })
-
-  const activeIconColor = computed(() => {
-    if (modelValue === 0 || modelValue === half.value) {
+  }
+  
+  const calcActiveIconColor = (value) => {
+    if (value === 0 || value === half.value) {
       return negative ? RATING_CONSTANTS.NEUTRAL_COLOR_NEGATIVE : RATING_CONSTANTS.NEUTRAL_COLOR_POSITIVE
     }
-
-    const isNegativeSide = negative !== (modelValue < half.value)
+    const isNegativeSide = negative !== (value < half.value)
     const baseColor = isNegativeSide ? RATING_CONSTANTS.NEGATIVE_BASE_COLOR : RATING_CONSTANTS.POSITIVE_BASE_COLOR
-    const intensity = modelValue < half.value ? modelValue : (length.value + 1) - modelValue
+    const intensity = value < half.value ? value : (length.value + 1) - value
     return `${baseColor}-lighten-${intensity}`
-  })
+  }
+  
+  const updateActiveIcon = (value) => {
+    fullIcon.value = calcFullIcon(value)
+    activeIconColor.value = calcActiveIconColor(value)
+  }
 
   const comparisonIcon = computed(() => {
     if (comparison === null || modelValue === comparison) return RATING_CONSTANTS.NO_CHANGE_ICON
@@ -64,6 +71,7 @@ export function useRatingLogic(props) {
     activeIconColor,
     comparisonIcon,
     comparisonColor,
-    comparisonLabel
+    comparisonLabel,
+    updateActiveIcon
   }
 }
