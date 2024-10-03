@@ -9,15 +9,13 @@
 
     <template v-else>
       <template v-if="isReportConfirmed">
-        <v-alert
-          type="info"
-          color="blue-grey"
-          icon="mdi-information"
-          border="start"
-          elevation="2"
-          class="mt-2 mb-6"
-        >
+        <v-alert type="info" color="blue-grey" border="start" class="mt-2 mb-6">
           この報告は管理者が確認済みです。編集はできません。
+        </v-alert>
+      </template>
+      <template v-else-if="weekString === getCurrentWeekString()">
+        <v-alert type="info" color="blue-grey" border="start" class="mt-2 mb-6">
+          まだ報告期間が終了していません。問題なければ入力を行なってください。
         </v-alert>
       </template>
 
@@ -383,7 +381,7 @@ import { getReport, submitReport, updateReport, getMemberProjects } from '../ser
 import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
 import { useResponsive } from '../composables/useResponsive'
-import ProjectSelector from './ProjectSelector.vue'
+import ProjectSelector from '../components/ProjectSelector.vue'
 import RatingItem from '../components/RatingItem.vue'
 
 const route = useRoute()
@@ -392,7 +390,7 @@ const showNotification = inject('showNotification')
 const showError = inject('showError')
 const showConfirmDialog = inject('showConfirmDialog')
 
-const { formatDateTimeJp, getPreviousWeekString } = useCalendar()
+const { formatDateTimeJp, getPreviousWeekString, getCurrentWeekString } = useCalendar()
 const { initialReport, ratingItems } = useReport()
 
 const props = defineProps({
