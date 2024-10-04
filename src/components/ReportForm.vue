@@ -234,14 +234,14 @@
                 <v-icon
                   v-bind="tooltipProps"
                   color="grey"
-                  icon="mdi-information-slab-box-outline"
+                  icon="mdi-tooltip-question-outline"
                 ></v-icon>
               </template>
               <div class="custom-tooltip">
                 <p><strong>効果的な振り返りのポイント</strong></p>
                 <p>
-                  ・ 主要な成果と進捗を具体的に記述<br>
-                  ・ 直面した課題と得られた学びを説明<br>
+                  ・ 主要な成果と進捗を具体的に記述する<br>
+                  ・ 直面した課題と得られた学びを説明する<br>
                   ・ 可能な限り数値や具体例を含める
                 </p>
               </div>
@@ -263,15 +263,14 @@
                 <v-icon
                   v-bind="tooltipProps"
                   color="grey"
-                  icon="mdi-information-slab-box-outline"
+                  icon="mdi-tooltip-question-outline"
                 ></v-icon>
               </template>
               <div class="custom-tooltip">
                 <p><strong>効果的な目標設定と改善計画</strong></p>
                 <p>
-                  ・ 具体的で測定可能な目標を設定<br>
-                  ・ 優先度の高い改善点を明確に<br>
-                  ・ 目標達成のための具体的な行動計画<br>
+                  ・ 優先度の高い改善点を明確にする<br>
+                  ・ 具体的で測定可能な目標と行動計画を立てる
                 </p>
               </div>
             </v-tooltip>
