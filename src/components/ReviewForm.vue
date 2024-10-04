@@ -179,7 +179,7 @@
                 />
 
                 <div class="text-subtitle-1 font-weight-medium mb-1">
-                  次の目標、改善策
+                  次の目標、改善施策
                 </div>
                 <v-textarea
                   v-model="report.improvements"

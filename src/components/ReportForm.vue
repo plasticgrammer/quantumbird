@@ -65,7 +65,7 @@
 
                     <v-textarea
                       v-model="formState.previousWeekReport.improvements"
-                      label="次の目標、改善策"
+                      label="次の目標、改善施策"
                       outlined
                       readonly
                       auto-grow
@@ -251,7 +251,7 @@
         
         <v-textarea
           v-model="formState.report.improvements"
-          label="次の目標、改善策"
+          label="次の目標、改善施策"
           rows="1"
           auto-grow
           outlined
@@ -267,7 +267,7 @@
                 ></v-icon>
               </template>
               <div class="custom-tooltip">
-                <p><strong>効果的な目標設定と改善計画</strong></p>
+                <p><strong>効果的な目標設定と改善施策</strong></p>
                 <p>
                   ・ 優先度の高い改善点を明確にする<br>
                   ・ 具体的で測定可能な目標と行動計画を立てる
