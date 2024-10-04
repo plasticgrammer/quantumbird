@@ -1,11 +1,10 @@
 <template>
   <v-container class="report-form-container">
-    <template v-if="isLoading">
-      <v-skeleton-loader
-        elevation="4"
-        type="text, sentences@2, actions, chip, divider, list-item-three-line, list-item@2, button"
-      ></v-skeleton-loader>
-    </template>
+    <v-skeleton-loader
+      v-if="formState.isLoading"
+      elevation="4"
+      type="text, sentences@2, actions, chip, divider, list-item-three-line, list-item@2, button"
+    ></v-skeleton-loader>
 
     <template v-else>
       <template v-if="isReportConfirmed">
@@ -15,13 +14,13 @@
       </template>
       <template v-else-if="weekString === getCurrentWeekString()">
         <v-alert type="info" color="blue-grey" border="start" class="mt-2 mb-6">
-          まだ報告期間が終了していません。問題なければ入力を行なってください。
+          報告対象期間が終了していません。問題なければ報告を行ってください。
         </v-alert>
       </template>
 
-      <template v-if="!!previousWeekReport && !isReportConfirmed">
+      <template v-if="!!formState.previousWeekReport && !isReportConfirmed">
         <v-card class="mb-4">
-          <v-expansion-panels v-model="expandedPanel">
+          <v-expansion-panels v-model="formState.expandedPanel">
             <v-expansion-panel>
               <v-expansion-panel-title class="bg-grey-lighten-4">
                 <span class="text-decoration-underline" style="text-underline-offset: 4px">
@@ -35,7 +34,7 @@
                 <v-row>
                   <v-col cols="12" md="5" class="pa-2">
                     <v-list class="bg-transparent custom-list">
-                      <v-list-item v-for="(project, index) in previousWeekReport.projects" :key="index">
+                      <v-list-item v-for="(project, index) in formState.previousWeekReport.projects" :key="index">
                         <v-list-item-title>
                           <v-icon small>
                             mdi-folder-outline
@@ -54,8 +53,8 @@
                   </v-col>
                   <v-col cols="12" md="7">
                     <v-textarea
-                      v-model="previousWeekReport.issues"
-                      label="振り返りと課題点"
+                      v-model="formState.previousWeekReport.issues"
+                      label="振り返り（成果と課題）"
                       outlined
                       readonly
                       auto-grow
@@ -65,8 +64,8 @@
                     />
 
                     <v-textarea
-                      v-model="previousWeekReport.improvements"
-                      label="次の目標、改善したいこと"
+                      v-model="formState.previousWeekReport.improvements"
+                      label="次の目標、改善策"
                       outlined
                       readonly
                       auto-grow
@@ -97,12 +96,12 @@
       <v-form
         ref="reportForm"
         class="report-form mt-3 elevation-6 pa-3 pa-md-5"
-        :class="{ 'form-disabled': isReportConfirmed } " 
+        :class="{ 'form-disabled': isReportConfirmed }"
         @submit.prevent="handleSubmit"
       >
         <!-- Projects section -->
         <v-card
-          v-for="(project, projectIndex) in report.projects"
+          v-for="(project, projectIndex) in formState.report.projects"
           :key="projectIndex" 
           elevation="2"
           class="pb-2 mb-4"
@@ -112,9 +111,9 @@
               <v-col cols="9" md="8" class="pa-1 pa-md-4">
                 <ProjectSelector
                   v-model="project.name"
-                  :project-names="projectNames"
+                  :project-names="formState.projectNames"
                   :member-uuid="props.memberUuid"
-                  :error-messages="projectErrors[projectIndex]?.name"
+                  :error-messages="formState.errors.projects[projectIndex]?.name"
                   @project-list-changed="updateProjectList"
                 />
               </v-col>
@@ -143,7 +142,7 @@
                     class="work-item-input pl-2 pl-md-5"
                     required
                     hide-details="auto"
-                    :error-messages="projectErrors[projectIndex]?.workItems[itemIndex]"
+                    :error-messages="formState.errors.projects[projectIndex]?.workItems[itemIndex]"
                     @keydown="handleKeyDown($event, project, itemIndex)"
                   >
                     <template #append>
@@ -220,28 +219,64 @@
 
         <!-- Issues and improvements section -->
         <v-textarea
-          v-model="report.issues"
-          label="振り返りと課題点"
+          v-model="formState.report.issues"
+          label="振り返り（成果と課題）"
           required
           rows="3"
           auto-grow
           outlined
-          clear-icon="mdi-close-circle"
-          clearable 
           counter
-          :error-messages="formErrors.issues"
-        />
-
+          :error-messages="formState.errors.form.issues"
+        >
+          <template #append-inner>
+            <v-tooltip location="top" max-width="340" :close-delay="500">
+              <template #activator="{ props: tooltipProps }">
+                <v-icon
+                  v-bind="tooltipProps"
+                  color="grey"
+                  icon="mdi-information-slab-box-outline"
+                ></v-icon>
+              </template>
+              <div class="custom-tooltip">
+                <p><strong>効果的な振り返りのポイント</strong></p>
+                <p>
+                  ・ 主要な成果と進捗を具体的に記述<br>
+                  ・ 直面した課題と得られた学びを説明<br>
+                  ・ 可能な限り数値や具体例を含める
+                </p>
+              </div>
+            </v-tooltip>
+          </template>
+        </v-textarea>
+        
         <v-textarea
-          v-model="report.improvements"
-          label="次の目標、改善したいこと"
+          v-model="formState.report.improvements"
+          label="次の目標、改善策"
           rows="1"
           auto-grow
           outlined
-          clear-icon="mdi-close-circle"
-          clearable 
-          :error-messages="formErrors.improvements"
-        />
+          :error-messages="formState.errors.form.improvements"
+        >
+          <template #append-inner>
+            <v-tooltip location="top" max-width="340" :close-delay="500">
+              <template #activator="{ props: tooltipProps }">
+                <v-icon
+                  v-bind="tooltipProps"
+                  color="grey"
+                  icon="mdi-information-slab-box-outline"
+                ></v-icon>
+              </template>
+              <div class="custom-tooltip">
+                <p><strong>効果的な目標設定と改善計画</strong></p>
+                <p>
+                  ・ 具体的で測定可能な目標を設定<br>
+                  ・ 優先度の高い改善点を明確に<br>
+                  ・ 目標達成のための具体的な行動計画<br>
+                </p>
+              </div>
+            </v-tooltip>
+          </template>
+        </v-textarea>
 
         <!-- Rating section -->
         <v-card 
@@ -258,17 +293,17 @@
             <rating-item
               v-for="item in ratingItems"
               :key="item.key"
-              v-model="report.rating[item.key]"
+              v-model="formState.report.rating[item.key]"
               :label="item.label"
               :item-labels="item.itemLabels"
               :negative="item.negative"
             />
           </v-card-text>
         </v-card>
-        <div v-if="formErrors.rating.length" class="v-input--error">
+        <div v-if="formState.errors.form.rating.length" class="v-input--error">
           <div class="v-input__details">
             <div 
-              v-for="(ratingError, index) in formErrors.rating"
+              v-for="(ratingError, index) in formState.errors.form.rating"
               :key="index"
               class="v-messages" 
             >
@@ -280,14 +315,14 @@
         </div>
 
         <v-row 
-          v-if="report.feedbacks && report.feedbacks.length"  
+          v-if="formState.report.feedbacks && formState.report.feedbacks.length"  
           class="mt-2"
         >
           <v-col cols="12">
             <v-alert
               density="compact"
               class="feedback-box px-2 pb-2"
-              :class="{ 'form-disabled': isReportConfirmed } " 
+              :class="{ 'form-disabled': isReportConfirmed }" 
               border="start"
               border-color="orange"
               outlined
@@ -346,7 +381,7 @@
         >
           <v-col cols="12" class="d-flex justify-end">
             <v-btn
-              v-if="!isNew"
+              v-if="!formState.isNew"
               color="grey"
               variant="outlined"
               @click="handleUndo"
@@ -360,12 +395,12 @@
             <v-btn
               color="primary"
               type="submit"
-              :disabled="!isFormValid"
+              :disabled="isSubmitDisabled"
             >
               <v-icon class="mr-1" left>
                 mdi-check
               </v-icon>
-              報告を{{ isNew ? '提出' : '更新' }}する
+              報告を{{ formState.isNew ? '提出' : '更新' }}する
             </v-btn>
           </v-col>
         </v-row>
@@ -375,7 +410,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, reactive, inject, onMounted } from 'vue'
+import { computed, nextTick, reactive, inject, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getReport, submitReport, updateReport, getMemberProjects } from '../services/publicService'
 import { useCalendar } from '../composables/useCalendar'
@@ -410,63 +445,59 @@ const props = defineProps({
 
 const emit = defineEmits(['report-submitted'])
 
-const report = ref(initialReport(props.organizationId, props.memberUuid, props.weekString))
-const workItemRefs = reactive({})
-const projectNames = ref([])
-const isLoading = ref(false)
-const isNew = ref(true)
-const previousWeekReport = ref(null)
-const expandedPanel = ref(null)
-
-const isFormValid = ref(true)
-const formErrors = reactive({
-  issues: [],
-  rating: []
-})
-const projectErrors = reactive([])
-
-const isReportConfirmed = computed(() => {
-  return report.value.status === 'approved'
-})
-
-const sortedFeedbacks = computed(() => {
-  return [...(report.value.feedbacks || [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-})
-
-const isLatestFeedback = (index) => {
-  return index === report.value.feedbacks.length - 1
-}
-
-const formattedOvertimeHours = computed({
-  get: () => {
-    const hours = report.value?.overtimeHours ?? 0
-    return hours.toFixed(1)
-  },
-  set: (value) => {
-    report.value.overtimeHours = parseFloat(value)
+const formState = reactive({
+  report: initialReport(props.organizationId, props.memberUuid, props.weekString),
+  isNew: true,
+  isLoading: false,
+  projectNames: [],
+  previousWeekReport: null,
+  expandedPanel: null,
+  errors: {
+    form: { issues: [], rating: [] },
+    projects: []
   }
 })
 
+const isSubmitDisabled = computed(() => {
+  // 報告が確認済みの場合は常に無効
+  if (isReportConfirmed.value) return true
+
+  // 最低限の必須項目のみをチェック
+  return formState.report.projects.length === 0 || 
+         formState.report.issues.trim() === ''
+})
+
+const workItemRefs = reactive({})
+
+const isReportConfirmed = computed(() => formState.report.status === 'approved')
+const sortedFeedbacks = computed(() => [...(formState.report.feedbacks || [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)))
+const formattedOvertimeHours = computed({
+  get: () => (formState.report.overtimeHours ?? 0).toFixed(1),
+  set: (value) => { formState.report.overtimeHours = parseFloat(value) }
+})
+
+const isLatestFeedback = (index) => index === formState.report.feedbacks.length - 1
+
 const updateProjectList = (newProjectList) => {
-  projectNames.value = newProjectList
+  formState.projectNames = newProjectList
 }
 
 const updateOvertime = (event) => {
   let value = parseFloat(event.target.value)
   if (isNaN(value)) value = 0
   value = Math.max(0, Math.min(99, value))
-  report.value.overtimeHours = parseFloat(value.toFixed(1))
+  formState.report.overtimeHours = parseFloat(value.toFixed(1))
 }
 
 const increaseOvertime = () => {
-  if (report.value.overtimeHours < 99) {
-    report.value.overtimeHours = parseFloat((report.value.overtimeHours + 0.5).toFixed(1))
+  if (formState.report.overtimeHours < 99) {
+    formState.report.overtimeHours = parseFloat((formState.report.overtimeHours + 0.5).toFixed(1))
   }
 }
 
 const decreaseOvertime = () => {
-  if (report.value.overtimeHours > 0) {
-    report.value.overtimeHours = parseFloat((report.value.overtimeHours - 0.5).toFixed(1))
+  if (formState.report.overtimeHours > 0) {
+    formState.report.overtimeHours = parseFloat((formState.report.overtimeHours - 0.5).toFixed(1))
   }
 }
 
@@ -497,7 +528,7 @@ const addWorkItem = async (project) => {
 }
 
 const focusNewWorkItem = (project, newIndex) => {
-  const projectIndex = report.value.projects.indexOf(project)
+  const projectIndex = formState.report.projects.indexOf(project)
   nextTick(() => {
     if (workItemRefs[projectIndex] && workItemRefs[projectIndex][newIndex]) {
       workItemRefs[projectIndex][newIndex].focus()
@@ -506,14 +537,13 @@ const focusNewWorkItem = (project, newIndex) => {
 }
 
 const focusNextField = (project, currentIndex) => {
-  const projectIndex = report.value.projects.indexOf(project)
+  const projectIndex = formState.report.projects.indexOf(project)
   const nextIndex = currentIndex + 1
   
   nextTick(() => {
     if (workItemRefs[projectIndex] && workItemRefs[projectIndex][nextIndex]) {
       workItemRefs[projectIndex][nextIndex].focus()
     } else {
-      // If there's no next work item, focus on the next available input field
       const form = document.querySelector('.report-form')
       const inputs = form.querySelectorAll('input, textarea, select')
       const currentInput = workItemRefs[projectIndex][currentIndex]
@@ -534,10 +564,10 @@ const removeWorkItem = (project, index) => {
 }
 
 const copyFromPreviousWeek = () => {
-  if (previousWeekReport.value) {
-    report.value = {
-      ...report.value,
-      projects: previousWeekReport.value.projects?.map(project => ({
+  if (formState.previousWeekReport) {
+    formState.report = {
+      ...formState.report,
+      projects: formState.previousWeekReport.projects?.map(project => ({
         ...project,
         workItems: project.workItems.map(item => ({ ...item }))
       })) || [],
@@ -546,17 +576,15 @@ const copyFromPreviousWeek = () => {
 }
 
 const addProject = () => {
-  report.value.projects.push({ name: '', workItems: [{ content: '' }] })
+  formState.report.projects.push({ name: '', workItems: [{ content: '' }] })
 }
 
 const removeProject = (projectIndex) => {
-  if (report.value.projects.length === 1) {
-    // 最後のプロジェクトの場合、プロジェクト名をクリアし、1つの空の作業項目を残す
-    report.value.projects[0].name = ''
-    report.value.projects[0].workItems = [{ content: '' }]
+  if (formState.report.projects.length === 1) {
+    formState.report.projects[0].name = ''
+    formState.report.projects[0].workItems = [{ content: '' }]
   } else {
-    // それ以外の場合、通常通りプロジェクトを削除する
-    report.value.projects.splice(projectIndex, 1)
+    formState.report.projects.splice(projectIndex, 1)
   }
 }
 
@@ -568,7 +596,7 @@ const scrollToFeedback = () => {
 }
 
 const checkAndScrollToFeedback = () => {
-  if (route.query.feedback === 'true' && report.value.feedbacks?.length > 0) {
+  if (route.query.feedback === 'true' && formState.report.feedbacks?.length > 0) {
     nextTick(() => {
       scrollToFeedback()
     })
@@ -576,7 +604,7 @@ const checkAndScrollToFeedback = () => {
 }
 
 const fetchReport = async () => {
-  isLoading.value = true
+  formState.isLoading = true
   try {
     const previousWeekString = getPreviousWeekString(props.weekString)
     const [fetchedReport, fetchedPrevReport, memberProjects] = await Promise.all([
@@ -585,10 +613,10 @@ const fetchReport = async () => {
       getMemberProjects(props.memberUuid)
     ])
 
-    isNew.value = true
+    formState.isNew = true
     if (fetchedReport) {
-      isNew.value = false
-      report.value = {
+      formState.isNew = false
+      formState.report = {
         ...fetchedReport,
         issues: fetchedReport.issues || '',
         improvements: fetchedReport.improvements || '',
@@ -596,60 +624,55 @@ const fetchReport = async () => {
       }
     }
     if (fetchedPrevReport) {
-      previousWeekReport.value = {
+      formState.previousWeekReport = {
         ...fetchedPrevReport,
         issues: fetchedPrevReport.issues || ' ',
         improvements: fetchedPrevReport.improvements || ' '
       }
     }
-    projectNames.value = memberProjects
+    formState.projectNames = memberProjects
   } catch (err) {
     showError('報告書またはプロジェクトリストの取得に失敗しました。', err)
   } finally {
-    isLoading.value = false
+    formState.isLoading = false
   }
 }
 
-onMounted(async () => {
-  await fetchReport()
-  checkAndScrollToFeedback()
-})
-
 const validateReport = () => {
   let isValid = true
-  formErrors.issues = []
-  formErrors.rating = []
-  projectErrors.length = 0
+  
+  // エラーメッセージをクリア
+  formState.errors.form.issues = []
+  formState.errors.form.rating = []
+  formState.errors.projects = []
 
-  // Check if there's at least one project
-  if (report.value.projects.length === 0) {
+  if (formState.report.projects.length === 0) {
     isValid = false
+    formState.errors.form.issues.push('少なくとも1つのプロジェクトを追加してください。')
   }
 
-  // Check each project and its work items
-  report.value.projects.forEach((project, index) => {
-    projectErrors[index] = { name: [], workItems: [] }
-    
+  formState.report.projects.forEach((project, index) => {
     if (!project.name.trim()) {
       isValid = false
-      projectErrors[index].name.push('プロジェクト名を入力してください。')
+      formState.errors.projects[index] = formState.errors.projects[index] || {}
+      formState.errors.projects[index].name = ['プロジェクト名を入力してください。']
     }
     const validWorkItems = project.workItems.filter(item => item.content.trim() !== '')
     if (validWorkItems.length === 0) {
       isValid = false
-      projectErrors[index].workItems.push('少なくとも1つの作業内容を追加してください。')
+      formState.errors.projects[index] = formState.errors.projects[index] || {}
+      formState.errors.projects[index].workItems = ['少なくとも1つの作業内容を追加してください。']
     }
   })
 
-  // Check if issues field is not empty
-  if (!report.value.issues.trim()) {
+  if (!formState.report.issues.trim()) {
     isValid = false
-    formErrors.issues.push('現状・問題点は必須入力です。')
+    formState.errors.form.issues.push('振り返り（成果と課題）は必須入力です。')
   }
 
-  if (!report.value.rating?.achievement || !report.value.rating?.disability || !report.value.rating?.stress) {
+  if (!formState.report.rating?.achievement || !formState.report.rating?.disability || !formState.report.rating?.stress) {
     isValid = false
-    formErrors.rating.push('評価は必須入力です。')
+    formState.errors.form.rating.push('評価は必須入力です。')
   }
 
   return isValid
@@ -660,6 +683,43 @@ const removeEmptyWorkItems = (projects) => {
     ...project,
     workItems: project.workItems.filter(item => item.content.trim() !== '')
   }))
+}
+
+const handleSubmit = async () => {
+  if (isReportConfirmed.value) {
+    showNotification('確認済みの報告書は編集できません。', 'info')
+    return
+  }
+
+  const isValid = validateReport()
+
+  if (!isValid) {
+    showError('入力に誤りがあります。赤字箇所を確認してください。')
+    return
+  }
+
+  const cleanedReport = {
+    ...formState.report,
+    projects: removeEmptyWorkItems(formState.report.projects),
+    status: 'pending'
+  }
+
+  const confirmed = await showConfirmDialog(
+    '確認',
+    `この内容で報告を${formState.isNew ? '提出' : '更新'}します。よろしいですか？`
+  )
+  if (!confirmed) return
+
+  try {
+    if (formState.isNew) {
+      await submitReport(cleanedReport)
+    } else {
+      await updateReport(cleanedReport)
+    }
+    emit('report-submitted')
+  } catch (error) {
+    showError('報告の提出に失敗しました。', error)
+  }
 }
 
 const handleUndo = async () => {
@@ -674,50 +734,10 @@ const handleUndo = async () => {
   await fetchReport()
 }
 
-const handleSubmit = async () => {
-  if (isReportConfirmed.value) {
-    showNotification('確認済みの報告書は編集できません。', 'info')
-    return
-  }
-
-  const isValid = validateReport()
-  if (!isValid) {
-    showError('入力に誤りがあります。赤字箇所を確認してください。')
-    return
-  }
-  // Remove empty work items before submission
-  const cleanedReport = {
-    ...report.value,
-    projects: removeEmptyWorkItems(report.value.projects),
-    status: 'pending'
-  }
-
-  // Additional check to ensure each project has at least one work item
-  if (cleanedReport.projects.some(project => project.workItems.length === 0)) {
-    showNotification('各プロジェクトに少なくとも1つの作業内容が必要です。', 'info')
-    return
-  }
-  
-  const confirmed = await showConfirmDialog(
-    '確認',
-    `この内容で報告を${ isNew.value ? '提出' : '更新' }します。よろしいですか？`
-  )
-  if (!confirmed) {
-    return
-  }
-
-  try {
-    if (isNew.value) {
-      await submitReport(cleanedReport)
-    } else {
-      await updateReport(cleanedReport)
-    }
-    emit('report-submitted')
-
-  } catch (error) {
-    showError('報告の提出に失敗しました。', error)
-  }
-}
+onMounted(async () => {
+  await fetchReport()
+  checkAndScrollToFeedback()
+})
 </script>
 
 <style>
@@ -786,5 +806,10 @@ const handleSubmit = async () => {
 .feedback-box {
   border: 1px solid rgb(0 0 0 / 0.2) !important;
   background-color: transparent;
+}
+
+.custom-tooltip p {
+  margin: 5px 0;
+  line-height: 1.6;
 }
 </style>

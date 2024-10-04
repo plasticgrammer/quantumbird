@@ -166,7 +166,7 @@
                 md="7"
               >
                 <div class="text-subtitle-1 font-weight-medium mb-1">
-                  振り返りと課題点
+                  振り返り（成果と課題）
                 </div>
                 <v-textarea
                   v-model="report.issues"
@@ -179,7 +179,7 @@
                 />
 
                 <div class="text-subtitle-1 font-weight-medium mb-1">
-                  次の目標、改善したいこと
+                  次の目標、改善策
                 </div>
                 <v-textarea
                   v-model="report.improvements"
