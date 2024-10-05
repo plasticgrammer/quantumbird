@@ -150,15 +150,7 @@
                   </v-list-item>
                 </v-list>
                 <div class="mt-auto">
-                  <v-chip color="blue-darken-2" class="text-body-1 border-thin py-1" label>
-                    <v-icon class="text-subtitle-1 mr-1">mdi-clock-outline</v-icon>
-                    <div v-if="report.overtimeHours == 0">
-                      <span>残業なし</span>
-                    </div>
-                    <div v-else>
-                      <span>残業:{{ report.overtimeHours }}時間</span>
-                    </div>
-                  </v-chip>
+                  <OvertimeDisplay :overtime-hours="report.overtimeHours" />
                 </div>
               </v-col>
               <v-col
@@ -359,6 +351,7 @@ import { generateToken } from '../services/secureParameterService'
 import { sendRequest } from '../services/sendRequestService'
 import { rootUrl } from '../config/environment'
 
+import OvertimeDisplay from '../components/OvertimeDisplay.vue'
 const RatingItem = defineAsyncComponent(() => import('../components/RatingItem.vue'))
 const ScrollNavigation = defineAsyncComponent(() => import('../components/ScrollNavigation.vue'))
 
