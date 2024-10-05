@@ -49,6 +49,11 @@ const stopLoading = () => {
   }
 }
 
+const isTokenError = (error) => {
+  // If it's a network error, it might be due to CORS
+  return (error.code === 'ERR_NETWORK' && !error.response) || error.response?.status === 401
+}
+
 // Request interceptor
 api.interceptors.request.use(
   async (config) => {
@@ -76,38 +81,44 @@ api.interceptors.response.use(
     stopLoading()
     const originalRequest = error.config
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (isTokenError(error) && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })
         }).then(token => {
           originalRequest.headers['Authorization'] = `Bearer ${token}`
           return api(originalRequest)
-        }).catch(err => {
-          return Promise.reject(err)
-        })
+        }).catch(err => Promise.reject(err))
       }
 
       originalRequest._retry = true
       isRefreshing = true
 
       try {
+        console.log('Attempting to refresh token')
         const newToken = await store.dispatch('auth/fetchAuthToken', { forceRefresh: true })
         if (newToken) {
+          console.log('Token refreshed successfully')
           processQueue(null, newToken)
           originalRequest.headers['Authorization'] = `Bearer ${newToken}`
           return api(originalRequest)
         } else {
-          processQueue(new Error('Failed to refresh token'), null)
+          console.error('Token refresh returned null')
           throw new Error('Failed to refresh token')
         }
       } catch (refreshError) {
+        console.error('Token refresh error:', refreshError)
         processQueue(refreshError, null)
         await store.dispatch('auth/handleAuthFailure')
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false
       }
+    }
+
+    if (error.response && error.response.status === 401) {
+      console.error('Received 401 after token refresh attempt')
+      await store.dispatch('auth/handleAuthFailure')
     }
 
     return Promise.reject(error)

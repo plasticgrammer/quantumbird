@@ -36,13 +36,13 @@ const props = defineProps({
   }
 })
 
-const maxValue = 20
+const maxValue = 15
 
 const getOvertimeColor = computed(() => {
   if (props.overtimeHours === 0) return 'blue'
   if (props.overtimeHours <= maxValue / 2) return 'blue-accent-1'
-  if (props.overtimeHours <= maxValue) return 'amber-accent-4'
-  return 'red'
+  if (props.overtimeHours <= maxValue) return 'warning'
+  return 'error'
 })
 
 const getOvertimePercentage = computed(() => {

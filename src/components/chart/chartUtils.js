@@ -12,35 +12,37 @@ export function useChart(chartType, createChartOptions) {
   const selectedDatasetIndex = ref(null)
 
   const updateDatasetVisibility = (instance) => {
-    if (!instance) {
-      console.error('Instance is undefined in updateDatasetVisibility')
-      return
-    }
-
-    // Check if the instance is a Chart object
-    if (instance instanceof Chart) {
-      if (!instance.data || !Array.isArray(instance.data.datasets)) {
-        console.error('Invalid chart data structure', instance.data)
-        return
+    try {
+      if (!instance) {
+        throw new Error('Instance is undefined in updateDatasetVisibility')
       }
 
-      const datasets = instance.data.datasets
-      datasets.forEach((dataset, index) => {
-        const meta = instance.getDatasetMeta(index)
-        if (meta) {
-          meta.hidden = selectedDatasetIndex.value !== null && index !== selectedDatasetIndex.value
-        } else {
-          console.warn(`Dataset meta not found for index ${index}`)
+      // Check if the instance is a Chart object
+      if (instance instanceof Chart) {
+        if (!instance.data || !Array.isArray(instance.data.datasets)) {
+          throw new Error('Invalid chart data structure')
         }
-      })
-      instance.update('none') // アニメーションなしで更新
-    } else {
-      // Handle Legend click
-      if (instance.chart && instance.chart instanceof Chart) {
-        updateDatasetVisibility(instance.chart)
+
+        const datasets = instance.data.datasets
+        datasets.forEach((dataset, index) => {
+          const meta = instance.getDatasetMeta(index)
+          if (meta) {
+            meta.hidden = selectedDatasetIndex.value !== null && index !== selectedDatasetIndex.value
+          } else {
+            console.warn(`Dataset meta not found for index ${index}`)
+          }
+        })
+        instance.update('none') // アニメーションなしで更新
       } else {
-        console.error('Invalid Legend instance or missing chart reference', instance)
+        // Handle Legend click
+        if (instance.chart && instance.chart instanceof Chart) {
+          updateDatasetVisibility(instance.chart)
+        } else {
+          throw new Error('Invalid Legend instance or missing chart reference')
+        }
       }
+    } catch (error) {
+      console.error('Error in updateDatasetVisibility:', error)
     }
   }
 
@@ -52,9 +54,7 @@ export function useChart(chartType, createChartOptions) {
         ...createChartOptions().plugins?.legend,
         onClick: (event, legendItem, legend) => {
           const index = legendItem.datasetIndex
-
           selectedDatasetIndex.value = selectedDatasetIndex.value === index ? null : index
-
           updateDatasetVisibility(legend)
         }
       }
@@ -62,43 +62,56 @@ export function useChart(chartType, createChartOptions) {
   })
 
   const createChart = (data) => {
-    if (!chartRef.value) {
-      throw new Error('Chart reference is not available')
-    }
+    try {
+      if (!chartRef.value) {
+        throw new Error('Chart reference is not available')
+      }
 
-    const ctx = chartRef.value.getContext('2d')
-    if (!ctx) {
-      throw new Error('Unable to get 2D context from canvas')
-    }
+      const ctx = chartRef.value.getContext('2d')
+      if (!ctx) {
+        throw new Error('Unable to get 2D context from canvas')
+      }
 
-    if (!data || !Array.isArray(data.datasets) || !Array.isArray(data.labels)) {
-      throw new Error('Invalid chart data format')
-    }
+      if (!data || !Array.isArray(data.datasets) || !Array.isArray(data.labels)) {
+        throw new Error('Invalid chart data format')
+      }
 
-    return new Chart(ctx, {
-      type: chartType,
-      data: data,
-      options: getChartOptions()
-    })
+      const chartInstance = new Chart(ctx, {
+        type: chartType,
+        data: data,
+        options: getChartOptions()
+      })
+      return chartInstance
+
+    } catch (error) {
+      console.error('Error creating chart:', error)
+      return null
+    }
   }
 
   const updateChart = (chartInstance, data) => {
-    if (!chartInstance || !(chartInstance instanceof Chart)) {
-      throw new Error('Invalid Chart instance')
+    try {
+      if (!chartInstance || !(chartInstance instanceof Chart)) {
+        throw new Error('Invalid Chart instance')
+      }
+
+      if (!data || !Array.isArray(data.datasets) || !Array.isArray(data.labels)) {
+        throw new Error('Invalid chart data format')
+      }
+
+      chartInstance.data = data
+      chartInstance.options = getChartOptions()
+
+      if (selectedDatasetIndex.value !== null && selectedDatasetIndex.value >= data.datasets.length) {
+        selectedDatasetIndex.value = null
+      }
+
+      updateDatasetVisibility(chartInstance)
+      chartInstance.update() // 明示的な更新呼び出し
+
+    } catch (error) {
+      console.error('Error updating chart:', error)
     }
-
-    if (!data || !Array.isArray(data.datasets) || !Array.isArray(data.labels)) {
-      throw new Error('Invalid chart data format')
-    }
-
-    chartInstance.data = data
-    chartInstance.options = getChartOptions()
-
-    if (selectedDatasetIndex.value !== null && selectedDatasetIndex.value >= data.datasets.length) {
-      selectedDatasetIndex.value = null
-    }
-
-    updateDatasetVisibility(chartInstance)
   }
 
   return {
