@@ -13,7 +13,7 @@
         </v-alert>
       </template>
       <template v-else-if="weekString === getCurrentWeekString()">
-        <v-alert type="info" color="blue-grey" border="start" class="mt-2 mb-6">
+        <v-alert type="info" color="light-blue" border="start" class="mt-2 mb-6" closable>
           報告対象期間が終了していません。問題なければ報告を行ってください。
         </v-alert>
       </template>

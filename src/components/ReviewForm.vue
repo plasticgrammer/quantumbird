@@ -75,7 +75,7 @@
           :key="report.memberUuid"
           :ref="el => { if (el) reportRefs[index] = el }"
           :class="{ 'approved-card': report.status === 'approved', 'none-card': report.status === 'none' }"
-          class="default-card cursor-default mt-2"
+          class="default-card cursor-default mt-2 pb-1"
           hover
           outlined
         > 
@@ -149,7 +149,7 @@
                     </v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
-                <div class="mt-auto">
+                <div v-if="report.overtimeHours >= 0" class="mt-auto">
                   <OvertimeDisplay :overtime-hours="report.overtimeHours" />
                 </div>
               </v-col>
@@ -228,15 +228,13 @@
                           mdi-comment-text-outline
                         </v-icon>
                         フィードバック
-                        <v-chip
-                          v-if="report.feedbacks.length > 0"
-                          class="ml-2 font-weight-bold"
-                          color="orange"
-                          size="small"
-                          outlined
-                        >
-                          {{ report.feedbacks.length }}
-                        </v-chip>
+                        <v-badge
+                          v-if="report.feedbacks.length"
+                          color="orange-darken-1"
+                          class="ml-1"
+                          :content="report.feedbacks.length"
+                          inline
+                        ></v-badge>
                       </v-alert-title>
                     </v-expansion-panel-title>
                     <v-expansion-panel-text>

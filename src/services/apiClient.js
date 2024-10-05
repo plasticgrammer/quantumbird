@@ -1,6 +1,5 @@
 import axios from 'axios'
 import store from '@/store'
-import router from '@/router'
 
 const stage = process.env.VUE_APP_STAGE || 'dev'
 const API_ENDPOINT = `${process.env.VUE_APP_API_ENDPOINT}/${stage}`
@@ -25,6 +24,20 @@ const startLoading = () => {
       store.dispatch('setLoading', true)
     }, LOADING_DELAY)
   }
+}
+
+let isRefreshing = false
+let failedQueue = []
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  failedQueue = []
 }
 
 const stopLoading = () => {
@@ -64,22 +77,36 @@ api.interceptors.response.use(
     const originalRequest = error.config
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then(token => {
+          originalRequest.headers['Authorization'] = `Bearer ${token}`
+          return api(originalRequest)
+        }).catch(err => {
+          return Promise.reject(err)
+        })
+      }
+
       originalRequest._retry = true
+      isRefreshing = true
 
       try {
-        // トークンを強制的に更新
         const newToken = await store.dispatch('auth/fetchAuthToken', { forceRefresh: true })
         if (newToken) {
+          processQueue(null, newToken)
           originalRequest.headers['Authorization'] = `Bearer ${newToken}`
           return api(originalRequest)
         } else {
+          processQueue(new Error('Failed to refresh token'), null)
           throw new Error('Failed to refresh token')
         }
       } catch (refreshError) {
-        // 認証失敗時の処理
+        processQueue(refreshError, null)
         await store.dispatch('auth/handleAuthFailure')
-        router.push('/login')
         return Promise.reject(refreshError)
+      } finally {
+        isRefreshing = false
       }
     }
 

@@ -74,7 +74,7 @@ export default {
       console.log('Authentication failure, signing out...')
       await dispatch('signOut')
       // ルーターを使用してログインページにリダイレクト
-      this.$router.push('/login')
+      this.$router.push('/signin')
     },
 
     async signOut({ commit }) {
