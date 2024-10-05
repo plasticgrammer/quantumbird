@@ -19,7 +19,7 @@
       </template>
 
       <template v-if="!!formState.previousWeekReport && !isReportConfirmed">
-        <v-card class="mb-4">
+        <v-card class="rounded-lg mb-4">
           <v-expansion-panels v-model="formState.expandedPanel">
             <v-expansion-panel>
               <v-expansion-panel-title class="bg-grey-lighten-4">
@@ -30,7 +30,7 @@
                   <v-icon icon="mdi-chevron-down"></v-icon>
                 </template>
               </v-expansion-panel-title>
-              <v-expansion-panel-text>
+              <v-expansion-panel-text class="bg-plain">
                 <v-row>
                   <v-col cols="12" md="5" class="pa-2">
                     <v-list class="bg-transparent custom-list">
@@ -95,7 +95,7 @@
 
       <v-form
         ref="reportForm"
-        class="report-form mt-3 elevation-6 pa-3 pa-md-5"
+        class="bg-plain rounded-lg mt-3 elevation-6 pa-3 pa-md-5"
         :class="{ 'form-disabled': isReportConfirmed }"
         @submit.prevent="handleSubmit"
       >
@@ -232,9 +232,11 @@
             <v-tooltip location="top" max-width="340" :close-delay="500">
               <template #activator="{ props: tooltipProps }">
                 <v-icon
+                  v-if="!isMobile"
                   v-bind="tooltipProps"
                   color="grey"
                   icon="mdi-tooltip-question-outline"
+                  class="cursor-pointer"
                 ></v-icon>
               </template>
               <div class="custom-tooltip">
@@ -261,9 +263,11 @@
             <v-tooltip location="top" max-width="340" :close-delay="500">
               <template #activator="{ props: tooltipProps }">
                 <v-icon
+                  v-if="!isMobile"
                   v-bind="tooltipProps"
                   color="grey"
                   icon="mdi-tooltip-question-outline"
+                  class="cursor-pointer"
                 ></v-icon>
               </template>
               <div class="custom-tooltip">
@@ -756,11 +760,6 @@ onMounted(async () => {
 
 .project-list-item:hover {
   background-color: rgba(179, 215, 255, 0.6) !important;
-}
-
-.report-form {
-  background-color: #f6fbff;
-  border-radius: 8px;
 }
 
 .project-delete-btn {

@@ -117,16 +117,7 @@ watch(isServiceWorkerReady, async (newValue) => {
   if (newValue) {
     await checkNotificationStatus()
     await checkSubscription()
-    // 強制的に再描画をトリガー
     await nextTick()
-  }
-})
-
-watch(isServiceWorkerReady, (newValue) => {
-  console.log('isServiceWorkerReady changed:', newValue)
-  if (newValue) {
-    checkNotificationStatus()
-    checkSubscription()
   }
 })
 
@@ -174,14 +165,14 @@ const initializeServiceWorker = async () => {
       console.log('isServiceWorkerReady set to true')
       clearError()
       
-      // 強制的に再評価をトリガー
       await nextTick()
       console.log('After nextTick, isServiceWorkerReady:', isServiceWorkerReady.value)
       
     } catch (error) {
       console.error('Service Worker initialization failed:', error)
-      setError(`Service Workerの初期化に失敗しました: ${error.message}。ページを再読み込みしてください。`)
+      setError(`Service Workerの初期化に失敗しました: ${error.message}`)
       isServiceWorkerReady.value = false
+      await nextTick()
       showReloadPrompt()
     }
   } else {
@@ -192,8 +183,12 @@ const initializeServiceWorker = async () => {
 }
 
 const showReloadPrompt = () => {
-  if (confirm('Service Workerの初期化に失敗しました。ページを再読み込みしますか？')) {
-    window.location.reload()
+  // ユーザーに一度だけ再読み込みを確認する
+  if (!window.hasShownReloadPrompt) {
+    window.hasShownReloadPrompt = true
+    if (confirm('Service Workerの初期化に失敗しました。ページを再読み込みしますか？')) {
+      window.location.reload()
+    }
   }
 }
 
@@ -204,49 +199,24 @@ const waitForServiceWorkerReady = async (registration) => {
     }, 30000)
 
     const checkState = () => {
-      console.log('Checking Service Worker state...')
-      console.log('Registration state:', registration.installing, registration.waiting, registration.active)
-      console.log('Controller:', navigator.serviceWorker.controller)
-
       if (registration.active && navigator.serviceWorker.controller) {
-        console.log('Service Worker is active and controlling the page')
         clearTimeout(timeout)
         resolve()
       } else {
-        console.log('Service Worker is not yet ready, waiting...')
         setTimeout(checkState, 1000)
       }
     }
 
-    registration.addEventListener('updatefound', () => {
-      console.log('Service Worker update found')
+    if (registration.active && navigator.serviceWorker.controller) {
+      clearTimeout(timeout)
+      resolve()
+    } else {
+      registration.addEventListener('updatefound', checkState)
+      navigator.serviceWorker.addEventListener('controllerchange', checkState)
       checkState()
-    })
-
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      console.log('Service Worker controller changed')
-      checkState()
-    })
-
-    checkState()
+    }
   })
 }
-
-// const checkServiceWorkerStatus = () => {
-//   if (navigator.serviceWorker.controller) {
-//     console.log('Service Worker controller:', navigator.serviceWorker.controller.state)
-//     navigator.serviceWorker.getRegistrations().then(registrations => {
-//       console.log('Service Worker registrations:', registrations)
-//       if (registrations.length > 0) {
-//         console.log('Service Worker is registered. Stopping periodic checks.')
-//         clearInterval(statusCheckInterval.value)
-//         statusCheckInterval.value = null
-//       }
-//     })
-//   } else {
-//     console.log('No Service Worker controller')
-//   }
-// }
 
 const checkNotificationStatus = async () => {
   if ('Notification' in window) {

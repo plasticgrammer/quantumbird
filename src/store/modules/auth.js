@@ -53,15 +53,14 @@ export default {
       }
     },
 
-    async fetchAuthToken({ commit, dispatch }) {
+    async fetchAuthToken({ commit, dispatch }, { forceRefresh = false } = {}) {
       try {
-        const { tokens } = await fetchAuthSession()
+        const { tokens } = await fetchAuthSession({ forceRefresh })
         if (tokens && tokens.idToken) {
           const token = tokens.idToken.toString()
           commit('setToken', token)
           return token
         }
-        // トークンが取得できなかった場合
         await dispatch('handleAuthFailure')
         return null
       } catch (error) {
@@ -74,7 +73,8 @@ export default {
     async handleAuthFailure({ dispatch }) {
       console.log('Authentication failure, signing out...')
       await dispatch('signOut')
-      // ここでルーターを使用してログインページにリダイレクトするなどの処理を追加できます
+      // ルーターを使用してログインページにリダイレクト
+      this.$router.push('/login')
     },
 
     async signOut({ commit }) {

@@ -9,23 +9,21 @@
           :aspect-ratio="1"
         ></v-img>
 
-        <v-window v-if="currentStep == 0">
+        <div v-if="currentStep == 0">
           <!-- 初期説明画面 -->
-          <v-window-item value="intro">
-            <v-card flat class="mx-auto my-1 px-6 bg-plain">
-              <v-card-title class="text-h5 text-center">ストレスチェックへようこそ</v-card-title>
-              <v-card-text>
-                <p>このチェックは、あなたの現在のストレスレベルを評価するためのものです。</p>
-                <p>システムに回答を保持することはありません。</p>
-                <p>１０の質問に対して [いいえ] から [はい] の５段階で評価してください。</p>
-                <p>準備ができたら「開始」ボタンをクリックしてください。</p>
-              </v-card-text>
-            </v-card>
-            <v-btn color="secondary" block class="mt-6" @click="startCheck">
-              開始
-            </v-btn>
-          </v-window-item>
-        </v-window>
+          <v-card flat class="bg-plain">
+            <v-card-title class="text-h5 text-center">ストレスチェックへようこそ</v-card-title>
+            <v-card-text>
+              <p>このチェックは、あなたの現在のストレスレベルを評価するためのものです。</p>
+              <p>システムに回答を保持することはありません。</p>
+              <p>１０の質問に対して [いいえ] から [はい] の５段階で評価してください。</p>
+              <p>準備ができたら「開始」ボタンをクリックしてください。</p>
+            </v-card-text>
+          </v-card>
+          <v-btn color="secondary" block class="mt-6" @click="startCheck">
+            開始
+          </v-btn>
+        </div>
 
         <div v-if="currentStep > 0 && !showResult">
           <div class="d-flex align-center mb-5">

@@ -1,5 +1,6 @@
 import axios from 'axios'
 import store from '@/store'
+import router from '@/router'
 
 const stage = process.env.VUE_APP_STAGE || 'dev'
 const API_ENDPOINT = `${process.env.VUE_APP_API_ENDPOINT}/${stage}`
@@ -39,9 +40,9 @@ const stopLoading = () => {
 
 // Request interceptor
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
     startLoading()
-    const token = store.getters['auth/token']
+    const token = await store.dispatch('auth/fetchAuthToken')
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`
     }
@@ -65,7 +66,7 @@ const processQueue = (error, token = null) => {
   failedQueue = []
 }
 
-// Response interceptor
+// Response interceptor// Response interceptor
 api.interceptors.response.use(
   (response) => {
     stopLoading()
@@ -75,15 +76,6 @@ api.interceptors.response.use(
     stopLoading()
     const originalRequest = error.config
 
-    // ネットワークエラーに対する再試行ロジック
-    if (!error.response) {
-      if (!originalRequest._networkRetry) {
-        originalRequest._networkRetry = true
-        console.log('Network error detected. Retrying in 1 second...')
-        return new Promise(resolve => setTimeout(() => resolve(api(originalRequest)), 1000))
-      }
-    }
-    
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -98,27 +90,24 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const newToken = await store.dispatch('auth/fetchAuthToken')
-        processQueue(null, newToken)
-        originalRequest.headers['Authorization'] = `Bearer ${newToken}`
-        return api(originalRequest)
+        const newToken = await store.dispatch('auth/fetchAuthToken', { forceRefresh: true })
+        if (newToken) {
+          processQueue(null, newToken)
+          originalRequest.headers['Authorization'] = `Bearer ${newToken}`
+          return api(originalRequest)
+        } else {
+          throw new Error('Failed to refresh token')
+        }
       } catch (refreshError) {
         processQueue(refreshError, null)
-        console.error('Token refresh failed:', refreshError)
-        store.dispatch('auth/signOut')
+        await store.dispatch('auth/handleAuthFailure')
+        router.push('/login') // ログインページにリダイレクト
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false
       }
     }
 
-    console.error(`Error in API call (${originalRequest.method} ${originalRequest.url}):`, error)
-    console.error('Error details:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      config: error.config,
-    })
     return Promise.reject(error)
   }
 )
@@ -142,12 +131,7 @@ export const callApi = async (method, path, data = null, queryParams = null, opt
     const response = await api(config)
     return response.data
   } catch (error) {
-    if (axios.isCancel(error)) {
-      console.log('Request canceled:', error.message)
-    } else {
-      // Error is already logged in the response interceptor
-      // You can implement additional custom error handling here if needed
-    }
+    console.error(`Error in API call (${method} ${path}):`, error)
     throw error
   }
 }
