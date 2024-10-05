@@ -216,86 +216,97 @@
               class="mt-2"
             >
               <v-col cols="12">
-                <v-alert
-                  density="compact"
-                  class="feedback-box px-2"
-                  border="start"
-                  border-color="orange"
-                  outlined
-                  dense
+                <v-expansion-panels 
+                  v-model="expandedPanels[report.memberUuid]" 
+                  elevation="2"
+                  eager
                 >
-                  <v-alert-title class="pl-3 pb-2 text-body-1">
-                    <v-icon class="mr-2" color="orange" size="large">
-                      mdi-comment-text-outline
-                    </v-icon>
-                    フィードバック
-                  </v-alert-title>
-                  <div
-                    v-for="(feedback, feedbackIndex) in report.feedbacks"
-                    :key="feedbackIndex"
-                    class="pa-0"
-                  >
-                    <v-textarea
-                      v-model="feedback.content"
-                      :label="`${ formatDateTimeJp(new Date(feedback.createdAt)) }`"
-                      readonly
-                      rows="1"
-                      auto-grow
-                      hide-details
-                      density="comfortable"
-                      class="borderless-textarea"
-                    >
-                    </v-textarea>
-                    <v-textarea
-                      v-if="!!feedback.replyComment"
-                      v-model="feedback.replyComment"
-                      label="返信コメント"
-                      readonly
-                      rows="1"
-                      auto-grow
-                      hide-details
-                      density="comfortable"
-                      class="ml-4 mt-n2 borderless-textarea"
-                    >
-                      <template #prepend-inner>
-                        <v-icon class="mr-1" color="grey-darken-3" size="large">
-                          mdi-comment-account-outline
+                  <v-expansion-panel>
+                    <v-expansion-panel-title class="bg-plain">
+                      <v-alert-title class="text-body-1 d-flex align-center">
+                        <v-icon class="mr-2" color="orange">
+                          mdi-comment-text-outline
                         </v-icon>
-                      </template>
-                    </v-textarea>
-                  </div>
+                        フィードバック
+                        <v-chip
+                          v-if="report.feedbacks.length > 0"
+                          class="ml-2 font-weight-bold"
+                          color="orange"
+                          size="small"
+                          outlined
+                        >
+                          {{ report.feedbacks.length }}
+                        </v-chip>
+                      </v-alert-title>
+                    </v-expansion-panel-title>
+                    <v-expansion-panel-text>
+                      <div
+                        v-for="(feedback, feedbackIndex) in report.feedbacks"
+                        :key="feedbackIndex"
+                        class="pa-0"
+                      >
+                        <v-textarea
+                          v-model="feedback.content"
+                          :label="`${formatDateTimeJp(new Date(feedback.createdAt))}`"
+                          readonly
+                          rows="1"
+                          auto-grow
+                          hide-details
+                          density="comfortable"
+                          class="borderless-textarea"
+                        >
+                        </v-textarea>
+                        <v-textarea
+                          v-if="!!feedback.replyComment"
+                          v-model="feedback.replyComment"
+                          label="返信コメント"
+                          readonly
+                          rows="1"
+                          auto-grow
+                          hide-details
+                          density="comfortable"
+                          class="ml-4 mt-n2 borderless-textarea"
+                        >
+                          <template #prepend-inner>
+                            <v-icon class="mr-1" color="grey-darken-3" size="large">
+                              mdi-comment-account-outline
+                            </v-icon>
+                          </template>
+                        </v-textarea>
+                      </div>
 
-                  <div 
-                    v-if="report.status !== 'approved' && !readonly"
-                    class="pl-4 pr-3 py-1 d-print-none"
-                  >
-                    <v-textarea
-                      v-model="newFeedbacks[report.memberUuid]"
-                      placeholder="新しいフィードバックを入力..."
-                      outlined
-                      dense
-                      clear-icon="mdi-close-circle"
-                      clearable 
-                      hide-details="auto"
-                      rows="2"
-                      auto-grow
-                    >
-                    </v-textarea>
-                    <v-btn
-                      color="warning"
-                      variant="elevated" 
-                      :disabled="!newFeedbacks[report.memberUuid]?.trim()"
-                      class="mt-3"
-                      outlined
-                      @click="handleFeedback(report.memberUuid)"
-                    >
-                      <v-icon class="mr-1">
-                        mdi-reply
-                      </v-icon>
-                      フィードバック送信
-                    </v-btn>
-                  </div>
-                </v-alert>
+                      <div 
+                        v-if="report.status !== 'approved' && !readonly"
+                        class="mt-4"
+                      >
+                        <v-textarea
+                          v-model="newFeedbacks[report.memberUuid]"
+                          placeholder="新しいフィードバックを入力..."
+                          outlined
+                          dense
+                          clear-icon="mdi-close-circle"
+                          clearable 
+                          hide-details="auto"
+                          rows="2"
+                          auto-grow
+                        >
+                        </v-textarea>
+                        <v-btn
+                          color="warning"
+                          variant="elevated" 
+                          :disabled="!newFeedbacks[report.memberUuid]?.trim()"
+                          class="mt-3 mb-1"
+                          @click="handleFeedback(report.memberUuid)"
+                        >
+                          <v-icon class="mr-1">
+                            mdi-reply
+                          </v-icon>
+                          フィードバック送信
+                        </v-btn>
+                      </div>
+                    </v-expansion-panel-text>
+                  </v-expansion-panel>
+                </v-expansion-panels>
               </v-col>
             </v-row>
           </v-card-text>
@@ -381,9 +392,17 @@ const isLoading = ref(true)
 const error = ref(null)
 const newFeedbacks = ref({})
 const lastWeekRatings = ref({})
+const expandedPanels = ref({})
 
 const unconfirmedCount = computed(() => {
   return statusCounts.value['none'] || 0
+})
+
+const shouldExpandPanel = computed(() => {
+  return reports.value.reduce((acc, report) => {
+    acc[report.memberUuid] = report.feedbacks.length > 0 ? [0] : []
+    return acc
+  }, {})
 })
 
 const selectedStatus = ref('all')
@@ -392,6 +411,10 @@ watchEffect(() => {
   if (selectedStatus.value === undefined) {
     selectedStatus.value = 'all'
   }
+})
+
+watchEffect(() => {
+  expandedPanels.value = { ...shouldExpandPanel.value }
 })
 
 // メモ化されたステータスカウント
@@ -671,5 +694,19 @@ onMounted(() => {
 
 .v-list-item__subtitle {
   font-size: 0.75rem !important;
+}
+
+.v-expansion-panel-title {
+  padding: 4px 16px;
+}
+
+.v-expansion-panel--active > .v-expansion-panel-title:not(.v-expansion-panel-title--static) {
+  min-height: auto !important;
+  padding-top: 13px !important;
+  padding-bottom: 12px !important;
+}
+
+.borderless-textarea :deep(.v-field__outline) {
+  display: none;
 }
 </style>

@@ -17,8 +17,6 @@ const api = axios.create({
 
 let activeRequests = 0
 let loadingTimeout = null
-let isRefreshing = false
-let failedQueue = []
 
 const startLoading = () => {
   activeRequests++
@@ -55,18 +53,7 @@ api.interceptors.request.use(
   }
 )
 
-const processQueue = (error, token = null) => {
-  failedQueue.forEach(prom => {
-    if (error) {
-      prom.reject(error)
-    } else {
-      prom.resolve(token)
-    }
-  })
-  failedQueue = []
-}
-
-// Response interceptor// Response interceptor
+// Response interceptor
 api.interceptors.response.use(
   (response) => {
     stopLoading()
@@ -77,34 +64,22 @@ api.interceptors.response.use(
     const originalRequest = error.config
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject })
-        }).then(token => {
-          originalRequest.headers['Authorization'] = `Bearer ${token}`
-          return api(originalRequest)
-        }).catch(err => Promise.reject(err))
-      }
-
       originalRequest._retry = true
-      isRefreshing = true
 
       try {
+        // トークンを強制的に更新
         const newToken = await store.dispatch('auth/fetchAuthToken', { forceRefresh: true })
         if (newToken) {
-          processQueue(null, newToken)
           originalRequest.headers['Authorization'] = `Bearer ${newToken}`
           return api(originalRequest)
         } else {
           throw new Error('Failed to refresh token')
         }
       } catch (refreshError) {
-        processQueue(refreshError, null)
+        // 認証失敗時の処理
         await store.dispatch('auth/handleAuthFailure')
-        router.push('/login') // ログインページにリダイレクト
+        router.push('/login')
         return Promise.reject(refreshError)
-      } finally {
-        isRefreshing = false
       }
     }
 
