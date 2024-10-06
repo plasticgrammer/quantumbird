@@ -63,6 +63,7 @@
       <v-col v-for="i in 3" :key="i" cols="12">
         <v-skeleton-loader
           type="avatar, text, ossein, paragraph, text, actions"
+          class="rounded-lg"
           :loading="true"
           elevation="4"
         ></v-skeleton-loader>
@@ -75,7 +76,7 @@
           :key="report.memberUuid"
           :ref="el => { if (el) reportRefs[index] = el }"
           :class="{ 'approved-card': report.status === 'approved', 'none-card': report.status === 'none' }"
-          class="default-card cursor-default mt-2 pb-1"
+          class="default-card rounded-lg cursor-default mt-2 pb-1"
           hover
           outlined
         > 
@@ -275,7 +276,7 @@
 
                       <div 
                         v-if="report.status !== 'approved' && !readonly"
-                        class="mt-4"
+                        class="mt-4 px-1"
                       >
                         <v-textarea
                           v-model="newFeedbacks[report.memberUuid]"
@@ -435,7 +436,7 @@ const copyShareUrl = async () => {
     const params = { organizationId: props.organizationId, weekString: props.weekString }
     const result = await generateToken(params)
     
-    const shareUrl = `${rootUrl}/view/${result.token}`
+    const shareUrl = `${rootUrl}/view/${result.token}#_=`
     const week = getWeekFromString(props.weekString)
     const comment = `報告期間：${formatDateJp(week.startDate)}〜${formatDateJp(week.endDate)}\n（リンクは2週間有効です）`
     const shareText = `${shareUrl}\n${comment}`

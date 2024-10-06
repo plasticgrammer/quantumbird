@@ -31,9 +31,9 @@
               </template>
               <div class="d-flex align-center">
                 <div class="mr-2">
-                  isServiceWorkerReady: {{ isServiceWorkerReady }}<br>
-                  isSubscribed: {{ isSubscribed }}<br>
-                  notificationStatus: {{ notificationStatus }}
+                  - serviceWorkerReady: {{ isServiceWorkerReady }}<br>
+                  - subscribed: {{ isSubscribed }}<br>
+                  - notificationStatus: {{ notificationStatus }}
                 </div>
                 <v-btn
                   v-if="isServiceWorkerReady" 
