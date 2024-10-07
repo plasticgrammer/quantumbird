@@ -16,6 +16,8 @@ const api = axios.create({
 
 let activeRequests = 0
 let loadingTimeout = null
+let isRefreshing = false
+let failedQueue = []
 
 const startLoading = () => {
   activeRequests++
@@ -24,20 +26,6 @@ const startLoading = () => {
       store.dispatch('setLoading', true)
     }, LOADING_DELAY)
   }
-}
-
-let isRefreshing = false
-let failedQueue = []
-
-const processQueue = (error, token = null) => {
-  failedQueue.forEach(prom => {
-    if (error) {
-      prom.reject(error)
-    } else {
-      prom.resolve(token)
-    }
-  })
-  failedQueue = []
 }
 
 const stopLoading = () => {
@@ -56,9 +44,9 @@ const isTokenError = (error) => {
 
 // Request interceptor
 api.interceptors.request.use(
-  async (config) => {
+  (config) => {
     startLoading()
-    const token = await store.dispatch('auth/fetchAuthToken')
+    const token = store.getters['auth/token']
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`
     }
@@ -71,6 +59,17 @@ api.interceptors.request.use(
   }
 )
 
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  failedQueue = []
+}
+
 // Response interceptor
 api.interceptors.response.use(
   (response) => {
@@ -80,7 +79,7 @@ api.interceptors.response.use(
   async (error) => {
     stopLoading()
     const originalRequest = error.config
-
+ 
     if (isTokenError(error) && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -95,32 +94,27 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        console.log('Attempting to refresh token')
-        const newToken = await store.dispatch('auth/fetchAuthToken', { forceRefresh: true })
-        if (newToken) {
-          console.log('Token refreshed successfully')
-          processQueue(null, newToken)
-          originalRequest.headers['Authorization'] = `Bearer ${newToken}`
-          return api(originalRequest)
-        } else {
-          console.error('Token refresh returned null')
-          throw new Error('Failed to refresh token')
-        }
+        const newToken = await store.dispatch('auth/fetchAuthToken')
+        processQueue(null, newToken)
+        originalRequest.headers['Authorization'] = `Bearer ${newToken}`
+        return api(originalRequest)
       } catch (refreshError) {
-        console.error('Token refresh error:', refreshError)
         processQueue(refreshError, null)
-        await store.dispatch('auth/handleAuthFailure')
+        console.error('Token refresh failed:', refreshError)
+        store.dispatch('auth/signOut')
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false
       }
     }
 
-    if (error.response && error.response.status === 401) {
-      console.error('Received 401 after token refresh attempt')
-      await store.dispatch('auth/handleAuthFailure')
-    }
-
+    console.error(`Error in API call (${originalRequest.method} ${originalRequest.url}):`, error)
+    console.error('Error details:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      config: error.config,
+    })
     return Promise.reject(error)
   }
 )
@@ -144,7 +138,12 @@ export const callApi = async (method, path, data = null, queryParams = null, opt
     const response = await api(config)
     return response.data
   } catch (error) {
-    console.error(`Error in API call (${method} ${path}):`, error)
+    if (axios.isCancel(error)) {
+      console.log('Request canceled:', error.message)
+    } else {
+      // Error is already logged in the response interceptor
+      // You can implement additional custom error handling here if needed
+    }
     throw error
   }
 }
