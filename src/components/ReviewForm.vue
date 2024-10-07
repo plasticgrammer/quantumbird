@@ -352,7 +352,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watchEffect, onMounted, inject, defineAsyncComponent } from 'vue'
+import { ref, computed, watchEffect, onMounted, inject, nextTick, defineAsyncComponent } from 'vue'
 import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
 import { listReports, listMembers } from '../services/publicService'
@@ -389,9 +389,10 @@ const props = defineProps({
 const reports = ref([])
 const isLoading = ref(true)
 const error = ref(null)
-const newFeedbacks = ref({})
+const selectedStatus = ref('all')
 const lastWeekRatings = ref({})
 const expandedPanels = ref({})
+const newFeedbacks = ref({})
 
 const unconfirmedCount = computed(() => {
   return statusCounts.value['none'] || 0
@@ -399,12 +400,15 @@ const unconfirmedCount = computed(() => {
 
 const shouldExpandPanel = computed(() => {
   return reports.value.reduce((acc, report) => {
-    acc[report.memberUuid] = report.feedbacks.length > 0 ? [0] : []
+    const feedbacks = report.feedbacks ?? []
+    acc[report.memberUuid] = feedbacks.length > 0 ? [0] : []
     return acc
   }, {})
 })
 
-const selectedStatus = ref('all')
+const updateExpandedPanels = () => {
+  expandedPanels.value = { ...shouldExpandPanel.value }
+}
 
 watchEffect(() => {
   if (selectedStatus.value === undefined) {
@@ -413,7 +417,9 @@ watchEffect(() => {
 })
 
 watchEffect(() => {
-  expandedPanels.value = { ...shouldExpandPanel.value }
+  if (reports.value.length > 0) {
+    updateExpandedPanels()
+  }
 })
 
 // メモ化されたステータスカウント
@@ -626,14 +632,17 @@ const fetchData = async () => {
     // 各メンバーのフィードバック入力欄とLastWeekRating表示状態を初期化
     reports.value.forEach(report => {
       newFeedbacks.value[report.memberUuid] = ''
-      expandedPanels.value[report.memberUuid] = report.feedbacks.length > 0 ? [0] : []
     })
     lastWeekRatings.value = fetchedPrevReports.reduce((acc, report) => {
       if (report.rating) {
         acc[report.memberUuid] = report.rating
       }
       return acc
-    }, {})    
+    }, {})
+    nextTick(() => {
+      updateExpandedPanels()
+    })
+
   } catch (err) {
     console.error('Error in fetchData:', err)
     error.value = `データの取得に失敗しました: ${err.message}`
