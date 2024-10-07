@@ -276,7 +276,7 @@
 
                       <div 
                         v-if="report.status !== 'approved' && !readonly"
-                        class="mt-4 px-1"
+                        class="mt-2 px-1"
                       >
                         <v-textarea
                           v-model="newFeedbacks[report.memberUuid]"
@@ -626,6 +626,7 @@ const fetchData = async () => {
     // 各メンバーのフィードバック入力欄とLastWeekRating表示状態を初期化
     reports.value.forEach(report => {
       newFeedbacks.value[report.memberUuid] = ''
+      expandedPanels.value[report.memberUuid] = report.feedbacks.length > 0 ? [0] : []
     })
     lastWeekRatings.value = fetchedPrevReports.reduce((acc, report) => {
       if (report.rating) {
