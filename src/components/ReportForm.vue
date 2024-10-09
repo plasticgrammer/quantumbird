@@ -324,59 +324,70 @@
           class="mt-2"
         >
           <v-col cols="12">
-            <v-alert
-              density="compact"
-              class="feedback-box px-2 pb-2"
+            <v-expansion-panels 
+              v-model="expandedPanels" 
+              class="feedback-box"
               :class="{ 'form-disabled': isReportConfirmed }" 
-              border="start"
-              border-color="orange"
-              outlined
-              dense
+              elevation="2"
+              eager
             >
-              <v-alert-title class="pl-3 pb-2 text-body-1">
-                <v-icon class="mr-2" color="orange" size="large">
-                  mdi-comment-text-outline
-                </v-icon>
-                フィードバック
-              </v-alert-title>
-              <div 
-                v-for="(feedback, index) in sortedFeedbacks"
-                :key="feedback.id"
-                class="pa-0"
-              >
-                <v-textarea
-                  v-model="feedback.content"
-                  :label="`${ formatDateTimeJp(new Date(feedback.createdAt)) }`"
-                  readonly
-                  rows="1"
-                  auto-grow
-                  hide-details
-                  density="comfortable"
-                  class="borderless-textarea"
-                >
-                </v-textarea>
-                <template v-if="!!feedback.replyComment || isLatestFeedback(index)">
-                  <v-textarea
-                    v-model="feedback.replyComment"
-                    label="返信コメント"
-                    :readonly="!isLatestFeedback(index)"
-                    :clearable="isLatestFeedback(index)"
-                    :rows="isLatestFeedback(index) ? 2 : 1"
-                    auto-grow
-                    hide-details
-                    clear-icon="mdi-close-circle"
-                    class="ml-4 mr-3"
-                    :class="{ 'borderless-textarea': !isLatestFeedback(index), 'mt-n2': !isLatestFeedback(index), 'my-2': isLatestFeedback(index) }"
+              <v-expansion-panel>
+                <v-expansion-panel-title>
+                  <div class="d-flex align-center">
+                    <v-icon class="mr-2" color="orange">
+                      mdi-comment-text-outline
+                    </v-icon>
+                    フィードバック
+                    <v-badge
+                      v-if="formState.report.feedbacks.length"
+                      color="orange-darken-1"
+                      class="ml-2"
+                      :content="formState.report.feedbacks.length"
+                      inline
+                    ></v-badge>
+                  </div>
+                </v-expansion-panel-title>
+                <v-expansion-panel-text>
+                  <div
+                    v-for="(feedback, index) in sortedFeedbacks"
+                    :key="index"
+                    class="pa-0"
                   >
-                    <template #prepend-inner>
-                      <v-icon class="mr-1" color="grey-darken-3" size="large">
-                        mdi-reply
-                      </v-icon>
-                    </template>
-                  </v-textarea>
-                </template>
-              </div>
-            </v-alert>
+                    <v-textarea
+                      v-model="feedback.content"
+                      :label="`${formatDateTimeJp(new Date(feedback.createdAt))}`"
+                      readonly
+                      rows="1"
+                      auto-grow
+                      hide-details
+                      density="comfortable"
+                      class="borderless-textarea"
+                    >
+                    </v-textarea>
+                    <v-textarea
+                      v-if="!!feedback.replyComment || isLatestFeedback(index)"
+                      v-model="feedback.replyComment"
+                      label="返信コメント"
+                      :readonly="!isLatestFeedback(index)"
+                      :clearable="isLatestFeedback(index)"
+                      clear-icon="mdi-close-circle"
+                      :rows="isLatestFeedback(index) ? 2 : 1"
+                      auto-grow
+                      hide-details
+                      density="comfortable"
+                      class="mx-4"
+                      :class="{ 'borderless-textarea': !isLatestFeedback(index), 'mt-n2': !isLatestFeedback(index), 'my-2': isLatestFeedback(index) }"
+                    >
+                      <template #prepend-inner>
+                        <v-icon class="mr-1" color="grey-darken-3" size="large">
+                          mdi-reply
+                        </v-icon>
+                      </template>
+                    </v-textarea>
+                  </div>
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+            </v-expansion-panels>
           </v-col>
         </v-row>
 
@@ -415,7 +426,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, reactive, inject, onMounted } from 'vue'
+import { ref, computed, nextTick, reactive, inject, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getReport, submitReport, updateReport, getMemberProjects } from '../services/publicService'
 import { useCalendar } from '../composables/useCalendar'
@@ -473,6 +484,7 @@ const isSubmitDisabled = computed(() => {
 })
 
 const workItemRefs = reactive({})
+const expandedPanels = ref([0])
 
 const isReportConfirmed = computed(() => formState.report.status === 'approved')
 const sortedFeedbacks = computed(() => [...(formState.report.feedbacks || [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)))
@@ -739,8 +751,15 @@ const handleUndo = async () => {
   await fetchReport()
 }
 
+const expandFeedbackPanel = () => {
+  if (formState.report.feedbacks && formState.report.feedbacks.length > 0) {
+    expandedPanels.value = [0]
+  }
+}
+
 onMounted(async () => {
   await fetchReport()
+  expandFeedbackPanel()
   checkAndScrollToFeedback()
 })
 </script>
@@ -803,13 +822,22 @@ onMounted(async () => {
   padding-top: 4px;
 }
 
-.feedback-box {
-  border: 1px solid rgb(0 0 0 / 0.2) !important;
-  background-color: transparent;
-}
-
 .custom-tooltip p {
   margin: 5px 0;
   line-height: 1.6;
+}
+
+.v-expansion-panel-title {
+  padding: 4px 16px;
+}
+
+.v-expansion-panel--active > .v-expansion-panel-title:not(.v-expansion-panel-title--static) {
+  min-height: auto !important;
+  padding-top: 13px !important;
+  padding-bottom: 12px !important;
+}
+
+.borderless-textarea :deep(.v-field__outline) {
+  display: none;
 }
 </style>

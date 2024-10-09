@@ -701,11 +701,6 @@ onMounted(() => {
   background-color: transparent;
 }
 
-.feedback-box {
-  border: 1px solid rgb(0 0 0 / 0.2) !important;
-  background-color: transparent;
-}
-
 .v-list-item__title {
   font-size: 0.875rem !important;
 }
