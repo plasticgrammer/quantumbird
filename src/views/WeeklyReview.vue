@@ -73,9 +73,9 @@ const handleReset = () => {
   router.push({ name: 'WeeklyReviewSelector' })
 }
 
-watch(() => props.weekString, (newweekString) => {
-  if (newweekString) {
-    const week = getWeekFromString(newweekString)
+watch(() => props.weekString, (newWeekString) => {
+  if (newWeekString) {
+    const week = getWeekFromString(newWeekString)
     if (week && isWeekInRange(week)) {
       selectedWeek.value = week
       isValidWeek.value = true

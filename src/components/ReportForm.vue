@@ -287,11 +287,13 @@
           elevation="0"
           variant="flat"
           color="#e6f3ff"
-          title="評価"
         >
-          <template #prepend>
-            <v-icon icon="mdi-poll"></v-icon>
-          </template>
+          <v-card-title>
+            <div class="d-flex align-center">
+              <v-icon icon="mdi-equalizer" color="blue-grey-darken-3" class="mr-2"></v-icon>
+              評価
+            </div>
+          </v-card-title>
           <v-card-text>
             <rating-item
               v-for="item in ratingItems"

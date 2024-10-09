@@ -194,20 +194,20 @@
             >
               <v-card-title>
                 <div class="d-flex align-center">
-                  <v-icon icon="mdi-poll" class="mr-2"></v-icon>
+                  <v-icon icon="mdi-equalizer" color="blue-grey-darken-3" class="mr-2"></v-icon>
                   評価
                 </div>
               </v-card-title>
               <v-card-text>
                 <rating-item
-                  v-for="item in ratingItems"
+                  v-for="item in preparedRatingItems"
                   :key="item.key"
-                  :model-value="getCurrentRating(report, item.key)"
+                  :model-value="item.getValue(report)"
                   :label="item.label"
-                  :item-labels="item.itemLabels"
+                  :item-labels="item.labels"
                   :negative="item.negative"
                   :readonly="true"
-                  :comparison="getComparisonRating(report, item.key)"
+                  :comparison="item.getComparison(report)"
                 />
               </v-card-text>
             </v-card>
@@ -454,16 +454,25 @@ const copyShareUrl = async () => {
   }
 }
 
-const getCurrentRating = (report, key) => {
-  return report.rating[key]
-}
-
-const getComparisonRating = (report, key) => {
-  if (lastWeekRatings.value[report.memberUuid]) {
-    return lastWeekRatings.value[report.memberUuid][key]
-  }
-  return null
-}
+const preparedRatingItems = computed(() => {
+  // 達成度の表示を反転させる
+  return ratingItems.map(item => ({
+    ...item,
+    labels: item.key === 'achievement' ? item.itemLabels.slice().reverse() : item.itemLabels,
+    negative: item.key === 'achievement' ? !item.negative : item.negative,
+    getValue: (report) => {
+      const value = report.rating[item.key]
+      return item.key === 'achievement' ? item.itemLabels.length - value + 1 : value
+    },
+    getComparison: (report) => {
+      if (lastWeekRatings.value[report.memberUuid]) {
+        const value = lastWeekRatings.value[report.memberUuid][item.key]
+        return item.key === 'achievement' ? item.itemLabels.length - value + 1 : value
+      }
+      return null
+    }
+  }))
+})
 
 const fetchReports = async (weekString) => {
   try {
