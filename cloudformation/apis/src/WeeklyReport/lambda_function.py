@@ -152,6 +152,7 @@ def prepare_item(report_data, existing_report=None):
         'issues': converted_data.get('issues'),
         'improvements': converted_data.get('improvements'),
         'rating': converted_data.get('rating', {}),
+        'stressHelp': report_data.get('stressHelp'),
         'status': converted_data.get('status'),
         'feedbacks': converted_data.get('feedbacks', []),
         'approvedAt': converted_data.get('approvedAt'),

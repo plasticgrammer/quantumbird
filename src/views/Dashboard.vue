@@ -459,6 +459,7 @@ const fetchSecondary = async () => {
 
 const handleReload = () => {
   fetchInitial()
+  fetchReportStatus()
   nextTick(() => {
     fetchSecondary()
   })

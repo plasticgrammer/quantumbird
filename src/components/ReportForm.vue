@@ -422,6 +422,31 @@
         </v-row>
       </v-form>
     </template>
+
+    <v-dialog v-model="showStressDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="bg-primary">ストレス状況の確認</v-card-title>
+        <v-card-text>
+          <div class="mb-4">
+            ストレス度が最大となっています。<br>
+            何か具体的な助けが必要ですか？<br>
+            必要な場合は、どのような支援が役立つか教えてください。
+          </div>
+          <v-textarea
+            v-model="formState.report.stressHelp"
+            label="必要な支援や状況の詳細"
+            variant="outlined"
+            rows="3"
+            auto-grow
+            hide-details
+          ></v-textarea>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="grey darken-1" text @click="showStressDialog = false">キャンセル</v-btn>
+          <v-btn color="primary" @click="handleSubmit">送信</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -485,7 +510,9 @@ const isSubmitDisabled = computed(() => {
 
 const workItemRefs = reactive({})
 const expandedPanels = ref([0])
+const showStressDialog = ref(false)
 
+const isHighStress = computed(() => formState.report.rating?.stress === 5)
 const isReportConfirmed = computed(() => formState.report.status === 'approved')
 const sortedFeedbacks = computed(() => [...(formState.report.feedbacks || [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)))
 const formattedOvertimeHours = computed({
@@ -709,11 +736,20 @@ const handleSubmit = async () => {
   }
 
   const isValid = validateReport()
-
   if (!isValid) {
     showError('入力に誤りがあります。赤字箇所を確認してください。')
     return
   }
+
+  if (isHighStress.value) {
+    if (!showStressDialog.value) {
+      showStressDialog.value = true
+      return
+    }
+  } else {
+    formState.report.stressHelp = ''
+  }
+  showStressDialog.value = false
 
   const cleanedReport = {
     ...formState.report,

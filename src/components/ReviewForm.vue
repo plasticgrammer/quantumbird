@@ -209,6 +209,18 @@
                   :readonly="true"
                   :comparison="item.getComparison(report)"
                 />
+                <v-textarea
+                  v-if="report.stressHelp"
+                  v-model="report.stressHelp"
+                  label="ストレス：必要な支援や状況の詳細"
+                  readonly
+                  rows="1"
+                  auto-grow
+                  hide-details
+                  variant="outlined"
+                  density="comfortable"
+                  class="mt-10 mx-2"
+                ></v-textarea>
               </v-card-text>
             </v-card>
             
