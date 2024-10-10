@@ -125,10 +125,8 @@
               prepend-icon="mdi-account-circle"
             >
               <template #append>
-                <div class="mr-n1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 256 256">
-                    <path d="m213.66 101.66-80 80a8 8 0 0 1-11.32 0l-80-80a8 8 0 0 1 11.32-11.32L128 164.69l74.34-74.35a8 8 0 0 1 11.32 11.32z" />
-                  </svg>
+                <div class="mr-n2">
+                  <v-icon :icon="showDropdown ? 'mdi-chevron-up' : 'mdi-chevron-down'" color="grey-lighten-1"></v-icon>
                 </div>
               </template>
             </v-list-item>
@@ -146,15 +144,48 @@
               <v-list-item
                 prepend-icon="mdi-comment-quote-outline"
                 title="フィードバック"
+                class="text-body-2"
                 link
                 @click="openFeedbackForm"
               >
               </v-list-item>
               <v-list-item
+                prepend-icon="mdi-information-outline"
+                title="その他"
+                class="text-body-2"
+              >
+                <template #append>
+                  <v-icon icon="mdi-chevron-right"></v-icon>
+                </template>
+                <v-menu
+                  v-model="showLearnMoreSubmenu"
+                  activator="parent"
+                  location="right"
+                >
+                  <v-list class="pa-0 bg-blue-grey-darken-1">
+                    <v-list-item
+                      prepend-icon="mdi-file-document-outline"
+                      title="利用規約"
+                      class="text-body-2"
+                      @click="openTermsOfService"
+                    >
+                    </v-list-item>
+                    <v-list-item
+                      prepend-icon="mdi-shield-account-outline"
+                      title="プライバシーポリシー"
+                      class="text-body-2"
+                      @click="openPrivacyPolicy"
+                    >
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </v-list-item>
+              <v-list-item
                 prepend-icon="mdi-logout-variant"
+                title="サインアウト"
+                class="text-body-2"
                 @click="handleSignOut"
               >
-                <v-list-item-title>サインアウト</v-list-item-title>
               </v-list-item>
             </v-list>
           </v-menu>
@@ -211,7 +242,7 @@ import { ref, provide, reactive, computed, watch, onMounted, defineAsyncComponen
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { useResponsive } from './composables/useResponsive'
-import { feedbackUrl } from './config/environment'
+import { feedbackUrl, termsOfServiceUrl, privacyPolicyUrl } from './config/environment'
 
 const ConfirmationDialog = defineAsyncComponent(() => import('./components/ConfirmationDialog.vue'))
 const LoadingOverlay = defineAsyncComponent(() => import('./components/LoadingOverlay.vue'))
@@ -224,9 +255,10 @@ const confirmDialog = ref(null)
 const drawer = ref(true)
 const isRailMode = ref(true)
 const isHovered = ref(false)
-const showDropdown = ref(false)
 const showAnimation = ref(true)
 const showNavigation = ref(true)
+const showDropdown = ref(false)
+const showLearnMoreSubmenu = ref(false)
 
 router.beforeEach((to, from, next) => {
   showAnimation.value = !to.meta.hideAnimation
@@ -342,6 +374,14 @@ const navigateTo = (route, params = {}) => {
 
 const openFeedbackForm = () => {
   window.open(feedbackUrl, '_blank', 'noopener,noreferrer')
+}
+
+const openTermsOfService = () => {
+  window.open(termsOfServiceUrl, '_blank', 'noopener,noreferrer')
+}
+
+const openPrivacyPolicy = () => {
+  window.open(privacyPolicyUrl, '_blank', 'noopener,noreferrer')
 }
 
 const handleSignOut = async () => {
