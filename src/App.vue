@@ -19,7 +19,7 @@
     <!-- Notification snackbar -->
     <v-snackbar
       v-model="notification.show"
-      :color="notification.type"
+      :color="getNotificationColor"
       :timeout="5000"
       location="top"
       width="90%"
@@ -328,6 +328,14 @@ const getNotificationIcon = computed(() => {
   case 'warning': return 'mdi-alert'
   case 'info': return 'mdi-information'
   default: return 'mdi-bell'
+  }
+})
+
+const getNotificationColor = computed(() => {
+  switch (notification.type) {
+  case 'error': return 'error'
+  case 'warning': return 'warning'
+  default: return 'info'
   }
 })
 

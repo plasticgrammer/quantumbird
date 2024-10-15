@@ -212,14 +212,14 @@
                 <v-textarea
                   v-if="report.stressHelp"
                   v-model="report.stressHelp"
-                  label="ストレス：必要な支援や状況の詳細"
+                  label="ストレス度：必要な支援や状況の詳細"
                   readonly
                   rows="1"
                   auto-grow
                   hide-details
                   variant="outlined"
                   density="comfortable"
-                  class="mt-10 mx-2"
+                  class="mt-8 mx-2"
                 ></v-textarea>
               </v-card-text>
             </v-card>
