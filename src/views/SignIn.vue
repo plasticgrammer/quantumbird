@@ -1,17 +1,12 @@
 <template>
   <v-container>
-    <v-card 
-      max-width="500" 
-      class="mx-auto mt-6"
-    >
+    <v-card max-width="500" class="mx-auto mt-6">
       <v-card-title class="mt-1 mb-4">
         <div class="text-center mb-5">
           <h1 class="logo-font">fluxweek</h1>
         </div>
-        <v-icon size="large" class="mr-1">
-          mdi-bird
-        </v-icon>
-        {{ getTitle }}
+        <v-icon size="large" class="mr-1">mdi-bird</v-icon>
+        {{ title }}
       </v-card-title>
       <v-card-text>
         <v-alert
@@ -19,6 +14,7 @@
           type="success"
           class="resultMessage mb-4"
           dismissible
+          @click:close="successMessage = ''"
         >
           {{ successMessage }}
         </v-alert>        
@@ -27,120 +23,121 @@
           type="error" 
           class="resultMessage mb-4"
           dismissible
+          @click:close="errorMessage = ''"
         >
           {{ errorMessage }}
         </v-alert>
-        <template v-if="isSignIn">
-          <v-form
-            v-if="currentView === 'signIn'"
-            @submit.prevent="handleSignIn"
-          >
-            <v-text-field
-              v-model="signInEmail"
-              label="メールアドレス"
-              required
-            />
-            <v-text-field
-              v-model="signInPassword"
-              label="パスワード"
-              type="password"
-              required
-            />
-            <v-btn
-              color="primary"
-              type="submit"
-              block
-              class="mt-4"
-              :loading="loading"
-            >
-              サインイン
-            </v-btn>
-          </v-form>
 
-          <v-divider class="my-4" />
-          
+        <!-- サインインフォーム -->
+        <v-form v-if="currentView === 'signIn'" @submit.prevent="handleSignIn">
+          <v-text-field
+            v-model="signInEmail"
+            label="メールアドレス"
+            required
+          />
+          <v-text-field
+            v-model="signInPassword"
+            label="パスワード"
+            type="password"
+            required
+          />
           <v-btn
-            color="red"
-            dark
+            color="primary"
+            type="submit"
             block
-            class="mb-2 d-none"
+            class="mt-4"
             :loading="loading"
-            @click="signInWithGoogle"
           >
-            <v-icon left>
-              mdi-google
-            </v-icon>
-            Googleでサインイン
+            サインイン
           </v-btn>
-        </template>
+        </v-form>
 
-        <template v-else-if="isSignUp">
-          <v-form ref="signUpForm" @submit.prevent="handleSignUpSubmit">
-            <v-text-field
-              v-model="signUpEmail"
-              label="メールアドレス"
-              type="email"
-              required
-              :rules="[v => !!v || 'メールアドレスは必須です', v => /.+@.+\..+/.test(v) || '有効なメールアドレスを入力してください']"
-            />
-            <v-text-field
-              v-model="signUpPassword"
-              label="パスワード"
-              type="password"
-              required
-              :rules="[v => !!v || 'パスワードは必須です', v => v.length >= 8 || 'パスワードは8文字以上である必要があります']"
-            />
-            <v-text-field
-              v-model="organizationId"
-              label="組織ID"
-              required
-              :rules="[
-                v => !!v || '組織IDは必須です',
-                validateOrganizationId
-              ]"
-              @input="clearErrorMessage"
-            />
-            <v-text-field
-              v-model="organizationName"
-              label="組織名"
-              required
-              :rules="[v => !!v || '組織名は必須です']"
-            />
-            <v-btn
-              color="primary"
-              type="submit"
-              block
-              class="mt-4"
-              :loading="loading"
-              :disabled="loading"
-            >
-              サインアップ
-            </v-btn>
-          </v-form>
-        </template>
+        <!-- サインアップフォーム -->
+        <v-form v-else-if="currentView === 'signUp'" ref="signUpForm" @submit.prevent="handleSignUpSubmit">
+          <v-text-field
+            v-model="signUpEmail"
+            label="メールアドレス"
+            type="email"
+            required
+            :rules="[v => !!v || 'メールアドレスは必須です', v => /.+@.+\..+/.test(v) || '有効なメールアドレスを入力してください']"
+          />
+          <v-text-field
+            v-model="signUpPassword"
+            label="パスワード"
+            type="password"
+            required
+            :rules="[v => !!v || 'パスワードは必須です', v => v.length >= 8 || 'パスワードは8文字以上である必要があります']"
+          />
+          <v-text-field
+            v-model="organizationId"
+            label="組織ID"
+            required
+            :rules="[v => !!v || '組織IDは必須です', validateOrganizationId]"
+            @input="clearErrorMessage"
+          />
+          <v-text-field
+            v-model="organizationName"
+            label="組織名"
+            required
+            :rules="[v => !!v || '組織名は必須です']"
+          />
+          <v-checkbox
+            v-model="agreeToTerms"
+            label="利用規約に同意する"
+            required
+            hide-details
+          >
+            <template #label>
+              <span>
+                <a href="#" @click.prevent="openTermsOfService">利用規約</a>に同意する
+              </span>
+            </template>
+          </v-checkbox>
+          <v-checkbox
+            v-model="agreeToPrivacy"
+            label="プライバシーポリシーに同意する"
+            required
+            hide-details
+          >
+            <template #label>
+              <span>
+                <a href="#" @click.prevent="openPrivacyPolicy">プライバシーポリシー</a>に同意する
+              </span>
+            </template>
+          </v-checkbox>
+          <v-btn
+            color="primary"
+            type="submit"
+            block
+            class="mt-4"
+            :loading="loading"
+            :disabled="loading || !isAgreedToAll"
+          >
+            サインアップ
+          </v-btn>
+        </v-form>
 
-        <template v-else>
-          <v-form @submit.prevent="confirmSignUpUser">
-            <v-text-field
-              v-model="confirmEmail"
-              label="メールアドレス"
-              required
-            />
-            <v-text-field
-              v-model="confirmCode"
-              label="確認コード"
-              required
-            />
-            <v-btn
-              color="primary"
-              type="submit"
-              block
-              class="mt-4"
-              :loading="loading"
-            >
-              確認
-            </v-btn>
-          </v-form>
+        <!-- 確認コードフォーム -->
+        <v-form v-else @submit.prevent="confirmSignUpUser">
+          <v-text-field
+            v-model="confirmEmail"
+            label="メールアドレス"
+            required
+          />
+          <v-text-field
+            v-model="confirmCode"
+            label="確認コード"
+            required
+          />
+          <v-btn
+            color="primary"
+            type="submit"
+            block
+            class="mt-4"
+            :loading="loading"
+          >
+            確認
+          </v-btn>
           <v-btn
             text
             color="secondary"
@@ -150,7 +147,7 @@
           >
             確認コードを再送信
           </v-btn>
-        </template>
+        </v-form>
 
         <v-card-actions>
           <v-spacer />
@@ -159,7 +156,7 @@
             color="primary"
             @click="toggleView"
           >
-            {{ getToggleButtonText }}
+            {{ toggleButtonText }}
           </v-btn>
         </v-card-actions>
       </v-card-text>
@@ -171,12 +168,12 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
+import { termsOfServiceUrl, privacyPolicyUrl } from '../config/environment'
 import { 
   signIn, 
   signUp, 
   confirmSignUp, 
   resendSignUpCode, 
-  signInWithRedirect, 
   signOut, 
   getCurrentUser,
 } from '@aws-amplify/auth'
@@ -199,27 +196,31 @@ const loading = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
 const signUpForm = ref(null)
+const agreeToTerms = ref(false)
+const agreeToPrivacy = ref(false)
 
 // Computed properties
-const isSignIn = computed(() => currentView.value === 'signIn')
-const isSignUp = computed(() => currentView.value === 'signUp')
-const getTitle = computed(() => {
-  switch (currentView.value) {
-  case 'signIn': return 'サインイン'
-  case 'signUp': return 'サインアップ'
-  case 'confirm': return '確認コードの入力'
-  default: return ''
+const title = computed(() => {
+  const titles = {
+    signIn: 'サインイン',
+    signUp: 'サインアップ',
+    confirm: '確認コードの入力'
   }
-})
-const getToggleButtonText = computed(() => {
-  switch (currentView.value) {
-  case 'signIn': return 'アカウントを作成'
-  case 'signUp': return 'サインインに戻る'
-  case 'confirm': return 'サインインに戻る'
-  default: return ''
-  }
+  return titles[currentView.value] || ''
 })
 
+const toggleButtonText = computed(() => {
+  const texts = {
+    signIn: 'アカウントを作成',
+    signUp: 'サインインに戻る',
+    confirm: 'サインインに戻る'
+  }
+  return texts[currentView.value] || ''
+})
+
+const isAgreedToAll = computed(() => agreeToTerms.value && agreeToPrivacy.value)
+
+// Methods
 const validateOrganizationId = (value) => {
   if (!value) return '組織IDは必須です'
   const alphanumericRegex = /^[a-zA-Z0-9_-]+$/
@@ -230,7 +231,6 @@ const clearErrorMessage = () => {
   errorMessage.value = ''
 }
 
-// Methods
 const handleSignIn = async () => {
   loading.value = true
   errorMessage.value = ''
@@ -241,44 +241,11 @@ const handleSignIn = async () => {
       await signOut()
       console.info('既存のセッションからサインアウトしました。')
     }
-    await signInUser()
+    await signIn({ username: signInEmail.value, password: signInPassword.value })
+    await store.dispatch('auth/fetchUser')
+    router.push('/admin')
   } catch (error) {
-    handleSignInError(error)
-  } finally {
-    loading.value = false
-  }
-}
-
-const signInUser = async () => {
-  await signIn({ username: signInEmail.value, password: signInPassword.value })
-  await store.dispatch('auth/fetchUser')
-  router.push('/admin')
-}
-
-const handleSignInError = (error) => {
-  console.info(error.name)
-  if (error.name === 'UserAlreadyAuthenticatedException') {
-    errorMessage.value = '既にサインインしています。一度サインアウトしてから再試行してください。'
-  } else if (error.name === 'UserNotConfirmedException') {
-    errorMessage.value = 'ユーザーアカウントが確認されていません。確認コードを入力してください。'
-    currentView.value = 'confirm'
-  } else if (error.name === 'NotAuthorizedException') {
-    errorMessage.value = 'メールアドレスまたはパスワードが正しくありません。'
-  } else if (error.name === 'UserNotFoundException') {
-    errorMessage.value = 'このメールアドレスに対応するアカウントが見つかりません。'
-  } else {
-    errorMessage.value = 'サインインに失敗しました: \n' + error.message
-  }
-}
-
-const signInWithGoogle = async () => {
-  loading.value = true
-  errorMessage.value = ''
-  try {
-    await signInWithRedirect({ provider: 'Google' })
-  } catch (error) {
-    console.error('Googleサインインエラー:', error)
-    errorMessage.value = 'Googleサインインに失敗しました。再度お試しください。'
+    handleAuthError(error)
   } finally {
     loading.value = false
   }
@@ -369,9 +336,30 @@ const resendConfirmationCode = async () => {
   }
 }
 
+const handleAuthError = (error) => {
+  const errorMessages = {
+    UserAlreadyAuthenticatedException: '既にサインインしています。一度サインアウトしてから再試行してください。',
+    UserNotConfirmedException: 'ユーザーアカウントが確認されていません。確認コードを入力してください。',
+    NotAuthorizedException: 'メールアドレスまたはパスワードが正しくありません。',
+    UserNotFoundException: 'このメールアドレスに対応するアカウントが見つかりません。'
+  }
+  errorMessage.value = errorMessages[error.name] || `サインインに失敗しました: ${error.message}`
+  if (error.name === 'UserNotConfirmedException') {
+    currentView.value = 'confirm'
+  }
+}
+
 const toggleView = () => {
   currentView.value = currentView.value === 'signIn' ? 'signUp' : 'signIn'
   errorMessage.value = ''
+}
+
+const openTermsOfService = () => {
+  window.open(termsOfServiceUrl, '_blank', 'noopener,noreferrer')
+}
+
+const openPrivacyPolicy = () => {
+  window.open(privacyPolicyUrl, '_blank', 'noopener,noreferrer')
 }
 </script>
 

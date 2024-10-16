@@ -289,6 +289,7 @@ def handle_get_stats_data(event):
 
     stats_data['datasets'] = [
         {
+            'memberUuid': member_uuid,
             'label': member_names.get(member_uuid, f'Unknown ({member_uuid})'),
             'data': member_data['data']
         }
