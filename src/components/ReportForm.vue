@@ -184,7 +184,7 @@
         <v-row class="mt-4 mt-md-2">
           <v-col cols="12" sm="6">
             <v-text-field
-              v-model="formattedOvertimeHours"
+              v-model="overtimeInputValue"
               label="残業時間（週単位）"
               type="number"
               min="0"
@@ -194,7 +194,7 @@
               outlined
               dense
               class="overtime-input"
-              @input="updateOvertime"
+              @blur="updateOvertime"
             >
               <template #append>
                 <v-btn
@@ -511,14 +511,11 @@ const isSubmitDisabled = computed(() => {
 const workItemRefs = reactive({})
 const expandedPanels = ref([0])
 const showStressDialog = ref(false)
+const overtimeInputValue = ref('')
 
 const isHighStress = computed(() => formState.report.rating?.stress === 5)
 const isReportConfirmed = computed(() => formState.report.status === 'approved')
 const sortedFeedbacks = computed(() => [...(formState.report.feedbacks || [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)))
-const formattedOvertimeHours = computed({
-  get: () => (formState.report.overtimeHours ?? 0).toFixed(1),
-  set: (value) => { formState.report.overtimeHours = parseFloat(value) }
-})
 
 const isLatestFeedback = (index) => index === formState.report.feedbacks.length - 1
 
@@ -526,22 +523,29 @@ const updateProjectList = (newProjectList) => {
   formState.projectNames = newProjectList
 }
 
-const updateOvertime = (event) => {
-  let value = parseFloat(event.target.value)
+const updateOvertime = () => {
+  let value = parseFloat(overtimeInputValue.value)
   if (isNaN(value)) value = 0
   value = Math.max(0, Math.min(99, value))
   formState.report.overtimeHours = parseFloat(value.toFixed(1))
+  overtimeInputValue.value = formState.report.overtimeHours.toFixed(1)
 }
 
 const increaseOvertime = () => {
-  if (formState.report.overtimeHours < 99) {
-    formState.report.overtimeHours = parseFloat((formState.report.overtimeHours + 0.5).toFixed(1))
+  let value = parseFloat(overtimeInputValue.value) || 0
+  if (value < 99) {
+    value += 0.5
+    overtimeInputValue.value = value.toFixed(1).toString()
+    formState.report.overtimeHours = value
   }
 }
 
 const decreaseOvertime = () => {
-  if (formState.report.overtimeHours > 0) {
-    formState.report.overtimeHours = parseFloat((formState.report.overtimeHours - 0.5).toFixed(1))
+  let value = parseFloat(overtimeInputValue.value) || 0
+  if (value > 0) {
+    value -= 0.5
+    overtimeInputValue.value = value.toFixed(1).toString()
+    formState.report.overtimeHours = value
   }
 }
 
@@ -675,6 +679,7 @@ const fetchReport = async () => {
       }
     }
     formState.projectNames = memberProjects
+    overtimeInputValue.value = formState ? formState.report.overtimeHours.toFixed(1) : 0.0
   } catch (err) {
     showError('報告書またはプロジェクトリストの取得に失敗しました。', err)
   } finally {

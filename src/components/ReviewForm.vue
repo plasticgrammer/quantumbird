@@ -109,7 +109,7 @@
                   {{ getStatusText(report.status) }}
                 </v-chip>
               </template>
-              <span>{{ formatDateTimeJp(new Date(report.approvedAt)) }}</span>
+              <span>確認日時：{{ formatDateTimeJp(new Date(report.approvedAt)) }}</span>
             </v-tooltip>
           </v-card-title>
 

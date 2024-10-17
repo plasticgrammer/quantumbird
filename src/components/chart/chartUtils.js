@@ -1,49 +1,19 @@
 import { ref } from 'vue'
 import { Chart, registerables } from 'chart.js'
 
-// Register all Chart.js components
 Chart.register(...registerables)
 
-// グローバルデフォルト設定
 Chart.defaults.datasets.line.tension = 0.3
 
 export function useChart(chartType, createChartOptions) {
   const chartRef = ref(null)
-  const selectedDatasetIndex = ref(null)
+  const hoveredDatasetIndex = ref(null)
 
-  const updateDatasetVisibility = (instance) => {
-    try {
-      if (!instance) {
-        throw new Error('Instance is undefined in updateDatasetVisibility')
-      }
-
-      // Check if the instance is a Chart object
-      if (instance instanceof Chart) {
-        if (!instance.data || !Array.isArray(instance.data.datasets)) {
-          throw new Error('Invalid chart data structure')
-        }
-
-        const datasets = instance.data.datasets
-        datasets.forEach((dataset, index) => {
-          const meta = instance.getDatasetMeta(index)
-          if (meta) {
-            meta.hidden = selectedDatasetIndex.value !== null && index !== selectedDatasetIndex.value
-          } else {
-            console.warn(`Dataset meta not found for index ${index}`)
-          }
-        })
-        instance.update('none') // アニメーションなしで更新
-      } else {
-        // Handle Legend click
-        if (instance.chart && instance.chart instanceof Chart) {
-          updateDatasetVisibility(instance.chart)
-        } else {
-          throw new Error('Invalid Legend instance or missing chart reference')
-        }
-      }
-    } catch (error) {
-      console.error('Error in updateDatasetVisibility:', error)
-    }
+  const updateDatasetVisibility = (chart, index) => {
+    chart.data.datasets.forEach((dataset, i) => {
+      chart.setDatasetVisibility(i, i === index || index === null)
+    })
+    chart.update('none')
   }
 
   const getChartOptions = () => ({
@@ -52,11 +22,23 @@ export function useChart(chartType, createChartOptions) {
       ...createChartOptions().plugins,
       legend: {
         ...createChartOptions().plugins?.legend,
-        onClick: (event, legendItem, legend) => {
+        onHover: (event, legendItem, legend) => {
           const index = legendItem.datasetIndex
-          selectedDatasetIndex.value = selectedDatasetIndex.value === index ? null : index
-          updateDatasetVisibility(legend)
+          if (hoveredDatasetIndex.value !== index) {
+            hoveredDatasetIndex.value = index
+            updateDatasetVisibility(legend.chart, index)
+          }
+        },
+        onLeave: (event, legendItem, legend) => {
+          hoveredDatasetIndex.value = null
+          updateDatasetVisibility(legend.chart, null)
         }
+      }
+    },
+    onHover: (event, activeElements, chart) => {
+      if (activeElements.length === 0) {
+        hoveredDatasetIndex.value = null
+        updateDatasetVisibility(chart, null)
       }
     }
   })
@@ -101,13 +83,7 @@ export function useChart(chartType, createChartOptions) {
 
       chartInstance.data = data
       chartInstance.options = getChartOptions()
-
-      if (selectedDatasetIndex.value !== null && selectedDatasetIndex.value >= data.datasets.length) {
-        selectedDatasetIndex.value = null
-      }
-
-      updateDatasetVisibility(chartInstance)
-      chartInstance.update() // 明示的な更新呼び出し
+      chartInstance.update()
 
     } catch (error) {
       console.error('Error updating chart:', error)
