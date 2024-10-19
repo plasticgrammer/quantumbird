@@ -156,19 +156,29 @@
     <ConfirmationDialog ref="confirmDialog" />
     <!-- Loading overlay -->
     <LoadingOverlay :style="bgImageStyle" />
+    <!-- Policy Acceptance Dialog -->
+    <PolicyAcceptanceDialog
+      v-model="showPolicyDialog"
+      :needs-tos-acceptance="needsTosAcceptance"
+      :needs-privacy-policy-acceptance="needsPrivacyPolicyAcceptance"
+      @accept="handlePolicyAcceptance"
+    />
   </v-app>
 </template>
 
 <script setup>
 import { ref, provide, reactive, computed, watch, onMounted, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
+import { useStore } from 'vuex'
 import { useResponsive } from './composables/useResponsive'
 import UserMenu from './components/UserMenu.vue'
+import PolicyAcceptanceDialog from './components/PolicyAcceptanceDialog.vue'
 
 const ConfirmationDialog = defineAsyncComponent(() => import('./components/ConfirmationDialog.vue'))
 const LoadingOverlay = defineAsyncComponent(() => import('./components/LoadingOverlay.vue'))
 
 const router = useRouter()
+const store = useStore()
 const { isMobile } = useResponsive()
 
 const confirmDialog = ref(null)
@@ -177,6 +187,9 @@ const isRailMode = ref(true)
 const isHovered = ref(false)
 const showAnimation = ref(true)
 const showNavigation = ref(true)
+const showPolicyDialog = ref(false)
+const needsTosAcceptance = ref(false)
+const needsPrivacyPolicyAcceptance = ref(false)
 
 router.beforeEach((to, from, next) => {
   showAnimation.value = !to.meta.hideAnimation
@@ -292,6 +305,36 @@ const navigateTo = (route, params = {}) => {
   }
 }
 
+const checkPolicies = async () => {
+  if (store.getters['auth/isAuthenticated']) {
+    try {
+      const { needsTosAcceptance: needsTos, needsPrivacyPolicyAcceptance: needsPrivacy } = await store.dispatch('auth/checkPolicyAcceptance')
+      needsTosAcceptance.value = needsTos
+      needsPrivacyPolicyAcceptance.value = needsPrivacy
+      if (needsTos || needsPrivacy) {
+        showPolicyDialog.value = true
+      }
+    } catch (error) {
+      console.error('Policy check failed:', error)
+      showError('ポリシーの確認に失敗しました。')
+    }
+  }
+}
+
+const handlePolicyAcceptance = async () => {
+  try {
+    await store.dispatch('auth/updatePolicyAcceptance', {
+      tosAccepted: needsTosAcceptance.value,
+      privacyPolicyAccepted: needsPrivacyPolicyAcceptance.value,
+    })
+    showPolicyDialog.value = false
+    showNotification('ポリシーの同意が更新されました。', 'success')
+  } catch (error) {
+    console.error('Policy acceptance update failed:', error)
+    showError('ポリシーの更新に失敗しました。')
+  }
+}
+
 onMounted(() => {
   // 事前ロード
   const img = new Image()
@@ -299,6 +342,8 @@ onMounted(() => {
   // ローカルストレージからRailModeの状態を読み込む
   const savedRailMode = localStorage.getItem('railMode')
   isRailMode.value = savedRailMode !== null ? JSON.parse(savedRailMode) : true
+
+  checkPolicies()
 })
 
 watch(isRailMode, (newValue) => {

@@ -168,7 +168,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { termsOfServiceUrl, privacyPolicyUrl } from '../config/environment'
+import { termsOfServiceUrl, privacyPolicyUrl, termsOfServiceVersion, privacyPolicyVersion } from '../config/environment'
 import { 
   signIn, 
   signUp, 
@@ -284,7 +284,9 @@ const signUpUser = async () => {
         userAttributes: {
           email: signUpEmail.value,
           name: signUpEmail.value,
-          'custom:organizationId': organizationId.value
+          'custom:organizationId': organizationId.value,
+          'custom:tos_version': termsOfServiceVersion,
+          'custom:pp_version': privacyPolicyVersion
         }
       }
     })

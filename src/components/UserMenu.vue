@@ -24,17 +24,8 @@
       </v-list-item>
       <v-divider></v-divider>
       <v-list-item
-        prepend-icon="mdi-comment-quote-outline"
-        title="フィードバック"
-        class="text-body-2"
-        link
-        @click="openFeedbackForm"
-      >
-      </v-list-item>
-      <v-list-item
         prepend-icon="mdi-information-outline"
         title="その他"
-        class="text-body-2"
       >
         <template #append>
           <v-icon icon="mdi-chevron-right"></v-icon>
@@ -46,16 +37,21 @@
         >
           <v-list class="pa-0 bg-blue-grey-darken-1">
             <v-list-item
+              prepend-icon="mdi-comment-quote-outline"
+              title="フィードバック"
+              link
+              @click="openFeedbackForm"
+            >
+            </v-list-item>
+            <v-list-item
               prepend-icon="mdi-file-document-outline"
               title="利用規約"
-              class="text-body-2"
               @click="openTermsOfService"
             >
             </v-list-item>
             <v-list-item
               prepend-icon="mdi-shield-account-outline"
               title="プライバシーポリシー"
-              class="text-body-2"
               @click="openPrivacyPolicy"
             >
             </v-list-item>
@@ -65,7 +61,6 @@
       <v-list-item
         prepend-icon="mdi-logout-variant"
         title="サインアウト"
-        class="text-body-2"
         @click="handleSignOut"
       >
       </v-list-item>
@@ -112,3 +107,9 @@ const handleSignOut = async () => {
   }
 }
 </script>
+
+<style>
+.v-list-item-title {
+  font-size: 0.925rem;
+}
+</style>
