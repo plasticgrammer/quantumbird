@@ -172,10 +172,10 @@ import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { useResponsive } from './composables/useResponsive'
 import UserMenu from './components/UserMenu.vue'
-import PolicyAcceptanceDialog from './components/PolicyAcceptanceDialog.vue'
 
 const ConfirmationDialog = defineAsyncComponent(() => import('./components/ConfirmationDialog.vue'))
 const LoadingOverlay = defineAsyncComponent(() => import('./components/LoadingOverlay.vue'))
+const PolicyAcceptanceDialog = defineAsyncComponent(() => import('./components/PolicyAcceptanceDialog.vue'))
 
 const router = useRouter()
 const store = useStore()

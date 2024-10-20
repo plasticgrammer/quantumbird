@@ -24,6 +24,13 @@
       </v-list-item>
       <v-divider></v-divider>
       <v-list-item
+        prepend-icon="mdi-cog-outline"
+        title="アカウント設定"
+        link
+        @click="navigateToAccounttSetting"
+      >
+      </v-list-item>
+      <v-list-item
         prepend-icon="mdi-information-outline"
         title="その他"
       >
@@ -85,6 +92,10 @@ const user = computed(() => ({
   username: store.getters['auth/name'],
   email: store.getters['auth/email']
 }))
+
+const navigateToAccounttSetting = () => {
+  router.push({ name: 'AccountSetting' })
+}
 
 const openFeedbackForm = () => {
   window.open(feedbackUrl, '_blank', 'noopener,noreferrer')
