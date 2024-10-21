@@ -1,4 +1,4 @@
-import { fetchUserAttributes, fetchAuthSession, signOut, updateUserAttributes } from 'aws-amplify/auth'
+import { fetchUserAttributes, fetchAuthSession, signOut, updateUserAttributes, deleteUser } from 'aws-amplify/auth'
 import { termsOfServiceVersion, privacyPolicyVersion } from '@/config/environment'
 
 const USER_CACHE_DURATION = 5 * 60 * 1000 // 5分
@@ -96,6 +96,30 @@ export default {
         // エラーが発生しても状態をクリアする
         commit('clearAuthState')
         throw error // エラーを上位に伝播させる
+      }
+    },
+
+    async deleteUserAccount({ commit }) {
+      try {
+        // ユーザーアカウントを削除
+        await deleteUser()
+
+        // ローカルの認証状態をクリア
+        commit('clearAuthState')
+
+        return { success: true, message: 'アカウントが正常に削除されました' }
+      } catch (error) {
+        console.error('Error deleting user account:', error)
+        console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
+
+        let errorMessage = 'アカウントの削除中にエラーが発生しました'
+        if (error.name === 'NotAuthorizedException') {
+          errorMessage = '認証エラー：再度ログインしてから試してください'
+        } else if (error.name === 'LimitExceededException') {
+          errorMessage = 'しばらく時間をおいてから再度お試しください'
+        }
+
+        throw new Error(errorMessage)
       }
     },
 
