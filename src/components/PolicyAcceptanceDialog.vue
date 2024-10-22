@@ -18,7 +18,6 @@
           v-if="needsTosAcceptance"
           v-model="tosAccepted"
           label="利用規約に同意します"
-          :rules="[v => !!v || '利用規約への同意が必要です']"
           hide-details
         >
           <template #label>
@@ -31,7 +30,6 @@
           v-if="needsPrivacyPolicyAcceptance"
           v-model="privacyPolicyAccepted"
           label="プライバシーポリシーに同意します"
-          :rules="[v => !!v || 'プライバシーポリシーへの同意が必要です']"
           hide-details
         >
           <template #label>
@@ -41,7 +39,7 @@
           </template>
         </v-checkbox>
       </v-card-text>
-      <v-card-actions class="px-4 pb-4">
+      <v-card-actions class="px-4 pb-2">
         <v-spacer></v-spacer>
         <v-btn
           color="primary"
