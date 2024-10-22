@@ -9,51 +9,50 @@
       </v-col>
     </v-row>
 
-    <v-row>
-      <v-col>
-        <v-card>
-          <v-card-title>アカウント設定</v-card-title>
-          <v-card-text>
-            <v-text-field
-              v-model="email"
-              label="メールアドレス"
-              readonly
-              hide-details
-              class="mb-4"
-            ></v-text-field>
+    <v-card>
+      <v-card-title>アカウント情報</v-card-title>
+      <v-card-text>
+        <v-text-field
+          v-model="email"
+          label="メールアドレス"
+          readonly
+          hide-details
+          class="mb-4"
+        ></v-text-field>
 
-            <v-btn
-              color="primary"
-              variant="text"
-              @click="showPasswordDialog = true"
-            >
-              パスワードを変更
-              <v-icon class="ml-1" size="small">mdi-chevron-right</v-icon>
-            </v-btn>
-          </v-card-text>
-        </v-card>
+        <v-btn
+          color="primary"
+          variant="text"
+          @click="showPasswordDialog = true"
+        >
+          パスワードを変更
+          <v-icon class="ml-1" size="small">mdi-chevron-right</v-icon>
+        </v-btn>
+      </v-card-text>
+    </v-card>
 
-        <v-card class="mt-4">
-          <v-card-title>データ管理</v-card-title>
-          <v-card-text>
-            <v-btn color="info" :loading="isExporting" @click="exportData">
-              週次報告データをエクスポート
-            </v-btn>
-            <p v-if="exportStatus" class="mt-2">{{ exportStatus }}</p>
-          </v-card-text>
-        </v-card>
+    <v-card class="mt-4">
+      <v-card-title>データ管理</v-card-title>
+      <v-card-text>
+        <p class="mb-3">週次報告データをJSON形式でエクスポートします。</p>
+        <v-btn color="info" :loading="isExporting" @click="exportData">
+          <v-icon class="mr-2">mdi-download</v-icon>
+          データをエクスポート
+        </v-btn>
+        <p v-if="exportStatus" class="mt-2">{{ exportStatus }}</p>
+      </v-card-text>
+    </v-card>
 
-        <v-card class="mt-4">
-          <v-card-title class="text-error">危険ゾーン</v-card-title>
-          <v-card-text>
-            <p class="mb-4">一度アカウントを削除すると、二度と元に戻せません。十分ご注意ください。</p>
-            <v-btn color="error" @click="showDeleteConfirmation = true">
-              アカウントを削除
-            </v-btn>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+    <v-card class="mt-4">
+      <v-card-title class="text-error">危険ゾーン</v-card-title>
+      <v-card-text>
+        <p class="mb-3">一度アカウントを削除すると、二度と元に戻せません。十分ご注意ください。</p>
+        <v-btn color="error" @click="showDeleteConfirmation = true">
+          <v-icon class="mr-2">mdi-account-off</v-icon>
+          アカウントを削除
+        </v-btn>
+      </v-card-text>
+    </v-card>
 
     <!-- パスワード変更ダイアログ -->
     <v-dialog v-model="showPasswordDialog" max-width="500px">
@@ -247,7 +246,7 @@ const deleteAccount = async () => {
       message: 'アカウントが削除されました',
       type: 'success'
     })
-    router.push('/login') // ログインページにリダイレクト
+    router.push({ name: 'SignIn' })
   } catch (error) {
     store.dispatch('showNotification', {
       message: 'アカウントの削除に失敗しました',
