@@ -474,35 +474,98 @@ def format_export_data(reports, member_names):
     formatted_reports = []
     
     for report in reports:
-        # Unix timestampを日時文字列に変換
-        created_at = datetime.fromtimestamp(report.get('createdAt', 0), TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')
-        approved_at = None
-        if report.get('approvedAt'):
-            approved_at = datetime.fromtimestamp(report['approvedAt'], TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')
-        
-        # 基本データの整形
-        formatted_report = {
-            'memberName': member_names.get(report['memberUuid'], f"Unknown ({report['memberUuid']})"),
-            'weekString': report['weekString'],
-            'status': report.get('status', 'pending'),
-            'overtimeHours': float(report.get('overtimeHours', 0)),
-            'projects': report.get('projects', []),
-            'issues': report.get('issues', ''),
-            'improvements': report.get('improvements', ''),
-            'stressHelp': report.get('stressHelp', ''),
-            'rating': {
-                'achievement': report.get('rating', {}).get('achievement'),
-                'disability': report.get('rating', {}).get('disability'),
-                'stress': report.get('rating', {}).get('stress')
-            },
-            'feedbacks': report.get('feedbacks', []),
-            'createdAt': created_at,
-            'approvedAt': approved_at
-        }
-        
-        formatted_reports.append(formatted_report)
+        try:
+            # タイムスタンプの処理を安全に行う
+            created_at = format_timestamp(report.get('createdAt', 0))
+            approved_at = format_timestamp(report.get('approvedAt')) if report.get('approvedAt') else None
+            
+            # 数値データの安全な変換
+            overtime_hours = safe_float_conversion(report.get('overtimeHours'))
+            
+            # 基本データの整形
+            formatted_report = {
+                'memberName': member_names.get(report['memberUuid'], f"Unknown ({report['memberUuid']})"),
+                'weekString': report['weekString'],
+                'status': report.get('status', 'pending'),
+                'overtimeHours': overtime_hours,
+                'projects': report.get('projects', []),
+                'issues': report.get('issues', ''),
+                'improvements': report.get('improvements', ''),
+                'stressHelp': report.get('stressHelp', ''),
+                'rating': {
+                    'achievement': safe_float_conversion(report.get('rating', {}).get('achievement')),
+                    'disability': safe_float_conversion(report.get('rating', {}).get('disability')),
+                    'stress': safe_float_conversion(report.get('rating', {}).get('stress'))
+                },
+                'feedbacks': report.get('feedbacks', []),
+                'createdAt': created_at,
+                'approvedAt': approved_at
+            }
+            
+            formatted_reports.append(formatted_report)
+        except Exception as e:
+            logger.error(f"Error formatting report for week {report.get('weekString')}: {str(e)}")
+            continue
     
     # 週とメンバー名でソート
     formatted_reports.sort(key=lambda x: (x['weekString'], x['memberName']))
     
     return formatted_reports
+
+def safe_float_conversion(value, default=0.0):
+    """安全に浮動小数点数に変換する
+    
+    Parameters:
+        value: 変換する値
+        default: デフォルト値（変換できない場合に返す値）
+    
+    Returns:
+        float: 変換された浮動小数点数またはデフォルト値
+    """
+    if value is None:
+        return default
+        
+    try:
+        if isinstance(value, (Decimal, float, int)):
+            return float(value)
+        elif isinstance(value, str):
+            return float(value.strip())
+        return default
+    except (ValueError, TypeError, InvalidOperation):
+        logger.warning(f"Failed to convert value to float: {value}")
+        return default
+
+def format_timestamp(timestamp):
+    """タイムスタンプを日時文字列に変換する
+    
+    Parameters:
+        timestamp: Unix timestamp (int or str) or ISO format string
+    
+    Returns:
+        str: フォーマットされた日時文字列
+    """
+    try:
+        if timestamp is None:
+            return None
+            
+        # 整数（Unix タイムスタンプ）の場合
+        if isinstance(timestamp, (int, float, Decimal)):
+            return datetime.fromtimestamp(float(timestamp), TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')
+        
+        # 文字列の場合
+        if isinstance(timestamp, str):
+            # Unix タイムスタンプとして解釈できる場合
+            try:
+                return datetime.fromtimestamp(float(timestamp), TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                # ISO形式の文字列として解釈
+                try:
+                    return parse(timestamp).astimezone(TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    logger.warning(f"Unable to parse timestamp: {timestamp}")
+                    return timestamp
+        
+        return None
+    except Exception as e:
+        logger.error(f"Error formatting timestamp {timestamp}: {str(e)}")
+        return None

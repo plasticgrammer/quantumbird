@@ -161,10 +161,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
+import { exportReports } from '../services/reportService'
 
 const store = useStore()
 const router = useRouter()
 const passwordForm = ref(null)
+const organizationId = store.getters['auth/organizationId']
 
 const email = ref('')
 const showDeleteConfirmation = ref(false)
@@ -261,13 +263,13 @@ const exportData = async () => {
   isExporting.value = true
   exportStatus.value = 'エクスポート処理中...'
   try {
-    const result = await store.dispatch('auth/exportUserData')
+    const result = await exportReports(organizationId)
     const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.style.display = 'none'
     a.href = url
-    a.download = 'user_data_export.json'
+    a.download = 'weekly_report.json'
     document.body.appendChild(a)
     a.click()
     window.URL.revokeObjectURL(url)

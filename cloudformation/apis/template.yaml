@@ -282,6 +282,14 @@ Resources:
             Method: get
             Auth:
               Authorizer: CognitoAuthorizer
+        GetExportData:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /weekly-report/export
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
         SubmitFeedback:
           Type: Api
           Properties:

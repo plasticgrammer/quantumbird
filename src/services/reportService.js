@@ -22,6 +22,10 @@ export const listReports = async (organizationId, weekString) => {
   return apiClient.get(BASE_PATH, { organizationId, weekString })
 }
 
+export const exportReports = async (organizationId) => {
+  return apiClient.get(`${BASE_PATH}/export`, { organizationId })
+}
+
 export const getReportStatus = async (organizationId, weekString) => {
   return apiClient.get(`${BASE_PATH}/status`, { organizationId, weekString })
 }
