@@ -1,10 +1,38 @@
-import { fetchUserAttributes, fetchAuthSession, signOut, updateUserAttributes, deleteUser } from 'aws-amplify/auth'
+import { fetchUserAttributes, fetchAuthSession, signOut, updateUserAttributes, updatePassword, deleteUser } from 'aws-amplify/auth'
 import { termsOfServiceVersion, privacyPolicyVersion } from '@/config/environment'
 
-const USER_CACHE_DURATION = 5 * 60 * 1000 // 5分
+const AUTH_CONSTANTS = {
+  CACHE_DURATION: 5 * 60 * 1000, // 5分
+  ERROR_MESSAGES: {
+    AUTH: '認証エラー：再度ログインしてから試してください',
+    RATE_LIMIT: 'しばらく時間をおいてから再度お試しください',
+    GENERIC: 'エラーが発生しました',
+    DELETE_ACCOUNT: 'アカウントの削除中にエラーが発生しました',
+    NO_TOKEN: '認証情報が見つかりません。再度ログインしてください'
+  }
+}
+
+const createErrorHandler = (prefix) => (error) => {
+  console.error(`Error ${prefix}:`, error)
+  if (error?.details) {
+    console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
+  }
+  throw error
+}
+
+const mapErrorMessage = (error) => {
+  if (error.name === 'NotAuthorizedException') {
+    return AUTH_CONSTANTS.ERROR_MESSAGES.AUTH
+  }
+  if (error.name === 'LimitExceededException') {
+    return AUTH_CONSTANTS.ERROR_MESSAGES.RATE_LIMIT
+  }
+  return error.message || AUTH_CONSTANTS.ERROR_MESSAGES.GENERIC
+}
 
 export default {
   namespaced: true,
+  
   state: () => ({
     user: null,
     token: null,
@@ -12,38 +40,50 @@ export default {
     lastUserFetch: null,
     cognitoUserSub: null
   }),
+
   mutations: {
     setUser(state, user) {
       state.user = user
       state.lastUserFetch = Date.now()
     },
+
     setToken(state, token) {
       state.token = token
       state.lastTokenFetch = Date.now()
     },
+
     setCognitoUserSub(state, sub) {
       state.cognitoUserSub = sub
     },
+
     clearAuthState(state) {
-      state.user = null
-      state.token = null
-      state.lastTokenFetch = null
-      state.lastUserFetch = null
-      state.cognitoUserSub = null
+      Object.assign(state, {
+        user: null,
+        token: null,
+        lastTokenFetch: null,
+        lastUserFetch: null,
+        cognitoUserSub: null
+      })
     },
+
     updateUserPolicyVersions(state, { tosVersion, privacyPolicyVersion }) {
       if (state.user) {
-        state.user.tosVersion = tosVersion || state.user.tosVersion
-        state.user.privacyPolicyVersion = privacyPolicyVersion || state.user.privacyPolicyVersion
+        state.user = {
+          ...state.user,
+          tosVersion: tosVersion || state.user.tosVersion,
+          privacyPolicyVersion: privacyPolicyVersion || state.user.privacyPolicyVersion
+        }
       }
     }
   },
+
   actions: {
     async fetchUser({ commit, state }) {
-      if (state.user && Date.now() - state.lastUserFetch < USER_CACHE_DURATION) {
-        return state.user
-      }
       try {
+        if (state.user && Date.now() - state.lastUserFetch < AUTH_CONSTANTS.CACHE_DURATION) {
+          return state.user
+        }
+
         const attributes = await fetchUserAttributes()
         const userInfo = {
           organizationId: attributes['custom:organizationId'],
@@ -52,11 +92,12 @@ export default {
           tosVersion: attributes['custom:tos_version'],
           privacyPolicyVersion: attributes['custom:pp_version']
         }
+
         commit('setUser', userInfo)
         commit('setCognitoUserSub', attributes.sub)
         return userInfo
       } catch (error) {
-        console.error('Error fetching user:', error)
+        createErrorHandler('fetching user')(error)
         commit('setUser', null)
         commit('setCognitoUserSub', null)
         throw error
@@ -66,14 +107,15 @@ export default {
     async fetchAuthToken({ commit, dispatch }, { forceRefresh = false } = {}) {
       try {
         const { tokens } = await fetchAuthSession({ forceRefresh })
-        if (tokens?.idToken) {
-          const token = tokens.idToken.toString()
-          commit('setToken', token)
-          return token
+        if (!tokens?.idToken) {
+          throw new Error(AUTH_CONSTANTS.ERROR_MESSAGES.NO_TOKEN)
         }
-        throw new Error('No ID token found in auth session')
+        
+        const token = tokens.idToken.toString()
+        commit('setToken', token)
+        return token
       } catch (error) {
-        console.error('Error fetching auth token:', error)
+        createErrorHandler('fetching auth token')(error)
         await dispatch('handleAuthFailure')
         throw error
       }
@@ -82,50 +124,42 @@ export default {
     async handleAuthFailure({ dispatch }) {
       console.log('Authentication failure, signing out...')
       await dispatch('signOut')
-      // this.$router.push('/signin')
-      // このアクションを呼び出す側でリダイレクトを処理するべきです
     },
 
     async signOut({ commit }) {
       try {
         await signOut()
         commit('clearAuthState')
-        console.log('Successfully signed out')
       } catch (error) {
-        console.error('Error signing out:', error)
-        // エラーが発生しても状態をクリアする
+        createErrorHandler('signing out')(error)
         commit('clearAuthState')
-        throw error // エラーを上位に伝播させる
+        throw error
+      }
+    },
+
+    async updatePassword(_, { oldPassword, newPassword }) {
+      try {
+        await updatePassword({ oldPassword, newPassword })
+        return { success: true }
+      } catch (error) {
+        createErrorHandler('updating password')(error)
+        throw new Error(mapErrorMessage(error))
       }
     },
 
     async deleteUserAccount({ commit }) {
       try {
-        // ユーザーアカウントを削除
         await deleteUser()
-
-        // ローカルの認証状態をクリア
         commit('clearAuthState')
-
         return { success: true, message: 'アカウントが正常に削除されました' }
       } catch (error) {
-        console.error('Error deleting user account:', error)
-        console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
-
-        let errorMessage = 'アカウントの削除中にエラーが発生しました'
-        if (error.name === 'NotAuthorizedException') {
-          errorMessage = '認証エラー：再度ログインしてから試してください'
-        } else if (error.name === 'LimitExceededException') {
-          errorMessage = 'しばらく時間をおいてから再度お試しください'
-        }
-
-        throw new Error(errorMessage)
+        createErrorHandler('deleting user account')(error)
+        throw new Error(mapErrorMessage(error))
       }
     },
 
     async checkPolicyAcceptance({ state, dispatch }) {
       const user = state.user || await dispatch('fetchUser')
-
       return {
         needsTosAcceptance: user.tosVersion !== termsOfServiceVersion,
         needsPrivacyPolicyAcceptance: user.privacyPolicyVersion !== privacyPolicyVersion
@@ -134,54 +168,38 @@ export default {
 
     async updatePolicyAcceptance({ commit, dispatch }, { tosAccepted, privacyPolicyAccepted }) {
       try {
-        console.log('Updating policy acceptance:', { tosAccepted, privacyPolicyAccepted })
-        console.log('Current versions:', { termsOfServiceVersion, privacyPolicyVersion })
-
         const updates = {}
-        let hasUpdates = false
 
         if (tosAccepted && termsOfServiceVersion) {
           updates['custom:tos_version'] = termsOfServiceVersion
-          hasUpdates = true
         }
         if (privacyPolicyAccepted && privacyPolicyVersion) {
           updates['custom:pp_version'] = privacyPolicyVersion
-          hasUpdates = true
         }
 
-        console.log('Attributes to update:', updates)
-
-        if (hasUpdates) {
-          console.log('Calling updateUserAttributes with:', updates)
-          const result = await updateUserAttributes({
-            userAttributes: updates
-          })
-          console.log('updateUserAttributes result:', result)
+        if (Object.keys(updates).length > 0) {
+          await updateUserAttributes({ userAttributes: updates })
 
           commit('updateUserPolicyVersions', {
             tosVersion: tosAccepted ? termsOfServiceVersion : undefined,
             privacyPolicyVersion: privacyPolicyAccepted ? privacyPolicyVersion : undefined
           })
 
-          // ユーザー情報を再取得してキャッシュを更新
           await dispatch('fetchUser')
-        } else {
-          console.log('No updates to policy acceptance were necessary')
         }
 
         return { success: true }
       } catch (error) {
-        console.error('Error updating policy acceptance:', error)
-        console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
+        createErrorHandler('updating policy acceptance')(error)
         throw error
       }
     }
   },
 
   getters: {
-    organizationId: (state) => state.user?.organizationId,
-    name: (state) => state.user?.username,
-    email: (state) => state.user?.email,
+    organizationId: state => state.user?.organizationId,
+    name: state => state.user?.username,
+    email: state => state.user?.email,
     isAuthenticated: state => !!state.user,
     token: state => state.token,
     cognitoUserSub: state => state.cognitoUserSub,

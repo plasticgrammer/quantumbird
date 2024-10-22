@@ -14,15 +14,22 @@
         <v-card>
           <v-card-title>アカウント設定</v-card-title>
           <v-card-text>
-            <v-form @submit.prevent="updateSettings">
-              <v-text-field
-                v-model="email"
-                label="メールアドレス"
-                readonly
-              ></v-text-field>
-              <!-- 他の編集可能なフィールドをここに追加 -->
-              <v-btn color="primary" type="submit">設定を保存</v-btn>
-            </v-form>
+            <v-text-field
+              v-model="email"
+              label="メールアドレス"
+              readonly
+              hide-details
+              class="mb-4"
+            ></v-text-field>
+
+            <v-btn
+              color="primary"
+              variant="text"
+              @click="showPasswordDialog = true"
+            >
+              パスワードを変更
+              <v-icon class="ml-1" size="small">mdi-chevron-right</v-icon>
+            </v-btn>
           </v-card-text>
         </v-card>
 
@@ -30,14 +37,14 @@
           <v-card-title>データ管理</v-card-title>
           <v-card-text>
             <v-btn color="info" :loading="isExporting" @click="exportData">
-              データをエクスポート
+              週次報告データをエクスポート
             </v-btn>
             <p v-if="exportStatus" class="mt-2">{{ exportStatus }}</p>
           </v-card-text>
         </v-card>
 
         <v-card class="mt-4">
-          <v-card-title class="error--text">危険ゾーン</v-card-title>
+          <v-card-title class="text-error">危険ゾーン</v-card-title>
           <v-card-text>
             <p class="mb-4">一度アカウントを削除すると、二度と元に戻せません。十分ご注意ください。</p>
             <v-btn color="error" @click="showDeleteConfirmation = true">
@@ -47,6 +54,78 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- パスワード変更ダイアログ -->
+    <v-dialog v-model="showPasswordDialog" max-width="500px">
+      <v-card>
+        <v-card-title>パスワード変更</v-card-title>
+        <v-card-text class="pb-2">
+          <v-form ref="passwordForm" @submit.prevent="changePassword">
+            <v-text-field
+              v-model="passwordData.oldPassword"
+              label="現在のパスワード"
+              :type="showPassword ? 'text' : 'password'"
+              :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+              :rules="[v => !!v || '現在のパスワードを入力してください']"
+              hide-details="auto"
+              class="mb-4"
+              @click:append="showPassword = !showPassword"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="passwordData.newPassword"
+              label="新しいパスワード"
+              :type="showNewPassword ? 'text' : 'password'"
+              :append-icon="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'"
+              :rules="passwordRules"
+              hide-details="auto"
+              class="mb-4"
+              @click:append="showNewPassword = !showNewPassword"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="passwordData.confirmPassword"
+              label="新しいパスワード（確認）"
+              :type="showNewPassword ? 'text' : 'password'"
+              :rules="[
+                v => !!v || 'パスワードを確認してください',
+                v => v === passwordData.newPassword || 'パスワードが一致しません'
+              ]"
+              hide-details="auto"
+              class="mb-4"
+            ></v-text-field>
+
+            <div class="text-caption text-grey mb-2">
+              パスワードは以下の要件を満たす必要があります：
+              <ul class="ml-5 mt-1">
+                <li>8文字以上</li>
+                <li>大文字を含む</li>
+                <li>小文字を含む</li>
+                <li>数字を含む</li>
+              </ul>
+            </div>
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            variant="text"
+            @click="showPasswordDialog = false"
+          >
+            キャンセル
+          </v-btn>
+          <v-btn
+            color="primary"
+            :loading="isChangingPassword"
+            :disabled="isChangingPassword"
+            @click="changePassword"
+          >
+            変更する
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- 削除確認ダイアログ -->
     <v-dialog v-model="showDeleteConfirmation" max-width="400px">
@@ -85,12 +164,32 @@ import { useRouter } from 'vue-router'
 
 const store = useStore()
 const router = useRouter()
+const passwordForm = ref(null)
 
 const email = ref('')
 const showDeleteConfirmation = ref(false)
 const confirmationText = ref('')
 const isExporting = ref(false)
 const exportStatus = ref('')
+
+const showPasswordDialog = ref(false)
+const showPassword = ref(false)
+const showNewPassword = ref(false)
+const isChangingPassword = ref(false)
+const passwordData = ref({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+// パスワードのバリデーションルール
+const passwordRules = [
+  v => !!v || 'パスワードを入力してください',
+  v => v.length >= 8 || 'パスワードは8文字以上である必要があります',
+  v => /[A-Z]/.test(v) || '大文字を含める必要があります',
+  v => /[a-z]/.test(v) || '小文字を含める必要があります',
+  v => /[0-9]/.test(v) || '数字を含める必要があります'
+]
 
 const user = computed(() => store.state.auth.user)
 
@@ -99,20 +198,44 @@ onMounted(() => {
   // 他の設定フィールドの初期化
 })
 
-const updateSettings = async () => {
+const changePassword = async () => {
+  if (!passwordForm.value.validate()) return
+
+  isChangingPassword.value = true
   try {
-    // 設定の更新処理
-    await store.dispatch('auth/updateUserSettings', { /* 更新するフィールド */ })
+    await store.dispatch('auth/updatePassword', {
+      oldPassword: passwordData.value.oldPassword,
+      newPassword: passwordData.value.newPassword
+    })
+
     store.dispatch('showNotification', {
-      message: '設定が更新されました',
+      message: 'パスワードが正常に変更されました',
       type: 'success'
     })
+
+    resetPasswordForm()
+    showPasswordDialog.value = false
   } catch (error) {
+    let errorMessage = 'パスワードの変更に失敗しました'
+    if (error.message === 'Incorrect username or password.') {
+      errorMessage = '現在のパスワードが正しくありません'
+    }
     store.dispatch('showNotification', {
-      message: '設定の更新に失敗しました',
+      message: errorMessage,
       type: 'error'
     })
+  } finally {
+    isChangingPassword.value = false
   }
+}
+
+const resetPasswordForm = () => {
+  passwordData.value = {
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  }
+  passwordForm.value?.reset()
 }
 
 const deleteAccount = async () => {

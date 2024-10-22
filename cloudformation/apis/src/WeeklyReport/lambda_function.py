@@ -52,6 +52,8 @@ def lambda_handler(event, context):
                 return handle_get_report_status(event)
             elif resource == '/weekly-report/stats':
                 return handle_get_stats_data(event)
+            elif resource == '/weekly-report/export':
+                return handle_export(event)
         elif http_method == 'POST':
             if resource == '/weekly-report':
                 return handle_post(event)
@@ -417,3 +419,90 @@ def get_member(member_uuid):
     except Exception as e:
         logger.error(f"Error getting member: {str(e)}", exc_info=True)
         return None
+
+def handle_export(event):
+    """組織単位での週次レポートデータのエクスポートを処理する"""
+    params = event.get('queryStringParameters', {}) or {}
+    if 'organizationId' not in params:
+        return create_response(400, 'Missing organizationId parameter')
+
+    organization_id = params['organizationId']
+    
+    try:
+        # WeeklyReportsテーブルから対象組織の全データを取得
+        reports = get_all_organization_reports(organization_id)
+        
+        # レポートからmemberUuidの一覧を抽出
+        member_uuids = list(set(report['memberUuid'] for report in reports))
+        
+        # メンバー名の取得
+        member_names = get_member_names(member_uuids)
+        
+        # レポートデータの整形
+        formatted_reports = format_export_data(reports, member_names)
+        
+        return create_response(200, formatted_reports)
+    except Exception as e:
+        logger.error(f"Error exporting reports: {str(e)}", exc_info=True)
+        return create_response(500, f'Failed to export reports: {str(e)}')
+
+def get_all_organization_reports(organization_id):
+    """組織の全週次レポートを取得する"""
+    reports = []
+    last_evaluated_key = None
+    
+    while True:
+        query_params = {
+            'IndexName': 'OrganizationWeekIndex',
+            'KeyConditionExpression': Key('organizationId').eq(organization_id)
+        }
+        
+        if last_evaluated_key:
+            query_params['ExclusiveStartKey'] = last_evaluated_key
+            
+        response = weekly_reports_table.query(**query_params)
+        reports.extend(response.get('Items', []))
+        
+        last_evaluated_key = response.get('LastEvaluatedKey')
+        if not last_evaluated_key:
+            break
+    
+    return reports
+
+def format_export_data(reports, member_names):
+    """エクスポート用にレポートデータを整形する"""
+    formatted_reports = []
+    
+    for report in reports:
+        # Unix timestampを日時文字列に変換
+        created_at = datetime.fromtimestamp(report.get('createdAt', 0), TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')
+        approved_at = None
+        if report.get('approvedAt'):
+            approved_at = datetime.fromtimestamp(report['approvedAt'], TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')
+        
+        # 基本データの整形
+        formatted_report = {
+            'memberName': member_names.get(report['memberUuid'], f"Unknown ({report['memberUuid']})"),
+            'weekString': report['weekString'],
+            'status': report.get('status', 'pending'),
+            'overtimeHours': float(report.get('overtimeHours', 0)),
+            'projects': report.get('projects', []),
+            'issues': report.get('issues', ''),
+            'improvements': report.get('improvements', ''),
+            'stressHelp': report.get('stressHelp', ''),
+            'rating': {
+                'achievement': report.get('rating', {}).get('achievement'),
+                'disability': report.get('rating', {}).get('disability'),
+                'stress': report.get('rating', {}).get('stress')
+            },
+            'feedbacks': report.get('feedbacks', []),
+            'createdAt': created_at,
+            'approvedAt': approved_at
+        }
+        
+        formatted_reports.append(formatted_report)
+    
+    # 週とメンバー名でソート
+    formatted_reports.sort(key=lambda x: (x['weekString'], x['memberName']))
+    
+    return formatted_reports
