@@ -39,7 +39,7 @@
         <v-card class="mt-4">
           <v-card-title class="error--text">危険ゾーン</v-card-title>
           <v-card-text>
-            <p>アカウントを削除すると、すべてのデータが永久に失われます。この操作は取り消せません。</p>
+            <p class="mb-4">一度アカウントを削除すると、二度と元に戻せません。十分ご注意ください。</p>
             <v-btn color="error" @click="showDeleteConfirmation = true">
               アカウントを削除
             </v-btn>
@@ -53,11 +53,13 @@
       <v-card>
         <v-card-title>アカウント削除の確認</v-card-title>
         <v-card-text>
-          本当にアカウントを削除しますか？<br>この操作は取り消せません。
+          <p class="mb-4">
+            本当にアカウントを削除しますか？<br>この操作は取り消せません。
+          </p>
           <v-text-field
             v-model="confirmationText"
             label="確認のため 'DELETE' と入力してください"
-            :rules="[v => v === 'DELETE' || '正しいテキストを入力してください']"
+            hide-details
           ></v-text-field>
         </v-card-text>
         <v-card-actions>
