@@ -78,12 +78,14 @@ export default {
   },
 
   actions: {
-    async fetchUser({ commit, state }) {
+    async fetchUser({ commit, state, dispatch }) {
       try {
         if (state.user && Date.now() - state.lastUserFetch < AUTH_CONSTANTS.CACHE_DURATION) {
+          // キャッシュ期間内の場合、トークンの有効性を確認
+          await dispatch('validateToken')
           return state.user
         }
-
+  
         const attributes = await fetchUserAttributes()
         const userInfo = {
           organizationId: attributes['custom:organizationId'],
@@ -92,7 +94,7 @@ export default {
           tosVersion: attributes['custom:tos_version'],
           privacyPolicyVersion: attributes['custom:pp_version']
         }
-
+  
         commit('setUser', userInfo)
         commit('setCognitoUserSub', attributes.sub)
         return userInfo
@@ -103,7 +105,7 @@ export default {
         throw error
       }
     },
-
+  
     async fetchAuthToken({ commit, dispatch }, { forceRefresh = false } = {}) {
       try {
         const { tokens } = await fetchAuthSession({ forceRefresh })
@@ -116,11 +118,37 @@ export default {
         return token
       } catch (error) {
         createErrorHandler('fetching auth token')(error)
-        await dispatch('handleAuthFailure')
-        throw error
+        
+        // トークンのリフレッシュを試行
+        try {
+          const { tokens } = await fetchAuthSession({ forceRefresh: true })
+          if (!tokens?.idToken) {
+            throw new Error(AUTH_CONSTANTS.ERROR_MESSAGES.NO_TOKEN)
+          }
+          
+          const token = tokens.idToken.toString()
+          commit('setToken', token)
+          return token
+        } catch (refreshError) {
+          createErrorHandler('refreshing auth token')(refreshError)
+          await dispatch('handleAuthFailure')
+          throw refreshError
+        }
       }
     },
-
+  
+    async validateToken({ dispatch }) {
+      try {
+        // トークンの有効性を確認
+        await fetchAuthSession()
+      } catch (error) {
+        createErrorHandler('validating token')(error)
+        
+        // トークンが無効な場合、再取得を試行
+        await dispatch('fetchAuthToken', { forceRefresh: true })
+      }
+    },
+  
     async handleAuthFailure({ dispatch }) {
       console.log('Authentication failure, signing out...')
       await dispatch('signOut')

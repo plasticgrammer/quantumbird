@@ -194,11 +194,6 @@ const passwordRules = [
 
 const user = computed(() => store.state.auth.user)
 
-onMounted(() => {
-  email.value = user.value.email
-  // 他の設定フィールドの初期化
-})
-
 const changePassword = async () => {
   if (!passwordForm.value.validate()) return
 
@@ -276,12 +271,13 @@ const exportData = async () => {
   } catch (error) {
     console.error('Data export failed:', error)
     exportStatus.value = 'エクスポートに失敗しました'
-    store.dispatch('showNotification', {
-      message: 'データのエクスポートに失敗しました',
-      type: 'error'
-    })
   } finally {
     isExporting.value = false
   }
 }
+
+onMounted(() => {
+  email.value = user.value.email
+  // 他の設定フィールドの初期化
+})
 </script>

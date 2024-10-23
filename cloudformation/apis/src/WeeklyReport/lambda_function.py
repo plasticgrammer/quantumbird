@@ -5,7 +5,7 @@ from boto3.dynamodb.conditions import Key
 import os
 import time
 import urllib.parse
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from datetime import datetime, timedelta
 from dateutil.parser import parse
 from zoneinfo import ZoneInfo
