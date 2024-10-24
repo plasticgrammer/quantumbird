@@ -96,7 +96,7 @@
             :aspect-ratio="1"
           ></v-img>
 
-          <v-sheet border="info md" class="text-left pa-4 bg-grey-lighten-4 rounded-lg">
+          <v-sheet border="info md" class="text-left pa-4 mx-3 rounded-lg">
             <p class="text-body-1 mb-2">
               あなたへのアドバイス
             </p>
@@ -108,10 +108,7 @@
             <!-- アドバイス生成中の表示 -->
             <div v-else-if="isLoadingAdvice">
               <div class="d-flex align-center justify-center py-4">
-                <v-progress-circular
-                  indeterminate
-                  color="primary"
-                ></v-progress-circular>
+                <v-skeleton-loader type="paragraph" class="w-100 bg-transparent" />
               </div>
             </div>
             <!-- アドバイス生成前の表示 -->

@@ -46,22 +46,21 @@ def create_prompt(report: Dict[str, Any]) -> str:
     achievement_level = parse_rating_level(rating.get('achievement', 0))
     stress_level = parse_rating_level(rating.get('stress', 0))
     disability_level = parse_rating_level(rating.get('disability', 0))
-    
     # プロジェクト作業の整形
     projects_str = format_projects(report.get('projects', []))
-    
     # 残業時間
     overtime = report.get('overtimeHours', 0)
     
-    prompt = f"""Human: あなたは経験豊富なマネージャーとして週次報告へのアドバイスを提供してください。以下が報告の内容です：
+    prompt = f"""Human: あなたは豊富な知識がある優秀なAIメンタルサポーター兼アドバイザーです。
+週次報告へのアドバイスを提供してください。以下が報告の内容です：
 
 【実施した作業】
 {projects_str}
 
-【課題・懸念事項】
+【振り返り（成果と課題）】
 {report.get('issues', '記載なし')}
 
-【改善提案】
+【改善施策】
 {report.get('improvements', '記載なし')}
 
 【各種指標】
@@ -71,12 +70,12 @@ def create_prompt(report: Dict[str, Any]) -> str:
 ・残業時間: {overtime}時間
 
 以下の3つの観点から具体的なアドバイスを提供してください：
-1. 業務遂行とワークライフバランス
-2. メンタルヘルスとストレス管理
-3. 課題解決と改善提案
+・業務遂行とワークライフバランス
+・メンタルヘルスとストレス管理
+・課題解決と改善提案
 具体的な行動提案を含め、前向きで実践的なアドバイスを心がけてください。
 数値評価を踏まえた具体的な改善アプローチを提案してください。
-各アドバイスは空行により分割して見やすくしてください。
+過剰なアドバイスは避けて、メンタルケアを最重要項目としてください。
 Assistant:"""
 
     return prompt
