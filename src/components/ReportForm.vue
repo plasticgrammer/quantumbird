@@ -774,7 +774,7 @@ const handleSubmit = async () => {
     } else {
       await updateReport(cleanedReport)
     }
-    emit('report-submitted')
+    emit('report-submitted', cleanedReport)
   } catch (error) {
     showError('報告の提出に失敗しました。', error)
   }

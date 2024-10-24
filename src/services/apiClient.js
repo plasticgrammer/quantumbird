@@ -10,7 +10,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 30000,
   withCredentials: false
 })
 
@@ -79,7 +79,7 @@ api.interceptors.response.use(
   async (error) => {
     stopLoading()
     const originalRequest = error.config
- 
+
     if (isTokenError(error) && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

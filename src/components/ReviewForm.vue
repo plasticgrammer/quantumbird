@@ -377,7 +377,7 @@ import OvertimeDisplay from '../components/OvertimeDisplay.vue'
 const RatingItem = defineAsyncComponent(() => import('../components/RatingItem.vue'))
 const ScrollNavigation = defineAsyncComponent(() => import('../components/ScrollNavigation.vue'))
 
-const { formatDateTimeJp, formatDateJp, getWeekFromString, getPreviousWeekString } = useCalendar()
+const { formatDateTimeJp, formatDateJp, getPreviousWeekString } = useCalendar()
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
 const showNotification = inject('showNotification')
 const showError = inject('showError')
@@ -455,8 +455,12 @@ const copyShareUrl = async () => {
     const result = await generateToken(params)
     
     const shareUrl = `${rootUrl}/view/${result.token}#_=`
-    const week = getWeekFromString(props.weekString)
-    const comment = `報告期間：${formatDateJp(week.startDate)}〜${formatDateJp(week.endDate)}\n（リンクは2週間有効です）`
+    
+    // 14日後の日付を計算
+    const expiryDate = new Date()
+    expiryDate.setDate(expiryDate.getDate() + 14)
+    const comment = `有効期限：${formatDateJp(expiryDate)}`
+    
     const shareText = `${shareUrl}\n${comment}`
     
     await navigator.clipboard.writeText(shareText)

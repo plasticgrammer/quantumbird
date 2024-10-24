@@ -160,6 +160,34 @@ Resources:
             Path: /public/project
             Method: GET
 
+  BedrockFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Stage}-bedrock"
+      CodeUri: ./src/Bedrock
+      Timeout: 30
+      MemorySize: 256
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource:
+                - !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/anthropic.claude-v2:1"
+      Description: "Weekly Report Advice Generation using AWS Bedrock"
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+      Layers:
+        - !Ref CommonLayer
+      Events:
+        WeeklyReportAdvice:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /bedrock/advice
+            Method: POST
+
   OrganizationFunction:
     Type: AWS::Serverless::Function
     Properties:
