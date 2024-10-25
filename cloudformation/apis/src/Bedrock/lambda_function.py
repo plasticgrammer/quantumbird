@@ -40,7 +40,25 @@ def format_projects(projects: list) -> str:
 
 def create_prompt(report: Dict[str, Any]) -> str:
     """週次報告の内容からプロンプトを生成する"""
-    
+
+    # 【メンタルケア】
+    adviser_role = 'ポジティブ心理学に基づいた優秀なAIメンタルサポーター'
+    advise_point = """
+具体的な行動提案を含め、前向きで実践的なアドバイスを心がけてください。
+過剰なアドバイスは避けて、メンタルケアを最重要項目としてください。"""
+
+    # 【ソリューション提供】
+#     adviser_role = '経験豊富な包括的な視点を持つマネージャー'
+#     advise_point = """
+# 課題解決の観点から具体的な改善アプローチを提案してください。
+# 前向きで実践的なアドバイスを心がけてください。"""
+
+    # 【スキル開発・モチベ向上】
+#     adviser_role = '市場価値向上を重視するキャリアアドバイザー'
+#     advise_point = """
+# 個人の成長に焦点を当てた視点を提供してください。
+# スキル開発・モチベーション向上の具体的アドバイスをお願いします。"""
+
     # 評価指標の解析
     rating = report.get('rating', {})
     achievement_level = parse_rating_level(rating.get('achievement', 0))
@@ -50,10 +68,8 @@ def create_prompt(report: Dict[str, Any]) -> str:
     projects_str = format_projects(report.get('projects', []))
     # 残業時間
     overtime = report.get('overtimeHours', 0)
-    
-    prompt = f"""Human: あなたは豊富な知識がある優秀なAIメンタルサポーター兼アドバイザーです。
-週次報告へのアドバイスを提供してください。以下が報告の内容です：
-
+    # 週次報告内容
+    report_content = f"""
 【実施した作業】
 {projects_str}
 
@@ -64,18 +80,18 @@ def create_prompt(report: Dict[str, Any]) -> str:
 {report.get('improvements', '記載なし')}
 
 【各種指標】
-・ストレス度: {stress_level} ({rating.get('stress', 0)}/5.0)
-・タスク目標の達成度: {achievement_level} ({rating.get('achievement', 0)}/5.0)
-・タスク遂行の難易度: {disability_level} ({rating.get('disability', 0)}/5.0)
-・残業時間: {overtime}時間
+・ストレス度: {stress_level} ({rating.get('stress', 0)}/5)
+・タスク目標の達成度: {achievement_level} ({rating.get('achievement', 0)}/5)
+・タスク遂行の難易度: {disability_level} ({rating.get('disability', 0)}/5)
+・残業時間: {overtime}時間"""
 
-以下の3つの観点から具体的なアドバイスを提供してください：
-・業務遂行とワークライフバランス
-・メンタルヘルスとストレス管理
-・課題解決と改善提案
-具体的な行動提案を含め、前向きで実践的なアドバイスを心がけてください。
-数値評価を踏まえた具体的な改善アプローチを提案してください。
-過剰なアドバイスは避けて、メンタルケアを最重要項目としてください。
+    # プロンプト
+    prompt = f"""Human: あなたは{adviser_role}です。
+週次報告へのアドバイスを提供してください。以下が報告の内容です：
+
+{report_content}
+
+{advise_point}
 Assistant:"""
 
     return prompt
