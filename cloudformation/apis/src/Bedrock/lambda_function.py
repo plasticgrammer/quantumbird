@@ -41,23 +41,10 @@ def format_projects(projects: list) -> str:
 def create_prompt(report: Dict[str, Any]) -> str:
     """週次報告の内容からプロンプトを生成する"""
 
-    # 【メンタルケア】
-    adviser_role = 'ポジティブ心理学に基づいた優秀なAIメンタルサポーター'
-    advise_point = """
-具体的な行動提案を含め、前向きで実践的なアドバイスを心がけてください。
-過剰なアドバイスは避けて、メンタルケアを最重要項目としてください。"""
-
-    # 【ソリューション提供】
-#     adviser_role = '経験豊富な包括的な視点を持つマネージャー'
-#     advise_point = """
-# 課題解決の観点から具体的な改善アプローチを提案してください。
-# 前向きで実践的なアドバイスを心がけてください。"""
-
-    # 【スキル開発・モチベ向上】
-#     adviser_role = '市場価値向上を重視するキャリアアドバイザー'
-#     advise_point = """
-# 個人の成長に焦点を当てた視点を提供してください。
-# スキル開発・モチベーション向上の具体的アドバイスをお願いします。"""
+    # クライアントから送られてきたアドバイザーロール情報を取得
+    advisor_role = report.get('advisorRole', {})
+    adviser_role = advisor_role.get('role', '経験豊富なマネージャー')
+    advise_point = advisor_role.get('point', '具体的な行動提案を含め、前向きで実践的なアドバイスを心がけてください。')
 
     # 評価指標の解析
     rating = report.get('rating', {})

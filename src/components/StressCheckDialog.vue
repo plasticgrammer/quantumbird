@@ -3,7 +3,7 @@
     <v-card color="blue-lighten-5" min-height="470px">
       <v-card-text class="pt-0">
         <v-img
-          src="@/assets/images/toraneko.png"
+          src="@/assets/images/advisor_mental.png"
           max-width="240"
           class="mx-auto my-0"
           :aspect-ratio="1"

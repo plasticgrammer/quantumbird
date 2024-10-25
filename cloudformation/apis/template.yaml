@@ -104,7 +104,7 @@ Resources:
               Action:
                 - sns:Publish
               Resource: !Ref WebPushPlatformApplicationArn
-      Description: ""
+      Description: "Handles public endpoints for organization reports, weekly reports, member management, and project information without requiring authentication"
       Environment:
         Variables:
           STAGE: !Ref Stage
@@ -174,7 +174,7 @@ Resources:
                 - bedrock:InvokeModel
               Resource:
                 - !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/anthropic.claude-v2:1"
-      Description: "Weekly Report Advice Generation using AWS Bedrock"
+      Description: "Generates weekly report advice using AWS Bedrock's Claude model for AI-powered content analysis and recommendations"
       Environment:
         Variables:
           STAGE: !Ref Stage
@@ -206,7 +206,7 @@ Resources:
                 - sns:GetPlatformApplicationAttributes
                 - sns:CreatePlatformEndpoint
               Resource: !Ref WebPushPlatformApplicationArn
-      Description: ""
+      Description: "Manages organization-related operations including push notifications and email communications with SES integration"
       Environment:
         Variables:
           STAGE: !Ref Stage
@@ -238,7 +238,7 @@ Resources:
       CodeUri: ./src/Member
       Policies:
         - AmazonDynamoDBFullAccess
-      Description: ""
+      Description: "Handles member management operations including profile updates, project assignments, and email confirmation workflows"
       Environment:
         Variables:
           STAGE: !Ref Stage
@@ -282,7 +282,7 @@ Resources:
                 - ses:SendRawEmail
                 - ses:SendEmail
               Resource: "*"
-      Description: "Weekly Report API Handler"
+      Description: "Core weekly report functionality handling report creation, updates, status tracking, statistics, and feedback management with email notifications"
       Layers:
         - !Ref CommonLayer
       Events:
@@ -339,6 +339,7 @@ Resources:
                 - ses:GetIdentityVerificationAttributes
                 - ses:VerifyEmailIdentity
               Resource: "*"
+      Description: "Manages Amazon SES email verification processes and identity checks for the application's email functionality"
       Layers:
         - !Ref CommonLayer
       Events:
@@ -368,7 +369,7 @@ Resources:
         - AmazonDynamoDBFullAccess
         - LambdaInvokePolicy:
             FunctionName: !Sub "${Stage}-send-request"
-      Description: ""
+      Description: "Executes scheduled tasks for weekly report reminders and automated email triggers on an hourly basis"
       Environment:
         Variables:
           STAGE: !Ref Stage
@@ -396,7 +397,7 @@ Resources:
                 - ses:SendRawEmail
                 - ses:SendEmail
               Resource: "*"
-      Description: ""
+      Description: "Handles the sending of automated requests and notifications via email using Amazon SES"
       Environment:
         Variables:
           STAGE: !Ref Stage
@@ -434,6 +435,7 @@ Resources:
                 - ssm:GetParameters
                 - ssm:DeleteParameter
               Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/weekly-report/${Stage}/*"
+      Description: "Manages secure parameter operations including JWT token generation and verification for application security"
       Events:
         GenerateTokenApi:
           Type: Api
@@ -457,7 +459,7 @@ Resources:
       CodeUri: ./src/UserTasks
       Policies:
         - AmazonDynamoDBFullAccess
-      Description: ""
+      Description: "Manages user-specific tasks and task-related operations including task creation, updates, assignments, and status tracking for weekly reports"
       Environment:
         Variables:
           STAGE: !Ref Stage

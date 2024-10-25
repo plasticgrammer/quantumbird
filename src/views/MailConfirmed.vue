@@ -14,7 +14,7 @@
               {{ email }}
             </p>
             <v-img
-              src="@/assets/images/toraneko.png"
+              src="@/assets/images/advisor_mental.png"
               max-width="240"
               class="mx-auto mt-0 mb-5"
               :aspect-ratio="1"

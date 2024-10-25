@@ -1,3 +1,4 @@
+```vue
 <template>
   <v-container>
     <WeekSelector 
@@ -88,46 +89,106 @@
         <v-card-title class="text-h5 font-weight-bold">
           週次報告ありがとうございました
         </v-card-title>
+
         <v-card-text class="pt-1">
-          <v-img
-            src="@/assets/images/usagikigurumi.gif"
-            max-width="240"
-            class="mx-auto mt-0 mb-3"
-            :aspect-ratio="1"
-          ></v-img>
+          <!-- アドバイス生成状態に応じて表示を切り替え -->
+          <div v-if="isAdviceAvailable">
+            <v-img
+              :src="advisorRoles[selectedAdvisorRole].image"
+              max-width="240"
+              class="mx-auto mt-0 mb-3"
+              :aspect-ratio="1"
+            ></v-img>
 
-          <v-sheet border="info md" class="text-left pa-4 mx-3 rounded-lg">
-            <p class="text-body-1 mb-2">
-              あなたへのアドバイス
-            </p>
+            <v-sheet border="info md" class="text-left pa-4 mx-3 rounded-lg">
+              <p class="text-caption text-grey-darken-1 mb-2">
+                <v-icon 
+                  :icon="advisorRoles[selectedAdvisorRole].icon" 
+                  :color="advisorRoles[selectedAdvisorRole].color" 
+                  size="small" 
+                  class="me-1"
+                />
+                {{ advisorRoles[selectedAdvisorRole].title }}からのアドバイス
+              </p>
+              <p class="text-body-2 text-grey-darken-3" style="white-space: pre-wrap">
+                {{ claudeAdvice }}
+              </p>
+            </v-sheet>
+          </div>
 
-            <!-- アドバイス生成状態に応じて表示を切り替え -->
-            <div v-if="isAdviceAvailable">
-              <p class="text-body-2 text-grey-darken-3" style="white-space: pre-wrap">{{ claudeAdvice }}</p>
-            </div>
-            <!-- アドバイス生成中の表示 -->
-            <div v-else-if="isLoadingAdvice">
+          <!-- アドバイス生成中の表示 -->
+          <div v-else-if="isLoadingAdvice">
+            <v-img
+              :src="advisorRoles[selectedAdvisorRole].image"
+              max-width="240"
+              class="mx-auto mt-0 mb-3"
+              :aspect-ratio="1"
+            ></v-img>
+            <v-sheet border="info md" class="text-left pa-4 mx-3 rounded-lg">
               <div class="d-flex align-center justify-center py-4">
-                <v-skeleton-loader type="paragraph" class="w-100 bg-transparent" />
+                <v-progress-circular
+                  indeterminate
+                  color="primary"
+                ></v-progress-circular>
               </div>
-            </div>
-            <!-- アドバイス生成前の表示 -->
-            <div v-else>
-              <div class="d-flex justify-center">
+            </v-sheet>
+          </div>
+
+          <!-- アドバイザー選択UI -->
+          <div v-else>
+            <v-sheet class="mx-3 mb-4">
+              <p class="text-h6 mb-4">アドバイザーを選んでください</p>
+              
+              <v-window v-model="selectedAdvisorRole" show-arrows>
+                <v-window-item
+                  v-for="(advisor, key) in advisorRoles"
+                  :key="key"
+                  :value="key"
+                >
+                  <v-card class="advisor-container mx-2 mb-4" variant="outlined">
+                    <div class="advisor-image-container">
+                      <v-img
+                        :src="advisor.image"
+                        height="200"
+                        max-width="200"
+                        class="mb-2 mx-auto"
+                        :position="'middle center'"
+                        contain
+                      ></v-img>
+                    </div>
+                    <v-card-item>
+                      <v-card-title>
+                        <v-icon
+                          :icon="advisor.icon"
+                          :color="advisor.color"
+                          class="me-2"
+                        />
+                        {{ advisor.title }}
+                      </v-card-title>
+                      <v-card-subtitle>
+                        {{ advisor.description }}
+                      </v-card-subtitle>
+                    </v-card-item>
+                  </v-card>
+                </v-window-item>
+              </v-window>
+
+              <div class="d-flex justify-center mt-4">
                 <v-btn
                   color="primary"
                   variant="outlined"
-                  class="ma-3"
+                  class="px-8"
                   :loading="isLoadingAdvice"
                   @click="generateAdvice"
                 >
                   <v-icon icon="mdi-robot" color="info" class="me-2"></v-icon>
-                  アドバイスを生成する
+                  このアドバイザーに相談する
                 </v-btn>
               </div>
-            </div>
-          </v-sheet>
+            </v-sheet>
+          </div>
         </v-card-text>
+
         <v-card-actions class="pb-4">
           <v-row justify="center" no-gutters>
             <v-col cols="auto" class="mx-2">
@@ -155,7 +216,7 @@ import ReportForm from '../components/ReportForm.vue'
 import { useCalendar } from '../composables/useCalendar'
 import { feedbackUrl } from '../config/environment'
 import { getMember } from '../services/publicService'
-import { getWeeklyReportAdvice } from '../services/bedrockService'
+import { advisorRoles, getWeeklyReportAdvice } from '../services/bedrockService'
 
 const MemberInfoDialog = defineAsyncComponent(() => import('../components/MemberInfoDialog.vue'))
 const StressCheckDialog = defineAsyncComponent(() => import('../components/StressCheckDialog.vue'))
@@ -188,6 +249,7 @@ const isLoadingAdvice = ref(false)
 const isAdviceAvailable = ref(false)
 const claudeAdvice = ref('')
 const lastReportContent = ref(null)
+const selectedAdvisorRole = ref('manager')
 
 const openMemberInfoDialog = () => {
   memberInfoDialog.value.openDialog()
@@ -232,6 +294,7 @@ const handleReset = () => {
   isAdviceAvailable.value = false
   claudeAdvice.value = ''
   lastReportContent.value = null
+  selectedAdvisorRole.value = 'manager'
 
   router.push({ 
     name: 'WeeklyReportSelector',
@@ -247,7 +310,6 @@ const handleReportSubmitted = async (reportContent) => {
     memberUuid: props.memberUuid,
     organizationId: props.organizationId
   }
-  // アドバイスの自動生成をスキップ
   isAdviceAvailable.value = false
   claudeAdvice.value = ''
 }
@@ -257,7 +319,13 @@ const generateAdvice = async () => {
 
   try {
     isLoadingAdvice.value = true
-    const result = await getWeeklyReportAdvice(lastReportContent.value)
+    const result = await getWeeklyReportAdvice({
+      ...lastReportContent.value,
+      advisorRole: {
+        role: advisorRoles[selectedAdvisorRole.value].role,
+        point: advisorRoles[selectedAdvisorRole.value].point
+      }
+    })
     claudeAdvice.value = result.advice
     isAdviceAvailable.value = true
   } catch (error) {
@@ -274,6 +342,7 @@ const handleBackToReport = () => {
   isAdviceAvailable.value = false
   claudeAdvice.value = ''
   lastReportContent.value = null
+  selectedAdvisorRole.value = 'manager'
   handleReset()
 }
 
@@ -303,10 +372,6 @@ watch(() => props.weekString, (newWeekParam) => {
 
 onMounted(async () => {
   try {
-    // 事前ロード
-    const img = new Image()
-    img.src = require('@/assets/images/usagikigurumi.gif')
-
     member.value = await getMember(props.memberUuid)
   } catch (err) {
     console.error('Error initializing dashboard:', err)
@@ -326,5 +391,37 @@ onMounted(async () => {
   .v-btn-group {
     display: none;
   }
+}
+
+.v-window {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.v-window-item {
+  height: 100%;
+}
+
+.advisor-container {
+  border-color: #90caf9;
+  background-color: #e3f2fd;
+}
+
+.advisor-image-container {
+  overflow: hidden;
+  position: relative;
+}
+
+.advisor-image-container :deep(.v-img__img) {
+  object-fit: contain !important;
+  max-height: 200px;
+}
+
+.advisor-card {
+  transition: transform 0.2s;
+}
+
+.advisor-card:hover {
+  transform: translateY(-4px);
 }
 </style>
