@@ -766,7 +766,10 @@ const handleSubmit = async () => {
     '確認',
     `この内容で報告を${formState.isNew ? '提出' : '更新'}します。よろしいですか？`
   )
-  if (!confirmed) return
+  if (!confirmed) {
+    emit('report-submitted', cleanedReport)
+    return
+  }
 
   try {
     if (formState.isNew) {

@@ -91,11 +91,10 @@
         </v-card-title>
 
         <v-card-text class="pt-1">
-          <!-- アドバイス生成状態に応じて表示を切り替え -->
           <div v-if="isAdviceAvailable">
             <v-img
               :src="advisorRoles[selectedAdvisorRole].image"
-              max-width="240"
+              max-width="200"
               class="mx-auto mt-0 mb-3"
               :aspect-ratio="1"
             ></v-img>
@@ -120,24 +119,21 @@
           <div v-else-if="isLoadingAdvice">
             <v-img
               :src="advisorRoles[selectedAdvisorRole].image"
-              max-width="240"
+              max-width="200"
               class="mx-auto mt-0 mb-3"
               :aspect-ratio="1"
             ></v-img>
             <v-sheet border="info md" class="text-left pa-4 mx-3 rounded-lg">
               <div class="d-flex align-center justify-center py-4">
-                <v-progress-circular
-                  indeterminate
-                  color="primary"
-                ></v-progress-circular>
+                <v-skeleton-loader type="paragraph" />
               </div>
             </v-sheet>
           </div>
 
           <!-- アドバイザー選択UI -->
           <div v-else>
-            <v-sheet class="mx-3 mb-4">
-              <p class="text-h6 mb-4">アドバイザーを選んでください</p>
+            <v-sheet class="mx-3 mb-2 py-3 advisor-container" variant="outlined">
+              <p class="text-body-1">アドバイザーを選んでください</p>
               
               <v-window v-model="selectedAdvisorRole" show-arrows>
                 <v-window-item
@@ -145,16 +141,16 @@
                   :key="key"
                   :value="key"
                 >
-                  <v-card class="advisor-container mx-2 mb-4" variant="outlined">
-                    <div class="advisor-image-container">
+                  <v-card class="mx-2 bg-transparent" elevation="0">
+                    <div class="advisor-image-container d-flex align-end justify-center">
                       <v-img
                         :src="advisor.image"
-                        height="200"
-                        max-width="200"
-                        class="mb-2 mx-auto"
-                        :position="'middle center'"
-                        contain
-                      ></v-img>
+                        max-height="200"
+                        max-width="240"
+                        class="advisor-image mb-2 mx-auto"
+                        :position="'top'"
+                      >
+                      </v-img>
                     </div>
                     <v-card-item>
                       <v-card-title>
@@ -173,7 +169,7 @@
                 </v-window-item>
               </v-window>
 
-              <div class="d-flex justify-center mt-4">
+              <div class="d-flex justify-center mb-2">
                 <v-btn
                   color="primary"
                   variant="outlined"
@@ -403,18 +399,27 @@ onMounted(async () => {
 }
 
 .advisor-container {
-  border-color: #90caf9;
+  border: solid 1px #2962ff;
   background-color: #e3f2fd;
 }
 
 .advisor-image-container {
+  height: 200px;
   overflow: hidden;
   position: relative;
 }
 
-.advisor-image-container :deep(.v-img__img) {
-  object-fit: contain !important;
-  max-height: 200px;
+.advisor-image {
+  width: 100%;
+  transition: transform 0.3s ease;
+}
+
+.advisor-image-container:hover .advisor-image {
+  transform: scale(1.1);
+}
+
+.advisor-image :deep(.v-img__img) {
+  object-fit: cover !important;
 }
 
 .advisor-card {

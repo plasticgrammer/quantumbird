@@ -8,7 +8,7 @@ export const advisorRoles = {
     title: 'マネジメントアドバイザー',
     description: '課題解決の視点から業務改善のアドバイスを提供します',
     icon: 'mdi-account-tie',
-    color: 'primary',
+    color: 'indigo',
     image: require('@/assets/images/advisor_manager.gif'),
     role: '【役割：マネジメント支援】課題解決型の包括的な視点を持つマネージャー',
     point: `業務遂行とチーム貢献の観点から、具体的な改善アプローチを提案してください。
