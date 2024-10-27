@@ -34,7 +34,7 @@ def format_projects(projects: list) -> str:
         work_items = [item.get('content', '') for item in project.get('workItems', [])]
         work_items_str = '\n'.join(f"- {item}" for item in work_items if item)
         if work_items_str:
-            formatted.append(f"【{project_name}】\n{work_items_str}")
+            formatted.append(f"[{project_name}]\n{work_items_str}")
     
     return '\n\n'.join(formatted) if formatted else "記載なし"
 
@@ -79,7 +79,7 @@ def create_prompt(report: Dict[str, Any]) -> str:
 {report_content}
 
 {advise_point}
-アドバイスは最大500文字程度としてください。
+アドバイスは重要度の高いポイントに絞って、最大400文字程度としてください。
 Assistant:"""
 
     return prompt
@@ -94,7 +94,7 @@ def invoke_claude(prompt: str) -> str:
             "prompt": prompt,
             "max_tokens_to_sample": 600,
             "temperature": 0.5,
-            "top_p": 0.7,
+            "top_p": 0.9,
             "top_k": 250,
             "stop_sequences": [],
             "anthropic_version": "bedrock-2023-05-31"
@@ -113,7 +113,6 @@ def invoke_claude(prompt: str) -> str:
     
     except ClientError as e:
         logger.error(f"Error invoking Bedrock: {str(e)}")
-        logger.error(f"Request details - ModelId: anthropic.claude-v2, Body: {body}")
         raise Exception("アドバイスの生成中にエラーが発生しました。")
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:

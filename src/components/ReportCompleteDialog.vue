@@ -6,7 +6,8 @@
   >
     <v-card class="text-center">
       <v-card-title class="text-h5 font-weight-bold">
-        週次報告ありがとうございました
+        <span v-if="isMobile">報告完了</span>
+        <span v-else>週次報告ありがとうございました</span>
       </v-card-title>
 
       <v-card-text class="pt-1">
@@ -29,7 +30,7 @@
                 />
                 {{ advisorRoles[selectedAdvisorRole].title }}からのアドバイス
               </p>
-              <p class="text-body-2 text-grey-darken-3" style="white-space: pre-wrap">
+              <p class="text-body-1 text-grey-darken-3" style="white-space: pre-wrap">
                 {{ advice }}
               </p>
             </v-sheet>
@@ -135,7 +136,10 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { useResponsive } from '../composables/useResponsive'
 import { advisorRoles, getWeeklyReportAdvice } from '../services/bedrockService'
+
+const { isMobile } = useResponsive()
 
 const props = defineProps({
   modelValue: {
@@ -215,9 +219,8 @@ const handleGenerateAdvice = async () => {
 }
 
 .advisor-image-container {
-  height: 200px;
+  height: 210px;
   overflow: hidden;
-  position: relative;
 }
 
 .advisor-image {

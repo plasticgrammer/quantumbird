@@ -88,7 +88,10 @@ def handle_post(event):
 def handle_put(event):
     data = json.loads(event['body'])
     if 'organizationId' in data:
-        org_item = prepare_organization_item(data)
+        # 既存の組織データを取得
+        existing_org = get_organization(data['organizationId'])
+        # 既存のデータと新しいデータをマージして更新
+        org_item = prepare_organization_item(data, existing_org)
         response = organizations_table.put_item(Item=org_item)
 
         if 'members' in data:
@@ -114,17 +117,42 @@ def handle_delete(event):
     else:
         return create_response(400, {'message': 'Missing required parameters'})
 
-def prepare_organization_item(org_data):
-    return {
-        'organizationId': org_data.get('organizationId'),
-        'name': org_data.get('name'),
-        'sender': org_data.get('sender'),
-        'senderName': org_data.get('senderName'),
-        'requestEnabled': org_data.get('requestEnabled'),
-        'requestTime': org_data.get('requestTime'),
-        'requestDayOfWeek': org_data.get('requestDayOfWeek'),
-        'reportWeek': org_data.get('reportWeek')
+def prepare_organization_item(org_data, existing_org=None):
+    if existing_org is None:
+        existing_org = {}
+    
+    # 基本データの更新
+    updated_org = {
+        'organizationId': org_data.get('organizationId', existing_org.get('organizationId')),
+        'name': org_data.get('name', existing_org.get('name')),
+        'sender': org_data.get('sender', existing_org.get('sender')),
+        'senderName': org_data.get('senderName', existing_org.get('senderName')),
+        'requestEnabled': org_data.get('requestEnabled', existing_org.get('requestEnabled')),
+        'requestTime': org_data.get('requestTime', existing_org.get('requestTime')),
+        'requestDayOfWeek': org_data.get('requestDayOfWeek', existing_org.get('requestDayOfWeek')),
+        'reportWeek': org_data.get('reportWeek', existing_org.get('reportWeek'))
     }
+
+    # 既存のfeaturesを保持
+    if 'features' in existing_org:
+        updated_org['features'] = existing_org['features']
+    
+    # 新しいfeaturesがある場合は更新
+    if 'features' in org_data:
+        if 'features' not in updated_org:
+            updated_org['features'] = {}
+        updated_org['features'].update(org_data['features'])
+    
+    # adminSubscriptionsの保持と更新
+    if 'adminSubscriptions' in existing_org:
+        updated_org['adminSubscriptions'] = existing_org['adminSubscriptions']
+    if 'adminSubscriptions' in org_data:
+        if 'adminSubscriptions' not in updated_org:
+            updated_org['adminSubscriptions'] = {}
+        updated_org['adminSubscriptions'].update(org_data['adminSubscriptions'])
+
+    # Noneの値を持つキーを除外
+    return {k: v for k, v in updated_org.items() if v is not None}
 
 def prepare_member_item(member_data, existing_member=None):
     if existing_member is None:

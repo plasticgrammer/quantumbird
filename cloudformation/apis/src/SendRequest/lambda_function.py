@@ -160,6 +160,16 @@ def generate_report_link(organization_id, member_uuid, week_string):
     return url
 
 def get_string_from_week(current_date, week_offset=0):
+    """
+    指定された日付と週オフセットから ISO 8601 形式の週文字列を生成する
+    
+    Args:
+        current_date: 基準日（datetime, date, または 'YYYY-MM-DD' 形式の文字列）
+        week_offset: 週オフセット（整数。負数の場合は過去の週を指定）
+    
+    Returns:
+        str: ISO 8601形式の週文字列（例: '2024-W43'）
+    """
     # 引数の型チェックと変換
     if isinstance(week_offset, decimal.Decimal):
         week_offset = int(week_offset)
@@ -168,27 +178,42 @@ def get_string_from_week(current_date, week_offset=0):
             week_offset = int(week_offset)
         except ValueError:
             logger.error(f"Invalid week_offset value: {week_offset}")
-            week_offset = 0  # デフォルト値を設定
+            week_offset = 0
 
-    # 日付オブジェクトに変換（文字列が渡された場合に対応）
+    # 日付オブジェクトに変換
     if isinstance(current_date, str):
         current_date = datetime.strptime(current_date, "%Y-%m-%d").replace(tzinfo=TIMEZONE).date()
     elif isinstance(current_date, datetime):
         current_date = current_date.date()
     
-    # オフセットを適用
-    current_date += timedelta(weeks=week_offset)
+    # その週の月曜日を取得
+    monday = current_date - timedelta(days=current_date.weekday())
     
-    # 木曜日に移動（ISO 8601準拠）
-    thursday = current_date + timedelta(days=(3 - current_date.weekday() + 7) % 7)
+    # オフセットを適用（週の開始日である月曜日に対して適用）
+    target_monday = monday + timedelta(weeks=week_offset)
+    
+    # 木曜日を取得（ISO 8601では木曜日が週の代表日）
+    target_thursday = target_monday + timedelta(days=3)
     
     # その年の最初の木曜日を計算
-    first_thursday = datetime(thursday.year, 1, 1, tzinfo=TIMEZONE).date()
-    if first_thursday.weekday() != 3:
-        first_thursday = first_thursday + timedelta(days=(3 - first_thursday.weekday() + 7) % 7)
+    first_day = datetime(target_thursday.year, 1, 1, tzinfo=TIMEZONE).date()
+    first_thursday = first_day + timedelta(days=(3 - first_day.weekday() + 7) % 7)
     
     # 週番号を計算
-    week_number = (thursday - first_thursday).days // 7 + 1
+    calendar_week = ((target_thursday - first_thursday).days // 7) + 1
+    
+    # 年をまたぐ特殊なケースの処理
+    if calendar_week < 1:
+        # 前年の最後の週に属する場合
+        target_thursday = target_thursday - timedelta(days=7)
+        return get_string_from_week(target_thursday, 0)
+    elif calendar_week > 52 and target_thursday.month == 12:
+        # 次年の最初の週に属する可能性がある場合
+        next_first_day = datetime(target_thursday.year + 1, 1, 1, tzinfo=TIMEZONE).date()
+        next_first_thursday = next_first_day + timedelta(days=(3 - next_first_day.weekday() + 7) % 7)
+        if target_thursday >= next_first_thursday - timedelta(days=3):
+            # 次年の最初の週に属する
+            return f"{target_thursday.year + 1}-W01"
     
     # 結果の文字列を生成
-    return f"{thursday.year}-W{week_number:02d}"
+    return f"{target_thursday.year}-W{calendar_week:02d}"
