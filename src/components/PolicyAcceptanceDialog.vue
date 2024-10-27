@@ -19,10 +19,15 @@
           v-model="tosAccepted"
           label="利用規約に同意します"
           hide-details
+          class="mb-2"
         >
           <template #label>
             <div>
-              <a href="#" @click.prevent="openTermsOfService">利用規約</a>に同意します
+              <a 
+                href="#"
+                class="text-decoration-none"
+                @click.prevent="openTermsOfService"
+              >利用規約</a>に同意します
             </div>
           </template>
         </v-checkbox>
@@ -31,20 +36,26 @@
           v-model="privacyPolicyAccepted"
           label="プライバシーポリシーに同意します"
           hide-details
+          class="mb-2"
         >
           <template #label>
             <div>
-              <a href="#" @click.prevent="openPrivacyPolicy">プライバシーポリシー</a>に同意します
+              <a 
+                href="#"
+                class="text-decoration-none"
+                @click.prevent="openPrivacyPolicy"
+              >プライバシーポリシー</a>に同意します
             </div>
           </template>
         </v-checkbox>
       </v-card-text>
-      <v-card-actions class="px-4 pb-2">
+      <v-card-actions class="px-4 pb-4">
         <v-spacer></v-spacer>
         <v-btn
           color="primary"
           :disabled="!canAccept"
-          @click="accept"
+          :loading="isSubmitting"
+          @click="handleAccept"
         >
           同意して続行
         </v-btn>
@@ -54,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { termsOfServiceUrl, privacyPolicyUrl } from '@/config/environment'
 
 const props = defineProps({
@@ -67,6 +78,7 @@ const emit = defineEmits(['update:modelValue', 'accept'])
 
 const tosAccepted = ref(false)
 const privacyPolicyAccepted = ref(false)
+const isSubmitting = ref(false)
 
 const dialog = computed({
   get: () => props.modelValue,
@@ -75,7 +87,16 @@ const dialog = computed({
 
 const canAccept = computed(() => {
   return (!props.needsTosAcceptance || tosAccepted.value) &&
-          (!props.needsPrivacyPolicyAcceptance || privacyPolicyAccepted.value)
+         (!props.needsPrivacyPolicyAcceptance || privacyPolicyAccepted.value)
+})
+
+// ダイアログが開かれる度にチェックボックスをリセット
+watch(() => props.modelValue, (newValue) => {
+  if (newValue) {
+    tosAccepted.value = false
+    privacyPolicyAccepted.value = false
+    isSubmitting.value = false
+  }
 })
 
 const openTermsOfService = () => {
@@ -86,9 +107,23 @@ const openPrivacyPolicy = () => {
   window.open(privacyPolicyUrl, '_blank', 'noopener,noreferrer')
 }
 
-const accept = () => {
-  emit('accept')
-  tosAccepted.value = false
-  privacyPolicyAccepted.value = false
+const handleAccept = async () => {
+  if (isSubmitting.value || !canAccept.value) return
+  
+  isSubmitting.value = true
+  try {
+    await emit('accept')
+    tosAccepted.value = false
+    privacyPolicyAccepted.value = false
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
+
+<style scoped>
+.v-card-text {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+</style>

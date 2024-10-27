@@ -190,6 +190,8 @@ const showNavigation = ref(true)
 const showPolicyDialog = ref(false)
 const needsTosAcceptance = ref(false)
 const needsPrivacyPolicyAcceptance = ref(false)
+const isPolicyCheckPending = ref(true)
+const isAuthenticated = computed(() => store.getters['auth/isAuthenticated'])
 
 router.beforeEach((to, from, next) => {
   showAnimation.value = !to.meta.hideAnimation
@@ -306,18 +308,26 @@ const navigateTo = (route, params = {}) => {
 }
 
 const checkPolicies = async () => {
-  if (store.getters['auth/isAuthenticated']) {
-    try {
-      const { needsTosAcceptance: needsTos, needsPrivacyPolicyAcceptance: needsPrivacy } = await store.dispatch('auth/checkPolicyAcceptance')
-      needsTosAcceptance.value = needsTos
-      needsPrivacyPolicyAcceptance.value = needsPrivacy
-      if (needsTos || needsPrivacy) {
-        showPolicyDialog.value = true
-      }
-    } catch (error) {
-      console.error('Policy check failed:', error)
-      showError('ポリシーの確認に失敗しました。')
+  if (!isAuthenticated.value) {
+    isPolicyCheckPending.value = false
+    return
+  }
+
+  try {
+    const { needsTosAcceptance: needsTos, needsPrivacyPolicyAcceptance: needsPrivacy } = 
+      await store.dispatch('auth/checkPolicyAcceptance')
+    
+    needsTosAcceptance.value = needsTos
+    needsPrivacyPolicyAcceptance.value = needsPrivacy
+    
+    if (needsTos || needsPrivacy) {
+      showPolicyDialog.value = true
     }
+  } catch (error) {
+    console.error('Policy check failed:', error)
+    showError('ポリシーの確認に失敗しました。')
+  } finally {
+    isPolicyCheckPending.value = false
   }
 }
 
@@ -328,12 +338,25 @@ const handlePolicyAcceptance = async () => {
       privacyPolicyAccepted: needsPrivacyPolicyAcceptance.value,
     })
     showPolicyDialog.value = false
+    needsTosAcceptance.value = false
+    needsPrivacyPolicyAcceptance.value = false
     showNotification('ポリシーの同意が更新されました。', 'success')
   } catch (error) {
     console.error('Policy acceptance update failed:', error)
-    showError('ポリシーの更新に失敗しました。')
+    showError('ポリシーの更新に失敗しました。再度お試しください。')
   }
 }
+
+watch(isAuthenticated, (newValue) => {
+  if (newValue) {
+    checkPolicies()
+  } else {
+    isPolicyCheckPending.value = false
+    showPolicyDialog.value = false
+    needsTosAcceptance.value = false
+    needsPrivacyPolicyAcceptance.value = false
+  }
+})
 
 onMounted(() => {
   // 事前ロード
