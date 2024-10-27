@@ -408,14 +408,13 @@
               元に戻す
             </v-btn>
             <span class="mx-2"></span>
+
             <v-btn
               color="primary"
               type="submit"
               :disabled="isSubmitDisabled"
             >
-              <v-icon class="mr-1" left>
-                mdi-check
-              </v-icon>
+              <v-icon class="mr-1" left>mdi-check</v-icon>
               報告を{{ formState.isNew ? '提出' : '更新' }}する
             </v-btn>
           </v-col>
@@ -766,10 +765,7 @@ const handleSubmit = async () => {
     '確認',
     `この内容で報告を${formState.isNew ? '提出' : '更新'}します。よろしいですか？`
   )
-  if (!confirmed) {
-    emit('report-submitted', cleanedReport)
-    return
-  }
+  if (!confirmed) return
 
   try {
     if (formState.isNew) {

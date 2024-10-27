@@ -7,8 +7,8 @@ export const advisorRoles = {
   manager: {
     title: 'マネジメントアドバイザー',
     description: '課題解決の視点から業務改善のアドバイスを提供します',
-    icon: 'mdi-account-tie',
-    color: 'indigo',
+    icon: 'mdi-account-supervisor',
+    color: 'blue-grey-darken-2',
     image: require('@/assets/images/advisor_manager.gif'),
     role: '【役割：マネジメント支援】課題解決型の包括的な視点を持つマネージャー',
     point: `業務遂行とチーム貢献の観点から、具体的な改善アプローチを提案してください。
@@ -21,20 +21,19 @@ export const advisorRoles = {
     title: 'メンタルサポーター',
     description: 'ストレス管理とワークライフバランスのアドバイスを提供します',
     icon: 'mdi-heart',
-    color: 'error',
+    color: 'pink',
     image: require('@/assets/images/advisor_mental.png'),
     role: '【役割：メンタルケア】共感的傾聴力に長けたメンタルサポーター',
     point: `ストレスマネジメントとワークライフバランスの観点から、具体的なアドバイスを提供してください。
 心理的安全性を重視し、特に以下の点に注目してください：
 ・ストレス軽減のための具体的な施策
-・セルフケアの方法
-・モチベーション維持のためのアプローチ`
+・セルフケアの方法`
   },
   career: {
     title: 'キャリアアドバイザー',
     description: 'スキル開発とキャリア形成のアドバイスを提供します',
     icon: 'mdi-school',
-    color: 'warning',
+    color: 'indigo',
     image: require('@/assets/images/advisor_career.png'),
     role: '【役割：キャリア支援】スキル分析の専門性を持つキャリアアドバイザー',
     point: `プロフェッショナルとしての成長の観点から、具体的な成長戦略を提案してください。

@@ -32,7 +32,7 @@ const mapErrorMessage = (error) => {
 
 export default {
   namespaced: true,
-  
+
   state: () => ({
     user: null,
     token: null,
@@ -85,7 +85,7 @@ export default {
           await dispatch('validateToken')
           return state.user
         }
-  
+
         const attributes = await fetchUserAttributes()
         const userInfo = {
           organizationId: attributes['custom:organizationId'],
@@ -94,7 +94,7 @@ export default {
           tosVersion: attributes['custom:tos_version'],
           privacyPolicyVersion: attributes['custom:pp_version']
         }
-  
+
         commit('setUser', userInfo)
         commit('setCognitoUserSub', attributes.sub)
         return userInfo
@@ -105,27 +105,27 @@ export default {
         throw error
       }
     },
-  
+
     async fetchAuthToken({ commit, dispatch }, { forceRefresh = false } = {}) {
       try {
         const { tokens } = await fetchAuthSession({ forceRefresh })
         if (!tokens?.idToken) {
           throw new Error(AUTH_CONSTANTS.ERROR_MESSAGES.NO_TOKEN)
         }
-        
+
         const token = tokens.idToken.toString()
         commit('setToken', token)
         return token
       } catch (error) {
         createErrorHandler('fetching auth token')(error)
-        
+
         // トークンのリフレッシュを試行
         try {
           const { tokens } = await fetchAuthSession({ forceRefresh: true })
           if (!tokens?.idToken) {
             throw new Error(AUTH_CONSTANTS.ERROR_MESSAGES.NO_TOKEN)
           }
-          
+
           const token = tokens.idToken.toString()
           commit('setToken', token)
           return token
@@ -136,19 +136,19 @@ export default {
         }
       }
     },
-  
+
     async validateToken({ dispatch }) {
       try {
         // トークンの有効性を確認
         await fetchAuthSession()
       } catch (error) {
         createErrorHandler('validating token')(error)
-        
+
         // トークンが無効な場合、再取得を試行
         await dispatch('fetchAuthToken', { forceRefresh: true })
       }
     },
-  
+
     async handleAuthFailure({ dispatch }) {
       console.log('Authentication failure, signing out...')
       await dispatch('signOut')
