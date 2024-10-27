@@ -79,18 +79,22 @@ def create_prompt(report: Dict[str, Any]) -> str:
 {report_content}
 
 {advise_point}
+アドバイスは最大500文字程度としてください。
 Assistant:"""
 
     return prompt
 
 def invoke_claude(prompt: str) -> str:
-    """Claude (Anthropic Claude) を呼び出してアドバイスを生成"""
+    """Claude (Anthropic Claude) を呼び出してアドバイスを生成
+    温度: 出力のランダム性を制御。低温（0に近い）だと安全で一貫性のある出力が得られるが、単調になることが多い。高温（1以上）だとクリエイティブな応答が期待できる。
+    トップP: 確率質量とも呼ばれる。たとえばトップPを0.7と定義した場合には、確率の合計が0.7の中から次の単語が選ばれることになる。
+    """
     try:
         body = json.dumps({
             "prompt": prompt,
             "max_tokens_to_sample": 600,
             "temperature": 0.5,
-            "top_p": 1,
+            "top_p": 0.7,
             "top_k": 250,
             "stop_sequences": [],
             "anthropic_version": "bedrock-2023-05-31"

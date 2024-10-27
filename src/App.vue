@@ -162,6 +162,7 @@
       :needs-tos-acceptance="needsTosAcceptance"
       :needs-privacy-policy-acceptance="needsPrivacyPolicyAcceptance"
       @accept="handlePolicyAcceptance"
+      @disaccept="handlePolicyDisacceptance"
     />
   </v-app>
 </template>
@@ -344,6 +345,16 @@ const handlePolicyAcceptance = async () => {
   } catch (error) {
     console.error('Policy acceptance update failed:', error)
     showError('ポリシーの更新に失敗しました。再度お試しください。')
+  }
+}
+
+const handlePolicyDisacceptance = async () => {
+  try {
+    await store.dispatch('auth/signOut')
+    showPolicyDialog.value = false
+    router.push({ name: 'SignIn' })
+  } catch (error) {
+    console.error('サインアウトに失敗しました', error)
   }
 }
 

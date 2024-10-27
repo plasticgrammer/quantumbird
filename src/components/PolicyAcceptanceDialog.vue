@@ -50,6 +50,13 @@
         </v-checkbox>
       </v-card-text>
       <v-card-actions class="px-4 pb-4">
+        <v-btn
+          variant="text"
+          :disabled="isSubmitting"
+          @click="handledDisaccept"
+        >
+          ログアウト
+        </v-btn>
         <v-spacer></v-spacer>
         <v-btn
           color="primary"
@@ -74,7 +81,7 @@ const props = defineProps({
   needsPrivacyPolicyAcceptance: Boolean,
 })
 
-const emit = defineEmits(['update:modelValue', 'accept'])
+const emit = defineEmits(['update:modelValue', 'accept', 'disaccept'])
 
 const tosAccepted = ref(false)
 const privacyPolicyAccepted = ref(false)
@@ -118,6 +125,10 @@ const handleAccept = async () => {
   } finally {
     isSubmitting.value = false
   }
+}
+
+const handledDisaccept = () => {
+  emit('disaccept')
 }
 </script>
 
