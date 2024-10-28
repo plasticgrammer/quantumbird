@@ -65,14 +65,14 @@
                       <v-img
                         :src="advisor.image"
                         max-height="200"
-                        max-width="260"
+                        max-width="250"
                         :class="['advisor-image mb-2 mx-auto', { 'scale-up': isButtonHovering }]"
                         :position="'top'"
                       >
                       </v-img>
                     </div>
                     <v-card-item>
-                      <v-card-title>
+                      <v-card-title class="font-weight-bold">
                         <v-icon
                           :icon="advisor.icon"
                           :color="advisor.color"
@@ -80,7 +80,7 @@
                         />
                         {{ advisor.title }}
                       </v-card-title>
-                      <v-card-subtitle class="pt-1">
+                      <v-card-subtitle class="py-2">
                         {{ advisor.description }}
                       </v-card-subtitle>
                     </v-card-item>

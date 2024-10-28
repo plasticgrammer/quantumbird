@@ -75,25 +75,25 @@ def create_prompt(report: Dict[str, Any]) -> str:
     # プロンプト
     prompt = f"""Human: あなたは{adviser_role}です。
 週次報告へのアドバイスを提供してください。以下が報告の内容です：
-
 {report_content}
 
 {advise_point}
-アドバイスは重要度の高いポイントに絞って、最大400文字程度としてください。
+アドバイスは重要度の高いポイントに絞って、最大500文字程度としてください。
 Assistant:"""
 
     return prompt
 
 def invoke_claude(prompt: str) -> str:
     """Claude (Anthropic Claude) を呼び出してアドバイスを生成
-    温度: 出力のランダム性を制御。低温（0に近い）だと安全で一貫性のある出力が得られるが、単調になることが多い。高温（1以上）だとクリエイティブな応答が期待できる。
+    温度: 出力のランダム性を制御。低温(0に近い)だと安全で一貫性のある出力が得られるが、単調になることが多い。高温(1以上)だとクリエイティブな応答が期待できる。
     トップP: 確率質量とも呼ばれる。たとえばトップPを0.7と定義した場合には、確率の合計が0.7の中から次の単語が選ばれることになる。
+    トップK: 次のトークンを予測する際、全トークンに確率スコアを付与しtop_k数の上位トークンのみを候補として残します。残った候補から、temperature と top_p の影響下で最終選択します。
     """
     try:
         body = json.dumps({
             "prompt": prompt,
             "max_tokens_to_sample": 600,
-            "temperature": 0.5,
+            "temperature": 0.8,
             "top_p": 0.9,
             "top_k": 250,
             "stop_sequences": [],
@@ -109,6 +109,7 @@ def invoke_claude(prompt: str) -> str:
         
         response_body = json.loads(response.get('body').read())
         # Claude v2のレスポンス形式に合わせて変更
+        logger.info(f"Claude response: {response_body}")
         return response_body.get('completion', '')
     
     except ClientError as e:
@@ -118,8 +119,6 @@ def invoke_claude(prompt: str) -> str:
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """Lambda関数のメインハンドラー"""
     try:
-        logger.info("Received event: %s", json.dumps(event))
-        
         # リクエストボディの取得
         if 'body' not in event:
             return {
@@ -142,7 +141,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # Claudeの呼び出し
         claude_response = invoke_claude(prompt)
-        logger.info(f"Claude response: {claude_response}")
         
         # 余分な空白行を削除し、改行を適切に保持
         # lines = [line.strip() for line in claude_response.split('\n')]
