@@ -70,15 +70,16 @@ def create_prompt(report: Dict[str, Any]) -> str:
 ・ストレス度: {stress_level} ({rating.get('stress', 0)}/5)
 ・タスク目標の達成度: {achievement_level} ({rating.get('achievement', 0)}/5)
 ・タスク遂行の難易度: {disability_level} ({rating.get('disability', 0)}/5)
-・残業時間: {overtime}時間"""
+・残業時間: {overtime}時間/週"""
 
     # プロンプト
     prompt = f"""Human: あなたは{adviser_role}です。
-週次報告へのアドバイスを提供してください。以下が報告の内容です：
+週次報告へのアドバイスを提供してください。
+アドバイスは重要度の高いポイントに絞って、最大500文字程度としてください。
+以下が報告の内容です：
 {report_content}
 
 {advise_point}
-アドバイスは重要度の高いポイントに絞って、最大500文字程度としてください。
 Assistant:"""
 
     return prompt
