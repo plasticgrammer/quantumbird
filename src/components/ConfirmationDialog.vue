@@ -2,8 +2,9 @@
   <v-dialog
     v-model="isOpen"
     max-width="400px"
+    persistent
   >
-    <v-card>
+    <v-card class="bg-plain">
       <v-card-title class="bg-primary">
         {{ currentTitle }}
       </v-card-title>

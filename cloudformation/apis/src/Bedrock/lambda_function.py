@@ -147,7 +147,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # lines = [line.strip() for line in claude_response.split('\n')]
         # formatted_lines = [line for line in lines if line]
         # formatted_advice = '\n'.join(formatted_lines)
-        formatted_advice = claude_response
+        formatted_advice = claude_response.strip()
 
         # 結果を返す
         return {

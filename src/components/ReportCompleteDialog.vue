@@ -2,9 +2,10 @@
   <v-dialog 
     :model-value="modelValue"
     :max-width=" isAdviceEnabled ? 640 : 480 "
+    persistent
     @update:model-value="handleDialogUpdate"
   >
-    <v-card class="text-center">
+    <v-card class="bg-plain text-center rounded-lg">
       <v-card-title class="text-h5 font-weight-bold">
         <span v-if="isMobile">報告完了</span>
         <span v-else>週次報告ありがとうございました</span>
@@ -17,7 +18,7 @@
             <v-sheet class="text-left pa-4 mx-3 rounded-lg advisor-container">
               <v-img
                 :src="advisorRoles[selectedAdvisorRole].image"
-                max-width="200"
+                max-width="160"
                 class="mx-auto mt-0 mb-3"
                 :aspect-ratio="1"
               ></v-img>
@@ -25,14 +26,11 @@
                 <v-icon 
                   :icon="advisorRoles[selectedAdvisorRole].icon" 
                   :color="advisorRoles[selectedAdvisorRole].color" 
-                  size="small" 
                   class="me-1"
                 />
                 {{ advisorRoles[selectedAdvisorRole].title }}からのアドバイス
               </p>
-              <p class="text-body-1 text-grey-darken-3" style="white-space: pre-wrap">
-                {{ advice }}
-              </p>
+              <p class="text-body-1 text-grey-darken-3" style="white-space: pre-wrap">{{ advice }}</p>
             </v-sheet>
           </div>
 
@@ -40,7 +38,7 @@
             <v-sheet class="text-left pa-4 mx-3 rounded-lg advisor-container">
               <v-img
                 :src="advisorRoles[selectedAdvisorRole].image"
-                max-width="200"
+                max-width="160"
                 class="mx-auto mt-0 mb-3"
                 :aspect-ratio="1"
               ></v-img>
@@ -80,7 +78,7 @@
                         />
                         {{ advisor.title }}
                       </v-card-title>
-                      <v-card-subtitle class="py-2">
+                      <v-card-subtitle class="text-body-1 py-2">
                         {{ advisor.description }}
                       </v-card-subtitle>
                     </v-card-item>

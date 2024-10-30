@@ -422,9 +422,9 @@
       </v-form>
     </template>
 
-    <v-dialog v-model="showStressDialog" max-width="500px">
-      <v-card>
-        <v-card-title class="bg-primary">ストレス状況の確認</v-card-title>
+    <v-dialog v-model="showStressDialog" max-width="500px" persistent>
+      <v-card class="bg-plain">
+        <v-card-title>ストレス状況の確認</v-card-title>
         <v-card-text>
           <div class="mb-4">
             ストレス度が最大となっています。<br>
@@ -442,7 +442,8 @@
         </v-card-text>
         <v-card-actions>
           <v-btn color="grey darken-1" text @click="showStressDialog = false">キャンセル</v-btn>
-          <v-btn color="primary" @click="handleSubmit">送信</v-btn>
+          <v-btn v-if="formState.report.stressHelp" color="primary" @click="handleSubmit">送信</v-btn>
+          <v-btn v-else color="warning" @click="handleSubmit">スキップ</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
