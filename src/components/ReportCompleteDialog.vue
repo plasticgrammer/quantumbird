@@ -1,7 +1,7 @@
 <template>
   <v-dialog 
     :model-value="modelValue"
-    :max-width=" isAdviceEnabled ? 680 : 480 "
+    :max-width=" isAdviceEnabled ? 700 : 480 "
     persistent
     @update:model-value="handleDialogUpdate"
   >
@@ -33,21 +33,7 @@
               <p class="text-body-1 text-grey-darken-3" style="white-space: pre-wrap">{{ advice }}</p>
             </v-sheet>
           </div>
-
-          <div v-else-if="isLoadingAdvice">
-            <v-sheet class="text-left pa-4 mx-3 rounded-lg advisor-container">
-              <v-img
-                :src="advisorRoles[selectedAdvisorRole].image"
-                max-width="160"
-                class="mx-auto mt-0 mb-3"
-                :aspect-ratio="1"
-              ></v-img>
-              <div class="d-flex align-center justify-center py-4">
-                <v-skeleton-loader type="sentences, paragraph" class="w-100 bg-transparent" />
-              </div>
-            </v-sheet>
-          </div>
-
+          
           <div v-else>
             <v-sheet class="mx-3 py-3 rounded-lg advisor-container">
               <p class="text-body-1">アドバイザーを選んでください</p>
@@ -62,9 +48,9 @@
                     <div class="advisor-image-container d-flex align-end justify-center">
                       <v-img
                         :src="advisor.image"
-                        max-height="200"
-                        max-width="250"
-                        :class="['advisor-image mb-2 mx-auto', { 'scale-up': isButtonHovering }]"
+                        max-height="170"
+                        max-width="200"
+                        :class="['advisor-image mb-2 mx-auto', { 'scale-up': isButtonHovering || isLoadingAdvice }]"
                         :position="'top'"
                       >
                       </v-img>
@@ -91,13 +77,18 @@
                   class="px-8"
                   height="3em"
                   variant="outlined"
-                  :loading="isLoadingAdvice"
                   @mouseenter="handleButtonHover(true)"
                   @mouseleave="handleButtonHover(false)"
                   @click="handleGenerateAdvice"
                 >
-                  <v-icon icon="mdi-comment-text-outline" class="me-2"></v-icon>
-                  このアドバイザーに相談する
+                  <template v-if="isLoadingAdvice">
+                    <v-progress-circular indeterminate size="18" width="3" :color="advisorRoles[selectedAdvisorRole].color" class="me-2"></v-progress-circular>
+                    アドバイザーに相談中...
+                  </template>
+                  <template v-else>
+                    <v-icon icon="mdi-comment-text-outline" class="me-2"></v-icon>
+                    このアドバイザーに相談する
+                  </template>
                 </v-btn>
               </div>
             </v-sheet>
@@ -190,6 +181,10 @@ const handleButtonHover = (hovering) => {
 
 const handleGenerateAdvice = async () => {
   try {
+    if (isLoadingAdvice.value) {
+      return
+    }
+
     isLoadingAdvice.value = true
     const result = await getWeeklyReportAdvice({
       ...props.reportContent,
@@ -217,7 +212,7 @@ const handleGenerateAdvice = async () => {
 }
 
 .advisor-image-container {
-  height: 210px;
+  height: 175px;
   overflow: hidden;
 }
 
@@ -227,7 +222,7 @@ const handleGenerateAdvice = async () => {
 }
 
 .scale-up {
-  transform: scale(1.2);
+  transform: scale(1.25);
 }
 
 .advisor-image :deep(.v-img__img) {

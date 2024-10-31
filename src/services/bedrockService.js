@@ -19,12 +19,12 @@ export const advisorRoles = {
   },
   mental: {
     title: 'メンタルサポーター',
-    description: 'ストレス管理とワークライフバランスのアドバイスを提供します',
+    description: 'ストレス管理とセルフケアのアドバイスを提供します',
     icon: 'mdi-heart',
     color: 'pink',
     image: require('@/assets/images/advisor_mental.png'),
     role: '【役割：メンタルケア】共感的傾聴力に長けたメンタルサポーター',
-    point: `ストレスマネジメントとワークライフバランスの観点から、具体的なアドバイスを提供してください。
+    point: `ポジティブ心理学の観点から、具体的なアドバイスを提供してください。
 心理的安全性を重視し、特に以下の点に注目して、優しい言い回しで回答してください：
 ・ストレス軽減のための具体的な施策
 ・セルフケアの方法`
@@ -42,12 +42,12 @@ export const advisorRoles = {
 ・今後伸ばすべきスキル
 ・キャリアパスの提案`
   },
-  reversal: {
+  reframe: {
     title: 'リフレーミングマスター',
-    description: '課題や問題を新しい視点で捉え直すアドバイスを提供します',
+    description: '課題や問題をポジティブ視点で捉え直すアドバイスを提供します',
     icon: 'mdi-border-outside',
     color: 'deep-purple',
-    image: require('@/assets/images/advisor_reversal.png'),
+    image: require('@/assets/images/advisor_reframe.png'),
     role: '【役割：逆転の発想】熱血系リフレーミングマスター',
     point: `私はリフレーミングマスター！どんな課題も可能性に変換する熱血指導者です！
 あなたの報告から見出した課題を、エネルギッシュな口調で逆転の発想に変換していきます！
@@ -95,7 +95,7 @@ export const advisorRoles = {
 
 熱い魂で、どんな課題も可能性に変換していきましょう！」`
   },
-  timeParadox: {
+  timeNavi: {
     title: 'クロノスナビゲーター',
     description: '時間軸を超えた視点でアドバイスを提供します',
     icon: 'mdi-clock-time-eight',

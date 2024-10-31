@@ -2,6 +2,8 @@ import json
 import os
 import boto3
 import logging
+import html
+import re
 from typing import Dict, Any
 from botocore.exceptions import ClientError
 from datetime import datetime
@@ -12,6 +14,23 @@ logger.setLevel(logging.INFO)
 
 # Bedrockクライアントの初期化
 bedrock = boto3.client('bedrock-runtime', region_name = "ap-northeast-1")
+
+def sanitize_input(text: str) -> str:
+    """入力テキストをサニタイズする"""
+    if not isinstance(text, str):
+        return ""
+    
+    # HTMLエスケープ
+    text = html.escape(text)
+    
+    # 制御文字の削除（改行とタブは許可）
+    text = ''.join(char for char in text if char.isprintable() or char in '\n\t')
+    
+    # プロンプトインジェクション攻撃のパターンを削除
+    # Human: やAssistant: などのプロンプト操作を試みるパターンを削除
+    text = re.sub(r'(?i)(Human|Assistant|System):\s*', '', text)
+    
+    return text
 
 def parse_rating_level(rating: float) -> str:
     """評価レベルを言語化する"""
@@ -42,9 +61,9 @@ def create_prompt(report: Dict[str, Any]) -> str:
     """週次報告の内容からプロンプトを生成する"""
 
     # クライアントから送られてきたアドバイザーロール情報を取得
-    advisor_role = report.get('advisorRole', {})
-    adviser_role = advisor_role.get('role', '経験豊富なマネージャー')
-    advise_point = advisor_role.get('point', '具体的な行動提案を含め、前向きで実践的なアドバイスを心がけてください。')
+    advisor_role_map = report.get('advisorRole', {})
+    adviser_role = advisor_role_map.get('role', '経験豊富なマネージャー')
+    advise_point = advisor_role_map.get('point', '具体的な行動提案を含め、前向きで実践的なアドバイスを心がけてください。')
 
     # 評価指標の解析
     rating = report.get('rating', {})
@@ -55,6 +74,11 @@ def create_prompt(report: Dict[str, Any]) -> str:
     projects_str = format_projects(report.get('projects', []))
     # 残業時間
     overtime = report.get('overtimeHours', 0)
+
+    adviser_role = sanitize_input(adviser_role)
+    advise_point = sanitize_input(advise_point)
+    projects_str = sanitize_input(projects_str)
+
     # 週次報告内容
     report_content = f"""
 【実施した作業】
