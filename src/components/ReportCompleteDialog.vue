@@ -1,21 +1,21 @@
 <template>
   <v-dialog 
     :model-value="modelValue"
-    :max-width=" isAdviceEnabled ? 640 : 480 "
+    :max-width=" isAdviceEnabled ? 680 : 480 "
     persistent
     @update:model-value="handleDialogUpdate"
   >
-    <v-card class="bg-plain text-center rounded-lg">
-      <v-card-title class="text-h5 font-weight-bold">
+    <v-card class="bg-plain text-center rounded-lg d-flex flex-column">
+      <v-card-title class="text-h5 font-weight-bold flex-shrink-0">
         <span v-if="isMobile">報告完了</span>
         <span v-else>週次報告ありがとうございました</span>
       </v-card-title>
 
-      <v-card-text class="pt-1">
+      <v-card-text class="py-1 flex-grow-1" style="max-height: 80vh; overflow-y: auto;">
         <!-- アドバイス機能が有効な場合 -->
         <template v-if="isAdviceEnabled">
           <div v-if="isAdviceAvailable">
-            <v-sheet class="text-left pa-4 mx-3 rounded-lg advisor-container">
+            <v-sheet class="text-left pa-4 pt-1 mx-3 rounded-lg advisor-container">
               <v-img
                 :src="advisorRoles[selectedAdvisorRole].image"
                 max-width="160"
@@ -49,7 +49,7 @@
           </div>
 
           <div v-else>
-            <v-sheet class="mx-3 mb-2 py-3 rounded-lg advisor-container">
+            <v-sheet class="mx-3 py-3 rounded-lg advisor-container">
               <p class="text-body-1">アドバイザーを選んでください</p>
               
               <v-window v-model="selectedAdvisorRole" show-arrows continuous>
@@ -114,7 +114,7 @@
         </template>
       </v-card-text>
 
-      <v-card-actions class="pb-4">
+      <v-card-actions class="pt-4 pb-4 flex-shrink-0">
         <v-row justify="center" no-gutters>
           <v-col cols="auto" class="mx-2">
             <v-btn color="primary" prepend-icon="mdi-chevron-left" variant="elevated" @click="$emit('back')">
@@ -241,5 +241,24 @@ const handleGenerateAdvice = async () => {
 
 .v-window-item {
   height: 100%;
+}
+
+.v-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.v-card-text {
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.v-card-text::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.v-card-text::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
 }
 </style>

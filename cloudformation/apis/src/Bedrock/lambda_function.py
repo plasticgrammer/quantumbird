@@ -92,26 +92,30 @@ def invoke_claude(prompt: str) -> str:
     """
     try:
         body = json.dumps({
-            "prompt": prompt,
-            "max_tokens_to_sample": 600,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "max_tokens": 600,
             "temperature": 0.8,
             "top_p": 0.9,
             "top_k": 250,
-            "stop_sequences": [],
             "anthropic_version": "bedrock-2023-05-31"
         })
 
         response = bedrock.invoke_model(
             body=body,
-            modelId="anthropic.claude-v2:1",
+            modelId="anthropic.claude-3-5-sonnet-20240620-v1:0",
             contentType="application/json",
             accept="application/json"
         )
         
         response_body = json.loads(response.get('body').read())
-        # Claude v2のレスポンス形式に合わせて変更
         logger.info(f"Claude response: {response_body}")
-        return response_body.get('completion', '')
+        # Claude 3のレスポンス形式に合わせて変更
+        return response_body.get('content')[0].get('text', '')
     
     except ClientError as e:
         logger.error(f"Error invoking Bedrock: {str(e)}")
