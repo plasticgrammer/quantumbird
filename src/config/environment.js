@@ -29,9 +29,9 @@ export const rootUrl = getRootUrl()
 export const contextPath = isProd ? '/quantumbird/' : '/'
 export const feedbackUrl = 'https://forms.gle/suRGEcRXE33xvFu19'
 export const termsOfServiceUrl = `${rootUrl}/terms-of-service.html`
-export const termsOfServiceVersion = '1.0'
+export const termsOfServiceVersion = '1.01'
 export const privacyPolicyUrl = `${rootUrl}/privacy-policy.html`
-export const privacyPolicyVersion = '1.0'
+export const privacyPolicyVersion = '1.01'
 
 const config = {
   isProd,
