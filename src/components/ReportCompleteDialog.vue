@@ -30,7 +30,7 @@
                 />
                 {{ advisorRoles[selectedAdvisorRole].title }}からのアドバイス
               </p>
-              <p class="text-body-1 text-grey-darken-3" style="white-space: pre-wrap">{{ advice }}</p>
+              <p class="text-advice text-grey-darken-3">{{ advice }}</p>
             </v-sheet>
           </div>
           
@@ -227,6 +227,12 @@ const handleGenerateAdvice = async () => {
 
 .advisor-image :deep(.v-img__img) {
   object-fit: cover !important;
+}
+
+.text-advice {
+  font-size: .925em !important;
+  white-space: pre-wrap;
+  line-height: 1.4;
 }
 
 .v-window {
