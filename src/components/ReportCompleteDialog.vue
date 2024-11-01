@@ -75,7 +75,7 @@
               <div class="d-flex justify-center mb-2">
                 <v-btn
                   class="px-8"
-                  height="3em"
+                  min-width="50%"
                   variant="outlined"
                   @mouseenter="handleButtonHover(true)"
                   @mouseleave="handleButtonHover(false)"
