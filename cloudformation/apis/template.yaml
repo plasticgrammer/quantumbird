@@ -168,6 +168,7 @@ Resources:
       Timeout: 30
       MemorySize: 256
       Policies:
+        - AmazonDynamoDBFullAccess
         - Statement:
             - Effect: Allow
               Action:

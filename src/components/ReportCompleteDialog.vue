@@ -1,7 +1,7 @@
 <template>
   <v-dialog 
     :model-value="modelValue"
-    :max-width=" isAdviceEnabled ? 700 : 480 "
+    :max-width="isAdviceEnabled ? 680 : 480"
     persistent
     @update:model-value="handleDialogUpdate"
   >
@@ -10,35 +10,68 @@
         <span v-if="isMobile">報告完了</span>
         <span v-else>週次報告ありがとうございました</span>
       </v-card-title>
-
+ 
+      <!-- チケット残数表示 -->
+      <div v-if="isAdviceEnabled" class="ticket-chip-container">
+        <v-chip
+          :color="advisorState.remainingTickets ? 'grey-darken-2' : 'grey-lighten-1'"
+          class="ticket-chip"
+          variant="outlined"
+        >
+          <v-icon class="mr-1" :color="advisorState.remainingTickets ? 'deep-purple' : 'grey-lighten-1'">
+            {{ advisorState.remainingTickets ? 'mdi-ticket' : 'mdi-ticket-outline' }}
+          </v-icon>
+          <span class="text-caption">{{ advisorState.remainingTickets }}</span>
+          <v-tooltip activator="parent" location="top">
+            アドバイスチケット残数
+          </v-tooltip>
+        </v-chip>
+      </div>
+      
+      <!-- アドバイス機能が有効な場合 -->
       <v-card-text class="py-1 flex-grow-1" style="max-height: 80vh; overflow-y: auto;">
-        <!-- アドバイス機能が有効な場合 -->
         <template v-if="isAdviceEnabled">
-          <div v-if="isAdviceAvailable">
+          <!-- アドバイス表示 -->
+          <div v-if="advisorState.isAdviceAvailable">
             <v-sheet class="text-left pa-4 pt-1 mx-3 rounded-lg advisor-container">
               <v-img
-                :src="advisorRoles[selectedAdvisorRole].image"
+                :src="advisorRoles[advisorState.selectedRole].image"
                 max-width="160"
                 class="mx-auto mt-0 mb-3"
                 :aspect-ratio="1"
               ></v-img>
               <p class="text-caption text-grey-darken-1 mb-2">
                 <v-icon 
-                  :icon="advisorRoles[selectedAdvisorRole].icon" 
-                  :color="advisorRoles[selectedAdvisorRole].color" 
+                  :icon="advisorRoles[advisorState.selectedRole].icon" 
+                  :color="advisorRoles[advisorState.selectedRole].color" 
                   class="me-1"
                 />
-                {{ advisorRoles[selectedAdvisorRole].title }}からのアドバイス
+                {{ advisorRoles[advisorState.selectedRole].title }}からのアドバイス
               </p>
-              <p class="text-advice text-grey-darken-3">{{ advice }}</p>
+              <p class="text-advice text-grey-darken-3">{{ advisorState.advice }}</p>
             </v-sheet>
+ 
+            <!-- 別のアドバイザーに相談するオプション -->
+            <div v-if="advisorState.remainingTickets > 0" class="my-4">
+              <v-btn
+                variant="outlined"
+                color="grey-darken-2"
+                @click="resetState"
+              >
+                別のアドバイザーに相談する
+              </v-btn>
+            </div>
+            <p v-else class="text-caption my-2">
+              アドバイスチケットを使い切りました。新しい週次報告時に再度利用可能になります。
+            </p>
           </div>
           
+          <!-- アドバイザー選択 -->
           <div v-else>
             <v-sheet class="mx-3 py-3 rounded-lg advisor-container">
               <p class="text-body-1">アドバイザーを選んでください</p>
-              
-              <v-window v-model="selectedAdvisorRole" show-arrows continuous>
+ 
+              <v-window v-model="advisorState.selectedRole" show-arrows continuous>
                 <v-window-item
                   v-for="(advisor, key) in advisorRoles"
                   :key="key"
@@ -50,7 +83,7 @@
                         :src="advisor.image"
                         max-height="170"
                         max-width="200"
-                        :class="['advisor-image mb-2 mx-auto', { 'scale-up': isButtonHovering || isLoadingAdvice }]"
+                        :class="['advisor-image mb-2 mx-auto', { 'scale-up': advisorState.isButtonHovering || advisorState.isLoading }]"
                         :position="'top'"
                       >
                       </v-img>
@@ -71,25 +104,43 @@
                   </v-card>
                 </v-window-item>
               </v-window>
-
+ 
               <div class="d-flex justify-center mb-2">
                 <v-btn
+                  v-if="advisorState.remainingTickets > 0"
                   class="px-8"
                   min-width="50%"
+                  height="50px"
                   variant="outlined"
+                  color="grey-darken-2"
+                  :disabled="advisorState.remainingTickets === 0"
                   @mouseenter="handleButtonHover(true)"
                   @mouseleave="handleButtonHover(false)"
                   @click="handleGenerateAdvice"
                 >
-                  <template v-if="isLoadingAdvice">
-                    <v-progress-circular indeterminate size="18" width="3" :color="advisorRoles[selectedAdvisorRole].color" class="me-2"></v-progress-circular>
+                  <template v-if="advisorState.isLoading">
+                    <v-progress-circular
+                      indeterminate size="22" width="4" 
+                      :color="advisorRoles[advisorState.selectedRole].color" class="me-2"
+                    ></v-progress-circular>
                     アドバイザーに相談中...
                   </template>
                   <template v-else>
-                    <v-icon icon="mdi-comment-text-outline" class="me-2"></v-icon>
-                    このアドバイザーに相談する
+                    <div class="d-flex flex-column">
+                      <div class="d-flex align-center">
+                        <v-icon icon="mdi-comment-text-outline" size="large" class="me-2" />
+                        <span>このアドバイザーに相談する</span>
+                      </div>
+                      <div class="text-caption text-grey-darken-1">
+                        （チケットを1枚消費します）
+                      </div>
+                    </div>
                   </template>
                 </v-btn>
+                <p v-else class="text-caption text-error my-1">
+                  アドバイスチケットを使い切りました。<br>
+                  新しい週次報告時に再度利用可能になります。
+                </p>
               </div>
             </v-sheet>
           </div>
@@ -97,14 +148,14 @@
         <!-- アドバイス機能が無効な場合 -->
         <template v-else>
           <v-img
-            :src="advisorRoles[selectedAdvisorRole].image"
-            max-width="300"
+            :src="advisorRoles[advisorState.selectedRole].image"
+            max-width="200"
             class="mx-auto mt-0 mb-3"
             :aspect-ratio="1"
           ></v-img>
         </template>
       </v-card-text>
-
+ 
       <v-card-actions class="pt-4 pb-4 flex-shrink-0">
         <v-row justify="center" no-gutters>
           <v-col cols="auto" class="mx-2">
@@ -124,9 +175,10 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { reactive, watch } from 'vue'
 import { useResponsive } from '../composables/useResponsive'
 import { advisorRoles, getWeeklyReportAdvice } from '../services/bedrockService'
+import { getMember } from '../services/publicService'
 
 const { isMobile } = useResponsive()
 
@@ -147,19 +199,24 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'back', 'close'])
 
-// ローカルの状態管理
-const selectedAdvisorRole = ref('manager')
-const isButtonHovering = ref(false)
-const isLoadingAdvice = ref(false)
-const isAdviceAvailable = ref(false)
-const advice = ref('')
+// 状態管理をreactiveオブジェクトとして定義
+const advisorState = reactive({
+  selectedRole: 'manager',
+  isButtonHovering: false,
+  isLoading: false,
+  isAdviceAvailable: false,
+  advice: '',
+  remainingTickets: 0
+})
 
 const resetState = () => {
-  selectedAdvisorRole.value = 'manager'
-  isLoadingAdvice.value = false
-  isAdviceAvailable.value = false
-  advice.value = ''
-  isButtonHovering.value = false
+  Object.assign(advisorState, {
+    selectedRole: 'manager',
+    isLoading: false,
+    isAdviceAvailable: false,
+    advice: '',
+    isButtonHovering: false
+  })
 }
 
 const handleDialogUpdate = (value) => {
@@ -169,45 +226,74 @@ const handleDialogUpdate = (value) => {
   }
 }
 
-watch(() => props.reportContent, (newValue) => {
-  if (newValue && Object.keys(newValue).length > 0) {
-    resetState()
-  }
-})
-
 const handleButtonHover = (hovering) => {
-  isButtonHovering.value = hovering
+  advisorState.isButtonHovering = hovering
+}
+
+const initializeTickets = async (memberUuid) => {
+  if (!memberUuid || !props.isAdviceEnabled) return
+
+  try {
+    const member = await getMember(memberUuid)
+    advisorState.remainingTickets = member.adviceTickets ?? 0
+  } catch (error) {
+    console.error('Error fetching member tickets:', error)
+    advisorState.remainingTickets = 0
+  }
 }
 
 const handleGenerateAdvice = async () => {
-  try {
-    if (isLoadingAdvice.value) {
-      return
-    }
+  if (advisorState.isLoading || advisorState.remainingTickets <= 0) return
 
-    isLoadingAdvice.value = true
-    const result = await getWeeklyReportAdvice({
+  try {
+    advisorState.isLoading = true
+    const response = await getWeeklyReportAdvice({
       ...props.reportContent,
       advisorRole: {
-        role: advisorRoles[selectedAdvisorRole.value].role,
-        point: advisorRoles[selectedAdvisorRole.value].point
+        role: advisorRoles[advisorState.selectedRole].role,
+        point: advisorRoles[advisorState.selectedRole].point
       }
     })
-    advice.value = result.advice
-    isAdviceAvailable.value = true
+    
+    Object.assign(advisorState, {
+      advice: response.advice,
+      remainingTickets: response.remainingTickets,
+      isAdviceAvailable: true
+    })
+
   } catch (error) {
     console.error('Error getting weekly report advice:', error)
-    advice.value = '申し訳ありません。アドバイスの生成中にエラーが発生しました。'
-    isAdviceAvailable.value = true
+    const errorMessage = error.code === 'INSUFFICIENT_TICKETS'
+      ? 'アドバイスチケットが不足しています。新しい週次報告時に再度利用可能になります。'
+      : '申し訳ありません。アドバイスの生成中にエラーが発生しました。'
+
+    Object.assign(advisorState, {
+      advice: errorMessage,
+      remainingTickets: error.remainingTickets || 0,
+      isAdviceAvailable: true
+    })
   } finally {
-    isLoadingAdvice.value = false
+    advisorState.isLoading = false
   }
 }
+
+watch(
+  () => props.reportContent,
+  async (newValue) => {
+    if (newValue?.memberUuid) {
+      resetState()
+      if (props.isAdviceEnabled) {
+        await initializeTickets(newValue.memberUuid)
+      }
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>
 .advisor-container {
-  border: solid 1px #1e88e5;
+  border: solid 1px #607d8b;
   background-color: #e3f2fd;
 }
 
@@ -230,9 +316,21 @@ const handleGenerateAdvice = async () => {
 }
 
 .text-advice {
-  font-size: .925em !important;
+  font-size: 0.925em !important;
   white-space: pre-wrap;
-  line-height: 1.4;
+  line-height: 1.8;
+  letter-spacing: 0.03em;
+}
+
+.ticket-chip-container {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+}
+
+.ticket-chip {
+  border: solid 1px #607d8b;
 }
 
 .v-window {

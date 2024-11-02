@@ -8,7 +8,7 @@ export const advisorRoles = {
     title: 'マネジメントアドバイザー',
     description: '課題解決の視点から業務改善のアドバイスを提供します',
     icon: 'mdi-account-supervisor',
-    color: 'blue-grey-darken-2',
+    color: 'pink',
     image: require('@/assets/images/advisor_manager.gif'),
     role: '【役割：マネジメント支援】課題解決型の包括的な視点を持つマネージャー',
     point: `業務遂行とチーム貢献の観点から、具体的な改善アプローチを提案してください。
@@ -17,11 +17,24 @@ export const advisorRoles = {
 ・チームへの貢献度向上
 ・目標達成のための具体的なアクション`
   },
+  career: {
+    title: 'キャリアアドバイザー',
+    description: 'スキル開発とキャリア形成のアドバイスを提供します',
+    icon: 'mdi-school',
+    color: 'deep-purple',
+    image: require('@/assets/images/advisor_career.png'),
+    role: '【役割：キャリア支援】スキル分析の専門性を持つキャリアアドバイザー',
+    point: `プロフェッショナルとしての成長の観点から、具体的な成長戦略を提案してください。
+市場価値の向上を意識し、特に以下の点に注目してください：
+・現在の業務から得られる学び
+・今後伸ばすべきスキル
+・キャリアパスの提案`
+  },
   mental: {
     title: 'メンタルサポーター',
     description: 'ストレス管理とセルフケアのアドバイスを提供します',
     icon: 'mdi-heart',
-    color: 'pink',
+    color: 'red',
     image: require('@/assets/images/advisor_mental.png'),
     role: '【役割：心の伴走者】深い共感と温かな支援を届ける心理カウンセラー',
     point: `私はあなたの心に寄り添うメンタルサポーター。
@@ -76,19 +89,6 @@ export const advisorRoles = {
 
 このアドバイスは、深い共感と理解に基づき、
 あなたの心に優しく寄り添う形で展開されます。`
-  },
-  career: {
-    title: 'キャリアアドバイザー',
-    description: 'スキル開発とキャリア形成のアドバイスを提供します',
-    icon: 'mdi-school',
-    color: 'indigo',
-    image: require('@/assets/images/advisor_career.png'),
-    role: '【役割：キャリア支援】スキル分析の専門性を持つキャリアアドバイザー',
-    point: `プロフェッショナルとしての成長の観点から、具体的な成長戦略を提案してください。
-市場価値の向上を意識し、特に以下の点に注目してください：
-・現在の業務から得られる学び
-・今後伸ばすべきスキル
-・キャリアパスの提案`
   },
   reframe: {
     title: 'リフレーミングマスター',
@@ -147,7 +147,7 @@ export const advisorRoles = {
     title: 'ストーリーアーキテクト',
     description: '成長のストーリーとして状況を再構築します',
     icon: 'mdi-script-text',
-    color: 'orange',
+    color: 'orange-darken-2',
     image: require('@/assets/images/advisor_scenario.png'),
     role: '【役割：物語紡ぎ】人生という詩篇を紡ぐ言葉の錬金術師',
     point: `私は言葉の建築家、ストーリーアーキテクト。
@@ -240,7 +240,7 @@ Phase 3: 真相解明 "事件の真相が見えてきました。実は..."
     title: 'クロノスナビゲーター',
     description: '時間軸を超えた視点でアドバイスを提供します',
     icon: 'mdi-clock-time-eight',
-    color: 'deep-purple',
+    color: 'indigo',
     image: require('@/assets/images/advisor_time.png'),
     role: '【役割：時空を超えたアドバイス】未来からの助言者',
     point: `あなたはクロノスナビゲーター。時空を超えて様々な可能性の分岐点を観測し、最適な未来への航路を提案します。
@@ -277,7 +277,8 @@ export const getWeeklyReportAdvice = async (report, advisorRole) => {
     return {
       advice: result.advice || '',
       weekString: result.weekString,
-      memberUuid: result.memberUuid
+      memberUuid: result.memberUuid,
+      remainingTickets: result.remainingTickets || 0
     }
   } catch (error) {
     console.error('Error getting weekly report advice:', error)

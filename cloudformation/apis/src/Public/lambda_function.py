@@ -99,13 +99,46 @@ def get_reports_by_organization(organization_id, week_string):
 def handle_post_report(event):
     report_data = json.loads(event['body'])
     item = prepare_item(report_data)
-    response = weekly_reports_table.put_item(Item=item)
-    logger.info(f"DynamoDB response: {response}")
     
-    # 組織の管理者に通知を送信
-    send_push_notification_to_admins(item['organizationId'], 'new_report', item)
-
-    return create_response(201, 'Weekly report created successfully')
+    try:
+        member_uuid = item['memberUuid']
+        member = get_member(member_uuid)
+        if not member:
+            return create_response(404, 'Member not found')
+        
+        current_tickets = member.get('adviceTickets', 0)
+        member['adviceTickets'] = current_tickets + 3
+        
+        # トランザクションで両方のテーブルを更新
+        transaction_items = [
+            {
+                'Put': {
+                    'TableName': weekly_reports_table.name,
+                    'Item': item
+                }
+            },
+            {
+                'Put': {
+                    'TableName': members_table.name,
+                    'Item': member
+                }
+            }
+        ]
+        
+        dynamodb.meta.client.transact_write_items(
+            TransactItems=transaction_items
+        )
+        
+        send_push_notification_to_admins(item['organizationId'], 'new_report', item)
+        
+        return create_response(201, {
+            'message': 'Weekly report created successfully',
+            'adviceTickets': member['adviceTickets']
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in transaction: {str(e)}", exc_info=True)
+        return create_response(500, f'Transaction failed: {str(e)}')
 
 def handle_put_report(event):
     report_data = json.loads(event['body'])

@@ -7,13 +7,26 @@ import re
 from typing import Dict, Any
 from botocore.exceptions import ClientError
 from datetime import datetime
+from decimal import Decimal
 
 # ロガーの設定
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+# Initialize DynamoDB client
+dynamodb = boto3.resource('dynamodb')
+stage = os.environ.get('STAGE', 'dev')
+members_table_name = f'{stage}-Members'
+members_table = dynamodb.Table(members_table_name)
+
 # Bedrockクライアントの初期化
 bedrock = boto3.client('bedrock-runtime', region_name = "ap-northeast-1")
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
 
 def sanitize_input(text: str) -> str:
     """入力テキストをサニタイズする"""
@@ -144,15 +157,56 @@ def invoke_claude(prompt: str) -> str:
     except ClientError as e:
         logger.error(f"Error invoking Bedrock: {str(e)}")
         raise Exception("アドバイスの生成中にエラーが発生しました。")
+    
+def check_and_update_advice_tickets(member_uuid: str) -> tuple[bool, int]:
+    """
+    アドバイスチケットの残数をチェックし、利用可能な場合は1枚消費する
+    
+    Returns:
+        tuple[bool, int]: (チケットが利用可能かどうか, 残りチケット数)
+    """
+    try:
+        # メンバー情報を取得
+        response = members_table.get_item(
+            Key={'memberUuid': member_uuid}
+        )
+        member = response.get('Item')
+        
+        if not member:
+            raise Exception('Member not found')
+            
+        current_tickets = member.get('adviceTickets', 0)
+        
+        # チケットが0枚の場合は利用不可
+        if current_tickets <= 0:
+            return False, current_tickets
+            
+        # チケットを1枚消費
+        response = members_table.update_item(
+            Key={'memberUuid': member_uuid},
+            UpdateExpression="SET adviceTickets = adviceTickets - :val",
+            ExpressionAttributeValues={':val': 1, ':zero': 0},
+            ConditionExpression="adviceTickets > :zero",
+            ReturnValues="UPDATED_NEW"  # 更新後の値を取得
+        )
+        
+        # 更新後のチケット数を取得
+        remaining_tickets = response.get('Attributes', {}).get('adviceTickets', 0)
+        return True, remaining_tickets
+        
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+            # 条件チェックに失敗（チケットが0以下）
+            return False, 0
+        raise e
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """Lambda関数のメインハンドラー"""
     try:
-        # リクエストボディの取得
         if 'body' not in event:
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'リクエストボディが必要です。'})
+                'body': json.dumps({'error': 'リクエストボディが必要です。'}, cls=DecimalEncoder)
             }
             
         body = json.loads(event['body'])
@@ -161,7 +215,26 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if not report_content:
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': '週次報告の内容が必要です。'})
+                'body': json.dumps({'error': '週次報告の内容が必要です。'}, cls=DecimalEncoder)
+            }
+            
+        member_uuid = report_content.get('memberUuid')
+        if not member_uuid:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': 'memberUuidが必要です。'}, cls=DecimalEncoder)
+            }
+            
+        # チケットのチェックと消費
+        is_available, remaining_tickets = check_and_update_advice_tickets(member_uuid)
+        if not is_available:
+            return {
+                'statusCode': 403,
+                'body': json.dumps({
+                    'error': 'アドバイスチケットが不足しています。',
+                    'code': 'INSUFFICIENT_TICKETS',
+                    'remainingTickets': remaining_tickets
+                }, ensure_ascii=False, cls=DecimalEncoder)
             }
         
         # プロンプトの生成
@@ -170,11 +243,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # Claudeの呼び出し
         claude_response = invoke_claude(prompt)
-        
-        # 余分な空白行を削除し、改行を適切に保持
-        # lines = [line.strip() for line in claude_response.split('\n')]
-        # formatted_lines = [line for line in lines if line]
-        # formatted_advice = '\n'.join(formatted_lines)
         formatted_advice = claude_response.strip()
 
         # 結果を返す
@@ -187,8 +255,9 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'body': json.dumps({
                 'advice': formatted_advice,
                 'weekString': report_content.get('weekString'),
-                'memberUuid': report_content.get('memberUuid')
-            }, ensure_ascii=False)
+                'memberUuid': member_uuid,
+                'remainingTickets': remaining_tickets
+            }, ensure_ascii=False, cls=DecimalEncoder)
         }
         
     except Exception as e:
@@ -196,6 +265,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         return {
             'statusCode': 500,
             'body': json.dumps({
-                'error': 'アドバイスの生成中にエラーが発生しました。'
-            }, ensure_ascii=False)
+                'error': 'アドバイスの生成中にエラーが発生しました。',
+                'remainingTickets': remaining_tickets  # エラー時もチケット数を返す
+            }, ensure_ascii=False, cls=DecimalEncoder)  # DecimalEncoderを追加
         }
