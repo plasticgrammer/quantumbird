@@ -6,8 +6,8 @@ import html
 import re
 from typing import Dict, Any
 from botocore.exceptions import ClientError
-from datetime import datetime
 from decimal import Decimal
+from advisor_roles import ADVISOR_ROLES
 
 # ロガーの設定
 logger = logging.getLogger()
@@ -70,13 +70,25 @@ def format_projects(projects: list) -> str:
     
     return '\n\n'.join(formatted) if formatted else "記載なし"
 
+def get_advisor_role_config(role_id: str) -> Dict[str, str]:
+    """アドバイザーロールの設定を取得する"""
+    if role_id not in ADVISOR_ROLES:
+        # デフォルトのロール設定を返す
+        return {
+            "role": "経験豊富なマネージャー",
+            "point": "具体的な行動提案を含め、前向きで実践的なアドバイスを心がけてください。"
+        }
+    return ADVISOR_ROLES[role_id]
+
 def create_prompt(report: Dict[str, Any]) -> str:
     """週次報告の内容からプロンプトを生成する"""
 
-    # クライアントから送られてきたアドバイザーロール情報を取得
-    advisor_role_map = report.get('advisorRole', {})
-    adviser_role = advisor_role_map.get('role', '経験豊富なマネージャー')
-    advise_point = advisor_role_map.get('point', '具体的な行動提案を含め、前向きで実践的なアドバイスを心がけてください。')
+    # クライアントから送られてきたロールIDを使用
+    role_id = report.get('advisorRole')
+    role_config = get_advisor_role_config(role_id)
+    
+    adviser_role = sanitize_input(role_config['role'])
+    advise_point = sanitize_input(role_config['point'])
 
     # 評価指標の解析
     rating = report.get('rating', {})

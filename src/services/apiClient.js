@@ -39,6 +39,8 @@ const stopLoading = () => {
 
 const isTokenError = (error) => {
   // If it's a network error, it might be due to CORS
+  console.error('ERR_NETWORK:', (error.code === 'ERR_NETWORK' && !error.response))
+  console.error('error.response.status:', error.response?.status)
   return (error.code === 'ERR_NETWORK' && !error.response) || error.response?.status === 401
 }
 
@@ -101,7 +103,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null)
         console.error('Token refresh failed:', refreshError)
-        store.dispatch('auth/signOut')
+        await store.dispatch('auth/signOut')
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false

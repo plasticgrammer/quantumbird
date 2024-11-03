@@ -23,7 +23,7 @@
       :timeout="5000"
       location="top"
       width="90%"
-      class="mx-auto"
+      class="mx-auto rounded-lg"
       role="alert"
       aria-live="assertive"
     >

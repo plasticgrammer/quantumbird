@@ -19,6 +19,15 @@ stage = os.environ.get('STAGE', 'dev')
 members_table_name = f'{stage}-Members'
 members_table = dynamodb.Table(members_table_name)
 
+def float_to_decimal(obj):
+    if isinstance(obj, float):
+        return Decimal(str(obj))
+    elif isinstance(obj, dict):
+        return {k: float_to_decimal(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [float_to_decimal(v) for v in obj]
+    return obj
+
 def lambda_handler(event, context):
     #logger.info(f"Received event: {json.dumps(event)}")
     try:
@@ -129,7 +138,8 @@ def prepare_member_item(member_data):
         'name': member_data.get('name'),
         'email': member_data.get('email'),
         'goal': member_data.get('goal'),
-        'projects': member_data.get('projects', [])
+        'projects': member_data.get('projects', []),
+        'adviceTickets': float_to_decimal(member_data.get('adviceTickets'))
     }
 
 def get_member(member_uuid):

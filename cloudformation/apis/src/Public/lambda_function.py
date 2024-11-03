@@ -287,7 +287,8 @@ def prepare_member_item(member_data):
         'name': member_data.get('name'),
         'email': member_data.get('email'),
         'goal': member_data.get('goal'),
-        'projects': member_data.get('projects', [])
+        'projects': member_data.get('projects', []),
+        'adviceTickets': float_to_decimal(member_data.get('adviceTickets'))
     }
 
 def update_member_projects(member_uuid, projects):

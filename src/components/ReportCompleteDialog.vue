@@ -18,11 +18,11 @@
           class="ticket-chip"
           variant="outlined"
         >
-          <v-icon class="mr-1" :color="advisorState.remainingTickets ? 'deep-purple' : 'grey-lighten-1'">
+          <v-icon class="mr-1" :color="advisorState.remainingTickets ? 'primary' : 'grey-lighten-1'">
             {{ advisorState.remainingTickets ? 'mdi-ticket' : 'mdi-ticket-outline' }}
           </v-icon>
           <span class="text-caption">{{ advisorState.remainingTickets }}</span>
-          <v-tooltip activator="parent" location="top">
+          <v-tooltip activator="parent" location="bottom">
             アドバイスチケット残数
           </v-tooltip>
         </v-chip>
@@ -58,6 +58,7 @@
                 color="grey-darken-2"
                 @click="resetState"
               >
+                <v-icon icon="mdi-swap-horizontal-bold" class="mr-1" />
                 別のアドバイザーに相談する
               </v-btn>
             </div>
@@ -110,7 +111,7 @@
                   v-if="advisorState.remainingTickets > 0"
                   class="px-8"
                   min-width="50%"
-                  height="50px"
+                  height="60px"
                   variant="outlined"
                   color="grey-darken-2"
                   :disabled="advisorState.remainingTickets === 0"
@@ -131,8 +132,8 @@
                         <v-icon icon="mdi-comment-text-outline" size="large" class="me-2" />
                         <span>このアドバイザーに相談する</span>
                       </div>
-                      <div class="text-caption text-grey-darken-1">
-                        （チケットを1枚消費します）
+                      <div class="text-caption text-grey-darken-1 pt-1">
+                        （<v-icon size="small" class="mx-1">mdi-ticket</v-icon>チケットを1枚消費します）
                       </div>
                     </div>
                   </template>
@@ -249,10 +250,7 @@ const handleGenerateAdvice = async () => {
     advisorState.isLoading = true
     const response = await getWeeklyReportAdvice({
       ...props.reportContent,
-      advisorRole: {
-        role: advisorRoles[advisorState.selectedRole].role,
-        point: advisorRoles[advisorState.selectedRole].point
-      }
+      advisorRole: advisorState.selectedRole
     })
     
     Object.assign(advisorState, {
@@ -263,13 +261,13 @@ const handleGenerateAdvice = async () => {
 
   } catch (error) {
     console.error('Error getting weekly report advice:', error)
-    const errorMessage = error.code === 'INSUFFICIENT_TICKETS'
+    const hasNoTickets = error.code === 'INSUFFICIENT_TICKETS'
+    const errorMessage = hasNoTickets
       ? 'アドバイスチケットが不足しています。新しい週次報告時に再度利用可能になります。'
       : '申し訳ありません。アドバイスの生成中にエラーが発生しました。'
-
+    if (hasNoTickets) advisorState.remainingTickets = 0
     Object.assign(advisorState, {
       advice: errorMessage,
-      remainingTickets: error.remainingTickets || 0,
       isAdviceAvailable: true
     })
   } finally {
