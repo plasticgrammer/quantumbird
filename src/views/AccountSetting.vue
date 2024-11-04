@@ -12,13 +12,26 @@
     <v-card>
       <v-card-title>アカウント情報</v-card-title>
       <v-card-text>
-        <v-text-field
-          v-model="email"
-          label="メールアドレス"
-          readonly
-          hide-details
-          class="mb-4"
-        ></v-text-field>
+        <v-row>
+          <v-col cols="6">
+            <v-text-field
+              v-model="organizationId"
+              label="組織ID"
+              readonly
+              hide-details
+              class="mb-4"
+            ></v-text-field>
+            <v-text-field
+              v-model="email"
+              label="メールアドレス"
+              readonly
+              hide-details
+              class="mb-4"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="6">
+          </v-col>
+        </v-row>
 
         <v-btn
           color="primary"
@@ -40,17 +53,6 @@
           データをエクスポート
         </v-btn>
         <p v-if="exportStatus" class="mt-2">{{ exportStatus }}</p>
-      </v-card-text>
-    </v-card>
-
-    <v-card class="mt-4">
-      <v-card-title class="text-error">危険ゾーン</v-card-title>
-      <v-card-text>
-        <p class="mb-3">一度アカウントを削除すると、二度と元に戻せません。十分ご注意ください。</p>
-        <v-btn color="error" @click="showDeleteConfirmation = true">
-          <v-icon class="mr-2">mdi-account-off</v-icon>
-          アカウントを削除
-        </v-btn>
       </v-card-text>
     </v-card>
 
@@ -127,28 +129,108 @@
     </v-dialog>
 
     <!-- 削除確認ダイアログ -->
-    <v-dialog v-model="showDeleteConfirmation" max-width="400px">
+    <v-card class="mt-4">
+      <v-card-title class="text-error">危険ゾーン</v-card-title>
+      <v-card-text>
+        <div class="d-flex flex-column gap-4">
+          <!-- アカウント引き継ぎ -->
+          <div class="border-bottom pb-6">
+            <p class="mb-2">アカウントの引き継ぎを行います。新しいユーザーに組織の管理を移譲できます。</p>
+            <v-btn 
+              color="warning" 
+              @click="showDeleteDialog = true"
+            >
+              <v-icon class="mr-2">mdi-account-switch</v-icon>
+              アカウントを削除
+            </v-btn>
+          </div>
+
+          <!-- アカウント完全削除 -->
+          <div>
+            <p class="mb-2 text-error">
+              アカウントと全てのデータを完全に削除します。この操作は取り消せません。
+            </p>
+            <v-btn 
+              color="error" 
+              @click="showDeleteAllDialog = true"
+            >
+              <v-icon class="mr-2">mdi-account-off</v-icon>
+              アカウントを完全に削除
+            </v-btn>
+          </div>
+        </div>
+      </v-card-text>
+    </v-card>
+
+    <!-- アカウント引き継ぎダイアログ -->
+    <v-dialog v-model="showDeleteDialog" max-width="500px">
       <v-card>
-        <v-card-title>アカウント削除の確認</v-card-title>
+        <v-card-title>アカウント引き継ぎ用 削除</v-card-title>
         <v-card-text>
-          <p class="mb-4">
-            本当にアカウントを削除しますか？<br>この操作は取り消せません。
-          </p>
+          アカウントの引き継ぎを行うと：
+          <div class="mb-4">
+            <ul class="ml-4">
+              <li>ユーザーアカウント情報、組織情報は削除されます</li>
+              <li>メンバー情報、週次報告履歴は保持されます</li>
+              <li>削除後に組織ID「<span class="text-error">{{ organizationId }}</span>」でサインアップしたユーザーが、<br>組織の新しい管理者となります</li>
+            </ul>
+            この操作は取り消すことができません。
+          </div>
           <v-text-field
-            v-model="confirmationText"
+            v-model="deleteConfirmText"
             label="確認のため 'DELETE' と入力してください"
             hide-details
           ></v-text-field>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="showDeleteConfirmation = false">キャンセル</v-btn>
+          <v-btn color="primary" variant="text" @click="showDeleteDialog = false">
+            キャンセル
+          </v-btn>
           <v-btn
-            color="error"
-            :disabled="confirmationText !== 'DELETE'"
+            color="warning"
+            :disabled="deleteConfirmText !== 'DELETE'"
+            :loading="isDeleting"
             @click="deleteAccount"
           >
             削除する
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- アカウント完全削除ダイアログ -->
+    <v-dialog v-model="showDeleteAllDialog" max-width="500px">
+      <v-card>
+        <v-card-title>アカウントの完全削除</v-card-title>
+        <v-card-text>
+          以下のデータが完全に削除されます：
+          <div class="mb-4 text-error">
+            <ul class="ml-4">
+              <li>ユーザーアカウント情報</li>
+              <li>組織、メンバー情報</li>
+              <li>週次報告履歴</li>
+            </ul>
+            この操作は取り消すことができません。
+          </div>
+          <v-text-field
+            v-model="deleteConfirmText"
+            label="確認のため 'DELETE-ALL' と入力してください"
+            hide-details
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" variant="text" @click="showDeleteAllDialog = false">
+            キャンセル
+          </v-btn>
+          <v-btn
+            color="error"
+            :disabled="deleteConfirmText !== 'DELETE-ALL'"
+            :loading="isDeleting"
+            @click="deleteAccountCompletely"
+          >
+            完全に削除する
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -161,6 +243,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { exportReports } from '../services/reportService'
+import { deleteOrganization, deleteOrganizationCompletely } from '../services/organizationService'
 
 const store = useStore()
 const router = useRouter()
@@ -168,11 +251,6 @@ const passwordForm = ref(null)
 const organizationId = store.getters['auth/organizationId']
 
 const email = ref('')
-const showDeleteConfirmation = ref(false)
-const confirmationText = ref('')
-const isExporting = ref(false)
-const exportStatus = ref('')
-
 const showPasswordDialog = ref(false)
 const showPassword = ref(false)
 const showNewPassword = ref(false)
@@ -182,6 +260,12 @@ const passwordData = ref({
   newPassword: '',
   confirmPassword: ''
 })
+const isExporting = ref(false)
+const exportStatus = ref('')
+const showDeleteDialog = ref(false)
+const showDeleteAllDialog = ref(false)
+const isDeleting = ref(false)
+const deleteConfirmText = ref('')
 
 // パスワードのバリデーションルール
 const passwordRules = [
@@ -235,8 +319,11 @@ const resetPasswordForm = () => {
 }
 
 const deleteAccount = async () => {
+  isDeleting.value = true
   try {
     await store.dispatch('auth/deleteUserAccount')
+    await deleteOrganization(organizationId)
+
     store.dispatch('showNotification', {
       message: 'アカウントが削除されました',
       type: 'success'
@@ -248,8 +335,32 @@ const deleteAccount = async () => {
       type: 'error'
     })
   } finally {
-    showDeleteConfirmation.value = false
-    confirmationText.value = ''
+    isDeleting.value = false
+    showDeleteDialog.value = false
+    deleteConfirmText.value = ''
+  }
+}
+
+const deleteAccountCompletely = async () => {
+  isDeleting.value = true
+  try {
+    await store.dispatch('auth/deleteUserAccount')
+    await deleteOrganizationCompletely(organizationId)
+    
+    store.dispatch('showNotification', {
+      message: 'アカウントとすべてのデータが削除されました',
+      type: 'success'
+    })
+    router.push({ name: 'SignIn' })
+  } catch (error) {
+    store.dispatch('showNotification', {
+      message: 'アカウントの完全削除に失敗しました',
+      type: 'error'
+    })
+  } finally {
+    isDeleting.value = false
+    showDeleteAllDialog.value = false
+    deleteConfirmText.value = ''
   }
 }
 

@@ -18,7 +18,7 @@
     activator="parent"
     location="top"
   >
-    <v-list class="pa-0 bg-blue-grey-darken-1">
+    <v-list class="pa-0 bg-blue-grey">
       <v-list-item>
         <v-list-item-title class="text-body-2 opacity-60">{{ user.email }}</v-list-item-title>
       </v-list-item>
@@ -42,7 +42,7 @@
           activator="parent"
           location="right"
         >
-          <v-list class="pa-0 bg-blue-grey-darken-1">
+          <v-list class="pa-0 bg-blue-grey">
             <v-list-item
               prepend-icon="mdi-comment-quote-outline"
               title="フィードバック"

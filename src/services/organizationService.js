@@ -14,6 +14,10 @@ export const deleteOrganization = async (organizationId) => {
   return apiClient.delete(BASE_PATH, { organizationId })
 }
 
+export const deleteOrganizationCompletely = async (organizationId) => {
+  return apiClient.delete(BASE_PATH, { organizationId, mode: 'complete' })
+}
+
 export const getOrganization = async (organizationId) => {
   try {
     return await apiClient.get(BASE_PATH, { organizationId })

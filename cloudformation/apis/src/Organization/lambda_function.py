@@ -25,8 +25,10 @@ sns_client = boto3.client('sns')
 dynamodb = boto3.resource('dynamodb')
 organizations_table_name = f'{stage}-Organizations'
 members_table_name = f'{stage}-Members'
+reports_table_name = f'{stage}-WeeklyReports'
 organizations_table = dynamodb.Table(organizations_table_name)
 members_table = dynamodb.Table(members_table_name)
+reports_table = dynamodb.Table(reports_table_name)
 
 def lambda_handler(event, context):
     #logger.info(f"Received event: {json.dumps(event)}")
@@ -108,14 +110,169 @@ def handle_put(event):
 
 def handle_delete(event):
     params = event.get('queryStringParameters', {}) or {}
-    if 'organizationId' in params:
-        delete_organization_and_members(params['organizationId'])
-        return create_response(200, {'message': 'Organization and its members deleted successfully'})
-    elif 'memberUuid' in params:
-        delete_member(params['memberUuid'])
-        return create_response(200, {'message': 'Member deleted successfully'})
-    else:
-        return create_response(400, {'message': 'Missing required parameters'})
+    if 'organizationId' not in params:
+        return create_response(400, {'message': 'Missing required parameter: organizationId'})
+
+    organization_id = params['organizationId']
+    mode = params.get('mode')
+
+    try:
+        if mode == 'complete':
+            # 完全削除モード
+            delete_organization_completely(organization_id)
+            return create_response(200, {'message': 'Organization and all related data deleted successfully'})
+        else:
+            # 通常の削除モード（既存の処理）
+            delete_organization(organization_id)
+            return create_response(200, {'message': 'Organization and its members deleted successfully'})
+    except Exception as e:
+        logger.error(f"Error deleting organization: {str(e)}", exc_info=True)
+        return create_response(500, {'message': f'Failed to delete organization: {str(e)}'})
+
+def delete_organization(organization_id):
+    """組織のデータを完全に削除する"""
+    try:
+        logger.info(f"Starting complete deletion for organization: {organization_id}")
+
+        # 1. プッシュ通知登録の削除
+        delete_push_subscriptions(organization_id)
+        logger.info(f"Deleted push subscriptions for organization: {organization_id}")
+
+        # 2. 組織データの削除
+        organizations_table.delete_item(
+            Key={
+                'organizationId': organization_id
+            }
+        )
+        logger.info(f"Deleted organization data for: {organization_id}")
+
+    except Exception as e:
+        logger.error(f"Error in complete deletion process: {str(e)}", exc_info=True)
+        raise Exception(f"Failed to completely delete organization: {str(e)}")
+    
+def delete_organization_completely(organization_id):
+    """組織に関連する全てのデータを完全に削除する"""
+    try:
+        logger.info(f"Starting complete deletion for organization: {organization_id}")
+
+        # 1. プッシュ通知登録の削除
+        delete_push_subscriptions(organization_id)
+        logger.info(f"Deleted push subscriptions for organization: {organization_id}")
+
+        # 2. 週次報告データの削除
+        delete_weekly_reports(organization_id)
+        logger.info(f"Deleted weekly reports for organization: {organization_id}")
+
+        # 3. メンバーデータの削除
+        delete_members_by_organization(organization_id)
+        logger.info(f"Deleted members for organization: {organization_id}")
+
+        # 4. 組織データの削除
+        organizations_table.delete_item(
+            Key={
+                'organizationId': organization_id
+            }
+        )
+        logger.info(f"Deleted organization data for: {organization_id}")
+
+    except Exception as e:
+        logger.error(f"Error in complete deletion process: {str(e)}", exc_info=True)
+        raise Exception(f"Failed to completely delete organization: {str(e)}")
+
+def delete_weekly_reports(organization_id):
+    """週次報告データの削除（ページネーション対応）"""
+    try:
+        logger.info(f"Starting deletion of weekly reports for organization: {organization_id}")
+        
+        last_evaluated_key = None
+        total_deleted = 0
+
+        while True:
+            # クエリパラメータの準備
+            query_params = {
+                'IndexName': 'OrganizationIndex',
+                'KeyConditionExpression': Key('organizationId').eq(organization_id)
+            }
+            if last_evaluated_key:
+                query_params['ExclusiveStartKey'] = last_evaluated_key
+
+            # 週次報告の取得
+            response = reports_table.query(**query_params)
+            items = response.get('Items', [])
+
+            if not items:
+                break
+
+            # バッチ削除の実行
+            with reports_table.batch_writer() as batch:
+                for item in items:
+                    batch.delete_item(
+                        Key={
+                            'reportId': item['reportId']
+                        }
+                    )
+                    total_deleted += 1
+
+            # 次のページがあるか確認
+            last_evaluated_key = response.get('LastEvaluatedKey')
+            if not last_evaluated_key:
+                break
+
+        logger.info(f"Deleted {total_deleted} weekly reports for organization: {organization_id}")
+        return total_deleted
+
+    except Exception as e:
+        logger.error(f"Error deleting weekly reports: {str(e)}", exc_info=True)
+        raise
+
+def delete_members_by_organization(organization_id):
+    """組織に属する全メンバーの削除"""
+    try:
+        members = list_members(organization_id)
+        if not members:
+            return 0
+
+        with members_table.batch_writer() as batch:
+            for member in members:
+                batch.delete_item(
+                    Key={
+                        'memberUuid': member['memberUuid']
+                    }
+                )
+
+        return len(members)
+
+    except Exception as e:
+        logger.error(f"Error deleting members: {str(e)}", exc_info=True)
+        raise
+
+def delete_push_subscriptions(organization_id):
+    """組織のプッシュ通知登録を削除"""
+    try:
+        org = get_organization(organization_id)
+        if not org or 'adminSubscriptions' not in org:
+            return 0
+
+        admin_subscriptions = org.get('adminSubscriptions', {})
+        deleted_count = 0
+
+        for admin_id, endpoint_arn in admin_subscriptions.items():
+            try:
+                sns_client.delete_endpoint(
+                    EndpointArn=endpoint_arn
+                )
+                deleted_count += 1
+            except ClientError as e:
+                if e.response['Error']['Code'] != 'InvalidParameter':
+                    logger.warning(f"Failed to delete SNS endpoint for admin {admin_id}: {str(e)}")
+                continue
+
+        logger.info(f"Deleted {deleted_count} push subscriptions for organization: {organization_id}")
+        return deleted_count
+
+    except Exception as e:
+        logger.error(f"Error deleting push subscriptions: {str(e)}", exc_info=True)
+        raise
 
 def prepare_organization_item(org_data, existing_org=None):
     if existing_org is None:

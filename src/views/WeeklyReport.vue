@@ -63,7 +63,20 @@
               title="フィードバック"
               link
               @click="openFeedbackForm"
-            ></v-list-item>
+            >
+            </v-list-item>
+            <v-list-item
+              prepend-icon="mdi-file-document-outline"
+              title="利用規約"
+              @click="openTermsOfService"
+            >
+            </v-list-item>
+            <v-list-item
+              prepend-icon="mdi-shield-account-outline"
+              title="プライバシーポリシー"
+              @click="openPrivacyPolicy"
+            >
+            </v-list-item>
           </v-list>
         </v-menu>
       </v-btn>
@@ -96,7 +109,7 @@ import { useRouter } from 'vue-router'
 import WeekSelector from '../components/WeekSelector.vue'
 import ReportForm from '../components/ReportForm.vue'
 import { useCalendar } from '../composables/useCalendar'
-import { feedbackUrl } from '../config/environment'
+import { feedbackUrl, termsOfServiceUrl, privacyPolicyUrl } from '@/config/environment'
 import { getOrganization, getMember } from '../services/publicService'
 
 const MemberInfoDialog = defineAsyncComponent(() => import('../components/MemberInfoDialog.vue'))
@@ -204,6 +217,14 @@ const handleClose = () => {
 
 const openFeedbackForm = () => {
   window.open(feedbackUrl, '_blank', 'noopener,noreferrer')
+}
+
+const openTermsOfService = () => {
+  window.open(termsOfServiceUrl, '_blank', 'noopener,noreferrer')
+}
+
+const openPrivacyPolicy = () => {
+  window.open(privacyPolicyUrl, '_blank', 'noopener,noreferrer')
 }
 
 watch(() => props.weekString, (newWeekParam) => {

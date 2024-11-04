@@ -165,7 +165,7 @@
             </v-btn>
           </v-col>
           <v-col cols="auto" class="mx-2">
-            <v-btn color="error" prepend-icon="mdi-close" variant="elevated" @click="$emit('close')">
+            <v-btn color="grey-darken-1" prepend-icon="mdi-close" variant="elevated" @click="$emit('close')">
               終了する
             </v-btn>
           </v-col>
@@ -176,7 +176,7 @@
 </template>
 
 <script setup>
-import { reactive, watch } from 'vue'
+import { reactive, watch, onMounted, onUnmounted } from 'vue'
 import { useResponsive } from '../composables/useResponsive'
 import { advisorRoles, getWeeklyReportAdvice } from '../services/bedrockService'
 import { getMember } from '../services/publicService'
@@ -200,7 +200,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'back', 'close'])
 
-// 状態管理をreactiveオブジェクトとして定義
 const advisorState = reactive({
   selectedRole: 'manager',
   isButtonHovering: false,
@@ -220,17 +219,6 @@ const resetState = () => {
   })
 }
 
-const handleDialogUpdate = (value) => {
-  emit('update:modelValue', value)
-  if (!value) {
-    resetState()
-  }
-}
-
-const handleButtonHover = (hovering) => {
-  advisorState.isButtonHovering = hovering
-}
-
 const initializeTickets = async (memberUuid) => {
   if (!memberUuid || !props.isAdviceEnabled) return
 
@@ -241,6 +229,17 @@ const initializeTickets = async (memberUuid) => {
     console.error('Error fetching member tickets:', error)
     advisorState.remainingTickets = 0
   }
+}
+
+const handleDialogUpdate = (value) => {
+  emit('update:modelValue', value)
+  if (!value) {
+    resetState()
+  }
+}
+
+const handleButtonHover = (hovering) => {
+  advisorState.isButtonHovering = hovering
 }
 
 const handleGenerateAdvice = async () => {
@@ -274,6 +273,29 @@ const handleGenerateAdvice = async () => {
     advisorState.isLoading = false
   }
 }
+
+const advisorKeys = Object.keys(advisorRoles)
+
+const handleKeydown = (event) => {
+  if (!props.modelValue || advisorState.isAdviceAvailable) return
+
+  const currentIndex = advisorKeys.indexOf(advisorState.selectedRole)
+  if (event.key === 'ArrowLeft') {
+    const prevIndex = currentIndex <= 0 ? advisorKeys.length - 1 : currentIndex - 1
+    advisorState.selectedRole = advisorKeys[prevIndex]
+  } else if (event.key === 'ArrowRight') {
+    const nextIndex = currentIndex >= advisorKeys.length - 1 ? 0 : currentIndex + 1
+    advisorState.selectedRole = advisorKeys[nextIndex]
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 
 watch(
   () => props.reportContent,

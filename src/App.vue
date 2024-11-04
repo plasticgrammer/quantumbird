@@ -57,7 +57,7 @@
         permanent
         location="left"
         :width="255"
-        color="blue-grey-darken-2"
+        color="blue-grey-darken-1"
         class="navigation-drawer d-print-none"
         aria-label="Main navigation"
         @mouseenter="isHovered = true"
@@ -124,7 +124,7 @@
       <!-- Mobile bottom navigation -->
       <v-bottom-navigation
         v-else
-        bg-color="blue-grey-darken-2"
+        bg-color="blue-grey-darken-1"
         class="d-print-none"
         grow
         role="navigation"
