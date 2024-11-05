@@ -82,6 +82,10 @@ h3 {
   background-color: #f6fbff;
 }
 
+.brightness120 {
+  filter: brightness(1.2);
+}
+
 .work-items-list {
   padding-left: 24px;
 }

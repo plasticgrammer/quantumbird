@@ -24,7 +24,7 @@
       location="top"
       @update:model-value="handleDropdownChange"
     >
-      <v-list class="pa-0 bg-blue-grey">
+      <v-list class="pa-0 brightness120" :bg-color="bgColor">
         <v-list-item>
           <v-list-item-title class="text-body-2 opacity-60">{{ user.email }}</v-list-item-title>
         </v-list-item>
@@ -48,7 +48,7 @@
             activator="parent"
             location="right"
           >
-            <v-list class="pa-0 bg-blue-grey">
+            <v-list class="pa-0 brightness120" :bg-color="bgColor">
               <v-list-item
                 prepend-icon="mdi-comment-quote-outline"
                 title="フィードバック"
@@ -87,6 +87,17 @@ import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { feedbackUrl, termsOfServiceUrl, privacyPolicyUrl } from '@/config/environment'
+
+defineProps({
+  modelValue: {
+    type: Boolean,
+    default: false
+  },
+  bgColor: {
+    type: String,
+    default: '#365D91'
+  }
+})
 
 const emit = defineEmits(['update:modelValue'])
 
