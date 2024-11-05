@@ -57,7 +57,7 @@
         permanent
         location="left"
         :width="255"
-        color="blue-grey-darken-1"
+        color="#456D88"
         class="navigation-drawer d-print-none"
         aria-label="Main navigation"
         @mouseenter="isHovered = true"
@@ -117,7 +117,7 @@
         <!-- User menu -->
         <template #append>
           <v-divider />
-          <UserMenu />
+          <UserMenu v-model="showUserMenu" />
         </template>
       </v-navigation-drawer>
 
@@ -189,6 +189,7 @@ const isHovered = ref(false)
 const showAnimation = ref(true)
 const showNavigation = ref(true)
 const showPolicyDialog = ref(false)
+const showUserMenu = ref(false)
 const needsTosAcceptance = ref(false)
 const needsPrivacyPolicyAcceptance = ref(false)
 const isPolicyCheckPending = ref(true)
@@ -200,7 +201,7 @@ router.beforeEach((to, from, next) => {
   next()
 })
 
-const isRailModeActive = computed(() => !isMobile.value && isRailMode.value && !isHovered.value)
+const isRailModeActive = computed(() => !isMobile.value && isRailMode.value && !(isHovered.value || showUserMenu.value))
 
 const appStyle = computed(() => ({
   paddingBottom: (router.currentRoute.value.meta.hideAnimation ? 30 : 260) + 'px'
