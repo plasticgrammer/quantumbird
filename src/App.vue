@@ -57,7 +57,7 @@
         permanent
         location="left"
         :width="255"
-        color="#456D88"
+        color="#3A669B"
         class="navigation-drawer d-print-none"
         aria-label="Main navigation"
         @mouseenter="isHovered = true"

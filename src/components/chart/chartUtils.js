@@ -1,98 +1,87 @@
-import { ref } from 'vue'
 import { Chart, registerables } from 'chart.js'
 
 Chart.register(...registerables)
-
 Chart.defaults.datasets.line.tension = 0.3
 
-export function useChart(chartType, createChartOptions) {
-  const chartRef = ref(null)
-  const hoveredDatasetIndex = ref(null)
-
-  const updateDatasetVisibility = (chart, index) => {
-    chart.data.datasets.forEach((dataset, i) => {
-      chart.setDatasetVisibility(i, i === index || index === null)
-    })
-    chart.update('none')
-  }
-
-  const getChartOptions = () => ({
-    ...createChartOptions(),
-    plugins: {
-      ...createChartOptions().plugins,
-      legend: {
-        ...createChartOptions().plugins?.legend,
-        onHover: (event, legendItem, legend) => {
-          const index = legendItem.datasetIndex
-          if (hoveredDatasetIndex.value !== index) {
-            hoveredDatasetIndex.value = index
-            updateDatasetVisibility(legend.chart, index)
-          }
-        },
-        onLeave: (event, legendItem, legend) => {
-          hoveredDatasetIndex.value = null
-          updateDatasetVisibility(legend.chart, null)
-        }
-      }
+export const createBaseOptions = (config = {}) => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom'
     },
-    onHover: (event, activeElements, chart) => {
-      if (activeElements.length === 0) {
-        hoveredDatasetIndex.value = null
-        updateDatasetVisibility(chart, null)
-      }
+    title: {
+      display: false,
+      ...config.title
     }
-  })
-
-  const createChart = (data) => {
-    try {
-      if (!chartRef.value) {
-        throw new Error('Chart reference is not available')
-      }
-
-      const ctx = chartRef.value.getContext('2d')
-      if (!ctx) {
-        throw new Error('Unable to get 2D context from canvas')
-      }
-
-      if (!data || !Array.isArray(data.datasets) || !Array.isArray(data.labels)) {
-        throw new Error('Invalid chart data format')
-      }
-
-      const chartInstance = new Chart(ctx, {
-        type: chartType,
-        data: data,
-        options: getChartOptions()
-      })
-      return chartInstance
-
-    } catch (error) {
-      console.error('Error creating chart:', error)
-      return null
+  },
+  scales: {
+    y: {
+      beginAtZero: config.beginAtZero ?? true,
+      ...config.yAxis
     }
   }
+})
 
-  const updateChart = (chartInstance, data) => {
-    try {
-      if (!chartInstance || !(chartInstance instanceof Chart)) {
-        throw new Error('Invalid Chart instance')
-      }
+export const getFilteredData = (datasets, isTop3) => {
+  if (!isTop3) return datasets
 
-      if (!data || !Array.isArray(data.datasets) || !Array.isArray(data.labels)) {
-        throw new Error('Invalid chart data format')
-      }
+  return [...datasets]
+    .sort((a, b) => {
+      const aSum = a.data.reduce((sum, val) => sum + (val || 0), 0)
+      const bSum = b.data.reduce((sum, val) => sum + (val || 0), 0)
+      return bSum - aSum
+    })
+    .slice(0, 3)
+}
 
-      chartInstance.data = data
-      chartInstance.options = getChartOptions()
-      chartInstance.update()
+export const createChartInstance = ({
+  chartRef,
+  chartData,
+  options,
+  isTop3 = true,
+  onError = console.error
+}) => {
+  if (!chartRef) return null
 
-    } catch (error) {
-      console.error('Error updating chart:', error)
-    }
+  try {
+    const ctx = chartRef.getContext('2d')
+    const datasets = getFilteredData(chartData.datasets || [], isTop3)
+
+    return new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartData.labels,
+        datasets
+      },
+      options
+    })
+  } catch (error) {
+    onError('Error initializing chart:', error)
+    return null
   }
+}
 
-  return {
-    chartRef,
-    createChart,
-    updateChart
+export const updateChartInstance = ({
+  chart,
+  chartData,
+  isTop3,
+  onError = console.error,
+  additionalUpdates = () => {}
+}) => {
+  if (!chart) return
+
+  try {
+    const datasets = getFilteredData(chartData.datasets || [], isTop3)
+    
+    chart.data = {
+      labels: chartData.labels,
+      datasets
+    }
+
+    additionalUpdates(chart)
+    chart.update('none')
+  } catch (error) {
+    onError('Error updating chart:', error)
   }
 }

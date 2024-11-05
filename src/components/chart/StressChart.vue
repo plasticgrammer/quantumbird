@@ -1,10 +1,32 @@
 <template>
-  <canvas ref="chartRef" class="chart-canvas"></canvas>
+  <div class="chart-container">
+    <div class="chart-wrapper">
+      <canvas ref="chartRef" class="chart-canvas"></canvas>
+    </div>
+    <v-row v-if="totalCount > 3" class="align-center pa-2">
+      <v-col cols="auto" class="py-0">
+        <v-checkbox
+          v-model="isTop3"
+          color="info"
+          density="compact"
+          hide-details
+        >
+          <template #label="{ props: itemProps }">
+            <label v-bind="itemProps" class="cursor-pointer text-body-2">上位3件のみ表示</label>
+          </template>
+        </v-checkbox>
+      </v-col>
+    </v-row>
+  </div>
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { useChart } from './chartUtils'
+import { ref, shallowRef, watch, onMounted, onUnmounted } from 'vue'
+import { 
+  createBaseOptions, 
+  createChartInstance, 
+  updateChartInstance 
+} from './chartUtils'
 
 const props = defineProps({
   chartData: {
@@ -17,92 +39,89 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['error'])
+const chartRef = ref(null)
+const chart = shallowRef(null)
+const isTop3 = ref(true)
+const totalCount = ref(0)
 
-const isMounted = ref(false)
-const chartInstance = ref(null)
-
-const createChartOptions = () => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: 'bottom',
+const chartOptions = createBaseOptions({
+  beginAtZero: false,
+  yAxis: {
+    min: 0.8,
+    max: 5.2,
+    ticks: {
+      stepSize: 1,
+      precision: 0,
+      callback: (value) => {
+        if (value === 1) return '余裕'
+        if (value === 5) return '極限'
+        return ''
+      },
+      includeBounds: false
     },
     title: {
-      display: false
-    }
-  },
-  scales: {
-    y: {
-      beginAtZero: false,
-      min: 0.8,
-      max: 5.2,
-      ticks: {
-        stepSize: 1,
-        precision: 0,
-        callback: (value) => {
-          if (value === 1) return '余裕'
-          if (value === 5) return '極限'
-          return ''
-        },
-        includeBounds: false
-      },
-      title: {
-        display: true,
-        text: 'ストレス評価'
-      },
-      grid: {
-        color: (context) => context.tick.value === 5 ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.1)'
-      }
+      display: true,
+      text: 'ストレス評価'
+    },
+    grid: {
+      color: (context) => context.tick.value === 5 ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.1)'
     }
   }
 })
 
-const { chartRef, createChart, updateChart } = useChart('line', createChartOptions)
-
-const initChart = (data) => {
-  if (isMounted.value && chartRef.value) {
-    try {
-      chartInstance.value = createChart(data)
-    } catch (error) {
-      console.error('Error initializing chart:', error)
+function updateChart() {
+  updateChartInstance({
+    chart: chart.value,
+    chartData: props.chartData,
+    isTop3: isTop3.value,
+    onError: (message, error) => {
+      console.error(message, error)
       emit('error', error)
     }
-  }
+  })
+  totalCount.value = props.chartData.datasets?.length || 0
 }
-
-const updateChartData = (data) => {
-  if (isMounted.value && chartInstance.value) {
-    try {
-      updateChart(chartInstance.value, data)
-    } catch (error) {
-      console.error('Error updating chart:', error)
-      emit('error', error)
-    }
-  }
-}
-
-watch(() => props.chartData, (newData, oldData) => {
-  if (JSON.stringify(newData) !== JSON.stringify(oldData)) {
-    nextTick(() => updateChartData(newData))
-  }
-}, { deep: true })
 
 onMounted(() => {
-  isMounted.value = true
-  nextTick(() => initChart(props.chartData))
+  chart.value = createChartInstance({
+    chartRef: chartRef.value,
+    chartData: props.chartData,
+    options: chartOptions,
+    isTop3: isTop3.value,
+    onError: (message, error) => {
+      console.error(message, error)
+      emit('error', error)
+    }
+  })
+  totalCount.value = props.chartData.datasets?.length || 0
 })
 
 onUnmounted(() => {
-  isMounted.value = false
-  if (chartInstance.value) {
-    chartInstance.value.destroy()
+  if (chart.value) {
+    chart.value.destroy()
+    chart.value = null
   }
 })
+
+watch(isTop3, updateChart)
+watch(() => props.chartData, updateChart, { deep: true })
 </script>
 
 <style scoped>
-canvas {
+.chart-container {
+  width: 100%;
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 180px;
+  width: 100%;
+}
+
+.chart-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100% !important;
   height: 100% !important;
 }

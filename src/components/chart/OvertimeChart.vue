@@ -1,10 +1,33 @@
 <template>
-  <canvas ref="chartRef" class="chart-canvas"></canvas>
+  <div class="chart-container">
+    <div class="chart-wrapper">
+      <canvas ref="chartRef" class="chart-canvas"></canvas>
+    </div>
+    <v-row v-if="totalCount > 3" class="align-center pa-2">
+      <v-col cols="auto" class="py-0">
+        <v-checkbox
+          v-model="isTop3"
+          color="info"
+          density="compact"
+          hide-details
+        >
+          <template #label="{ props: itemProps }">
+            <label v-bind="itemProps" class="cursor-pointer text-body-2">上位3件のみ表示</label>
+          </template>
+        </v-checkbox>
+      </v-col>
+    </v-row>
+  </div>
 </template>
 
 <script setup>
-import { ref, watch, nextTick, computed, onMounted, onUnmounted } from 'vue'
-import { useChart } from './chartUtils'
+import { ref, shallowRef, watch, onMounted, onUnmounted } from 'vue'
+import { 
+  createBaseOptions, 
+  createChartInstance, 
+  updateChartInstance, 
+  getFilteredData 
+} from './chartUtils'
 
 const props = defineProps({
   chartData: {
@@ -21,90 +44,88 @@ const props = defineProps({
   }
 })
 
-// データの最大値を計算
-const maxDataValue = computed(() => {
-  if (!props.chartData.datasets || props.chartData.datasets.length === 0) {
-    return 3.0 // デフォルト値
-  }
-  const allValues = props.chartData.datasets.flatMap(dataset => dataset.data)
-  return Math.max(...allValues, 3.0)
-})
+const chartRef = ref(null)
+const chart = shallowRef(null)
+const isTop3 = ref(true)
+const totalCount = ref(0)
 
-const createChartOptions = () => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: 'bottom',
-    },
-    title: {
-      display: false
-    }
-  },
-  scales: {
-    y: {
-      beginAtZero: true,
+function getMaxValue(datasets) {
+  if (!datasets.length) return 3.0
+  const allValues = datasets.flatMap(d => d.data)
+  return Math.max(...allValues.filter(v => typeof v === 'number'), 3.0)
+}
+
+function getChartOptions() {
+  const datasets = getFilteredData(props.chartData.datasets || [], isTop3.value)
+  const maxValue = getMaxValue(datasets)
+
+  return createBaseOptions({
+    yAxis: {
+      max: maxValue,
+      ticks: {
+        stepSize: Math.ceil(maxValue / 5)
+      },
       title: {
         display: true,
         text: props.yAxisTitle
-      },
-      max: maxDataValue.value,
-      ticks: {
-        stepSize: Math.ceil(maxDataValue.value / 5)
       }
     }
-  }
-})
-
-const chartInstance = ref(null)
-const isMounted = ref(false)
-
-const { chartRef, createChart, updateChart } = useChart('line', createChartOptions)
-
-const initChart = (data) => {
-  if (isMounted.value && chartRef.value) {
-    chartInstance.value = createChart(data)
-  }
+  })
 }
 
-const updateChartData = (data) => {
-  if (isMounted.value && chartInstance.value) {
-    updateChart(chartInstance.value, data)
-  }
+function updateChart() {
+  updateChartInstance({
+    chart: chart.value,
+    chartData: props.chartData,
+    isTop3: isTop3.value,
+    additionalUpdates: (chartInstance) => {
+      const datasets = getFilteredData(props.chartData.datasets || [], isTop3.value)
+      const maxValue = getMaxValue(datasets)
+      
+      chartInstance.options.scales.y.max = maxValue
+      chartInstance.options.scales.y.ticks.stepSize = Math.ceil(maxValue / 5)
+      chartInstance.options.scales.y.title.text = props.yAxisTitle
+    }
+  })
+  totalCount.value = props.chartData.datasets?.length || 0
 }
-
-watch(() => props.chartData, (newData, oldData) => {
-  if (JSON.stringify(newData) !== JSON.stringify(oldData)) {
-    nextTick(() => updateChartData(newData))
-  }
-}, { deep: true })
-
-watch(() => props.yAxisTitle, (newTitle, oldTitle) => {
-  if (newTitle !== oldTitle) {
-    nextTick(() => {
-      if (chartInstance.value) {
-        chartInstance.value.options.scales.y.title.text = newTitle
-        chartInstance.value.update()
-      }
-    })
-  }
-})
 
 onMounted(() => {
-  isMounted.value = true
-  nextTick(() => initChart(props.chartData))
+  chart.value = createChartInstance({
+    chartRef: chartRef.value,
+    chartData: props.chartData,
+    options: getChartOptions(),
+    isTop3: isTop3.value
+  })
+  totalCount.value = props.chartData.datasets?.length || 0
 })
 
 onUnmounted(() => {
-  isMounted.value = false
-  if (chartInstance.value) {
-    chartInstance.value.destroy()
+  if (chart.value) {
+    chart.value.destroy()
+    chart.value = null
   }
 })
+
+watch(isTop3, updateChart)
+watch(() => [props.chartData, props.yAxisTitle], updateChart, { deep: true })
 </script>
 
 <style scoped>
-canvas {
+.chart-container {
+  width: 100%;
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 180px;
+  width: 100%;
+}
+
+.chart-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100% !important;
   height: 100% !important;
 }
