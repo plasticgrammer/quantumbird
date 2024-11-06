@@ -303,12 +303,6 @@ const calendarWeeks = createWeeks(6)
 const weekIndex = ref(null)
 
 const organization = ref(null)
-const reportStatus = ref({
-  pending: 0,
-  inFeedback: 0,
-  confirmed: 0,
-  reportedCount: 0
-})
 const selectedMember = ref(null)
 const isLoading = ref(true)
 const error = ref(null)
@@ -325,6 +319,14 @@ const weekString = computed(() => getStringFromWeek(calendarWeeks[weekIndex.valu
 const filteredStatusOptions = computed(() => 
   statusOptions.filter(option => option.value !== 'all')
 )
+
+const reportStatus = ref({
+  none: { count: 0, members: [] },
+  pending: { count: 0, members: [] },
+  inFeedback: { count: 0, members: [] },
+  confirmed: { count: 0, members: [] },
+  reportedCount: 0
+})
 
 const statusCounts = computed(() => ({
   none: reportStatus.value.none.count,
