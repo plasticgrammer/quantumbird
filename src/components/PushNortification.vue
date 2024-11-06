@@ -83,7 +83,7 @@ import { useStore } from 'vuex'
 import { app } from '../config/firebase-config'
 import { contextPath } from '../config/environment'
 import { getMessaging, getToken } from 'firebase/messaging'
-import { registerPushSubscription, removePushSubscription } from '../services/organizationService'
+import { registerPushSubscription, removePushSubscription, getPushSubscription } from '../services/organizationService'
 
 const store = useStore()
 const isSubscribed = ref(false)
@@ -226,9 +226,19 @@ const checkNotificationStatus = async () => {
 }
 
 const checkSubscription = async () => {
-  const token = await getStoredToken()
-  isSubscribed.value = !!token
-  console.log('Subscription checked, isSubscribed:', isSubscribed.value)
+  const localToken = await getStoredToken()
+  if (localToken) {
+    try {
+      const serverToken = await getPushSubscription(organizationId, adminId)
+      isSubscribed.value = localToken === serverToken
+      console.log('Subscription checked, isSubscribed:', isSubscribed.value)
+    } catch (error) {
+      console.error('Failed to check subscription on server:', error)
+      setError('サーバーでの購読確認に失敗しました。')
+    }
+  } else {
+    isSubscribed.value = false
+  }
 }
 
 const togglePushNotification = async () => {

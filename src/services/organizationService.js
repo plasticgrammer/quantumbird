@@ -40,3 +40,12 @@ export const registerPushSubscription = async (fcmToken, organizationId, adminId
 export const removePushSubscription = async (organizationId, adminId) => {
   return apiClient.delete(`${BASE_PATH}/push-subscription`, { organizationId, adminId })
 }
+
+export const getPushSubscription = async (organizationId, adminId) => {
+  try {
+    const response = await apiClient.get(`${BASE_PATH}/push-subscription`, { organizationId, adminId })
+    return response.data.endpointArn
+  } catch (error) {
+    return null // 見つからない場合はnullを返す
+  }
+}

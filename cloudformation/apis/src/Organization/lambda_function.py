@@ -48,7 +48,9 @@ def lambda_handler(event, context):
             elif http_method == 'DELETE':
                 return handle_delete(event)
         elif resource == '/organization/push-subscription':
-            if http_method == 'POST':
+            if http_method == 'GET':
+                return handle_get_subscription(event)
+            elif http_method == 'POST':
                 return handle_push_subscription(event)
             elif http_method == 'DELETE':
                 return handle_remove_subscription(event)
@@ -57,6 +59,35 @@ def lambda_handler(event, context):
     except Exception as e:
         logger.error(f"Error: {str(e)}", exc_info=True)
         return create_response(500, {'message': f'Internal server error: {str(e)}'})
+
+def handle_get_subscription(event):
+    params = event.get('queryStringParameters', {}) or {}
+    organization_id = params.get('organizationId')
+    admin_id = params.get('adminId')
+
+    if not organization_id or not admin_id:
+        return create_response(400, {'message': 'Missing required parameters: organizationId or adminId'})
+
+    try:
+        endpoint_arn = get_existing_subscription(organization_id, admin_id)
+        if not endpoint_arn:
+            return create_response(404, {'message': 'Subscription not found'})
+        return create_response(200, {'endpointArn': endpoint_arn})
+    except Exception as e:
+        logger.error(f"Error getting subscription: {str(e)}", exc_info=True)
+        return create_response(500, {'message': 'Failed to get subscription'})
+
+def get_existing_subscription(organization_id, admin_id):
+    try:
+        response = organizations_table.get_item(
+            Key={'organizationId': organization_id},
+            ProjectionExpression='adminSubscriptions'
+        )
+        admin_subscriptions = response.get('Item', {}).get('adminSubscriptions', {})
+        return admin_subscriptions.get(admin_id)
+    except Exception as e:
+        logger.error(f"Error getting existing subscription: {str(e)}", exc_info=True)
+        return None
 
 def handle_get(event):
     params = event.get('queryStringParameters', {}) or {}
@@ -546,6 +577,14 @@ def handle_push_subscription(event):
 
         logger.info(f"Handling push subscription for organization {organization_id}, admin {admin_id}")
 
+        # 既存のトークンを取得
+        existing_endpoint_arn = get_existing_subscription(organization_id, admin_id)
+        if existing_endpoint_arn:
+            existing_token = get_token_from_endpoint(existing_endpoint_arn)
+            if existing_token == fcm_token:
+                logger.info(f"Token for admin {admin_id} in organization {organization_id} is already up to date")
+                return create_response(200, {'message': 'Token is already up to date', 'endpointArn': existing_endpoint_arn})
+
         endpoint_arn = create_sns_endpoint(fcm_token, organization_id, admin_id)
         logger.info(f"Created SNS endpoint: {endpoint_arn}")
 
@@ -562,6 +601,16 @@ def handle_push_subscription(event):
     except Exception as e:
         logger.error(f"Unexpected error in handle_push_subscription: {str(e)}", exc_info=True)
         return create_response(500, {'message': f"Internal server error: {str(e)}"})
+
+def get_token_from_endpoint(endpoint_arn):
+    try:
+        response = sns_client.get_endpoint_attributes(
+            EndpointArn=endpoint_arn
+        )
+        return response['Attributes'].get('Token')
+    except ClientError as e:
+        logger.error(f"Failed to get token from endpoint: {str(e)}")
+        return None
 
 def create_sns_endpoint(fcm_token, organization_id, admin_id):
     try:

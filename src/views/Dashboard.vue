@@ -86,6 +86,7 @@
                 <span v-for="status in filteredStatusOptions" :key="status.value">
                   <v-chip
                     v-if="statusCounts[status.value] > 0"
+                    v-tooltip:right="statusMembers[status.value]?.join(', ') || ''"
                     class="ma-1"
                     :value="status.value"
                     :color="status.color"
@@ -306,8 +307,7 @@ const reportStatus = ref({
   pending: 0,
   inFeedback: 0,
   confirmed: 0,
-  reportedCount: 0,
-  totalCount: 0,
+  reportedCount: 0
 })
 const selectedMember = ref(null)
 const isLoading = ref(true)
@@ -327,10 +327,17 @@ const filteredStatusOptions = computed(() =>
 )
 
 const statusCounts = computed(() => ({
-  none: memberCount.value - reportStatus.value.reportedCount,
-  pending: reportStatus.value.pending,
-  feedback: reportStatus.value.inFeedback,
-  approved: reportStatus.value.confirmed,
+  none: reportStatus.value.none.count,
+  pending: reportStatus.value.pending.count,
+  feedback: reportStatus.value.inFeedback.count,
+  approved: reportStatus.value.confirmed.count,
+}))
+
+const statusMembers = computed(() => ({
+  none: reportStatus.value.none.members,
+  pending: reportStatus.value.pending.members,
+  feedback: reportStatus.value.inFeedback.members,
+  approved: reportStatus.value.confirmed.members,
 }))
 
 const weeklyReportLink = computed(() => {
@@ -385,8 +392,7 @@ const fetchReportStatus = async () => {
     const status = await getReportStatus(organizationId, weekString.value)
     reportStatus.value = {
       ...status,
-      reportedCount: status.pending + status.inFeedback + status.confirmed,
-      totalCount: status.totalCount || 0,
+      reportedCount: status.pending.count + status.inFeedback.count + status.confirmed.count
     }
   } catch (err) {
     console.error('Failed to fetch report status:', err)
@@ -433,8 +439,7 @@ const fetchInitial = async () => {
     organization.value = orgInfo
     reportStatus.value = {
       ...reportStatus,
-      reportedCount: reportStatus.pending + reportStatus.inFeedback + reportStatus.confirmed,
-      totalCount: reportStatus.totalCount || 0,
+      reportedCount: reportStatus.pending.count + reportStatus.inFeedback.count + reportStatus.confirmed.count
     }
   } catch (err) {
     console.error('Error initializing dashboard:', err)

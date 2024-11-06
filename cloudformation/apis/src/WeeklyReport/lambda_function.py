@@ -190,21 +190,55 @@ def handle_get_report_status(event):
     reports = get_reports_by_organization(organization_id, week_string)
 
     status = {
-        'pending': 0,
-        'inFeedback': 0,
-        'confirmed': 0
+        'pending': {'count': 0, 'members': []},
+        'inFeedback': {'count': 0, 'members': []},
+        'confirmed': {'count': 0, 'members': []},
+        'none': {'count': 0, 'members': []}
     }
 
+    reported_member_uuids = set()
     for report in reports:
         report_status = report.get('status', 'pending')
+        member_uuid = report.get('memberUuid')
+        reported_member_uuids.add(member_uuid)
         if report_status == 'approved':
-            status['confirmed'] += 1
+            status['confirmed']['count'] += 1
+            status['confirmed']['members'].append(member_uuid)
         elif report_status == 'feedback':
-            status['inFeedback'] += 1
+            status['inFeedback']['count'] += 1
+            status['inFeedback']['members'].append(member_uuid)
         else:
-            status['pending'] += 1
+            status['pending']['count'] += 1
+            status['pending']['members'].append(member_uuid)
+
+    # Get all members of the organization
+    all_members = get_all_members(organization_id)
+    all_member_uuids = [member['memberUuid'] for member in all_members]
+
+    # Identify members with no reports
+    no_report_members = set(all_member_uuids) - reported_member_uuids
+    status['none']['count'] = len(no_report_members)
+    status['none']['members'] = list(no_report_members)
+
+    # Get member names
+    member_names = get_member_names(all_member_uuids)
+
+    # Convert member UUIDs to names
+    for key in status:
+        status[key]['members'] = [member_names.get(uuid, 'Unknown') for uuid in status[key]['members']]
 
     return create_response(200, status)
+
+def get_all_members(organization_id):
+    try:
+        response = members_table.query(
+            IndexName='OrganizationIndex',
+            KeyConditionExpression=Key('organizationId').eq(organization_id)
+        )
+        return response.get('Items', [])
+    except Exception as e:
+        logger.error(f"Error fetching all members for organization {organization_id}: {str(e)}", exc_info=True)
+        return []
 
 def get_member_names(member_uuids):
     member_names = {}
@@ -421,7 +455,7 @@ def get_member(member_uuid):
         return None
 
 def handle_export(event):
-    """組織単位での週次レポートデータのエクスポートを処理する"""
+    """組織単���での週次レポートデータのエクスポートを処理する"""
     params = event.get('queryStringParameters', {}) or {}
     if 'organizationId' not in params:
         return create_response(400, 'Missing organizationId parameter')
