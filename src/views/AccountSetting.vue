@@ -321,8 +321,9 @@ const resetPasswordForm = () => {
 const deleteAccount = async () => {
   isDeleting.value = true
   try {
-    await store.dispatch('auth/deleteUserAccount')
+    // Cognitoユーザの削除を後にしないとトークンが無効となる
     await deleteOrganization(organizationId)
+    await store.dispatch('auth/deleteUserAccount')
 
     store.dispatch('showNotification', {
       message: 'アカウントが削除されました',
@@ -344,9 +345,10 @@ const deleteAccount = async () => {
 const deleteAccountCompletely = async () => {
   isDeleting.value = true
   try {
-    await store.dispatch('auth/deleteUserAccount')
+    // Cognitoユーザの削除を後にしないとトークンが無効となる
     await deleteOrganizationCompletely(organizationId)
-    
+    await store.dispatch('auth/deleteUserAccount')
+
     store.dispatch('showNotification', {
       message: 'アカウントとすべてのデータが削除されました',
       type: 'success'

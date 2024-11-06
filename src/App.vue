@@ -57,7 +57,7 @@
         permanent
         location="left"
         :width="255"
-        :color="THEME_COLORS.MENU"
+        color="menu"
         class="navigation-drawer d-print-none"
         aria-label="Main navigation"
         @mouseenter="isHovered = true"
@@ -117,14 +117,14 @@
         <!-- User menu -->
         <template #append>
           <v-divider />
-          <UserMenu v-model="showUserMenu" :bg-color="THEME_COLORS.MENU" />
+          <UserMenu v-model="showUserMenu" bg-color="menu" />
         </template>
       </v-navigation-drawer>
 
       <!-- Mobile bottom navigation -->
       <v-bottom-navigation
         v-else
-        bg-color="THEME_COLORS.MENU"
+        bg-color="menu"
         class="d-print-none"
         grow
         role="navigation"
@@ -173,11 +173,6 @@ import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { useResponsive } from './composables/useResponsive'
 import UserMenu from './components/UserMenu.vue'
-
-const THEME_COLORS = {
-  MENU: '#365D91',
-  BACKGROUND: '#f1f8fe',
-}
 
 const ConfirmationDialog = defineAsyncComponent(() => import('./components/ConfirmationDialog.vue'))
 const LoadingOverlay = defineAsyncComponent(() => import('./components/LoadingOverlay.vue'))

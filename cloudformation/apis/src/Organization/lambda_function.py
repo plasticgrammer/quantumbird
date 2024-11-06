@@ -26,9 +26,11 @@ dynamodb = boto3.resource('dynamodb')
 organizations_table_name = f'{stage}-Organizations'
 members_table_name = f'{stage}-Members'
 reports_table_name = f'{stage}-WeeklyReports'
+user_tasks_table_name = f'{stage}-UserTasks'
 organizations_table = dynamodb.Table(organizations_table_name)
 members_table = dynamodb.Table(members_table_name)
 reports_table = dynamodb.Table(reports_table_name)
+user_tasks_table = dynamodb.Table(user_tasks_table_name)
 
 def lambda_handler(event, context):
     #logger.info(f"Received event: {json.dumps(event)}")
@@ -130,9 +132,9 @@ def handle_delete(event):
         return create_response(500, {'message': f'Failed to delete organization: {str(e)}'})
 
 def delete_organization(organization_id):
-    """組織のデータを完全に削除する"""
+    """組織のデータを削除する"""
     try:
-        logger.info(f"Starting complete deletion for organization: {organization_id}")
+        logger.info(f"Starting deletion for organization: {organization_id}")
 
         # 1. プッシュ通知登録の削除
         delete_push_subscriptions(organization_id)
@@ -147,9 +149,9 @@ def delete_organization(organization_id):
         logger.info(f"Deleted organization data for: {organization_id}")
 
     except Exception as e:
-        logger.error(f"Error in complete deletion process: {str(e)}", exc_info=True)
-        raise Exception(f"Failed to completely delete organization: {str(e)}")
-    
+        logger.error(f"Error in deletion process: {str(e)}", exc_info=True)
+        raise Exception(f"Failed to delete organization: {str(e)}")
+
 def delete_organization_completely(organization_id):
     """組織に関連する全てのデータを完全に削除する"""
     try:
@@ -163,11 +165,15 @@ def delete_organization_completely(organization_id):
         delete_weekly_reports(organization_id)
         logger.info(f"Deleted weekly reports for organization: {organization_id}")
 
-        # 3. メンバーデータの削除
+        # 3. ユーザータスクの削除
+        delete_user_tasks(organization_id)
+        logger.info(f"Deleted user tasks for organization: {organization_id}")
+
+        # 4. メンバーデータの削除
         delete_members_by_organization(organization_id)
         logger.info(f"Deleted members for organization: {organization_id}")
 
-        # 4. 組織データの削除
+        # 5. 組織データの削除
         organizations_table.delete_item(
             Key={
                 'organizationId': organization_id
@@ -178,7 +184,7 @@ def delete_organization_completely(organization_id):
     except Exception as e:
         logger.error(f"Error in complete deletion process: {str(e)}", exc_info=True)
         raise Exception(f"Failed to completely delete organization: {str(e)}")
-
+    
 def delete_weekly_reports(organization_id):
     """週次報告データの削除（ページネーション対応）"""
     try:
@@ -190,7 +196,7 @@ def delete_weekly_reports(organization_id):
         while True:
             # クエリパラメータの準備
             query_params = {
-                'IndexName': 'OrganizationIndex',
+                'IndexName': 'OrganizationWeekIndex',
                 'KeyConditionExpression': Key('organizationId').eq(organization_id)
             }
             if last_evaluated_key:
@@ -208,7 +214,8 @@ def delete_weekly_reports(organization_id):
                 for item in items:
                     batch.delete_item(
                         Key={
-                            'reportId': item['reportId']
+                            'memberUuid': item['memberUuid'],
+                            'weekString': item['weekString']
                         }
                     )
                     total_deleted += 1
@@ -223,6 +230,57 @@ def delete_weekly_reports(organization_id):
 
     except Exception as e:
         logger.error(f"Error deleting weekly reports: {str(e)}", exc_info=True)
+        raise
+
+def delete_user_tasks(organization_id):
+    """組織に関連するユーザータスクの削除"""
+    try:
+        logger.info(f"Starting deletion of user tasks for organization: {organization_id}")
+        
+        # まず組織のメンバー一覧を取得
+        members = list_members(organization_id)
+        total_deleted = 0
+
+        for member in members:
+            member_uuid = member['memberUuid']
+            last_evaluated_key = None
+
+            while True:
+                # クエリパラメータの準備
+                query_params = {
+                    'KeyConditionExpression': Key('userId').eq(member_uuid)
+                }
+                if last_evaluated_key:
+                    query_params['ExclusiveStartKey'] = last_evaluated_key
+
+                # タスクの取得
+                response = user_tasks_table.query(**query_params)
+                items = response.get('Items', [])
+
+                if not items:
+                    break
+
+                # バッチ削除の実行
+                with user_tasks_table.batch_writer() as batch:
+                    for item in items:
+                        batch.delete_item(
+                            Key={
+                                'userId': item['userId'],
+                                'taskId': item['taskId']
+                            }
+                        )
+                        total_deleted += 1
+
+                # 次のページがあるか確認
+                last_evaluated_key = response.get('LastEvaluatedKey')
+                if not last_evaluated_key:
+                    break
+
+        logger.info(f"Deleted {total_deleted} user tasks for organization: {organization_id}")
+        return total_deleted
+
+    except Exception as e:
+        logger.error(f"Error deleting user tasks: {str(e)}", exc_info=True)
         raise
 
 def delete_members_by_organization(organization_id):
