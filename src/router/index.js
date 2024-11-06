@@ -11,6 +11,7 @@ import OrganizationManagement from '../views/OrganizationManagement.vue'
 import MailConfirmed from '../views/MailConfirmed.vue'
 import RequestSetting from '../views/RequestSetting.vue'
 import AccountSetting from '../views/AccountSetting.vue'
+import Payment from '../views/Payment.vue'
 import NotFound from '../views/NotFound.vue'
 
 const routes = [
@@ -86,6 +87,13 @@ const routes = [
     path: '/admin/account-setting',
     name: 'AccountSetting',
     component: AccountSetting,
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/account-setting/payment',
+    name: 'Payment',
+    component: Payment,
     props: true,
     meta: { requiresAuth: true }
   },

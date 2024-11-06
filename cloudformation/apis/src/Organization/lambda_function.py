@@ -70,8 +70,6 @@ def handle_get_subscription(event):
 
     try:
         endpoint_arn = get_existing_subscription(organization_id, admin_id)
-        if not endpoint_arn:
-            return create_response(404, {'message': 'Subscription not found'})
         return create_response(200, {'endpointArn': endpoint_arn})
     except Exception as e:
         logger.error(f"Error getting subscription: {str(e)}", exc_info=True)

@@ -15,13 +15,6 @@
         <v-row>
           <v-col cols="6">
             <v-text-field
-              v-model="organizationId"
-              label="組織ID"
-              readonly
-              hide-details
-              class="mb-4"
-            ></v-text-field>
-            <v-text-field
               v-model="email"
               label="メールアドレス"
               readonly
@@ -29,7 +22,14 @@
               class="mb-4"
             ></v-text-field>
           </v-col>
-          <v-col cols="6">
+          <v-col cols="3">
+            <v-text-field
+              v-model="organizationId"
+              label="組織ID"
+              readonly
+              hide-details
+              class="mb-4"
+            ></v-text-field>
           </v-col>
         </v-row>
 
@@ -40,6 +40,17 @@
         >
           パスワードを変更
           <v-icon class="ml-1" size="small">mdi-chevron-right</v-icon>
+        </v-btn>
+      </v-card-text>
+    </v-card>
+
+    <v-card class="mt-4">
+      <v-card-title>契約プラン</v-card-title>
+      <v-card-text>
+        <p class="mb-3">フリープラン</p>
+        <v-btn color="info" @click="router.push({ name: 'Payment' })">
+          <v-icon class="mr-2">mdi-card-account-details-outline</v-icon>
+          プラン変更
         </v-btn>
       </v-card-text>
     </v-card>

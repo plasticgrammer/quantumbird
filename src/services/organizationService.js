@@ -42,10 +42,6 @@ export const removePushSubscription = async (organizationId, adminId) => {
 }
 
 export const getPushSubscription = async (organizationId, adminId) => {
-  try {
-    const response = await apiClient.get(`${BASE_PATH}/push-subscription`, { organizationId, adminId })
-    return response.data.endpointArn
-  } catch (error) {
-    return null // 見つからない場合はnullを返す
-  }
+  const response = await apiClient.get(`${BASE_PATH}/push-subscription`, { organizationId, adminId })
+  return response.endpointArn
 }

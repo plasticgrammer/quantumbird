@@ -26,7 +26,11 @@
     >
       <v-list class="pa-0 brightness120" :bg-color="bgColor">
         <v-list-item>
-          <v-list-item-title class="text-body-2 opacity-60">{{ user.email }}</v-list-item-title>
+          <v-list-item-title class="text-body-2 py-2 opacity-60">{{ user.email }}</v-list-item-title>
+          <v-list-item-title class="text-body-2 py-2 opacity-60">
+            <v-icon class="mr-2" large>mdi-card-account-details-outline</v-icon>
+            {{ 'フリープラン' }}
+          </v-list-item-title>
         </v-list-item>
         <v-divider></v-divider>
         <v-list-item

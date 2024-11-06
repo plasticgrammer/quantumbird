@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
+    "@stripe/stripe-js": "^4.9.0",
     "aws-amplify": "^6.4.1",
     "aws-sdk": "^2.1659.0",
     "axios": "^1.7.5",

@@ -226,11 +226,11 @@ const checkNotificationStatus = async () => {
 }
 
 const checkSubscription = async () => {
-  const localToken = await getStoredToken()
-  if (localToken) {
+  const endpoint = await getStoredEndpointArn()
+  if (endpoint) {
     try {
-      const serverToken = await getPushSubscription(organizationId, adminId)
-      isSubscribed.value = localToken === serverToken
+      const serverEndpoint = await getPushSubscription(organizationId, adminId)
+      isSubscribed.value = endpoint === serverEndpoint
       console.log('Subscription checked, isSubscribed:', isSubscribed.value)
     } catch (error) {
       console.error('Failed to check subscription on server:', error)
@@ -288,10 +288,10 @@ const subscribeToPush = async () => {
 }
 
 const unsubscribeFromPush = async () => {
-  const token = await getStoredToken()
-  if (token) {
+  const endpoint = await getStoredEndpointArn()
+  if (endpoint) {
     try {
-      await deleteSubscription(token)
+      await deleteSubscription()
       isSubscribed.value = false
       console.log('Unsubscribed from push notifications')
     } catch (error) {
@@ -304,7 +304,7 @@ const unsubscribeFromPush = async () => {
 const saveSubscription = async (fcmToken) => {
   try {
     const response = await registerPushSubscription(fcmToken, organizationId, adminId)
-    await storeToken(fcmToken)
+    await storeEndpointArn(response.endpointArn)
     console.log('FCM token saved on server:', response.endpointArn)
   } catch (error) {
     console.error('Failed to save FCM token on server:', error)
@@ -315,23 +315,23 @@ const saveSubscription = async (fcmToken) => {
 const deleteSubscription = async () => {
   try {
     await removePushSubscription(organizationId, adminId)
-    await removeStoredToken()
+    await removeStoredEndpointArn()
   } catch (error) {
     console.error('Failed to delete subscription on server:', error)
     throw error
   }
 }
 
-const storeToken = async (fcmToken) => {
-  localStorage.setItem('fcmToken', fcmToken)
+const storeEndpointArn = async (endpointArn) => {
+  localStorage.setItem('endpointArn', endpointArn)
 }
 
-const getStoredToken = async () => {
-  return localStorage.getItem('fcmToken')
+const getStoredEndpointArn = async () => {
+  return localStorage.getItem('endpointArn')
 }
 
-const removeStoredToken = async () => {
-  localStorage.removeItem('fcmToken')
+const removeStoredEndpointArn = async () => {
+  localStorage.removeItem('endpointArn')
 }
 
 const setError = (message) => {

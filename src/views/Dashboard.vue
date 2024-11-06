@@ -86,7 +86,7 @@
                 <span v-for="status in filteredStatusOptions" :key="status.value">
                   <v-chip
                     v-if="statusCounts[status.value] > 0"
-                    v-tooltip:right="statusMembers[status.value]?.join(', ') || ''"
+                    v-tooltip:end="statusMembers[status.value]?.join(', ') || ''"
                     class="ma-1"
                     :value="status.value"
                     :color="status.color"
