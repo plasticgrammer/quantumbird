@@ -41,11 +41,11 @@
             報告依頼設定
           </v-btn>
         </p>
-        <p v-else-if="reportStatus['pending']">
+        <p v-else-if="reportStatus['pending'].count">
           先週分の確認待ちの報告があります。<br>
           <v-badge 
             color="info"
-            :content="reportStatus['pending']"
+            :content="reportStatus['pending'].count"
             class="mt-3"
           >
             <v-btn 
@@ -121,8 +121,7 @@ const fetchReportStatus = async () => {
     const status = await getReportStatus(organizationId, weekString.value)
     reportStatus.value = {
       ...status,
-      reportedCount: status.pending + status.inFeedback + status.confirmed,
-      totalCount: status.totalCount || 0,
+      reportedCount: status.pending.count + status.inFeedback.count + status.confirmed.count
     }
   } catch (err) {
     console.error('Failed to fetch report status:', err)
