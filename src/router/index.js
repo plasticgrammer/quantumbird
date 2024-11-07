@@ -8,11 +8,7 @@ import WeeklyReport from '../views/WeeklyReport.vue'
 import WeeklyReview from '../views/WeeklyReview.vue'
 import WeeklyReportSummary from '../views/WeeklyReportSummary.vue'
 import OrganizationManagement from '../views/OrganizationManagement.vue'
-import MailConfirmed from '../views/MailConfirmed.vue'
 import RequestSetting from '../views/RequestSetting.vue'
-import AccountSetting from '../views/AccountSetting.vue'
-import Payment from '../views/Payment.vue'
-import NotFound from '../views/NotFound.vue'
 
 const routes = [
   {
@@ -84,20 +80,6 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/admin/account-setting',
-    name: 'AccountSetting',
-    component: AccountSetting,
-    props: true,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/admin/account-setting/payment',
-    name: 'Payment',
-    component: Payment,
-    props: true,
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/reports/:organizationId/:memberUuid',
     name: 'WeeklyReportSelector',
     component: WeeklyReport,
@@ -119,17 +101,26 @@ const routes = [
     meta: { hideNavigation: true, hideAnimation: true }
   },
   {
+    path: '/account-setting',
+    name: 'AccountSetting',
+    component: () => import('../views/AccountSetting.vue')
+  },
+  {
+    path: '/payment',
+    name: 'Payment',
+    component: () => import('../views/Payment.vue')
+  },
+  {
     path: '/member/mail/:memberUuid',
     name: 'MailConfirmed',
-    component: MailConfirmed,
+    component: () => import('../views/MailConfirmed.vue'),
     props: true,
     meta: { hideNavigation: true, hideAnimation: true }
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    component: NotFound,
-    meta: { hideNavigation: true, hideAnimation: true }
+    component: () => import('../views/NotFound.vue')
   }
 ]
 
