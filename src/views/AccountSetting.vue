@@ -41,23 +41,27 @@
           パスワードを変更
           <v-icon class="ml-1" size="small">mdi-chevron-right</v-icon>
         </v-btn>
-      </v-card-text>
-    </v-card>
 
-    <v-card class="mt-4">
-      <v-card-title>契約プラン</v-card-title>
-      <v-card-text>
-        <p class="mb-3">フリープラン</p>
-        <v-btn color="info" @click="router.push({ name: 'Payment' })">
-          <v-icon class="mr-2">mdi-card-account-details-outline</v-icon>
-          プラン変更
-        </v-btn>
+        <v-card class="mt-4 mb-2" elevation="0" color="blue-lighten-5 border-thin" outlined>
+          <v-card-title>契約プラン</v-card-title>
+          <v-card-text class="px-6">
+            <p class="mb-3">フリープラン</p>
+            <v-row>
+              <v-col class="d-flex justify-end">
+                <v-btn color="info" @click="router.push({ name: 'Payment' })">
+                  <v-icon class="mr-2">mdi-card-account-details-outline</v-icon>
+                  プラン変更
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
       </v-card-text>
     </v-card>
 
     <v-card class="mt-4">
       <v-card-title>データ管理</v-card-title>
-      <v-card-text>
+      <v-card-text class="px-6">
         <p class="mb-3">週次報告データをJSON形式でエクスポートします。</p>
         <v-btn color="info" :loading="isExporting" @click="exportData">
           <v-icon class="mr-2">mdi-download</v-icon>
@@ -142,24 +146,24 @@
     <!-- 削除確認ダイアログ -->
     <v-card class="mt-4">
       <v-card-title class="text-error">危険ゾーン</v-card-title>
-      <v-card-text>
+      <v-card-text class="px-6">
         <div class="d-flex flex-column gap-4">
           <!-- アカウント引き継ぎ -->
           <div class="border-bottom pb-6">
-            <p class="mb-2">アカウントの引き継ぎを行います。新しいユーザーに組織の管理を移譲できます。</p>
+            <p class="mb-2">アカウント引き継ぎ用にユーザー削除を行います。新しいユーザーに組織の管理を移譲できます。</p>
             <v-btn 
-              color="warning" 
+              color="error" 
               @click="showDeleteDialog = true"
             >
               <v-icon class="mr-2">mdi-account-switch</v-icon>
-              アカウントを削除
+              アカウント引き継ぎ用の削除
             </v-btn>
           </div>
 
           <!-- アカウント完全削除 -->
           <div>
             <p class="mb-2 text-error">
-              アカウントと全てのデータを完全に削除します。この操作は取り消せません。
+              アカウントと全てのデータを完全に削除します。
             </p>
             <v-btn 
               color="error" 
@@ -199,7 +203,7 @@
             キャンセル
           </v-btn>
           <v-btn
-            color="warning"
+            color="error"
             :disabled="deleteConfirmText !== 'DELETE'"
             :loading="isDeleting"
             @click="deleteAccount"
@@ -216,13 +220,13 @@
         <v-card-title>アカウントの完全削除</v-card-title>
         <v-card-text>
           以下のデータが完全に削除されます：
-          <div class="mb-4 text-error">
+          <div class="mb-4">
             <ul class="ml-4">
               <li>ユーザーアカウント情報</li>
               <li>組織、メンバー情報</li>
               <li>週次報告履歴</li>
             </ul>
-            この操作は取り消すことができません。
+            <span class="text-error">この操作は取り消すことができません。</span>
           </div>
           <v-text-field
             v-model="deleteConfirmText"
@@ -250,7 +254,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, inject, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { exportReports } from '../services/reportService'
@@ -277,6 +281,8 @@ const showDeleteDialog = ref(false)
 const showDeleteAllDialog = ref(false)
 const isDeleting = ref(false)
 const deleteConfirmText = ref('')
+
+const showConfirmDialog = inject('showConfirmDialog')
 
 // パスワードのバリデーションルール
 const passwordRules = [
@@ -330,6 +336,9 @@ const resetPasswordForm = () => {
 }
 
 const deleteAccount = async () => {
+  const confirmed = await showConfirmDialog('確認', 'アカウントを削除します。よろしいですか？')
+  if (!confirmed) return
+
   isDeleting.value = true
   try {
     // Cognitoユーザの削除を後にしないとトークンが無効となる
@@ -354,6 +363,9 @@ const deleteAccount = async () => {
 }
 
 const deleteAccountCompletely = async () => {
+  const confirmed = await showConfirmDialog('確認', 'アカウントとすべてのデータを削除します。よろしいですか？')
+  if (!confirmed) return
+
   isDeleting.value = true
   try {
     // Cognitoユーザの削除を後にしないとトークンが無効となる
