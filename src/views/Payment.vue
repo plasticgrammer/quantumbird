@@ -5,7 +5,6 @@
         <v-btn
           color="primary"
           variant="text"
-          class="mb-4"
           @click="router.push({ name: 'AccountSetting' })"
         >
           <v-icon class="mr-2">mdi-arrow-left</v-icon>
@@ -14,7 +13,7 @@
       </v-col>
     </v-row>
 
-    <v-card max-width="900" class="mx-auto">
+    <v-card class="mx-auto">
       <v-card-title class="text-h5 font-weight-bold text-center pa-4">
         プラン選択
       </v-card-title>
@@ -104,10 +103,13 @@
       </v-card-text>
 
       <!-- 支払い情報フォーム -->
-      <v-card-text v-show="formState.selectedPlan === 'price_pro' || formState.selectedPlan === 'price_business'" class="mt-4">
-        <v-divider class="mb-6"></v-divider>
+      <v-card-text 
+        v-show="formState.selectedPlan === 'price_pro' || formState.selectedPlan === 'price_business'" 
+        class="px-6 py-4"
+      >
+        <v-divider class="mb-4"></v-divider>
         <h3 class="text-h6 mb-4">支払い情報の入力</h3>
-        <v-form ref="formRef" @submit.prevent="handleSubmit">
+        <v-form ref="formRef" class="w-50" @submit.prevent="handleSubmit">
           <!-- メールアドレス -->
           <v-text-field
             v-model="formState.email"
@@ -128,6 +130,7 @@
           <v-text-field
             v-if="formState.selectedPlan === 'price_business'"
             v-model="formState.accountCount"
+            max-width="200px"
             type="number"
             label="アカウント数"
             :rules="validationRules.accountCount"
@@ -479,6 +482,10 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.v-list-item--density-compact.v-list-item--one-line {
+  min-height: auto;
+}
+
 .current-plan {
   border: 2px solid #1867c0;
 }
@@ -504,5 +511,9 @@ onUnmounted(() => {
 
 .price-line {
   line-height: 1.6;
+}
+
+.v-list-item--density-compact.v-list-item--one-line {
+  min-height: auto;
 }
 </style>
