@@ -771,10 +771,11 @@ const handleSubmit = async () => {
   try {
     if (formState.isNew) {
       await submitReport(cleanedReport)
+      emit('report-submitted', cleanedReport, true)
     } else {
       await updateReport(cleanedReport)
+      emit('report-submitted', cleanedReport, false)
     }
-    emit('report-submitted', cleanedReport)
   } catch (error) {
     showError('報告の提出に失敗しました。', error)
   }

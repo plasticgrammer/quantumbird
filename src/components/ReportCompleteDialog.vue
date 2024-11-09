@@ -10,6 +10,9 @@
         <span v-if="isMobile">報告完了</span>
         <span v-else>週次報告ありがとうございました</span>
       </v-card-title>
+      <v-card-subtitle v-if="!isMobile && advisorState.showAddTicetMessage">
+        新しい週次報告によりアドバイスチケットが付与されました
+      </v-card-subtitle>
  
       <!-- チケット残数表示 -->
       <div v-if="isAdviceEnabled" class="ticket-chip-container">
@@ -205,17 +208,20 @@ const advisorState = reactive({
   isButtonHovering: false,
   isLoading: false,
   isAdviceAvailable: false,
+  isNewReport: false,
   advice: '',
-  remainingTickets: 0
+  remainingTickets: 0,
+  showAddTicetMessage: false
 })
 
 const resetState = () => {
   Object.assign(advisorState, {
     selectedRole: 'manager',
+    isButtonHovering: false,
     isLoading: false,
     isAdviceAvailable: false,
     advice: '',
-    isButtonHovering: false
+    showAddTicetMessage: false
   })
 }
 
@@ -297,12 +303,12 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
 
-watch(
-  () => props.reportContent,
+watch(() => props.reportContent,
   async (newValue) => {
     if (newValue?.memberUuid) {
       resetState()
       if (props.isAdviceEnabled) {
+        advisorState.showAddTicetMessage = newValue.isNew
         await initializeTickets(newValue.memberUuid)
       }
     }

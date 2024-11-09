@@ -37,11 +37,43 @@ const stopLoading = () => {
   }
 }
 
-const isTokenError = (error) => {
-  // If it's a network error, it might be due to CORS
-  console.error('ERR_NETWORK:', (error.code === 'ERR_NETWORK' && !error.response))
-  console.error('error.response.status:', error.response?.status)
-  return (error.code === 'ERR_NETWORK' && !error.response) || error.response?.status === 401
+const ERROR_TYPES = {
+  CORS: 'CORS_ERROR',
+  NETWORK: 'NETWORK_ERROR',
+  AUTH: 'AUTH_ERROR',
+  UNKNOWN: 'UNKNOWN_ERROR'
+}
+
+const getErrorType = (error) => {
+  if (error.code === 'ERR_NETWORK' && !error.response) {
+    // CORSエラーの特徴的なパターンをチェック
+    const isCORS = error.message.includes('CORS') ||
+      error.message.includes('Network Error') ||
+      error.message.includes('cross-origin')
+    return isCORS ? ERROR_TYPES.CORS : ERROR_TYPES.NETWORK
+  }
+  if (error.response?.status === 401) {
+    return ERROR_TYPES.AUTH
+  }
+  return ERROR_TYPES.UNKNOWN
+}
+
+// 変数名を変更し、実際に使用されていることを明確にする
+const checkTokenError = (error) => {
+  const errorType = getErrorType(error)
+
+  // デバッグ用の詳細なログ出力
+  console.error('Error details:', {
+    type: errorType,
+    code: error.code,
+    message: error.message,
+    response: error.response,
+    isAxiosError: error.isAxiosError,
+    config: error.config
+  })
+
+  // 認証エラーの場合のみtrueを返す
+  return errorType === ERROR_TYPES.AUTH
 }
 
 // Request interceptor
@@ -81,8 +113,18 @@ api.interceptors.response.use(
   async (error) => {
     stopLoading()
     const originalRequest = error.config
+    const errorType = getErrorType(error)
 
-    if (isTokenError(error) && !originalRequest._retry) {
+    // 通常のネットワークエラーの場合
+    if (errorType === ERROR_TYPES.NETWORK && !originalRequest._networkRetry) {
+      originalRequest._networkRetry = true
+      console.log('Retrying network request...')
+      return new Promise(resolve => setTimeout(resolve, 1000))
+        .then(() => api(originalRequest))
+    }
+
+    // CORSエラー,認証エラーの場合
+    if ((errorType === ERROR_TYPES.CORS || checkTokenError(error)) && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })

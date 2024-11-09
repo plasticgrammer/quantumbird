@@ -195,14 +195,15 @@ const handleReset = () => {
   })
 }
 
-const handleReportSubmitted = async (reportContent) => {
-  isReportSubmitted.value = true
+const handleReportSubmitted = async (reportContent, isNew) => {
   lastReportContent.value = {
     ...reportContent,
     weekString: getStringFromWeek(selectedWeek.value),
     memberUuid: props.memberUuid,
-    organizationId: props.organizationId
+    organizationId: props.organizationId,
+    isNew
   }
+  isReportSubmitted.value = true
 }
 
 const handleBackToReport = () => {
