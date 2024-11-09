@@ -38,7 +38,11 @@ export default {
     token: null,
     lastTokenFetch: null,
     lastUserFetch: null,
-    cognitoUserSub: null
+    cognitoUserSub: null,
+    subscription: {
+      planId: null,
+      accountCount: 0
+    }
   }),
 
   mutations: {
@@ -62,7 +66,11 @@ export default {
         token: null,
         lastTokenFetch: null,
         lastUserFetch: null,
-        cognitoUserSub: null
+        cognitoUserSub: null,
+        subscription: {
+          planId: null,
+          accountCount: 0
+        }
       })
     },
 
@@ -74,6 +82,10 @@ export default {
           privacyPolicyVersion: privacyPolicyVersion || state.user.privacyPolicyVersion
         }
       }
+    },
+
+    setSubscription(state, { planId, accountCount }) {
+      state.subscription = { planId, accountCount }
     }
   },
 
@@ -92,11 +104,16 @@ export default {
           username: attributes.name,
           email: attributes.email,
           tosVersion: attributes['custom:tos_version'],
-          privacyPolicyVersion: attributes['custom:pp_version']
+          privacyPolicyVersion: attributes['custom:pp_version'],
+          subscription: {
+            planId: attributes['custom:planId'] || 'price_free',
+            accountCount: parseInt(attributes['custom:accountCount'] || '0', 10)
+          }
         }
 
         commit('setUser', userInfo)
         commit('setCognitoUserSub', attributes.sub)
+        commit('setSubscription', userInfo.subscription)
         return userInfo
       } catch (error) {
         createErrorHandler('fetching user')(error)
@@ -232,6 +249,7 @@ export default {
     token: state => state.token,
     cognitoUserSub: state => state.cognitoUserSub,
     tosVersion: state => state.user?.tosVersion,
-    privacyPolicyVersion: state => state.user?.privacyPolicyVersion
+    privacyPolicyVersion: state => state.user?.privacyPolicyVersion,
+    currentSubscription: state => state.subscription || { planId: 'price_free', accountCount: 0 }
   }
 }

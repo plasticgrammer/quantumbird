@@ -1,5 +1,5 @@
 <template>
-  <v-container max-width="740px">
+  <v-container>
     <v-row dense class="pb-4">
       <v-col>
         <v-btn
@@ -25,28 +25,56 @@
           <v-col
             v-for="plan in plans"
             :key="plan.id"
-            cols="6"
+            cols="12"
             sm="6"
-            md="5"
+            md="4"
             class="pa-4"
           >
             <v-card
-              :color="formState.selectedPlan === plan.id ? 'blue-accent-2' : ''"
+              :color="getCardColor(plan)"
               :class="[
                 'plan-card',
-                formState.selectedPlan === plan.id ? 'selected-plan' : ''
+                formState.selectedPlan === plan.id ? 'selected-plan' : '',
+                currentPlan?.id === plan.id ? 'current-plan' : ''
               ]"
-              class="rounded-lg cursor-pointer"
+              class="rounded-lg cursor-pointer position-relative"
               elevation="4"
               @click="formState.selectedPlan = plan.id"
             >
+              <!-- 現在のプランバッジ -->
+              <v-chip
+                v-if="currentPlan?.id === plan.id"
+                color="primary"
+                class="current-plan-badge font-weight-bold"
+                size="small"
+                label
+              >
+                現在のプラン
+              </v-chip>
+
+              <!-- 既存のカード内容 -->
               <v-card-title class="text-center pt-6">
                 <div class="text-h6 font-weight-bold">{{ plan.name }}</div>
               </v-card-title>
 
               <v-card-text>
-                <div class="text-h4 font-weight-bold mb-4 text-center">
-                  ¥{{ plan.price }}<span class="text-body-1">/月</span>
+                <div class="text-h4 font-weight-bold mb-2 text-center">
+                  <div>
+                    ¥{{ plan.price.toLocaleString() }}<span class="text-body-1">/月</span>
+                  </div>
+                  <template v-if="plan.id === 'price_business'">
+                    <div class="text-body-1 mb-2">
+                      <div v-for="(line, index) in plan.priceDescription" :key="index" class="price-line">
+                        {{ line }}
+                      </div>
+                    </div>
+                    <div class="text-subtitle-1 font-weight-regular">
+                      選択アカウント数: {{ formState.accountCount }}
+                    </div>
+                    <div class="text-h5 mt-2">
+                      合計: ¥{{ plan.getPrice(formState.accountCount).toLocaleString() }}<span class="text-body-1">/月</span>
+                    </div>
+                  </template>
                 </div>
                 <v-divider class="mb-4"></v-divider>
                 <v-list
@@ -76,7 +104,7 @@
       </v-card-text>
 
       <!-- 支払い情報フォーム -->
-      <v-card-text v-if="formState.selectedPlan === 'price_pro'" class="mt-4">
+      <v-card-text v-show="formState.selectedPlan === 'price_pro' || formState.selectedPlan === 'price_business'" class="mt-4">
         <v-divider class="mb-6"></v-divider>
         <h3 class="text-h6 mb-4">支払い情報の入力</h3>
         <v-form ref="formRef" @submit.prevent="handleSubmit">
@@ -96,13 +124,25 @@
             required
           ></v-text-field>
 
+          <!-- ビジネスプラン用のアカウント数入力フィールド -->
+          <v-text-field
+            v-if="formState.selectedPlan === 'price_business'"
+            v-model="formState.accountCount"
+            type="number"
+            label="アカウント数"
+            :rules="validationRules.accountCount"
+            required
+            :hint="`月額料金: ¥${plans.find(p => p.id === 'price_business').getPrice(formState.accountCount).toLocaleString()}/月`"
+            persistent-hint
+          ></v-text-field>
+
           <!-- Stripe Elements マウントポイント -->
           <div class="mt-4">
             <label class="text-subtitle-1">カード情報</label>
             <div
               id="card-element"
               class="mt-2 pa-4 stripe-element"
-              style="border: 1px solid #ccc; border-radius: 4px;"
+              style="min-height: 40px"
             ></div>
             <div
               v-if="errorMessage"
@@ -124,6 +164,43 @@
             :disabled="isLoading"
           >
             {{ isLoading ? '処理中...' : '支払いを確定する' }}
+          </v-btn>
+        </v-form>
+      </v-card-text>
+
+      <!-- プラン変更セクション -->
+      <v-card-text v-if="currentPlan && currentPlan.id === 'price_business'" class="mt-4">
+        <v-divider class="mb-6"></v-divider>
+        <h3 class="text-h6 mb-4">アカウント数の変更</h3>
+        
+        <!-- 現在のプラン情報 -->
+        <v-card class="mb-4 pa-4" variant="outlined">
+          <div class="text-subtitle-1 mb-2">現在のプラン情報</div>
+          <div>現在のアカウント数: {{ currentPlan.currentAccountCount }}アカウント</div>
+          <div>現在の月額料金: ¥{{ currentPlan.getPrice(currentPlan.currentAccountCount).toLocaleString() }}/月</div>
+        </v-card>
+
+        <!-- アカウント数変更フォーム -->
+        <v-form ref="accountUpdateFormRef" @submit.prevent="handleAccountUpdate">
+          <v-text-field
+            v-model="accountUpdateForm.newAccountCount"
+            type="number"
+            label="新しいアカウント数"
+            :rules="validationRules.accountCount"
+            :hint="`変更後の月額料金: ¥${currentPlan.getPrice(accountUpdateForm.newAccountCount).toLocaleString()}/月`"
+            persistent-hint
+            required
+          ></v-text-field>
+
+          <v-btn
+            type="submit"
+            color="primary"
+            class="mt-4"
+            block
+            :loading="isUpdating"
+            :disabled="isUpdating || accountUpdateForm.newAccountCount == currentPlan.currentAccountCount"
+          >
+            {{ isUpdating ? '更新中...' : 'アカウント数を変更する' }}
           </v-btn>
         </v-form>
       </v-card-text>
@@ -150,7 +227,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, nextTick, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { useStripe } from '../composables/useStripe'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
@@ -164,18 +241,45 @@ const plans = [
   { 
     id: 'price_free', 
     name: 'フリープラン',
-    price: '0',
-    display: 'フリープラン - 無料',
-    features: ['基本機能が使用可能', '最大10名まで登録可能']
+    price: 0,
+    features: ['基本機能が使用可能', '最大5名まで登録可能']
   },
   { 
     id: 'price_pro', 
     name: 'プロプラン',
-    price: ' 1,000',
-    display: 'プロプラン - ¥1,000/月',
+    price: 1000,
     features: ['全機能が使用可能', 'メンバー数無制限']
+  },
+  {
+    id: 'price_business',
+    name: 'ビジネスプラン',
+    price: 2000,
+    pricePerAccount: 300, // 1アカウントあたり300円に設定
+    getPrice: (accountCount) => 2000 + (accountCount * 300),
+    priceDescription: [
+      '+ ¥300/アカウント'
+    ],
+    features: [
+      '全機能が使用可能',
+      'アカウント管理機能',
+      '請求書発行対応'
+    ]
   }
 ]
+
+// カードの色を決定する関数
+const getCardColor = (plan) => {
+  if (currentPlan.value?.id === plan.id && formState.selectedPlan === plan.id) {
+    return 'blue-darken-1' // 現在のプランかつ選択中
+  }
+  if (currentPlan.value?.id === plan.id) {
+    return 'blue-lighten-4' // 現在のプラン
+  }
+  if (formState.selectedPlan === plan.id) {
+    return 'blue-accent-2' // 選択中
+  }
+  return '' // デフォルト
+}
 
 const formRef = ref(null)
 const { initializeStripe, createToken, card } = useStripe()
@@ -183,7 +287,8 @@ const { initializeStripe, createToken, card } = useStripe()
 const formState = reactive({
   email: '',
   cardName: '',
-  selectedPlan: null
+  selectedPlan: null,
+  accountCount: 1
 })
 
 const validationRules = {
@@ -196,6 +301,11 @@ const validationRules = {
   ],
   plan: [
     v => !!v || 'プランを選択してください'
+  ],
+  accountCount: [
+    v => !!v || 'アカウント数は必須です',
+    v => v > 0 || 'アカウント数は1以上である必要があります',
+    v => Number.isInteger(Number(v)) || '整数を入力してください'
   ]
 }
 
@@ -208,11 +318,23 @@ const resetForm = () => {
   formState.email = ''
   formState.cardName = ''
   formState.selectedPlan = null
+  formState.accountCount = 1 // 追加：アカウント数のリセット
   errorMessage.value = ''
   if (formRef.value) {
     formRef.value.reset()
   }
 }
+
+// 現在のプラン情報を取得
+const currentPlan = computed(() => {
+  const subscription = store.getters['auth/currentSubscription']
+  const plan = plans.find(p => p.id === subscription.planId) || plans[0]
+  
+  return {
+    ...plan,
+    currentAccountCount: subscription.accountCount
+  }
+})
 
 // フォーム送信処理
 const handleSubmit = async () => {
@@ -244,7 +366,8 @@ const handleSubmit = async () => {
       body: JSON.stringify({
         email: formState.email,
         token: token.id,
-        planId: formState.selectedPlan
+        planId: formState.selectedPlan,
+        accountCount: formState.selectedPlan === 'price_business' ? formState.accountCount : 0
       })
     })
 
@@ -257,6 +380,7 @@ const handleSubmit = async () => {
     showSuccessDialog.value = true
     resetForm()
     emit('payment-success')
+    await store.dispatch('auth/fetchUser')
 
   } catch (err) {
     errorMessage.value = err.message
@@ -265,15 +389,86 @@ const handleSubmit = async () => {
   }
 }
 
+// アカウント数更新用の状態
+const accountUpdateFormRef = ref(null)
+const isUpdating = ref(false)
+const accountUpdateForm = reactive({
+  newAccountCount: 1
+})
+
+// アカウント数更新処理
+const handleAccountUpdate = async () => {
+  const form = accountUpdateFormRef.value
+  if (!form) return
+  
+  const { valid } = await form.validate()
+  if (!valid) return
+
+  isUpdating.value = true
+
+  try {
+    // アカウント数更新APIの呼び出し
+    const response = await fetch('/api/update-subscription', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        newAccountCount: accountUpdateForm.newAccountCount
+      })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'アカウント数の更新に失敗しました')
+    }
+
+    // 成功時の処理
+    showSuccessDialog.value = true
+    await store.dispatch('auth/fetchUser')
+    // ストアのプラン情報を更新
+    // await store.dispatch('subscription/updatePlan', await response.json())
+
+  } catch (err) {
+    errorMessage.value = err.message
+  } finally {
+    isUpdating.value = false
+  }
+}
+
 onMounted(async () => {
-  await initializeStripe()
+  try {
+    // DOMの準備を待ってからStripeを初期化
+    await nextTick()
+    await initializeStripe()
+    
+    // エラーハンドリングの追加
+    if (card.value) {
+      card.value.on('change', function(event) {
+        if (event.error) {
+          errorMessage.value = event.error.message
+        } else {
+          errorMessage.value = ''
+        }
+      })
+    }
+  } catch (error) {
+    console.error('Failed to initialize Stripe:', error)
+    errorMessage.value = 'カード情報フォームの初期化に失敗しました'
+  }
   // ユーザー情報の取得と設定
   const user = store.state.auth.user
   if (user) {
     formState.email = user.email
+    formState.selectedPlan = store.getters['auth/currentSubscription'].planId
+  } else {
+    formState.selectedPlan = 'price_free'
   }
-  // デフォルトプランの設定
-  formState.selectedPlan = plans[0].id
+
+  if (currentPlan.value) {
+    formState.accountCount = currentPlan.value.currentAccountCount || 1
+    accountUpdateForm.newAccountCount = currentPlan.value.currentAccountCount || 1
+  }
 })
 
 onUnmounted(() => {
@@ -284,9 +479,14 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.current-plan {
+  border: 2px solid #1867c0;
+}
+
 .plan-card {
   height: 100%;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .selected-plan {
@@ -300,5 +500,9 @@ onUnmounted(() => {
 
 .stripe-element:empty {
   background-color: white;
+}
+
+.price-line {
+  line-height: 1.6;
 }
 </style>

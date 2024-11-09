@@ -13,22 +13,19 @@ export function useStripe() {
         card.value.destroy()
       }
 
-      // 既存のマウントポイントをクリア
-      const mountPoint = document.getElementById('card-element')
-      if (mountPoint) {
-        mountPoint.innerHTML = ''
-      }
-
       const stripeKey = process.env.VUE_APP_STRIPE_PUBLISHABLE_KEY
       if (!stripeKey) {
         throw new Error('Stripe public key is not set')
       }
 
-      // betasとapiVersionの指定を削除
+      // Stripeの初期化
       stripe.value = await loadStripe(stripeKey)
 
+      // 要素の初期化を待機
+      await new Promise(resolve => setTimeout(resolve, 100))
+
       elements.value = stripe.value.elements({
-        locale: 'ja' // 日本語化
+        locale: 'ja'
       })
 
       const style = {
@@ -48,14 +45,17 @@ export function useStripe() {
 
       card.value = elements.value.create('card', {
         style,
-        hidePostalCode: true // 郵便番号入力を非表示
+        hidePostalCode: true
       })
 
-      // マウント前にエレメントが空であることを確認
+      // DOMの準備を待機
+      await new Promise(resolve => setTimeout(resolve, 100))
+
       const cardElement = document.getElementById('card-element')
       if (cardElement) {
-        cardElement.innerHTML = ''
         card.value.mount('#card-element')
+      } else {
+        throw new Error('Card element mount point not found')
       }
 
       return card.value
