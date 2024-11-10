@@ -111,66 +111,30 @@
         <v-row class="d-flex justify-center">
           <v-col cols="8">
             <h3 class="text-h6 mb-4">支払い情報の入力</h3>
-            <v-form ref="formRef" @submit.prevent="handleSubmit">
-              <!-- メールアドレス -->
-              <v-text-field
-                v-model="formState.email"
-                label="メールアドレス"
-                :rules="validationRules.email"
-                required
-              ></v-text-field>
-
-              <!-- カード所有者名 -->
-              <v-text-field
-                v-model="formState.cardName"
-                label="カード名義"
-                :rules="validationRules.cardName"
-                required
-              ></v-text-field>
-
-              <!-- ビジネスプラン用のアカウント数入力フィールド -->
+            <v-card class="mb-4 pa-4" variant="outlined">
+              <!-- メールアドレス入力フィールドを削除 -->
+              
+              <!-- ビジネスプラン選択時のアカウント数入力 -->
               <v-text-field
                 v-if="formState.selectedPlan === 'business'"
                 v-model="formState.accountCount"
-                max-width="200px"
                 type="number"
                 label="アカウント数"
                 :rules="validationRules.accountCount"
-                required
                 :hint="`月額料金: ¥${plans.find(p => p.planId === 'business').getPrice(formState.accountCount).toLocaleString()}/月`"
                 persistent-hint
+                required
               ></v-text-field>
 
-              <!-- Stripe Elements マウントポイント -->
-              <div class="mt-4">
-                <label class="text-subtitle-1">カード情報</label>
-                <div
-                  id="card-element"
-                  class="mt-2 pa-4 stripe-element"
-                  style="min-height: 40px"
-                ></div>
-                <div
-                  v-if="errorMessage"
-                  id="card-errors"
-                  class="error--text mt-2"
-                >
-                  {{ errorMessage }}
-                </div>
-              </div>
-
-              <!-- 支払いボタン -->
-              <v-btn
-                type="submit"
-                color="primary"
-                class="mt-6"
-                block
-                size="large"
+              <!-- PaymentMethodForm コンポーネント -->
+              <PaymentMethodForm
+                element-id="card-element"
+                submit-button-text="支払いを確定する"
                 :loading="isLoading"
-                :disabled="isLoading"
-              >
-                {{ isLoading ? '処理中...' : '支払いを確定する' }}
-              </v-btn>
-            </v-form>
+                @submit="handlePaymentSubmit"
+                @error="errorMessage = $event"
+              />
+            </v-card>
           </v-col>
         </v-row>
       </v-card-text>
@@ -239,43 +203,30 @@
                 @submit.prevent="handlePaymentMethodUpdate"
                 class="mt-4"
               >
-                <v-text-field
-                  v-model="paymentMethodForm.cardName"
-                  label="カード名義"
-                  :rules="validationRules.cardName"
-                  required
-                ></v-text-field>
-
-                <div class="mt-4">
-                  <label class="text-subtitle-1">カード情報</label>
-                  <div
-                    id="card-element-update"
-                    class="mt-2 pa-4 stripe-element"
-                    style="min-height: 40px"
-                  ></div>
-                  <div
-                    v-if="paymentMethodError"
-                    class="error--text mt-2"
-                  >
-                    {{ paymentMethodError }}
-                  </div>
-                </div>
-
-                <div class="d-flex gap-2 mt-4">
-                  <v-btn
-                    color="primary"
-                    type="submit"
-                    :loading="isUpdatingPaymentMethod"
-                  >
-                    支払い方法を更新
-                  </v-btn>
-                  <v-btn
-                    variant="outlined"
-                    @click="showPaymentMethodForm = false"
-                  >
-                    キャンセル
-                  </v-btn>
-                </div>
+                <PaymentMethodForm
+                  element-id="card-element-update"
+                  :loading="isUpdatingPaymentMethod"
+                  @submit="handlePaymentMethodUpdate"
+                  @error="paymentMethodError = $event"
+                >
+                  <template #submit-button>
+                    <div class="d-flex gap-2 mt-4">
+                      <v-btn
+                        color="primary"
+                        type="submit"
+                        :loading="isUpdatingPaymentMethod"
+                      >
+                        支払い方法を更新
+                      </v-btn>
+                      <v-btn
+                        variant="outlined"
+                        @click="showPaymentMethodForm = false"
+                      >
+                        キャンセル
+                      </v-btn>
+                    </div>
+                  </template>
+                </PaymentMethodForm>
               </v-form>
             </v-card>
             
@@ -356,7 +307,8 @@ import { ref, nextTick, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { useStripe } from '../composables/useStripe'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { createSubscription, updateSubscription, getPaymentMethods, changePlan } from '../services/paymentService'
+import { createSubscription, updateSubscription, getPaymentMethods, changePlan, updatePaymentMethod } from '../services/paymentService'
+import PaymentMethodForm from '../components/PaymentMethodForm.vue'
 
 const router = useRouter()
 const store = useStore()
@@ -383,8 +335,8 @@ const plans = [
     priceId: 'price_1QJSmjJlLYAT4bpzzPjAgcJj',
     name: 'ビジネスプラン',
     price: 2000,
-    pricePerAccount: 300,
-    getPrice: (accountCount) => 2000 + (accountCount * 300),
+    pricePerAccount: 500,
+    getPrice: (accountCount) => 2000 + (accountCount * 500),
     priceDescription: [
       '+ ¥300/アカウント'
     ],
@@ -411,20 +363,17 @@ const getCardColor = (plan) => {
 }
 
 const formRef = ref(null)
-const { initializeStripe, createToken, card } = useStripe()
+const { initializeStripe, cleanup: cleanupStripe } = useStripe() // card is no longer needed here
 
 const formState = reactive({
-  email: '',
+  // emailプロパティを削除
   cardName: '',
   selectedPlan: null,
   accountCount: 1
 })
 
 const validationRules = {
-  email: [
-    v => !!v || 'メールアドレスは必須です',
-    v => /.+@.+\..+/.test(v) || '有効なメールアドレスを入力してください'
-  ],
+  // emailの検証ルールを削除
   cardName: [
     v => !!v || 'カード名義は必須です'
   ],
@@ -442,12 +391,11 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const showSuccessDialog = ref(false)
 
-// resetForm関数を定義
+// resetForm関数を修正
 const resetForm = () => {
-  formState.email = ''
+  // emailのリセットを削除
   formState.cardName = ''
-  formState.selectedPlan = null
-  formState.accountCount = 1 // 追加：アカウント数のリセット
+  // プラン情報はリセットしない
   errorMessage.value = ''
   if (formRef.value) {
     formRef.value.reset()
@@ -457,7 +405,7 @@ const resetForm = () => {
 // 現在のプラン情報を取得
 const currentPlan = computed(() => {
   const subscription = store.getters['auth/currentSubscription']
-  const plan = plans.find(p => p.priceId === subscription.planId) || plans[0]
+  const plan = plans.find(p => p.planId === subscription.planId) || plans[0]
   
   return {
     ...plan,
@@ -481,51 +429,48 @@ const showPlanChangeConfirm = computed(() => {
   return true
 })
 
-// フォーム送信処理
+// フォーム送信処理を修正
 const handleSubmit = async () => {
-  const form = formRef.value
-  if (!form) return
-  
-  const { valid } = await form.validate()
-  if (!valid) return
-
-  isLoading.value = true
-  errorMessage.value = ''
-
   try {
-    const selectedPlan = plans.find(p => p.planId === formState.selectedPlan)
+    const form = formRef.value
+    if (!form) return
     
+    const { valid } = await form.validate()
+    if (!valid) return
+
+    isLoading.value = true
+    errorMessage.value = ''
+
+    const selectedPlan = plans.find(p => p.planId === formState.selectedPlan)
+    if (!selectedPlan) throw new Error('無効なプランが選択されました')
+
     if (isNewCustomer.value) {
-      // 新規顧客の場合
-      const { token, error } = await createToken({
-        name: formState.cardName
-      })
-
-      if (error) throw new Error(error.message)
-
-      await createSubscription({
-        email: formState.email,
-        token: token.id,
-        planId: selectedPlan.priceId,
-        accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0
-      })
-    } else {
-      // 既存顧客のプラン変更
-      await changePlan({
-        subscriptionId: currentPlan.value.subscriptionId,
-        planId: selectedPlan.priceId,
-        accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0
-      })
+      errorMessage.value = '新規登録の場合は支払い情報の入力が必要です'
+      return
     }
 
-    // 成功時の処理
-    showSuccessDialog.value = true
-    resetForm()
-    emit('payment-success')
-    await store.dispatch('auth/fetchUser')
+    // Stripeのプラン変更を実行
+    await changePlan({
+      subscriptionId: currentPlan.value.subscriptionId,
+      priceId: selectedPlan.priceId,
+      accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0,
+      signal: abortController.signal
+    })
 
+    // Cognitoの属性を更新
+    await store.dispatch('auth/updateSubscriptionAttributes', {
+      planId: selectedPlan.planId,
+      accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0
+    })
+
+    showSuccessDialog.value = true
+    // フォームのリセットを削除し、ユーザー情報の更新のみ実行
+    await store.dispatch('auth/fetchUser')
+    emit('payment-success')
   } catch (err) {
-    errorMessage.value = err.message || '処理に失敗しました'
+    if (!err.name === 'AbortError') {
+      errorMessage.value = err.message || '処理に失敗しました'
+    }
   } finally {
     isLoading.value = false
   }
@@ -549,15 +494,20 @@ const handleAccountUpdate = async () => {
   isUpdating.value = true
 
   try {
-    // アカウント数更新APIの呼び出し
     await updateSubscription({
       newAccountCount: accountUpdateForm.newAccountCount,
-      subscriptionId: currentPlan.value.subscriptionId // subscriptionIdを追加
+      subscriptionId: currentPlan.value.subscriptionId
     })
 
-    // 成功時の処理
+    await store.dispatch('auth/updateSubscriptionAttributes', {
+      planId: currentPlan.value.planId,
+      accountCount: accountUpdateForm.newAccountCount
+    })
+
     showSuccessDialog.value = true
+    // アカウント数の更新のみを行い、フォームはリセットしない
     await store.dispatch('auth/fetchUser')
+    formState.accountCount = accountUpdateForm.newAccountCount
 
   } catch (err) {
     errorMessage.value = err.message || 'アカウント数の更新に失敗しました'
@@ -571,33 +521,24 @@ const showPaymentMethodForm = ref(false)
 const paymentMethodFormRef = ref(null)
 const isUpdatingPaymentMethod = ref(false)
 const paymentMethodError = ref('')
-const paymentMethodForm = reactive({
-  cardName: ''
-})
 
 // 支払い方法更新用のStripeカード要素
 const updateCardElement = ref(null)
 
-const handlePaymentMethodUpdate = async () => {
-  const form = paymentMethodFormRef.value
-  if (!form) return
-  
-  const { valid } = await form.validate()
-  if (!valid) return
-
+const handlePaymentMethodUpdate = async ({ token }) => {
   isUpdatingPaymentMethod.value = true
   paymentMethodError.value = ''
 
   try {
-    const { token, error } = await createToken({
-      name: paymentMethodForm.cardName
-    })
-
-    if (error) throw new Error(error.message)
-
     // 支払い方法更新APIの呼び出し
     await updatePaymentMethod({
       token: token.id
+    })
+
+    // 現在のサブスクリプション情報でCognitoの属性を再同期
+    await store.dispatch('auth/updateSubscriptionAttributes', {
+      planId: currentPlan.value.planId,
+      accountCount: currentPlan.value.currentAccountCount
     })
 
     // 支払い方法の再取得
@@ -611,100 +552,95 @@ const handlePaymentMethodUpdate = async () => {
   }
 }
 
-// 支払い方法取得関数
 const fetchPaymentMethods = async () => {
   const user = store.state.auth.user
-  if (user) {
-    try {
-      const response = await getPaymentMethods(user.email)
-      const methods = response?.data?.paymentMethods || []
-      currentPaymentMethod.value = methods[0]
-      hasPaymentMethod.value = methods.length > 0
-    } catch (error) {
+  if (!user) return
+
+  try {
+    const response = await getPaymentMethods(user.email, { 
+      signal: abortController.signal 
+    })
+    const methods = response?.data?.paymentMethods || []
+    currentPaymentMethod.value = methods[0]
+    hasPaymentMethod.value = methods.length > 0
+  } catch (error) {
+    if (!error.name === 'AbortError') {
       console.error('支払い方法の取得に失敗しました:', error)
     }
   }
 }
 
+const abortController = new AbortController()
+
 onMounted(async () => {
   try {
     await nextTick()
-    await initializeStripe()
-    
-    if (card.value) {
-      card.value.on('change', function(event) {
-        if (event.error) {
-          errorMessage.value = event.error.message
-        } else {
-          errorMessage.value = ''
-        }
-      })
+    const { stripe, error } = await initializeStripe()
+    if (error || !stripe) {
+      throw new Error(error || 'Stripe initialization failed')
     }
 
-    // 支払い方法の確認を修正
     const user = store.state.auth.user
     if (user) {
-      try {
-        const response = await getPaymentMethods(user.email)
-        // レスポンスの構造に合わせて修正
-        const methods = response?.data?.paymentMethods || []
-        hasPaymentMethod.value = methods.length > 0
-        
-        // デバッグ用（必要に応じて削除）
-        console.log('Payment methods:', methods)
-      } catch (error) {
-        console.error('支払い方法の取得に失敗しました:', error)
-        hasPaymentMethod.value = false
-      }
+      formState.email = user.email
+      formState.selectedPlan = store.getters['auth/currentSubscription'].planId
+      await fetchPaymentMethods()
+    } else {
+      formState.selectedPlan = 'free'
+    }
+
+    if (currentPlan.value) {
+      const initialAccountCount = currentPlan.value.planId === 'business' 
+        ? currentPlan.value.currentAccountCount 
+        : 1
+      formState.accountCount = initialAccountCount
+      accountUpdateForm.newAccountCount = initialAccountCount
     }
   } catch (error) {
-    console.error('Failed to initialize:', error)
-    errorMessage.value = '初期化に失敗しました'
+    if (!error.name === 'AbortError') {
+      console.error('初期化に失敗しました:', error)
+      errorMessage.value = '初期化に失敗しました'
+    }
     hasPaymentMethod.value = false
-  }
-  
-  // ユーザー情報の取得と設定
-  const user = store.state.auth.user
-  if (user) {
-    formState.email = user.email
-    formState.selectedPlan = store.getters['auth/currentSubscription'].planId
-  } else {
-    formState.selectedPlan = 'free'
-  }
-
-  if (currentPlan.value) {
-    // ビジネスプランの場合は現在のアカウント数、それ以外は1をセット
-    const initialAccountCount = currentPlan.value.planId === 'business' 
-      ? currentPlan.value.currentAccountCount 
-      : 1
-    formState.accountCount = initialAccountCount
-    accountUpdateForm.newAccountCount = initialAccountCount
-  }
-
-  await fetchPaymentMethods()
-  
-  // 支払い方法更新用のStripe Elements初期化
-  if (showPaymentMethodForm.value) {
-    updateCardElement.value = elements.create('card')
-    updateCardElement.value.mount('#card-element-update')
-    updateCardElement.value.on('change', function(event) {
-      if (event.error) {
-        paymentMethodError.value = event.error.message
-      } else {
-        paymentMethodError.value = ''
-      }
-    })
   }
 })
 
 onUnmounted(() => {
-  if (card.value) {
-    card.value.destroy()
-  }
+  abortController.abort()
   if (updateCardElement.value) {
     updateCardElement.value.destroy()
   }
+  cleanupStripe()
 })
+
+// ハンドラーを修正
+const handlePaymentSubmit = async ({ token }) => {
+  try {
+    const selectedPlan = plans.find(p => p.planId === formState.selectedPlan)
+    const userEmail = store.state.auth.user.email // 保持しているメールアドレスを使用
+    
+    // Stripeサブスクリプション作成
+    await createSubscription({
+      email: userEmail, // 保持しているメールアドレスを使用
+      token: token.id,
+      priceId: selectedPlan.priceId,
+      accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0
+    })
+
+    // Cognitoの属性を更新
+    await store.dispatch('auth/updateSubscriptionAttributes', {
+      planId: selectedPlan.planId,
+      accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0
+    })
+
+    showSuccessDialog.value = true
+    resetForm()
+    emit('payment-success')
+    await store.dispatch('auth/fetchUser')
+  } catch (err) {
+    errorMessage.value = err.message || '処理に失敗しました'
+  }
+}
 </script>
 
 <style scoped>

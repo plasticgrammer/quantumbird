@@ -15,5 +15,5 @@ export const changePlan = async (changeData) => {
 }
 
 export const getPaymentMethods = async (email) => {
-  return await apiClient.post(`${BASE_PATH}/payment-methods`, { email });
+  return await apiClient.post(`${BASE_PATH}/payment-methods`, { email })
 }

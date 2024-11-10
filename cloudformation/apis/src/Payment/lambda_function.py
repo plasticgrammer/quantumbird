@@ -11,12 +11,12 @@ def create_subscription(body: Dict) -> Dict:
     """サブスクリプション作成処理"""
     email = body['email']
     token = body['token']
-    plan_id = body['planId']
-    account_count = body.get('accountCount', 0)
+    price_id = body['priceId']
+    account_count = int(body.get('accountCount', 0))  # 文字列を整数に変換
 
     # プランIDの検証
     valid_price_ids = ['price_free', 'price_1QJSigJlLYAT4bpznFUNs5eg', 'price_1QJSmjJlLYAT4bpzzPjAgcJj']
-    if plan_id not in valid_price_ids:
+    if price_id not in valid_price_ids:
         raise ValueError('無効なプランIDです')
 
     # 顧客の作成または取得
@@ -30,7 +30,7 @@ def create_subscription(body: Dict) -> Dict:
         )
 
     # プランに応じた価格設定とサブスクリプション作成
-    if plan_id == 'price_1QJSmjJlLYAT4bpzzPjAgcJj':  # ビジネスプラン
+    if price_id == 'price_1QJSmjJlLYAT4bpzzPjAgcJj':  # ビジネスプラン
         base_price = 2000
         per_account_price = 300
         total_price = base_price + (account_count * per_account_price)
@@ -46,17 +46,17 @@ def create_subscription(body: Dict) -> Dict:
             }],
             metadata={'account_count': str(account_count)}
         )
-    elif plan_id != 'price_free':  # プロプラン
+    elif price_id != 'price_free':  # プロプラン
         subscription = stripe.Subscription.create(
             customer=customer.id,
-            items=[{'price': plan_id}]
+            items=[{'price': price_id}]
         )
     else:  # フリープラン
         return {
             'message': 'フリープランが選択されました',
             'subscription': {
                 'id': 'free',
-                'plan': plan_id,
+                'price': price_id,
                 'accountCount': 0
             }
         }
@@ -65,14 +65,14 @@ def create_subscription(body: Dict) -> Dict:
         'message': 'サブスクリプションが正常に作成されました',
         'subscription': {
             'id': subscription.id,
-            'plan': plan_id,
+            'price': price_id,
             'accountCount': account_count
         }
     }
 
 def update_subscription(body: Dict) -> Dict:
     """サブスクリプション更新処理"""
-    new_account_count = int(body['newAccountCount'])
+    new_account_count = int(body.get('newAccountCount', 0))  # 文字列を整数に変換
     subscription_id = body['subscriptionId']
 
     # サブスクリプションの取得と更新
@@ -112,13 +112,13 @@ def update_subscription(body: Dict) -> Dict:
 def change_subscription_plan(body: Dict) -> Dict:
     """プラン変更処理"""
     subscription_id = body['subscriptionId']
-    new_plan_id = body['planId']
-    new_account_count = body.get('accountCount', 0)
+    new_price_id = body['priceId']
+    new_account_count = int(body.get('accountCount', 0))  # 文字列を整数に変換
 
     # サブスクリプションの取得
     subscription = stripe.Subscription.retrieve(subscription_id)
 
-    if new_plan_id == 'price_1QJSmjJlLYAT4bpzzPjAgcJj':  # ビジネスプラン
+    if new_price_id == 'price_1QJSmjJlLYAT4bpzzPjAgcJj':  # ビジネスプラン
         base_price = 2000
         per_account_price = 300
         total_price = base_price + (new_account_count * per_account_price)
@@ -144,7 +144,7 @@ def change_subscription_plan(body: Dict) -> Dict:
             subscription_id,
             items=[{
                 'id': subscription['items']['data'][0].id,
-                'price': new_plan_id
+                'price': new_price_id
             }],
             proration_behavior='always_invoice'
         )
@@ -153,13 +153,13 @@ def change_subscription_plan(body: Dict) -> Dict:
         'message': 'プランが正常に変更されました',
         'subscription': {
             'id': subscription_id,
-            'plan': new_plan_id,
+            'price': new_price_id,
             'accountCount': new_account_count
         }
     }
 
 def get_payment_methods(body: Dict) -> Dict:
-    """支払い方法取��処理"""
+    """支払い方法取得処理"""
     try:
         email = body.get('email')
         if not email:

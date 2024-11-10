@@ -115,16 +115,24 @@ api.interceptors.response.use(
     const originalRequest = error.config
     const errorType = getErrorType(error)
 
-    // 通常のネットワークエラーの場合
-    if (errorType === ERROR_TYPES.NETWORK && !originalRequest._networkRetry) {
-      originalRequest._networkRetry = true
-      console.log('Retrying network request...')
-      return new Promise(resolve => setTimeout(resolve, 1000))
-        .then(() => api(originalRequest))
+    // CORSエラーの場合、即時リトライ
+    if (errorType === ERROR_TYPES.CORS && !originalRequest._corsRetry) {
+      originalRequest._corsRetry = true
+      console.log('Retrying CORS error request with new token...')
+      // 新しいトークンを取得して即時リトライ
+      try {
+        const newToken = await store.dispatch('auth/fetchAuthToken')
+        originalRequest.headers['Authorization'] = `Bearer ${newToken}`
+        return api(originalRequest)
+      } catch (refreshError) {
+        console.error('Token refresh failed during CORS retry:', refreshError)
+        await store.dispatch('auth/signOut')
+        return Promise.reject(refreshError)
+      }
     }
 
-    // CORSエラー,認証エラーの場合
-    if ((errorType === ERROR_TYPES.CORS || checkTokenError(error)) && !originalRequest._retry) {
+    // 認証エラーの場合の処理
+    if (checkTokenError(error) && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })
@@ -150,6 +158,18 @@ api.interceptors.response.use(
       } finally {
         isRefreshing = false
       }
+    }
+
+    // 通常のネットワークエラーの場合
+    if (errorType === ERROR_TYPES.NETWORK && !originalRequest._networkRetry) {
+      originalRequest._networkRetry = true
+      console.log('Retrying network request...')
+      const currentToken = store.getters['auth/token']
+      if (currentToken) {
+        originalRequest.headers['Authorization'] = `Bearer ${currentToken}`
+      }
+      return new Promise(resolve => setTimeout(resolve, 1000))
+        .then(() => api(originalRequest))
     }
 
     console.error(`Error in API call (${originalRequest.method} ${originalRequest.url}):`, error)
