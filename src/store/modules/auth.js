@@ -44,7 +44,8 @@ export default {
     cognitoUserSub: null,
     subscription: {
       planId: null,
-      accountCount: 0
+      accountCount: 0,
+      subscriptionId: null
     }
   }),
 
@@ -72,29 +73,30 @@ export default {
         cognitoUserSub: null,
         subscription: {
           planId: null,
-          accountCount: 0
+          accountCount: 0,
+          subscriptionId: null
         }
       })
     },
 
     updateUserPolicyVersions(state, { tosVersion, privacyPolicyVersion }) {
       if (state.user) {
-        state.user = {
-          ...state.user,
+        Object.assign(state.user, {
           tosVersion: tosVersion || state.user.tosVersion,
           privacyPolicyVersion: privacyPolicyVersion || state.user.privacyPolicyVersion
-        }
+        })
       }
     },
 
-    setSubscription(state, { planId, accountCount }) {
-      state.subscription = {
-        planId: planId || 'price_free',
-        accountCount: parseInt(accountCount || '0', 10)
-      }
+    setSubscription(state, { planId, accountCount, subscriptionId }) {
+      Object.assign(state.subscription, {
+        planId,
+        accountCount: parseInt(accountCount || '0', 10),
+        subscriptionId: subscriptionId || null
+      })
       // ユーザー情報にも同期
       if (state.user) {
-        state.user.subscription = { ...state.subscription }
+        Object.assign(state.user.subscription, { ...state.subscription })
       }
     }
   },
@@ -116,8 +118,9 @@ export default {
           tosVersion: attributes['custom:tos_version'],
           privacyPolicyVersion: attributes['custom:pp_version'],
           subscription: {
-            planId: attributes['custom:planId'] || 'price_free',
-            accountCount: parseInt(attributes['custom:accountCount'] || '0', 10)
+            planId: attributes['custom:planId'] || 'free',
+            accountCount: parseInt(attributes['custom:accountCount'] || '0', 10),
+            subscriptionId: attributes['custom:subscriptionId'] || null
           }
         }
 
@@ -221,7 +224,7 @@ export default {
       }
     },
 
-    async updatePolicyAcceptance({ commit, dispatch }, { tosAccepted, privacyPolicyAccepted }) {
+    async updatePolicyAcceptance({ commit }, { tosAccepted, privacyPolicyAccepted }) {
       try {
         const updates = {}
 
@@ -239,8 +242,6 @@ export default {
             tosVersion: tosAccepted ? termsOfServiceVersion : undefined,
             privacyPolicyVersion: privacyPolicyAccepted ? privacyPolicyVersion : undefined
           })
-
-          await dispatch('fetchUser')
         }
 
         return { success: true }
@@ -250,11 +251,12 @@ export default {
       }
     },
 
-    async updateSubscriptionAttributes({ commit, dispatch }, { planId, accountCount }) {
+    async updateSubscriptionAttributes({ commit }, { planId, accountCount, subscriptionId }) {
       try {
         const updates = {
           'custom:planId': planId,
-          'custom:accountCount': String(accountCount)
+          'custom:accountCount': String(accountCount),
+          'custom:subscriptionId': subscriptionId || ''
         }
 
         await updateUserAttributes({
@@ -264,11 +266,10 @@ export default {
         // 即座にステートを更新
         commit('setSubscription', {
           planId,
-          accountCount
+          accountCount,
+          subscriptionId
         })
 
-        // ユーザー情報を再取得して完全な同期を確保
-        await dispatch('fetchUser')
         return { success: true }
       } catch (error) {
         createErrorHandler('updating subscription attributes')(error)
@@ -286,6 +287,6 @@ export default {
     cognitoUserSub: state => state.cognitoUserSub,
     tosVersion: state => state.user?.tosVersion,
     privacyPolicyVersion: state => state.user?.privacyPolicyVersion,
-    currentSubscription: state => state.subscription || { planId: 'price_free', accountCount: 0 }
+    currentSubscription: state => state.subscription || { planId: 'free', accountCount: 0 }
   }
 }

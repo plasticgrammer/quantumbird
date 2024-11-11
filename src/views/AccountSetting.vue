@@ -259,9 +259,12 @@ import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { exportReports } from '../services/reportService'
 import { deleteOrganization, deleteOrganizationCompletely } from '../services/organizationService'
+import { useStripe } from '../composables/useStripe'
 
 const store = useStore()
 const router = useRouter()
+const { plans } = useStripe() // plansを取得
+
 const passwordForm = ref(null)
 const organizationId = store.getters['auth/organizationId']
 
@@ -283,22 +286,6 @@ const isDeleting = ref(false)
 const deleteConfirmText = ref('')
 
 const showConfirmDialog = inject('showConfirmDialog')
-
-// プラン情報を定義
-const plans = [
-  { 
-    planId: 'free',
-    name: 'フリープラン'
-  },
-  { 
-    planId: 'pro',
-    name: 'プロプラン'
-  },
-  {
-    planId: 'business',
-    name: 'ビジネスプラン'
-  }
-]
 
 // 現在のプラン名を取得する computed プロパティ
 const currentPlanName = computed(() => {

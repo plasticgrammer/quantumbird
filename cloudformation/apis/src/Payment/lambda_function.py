@@ -113,11 +113,25 @@ def change_subscription_plan(body: Dict) -> Dict:
     """プラン変更処理"""
     subscription_id = body['subscriptionId']
     new_price_id = body['priceId']
-    new_account_count = int(body.get('accountCount', 0))  # 文字列を整数に変換
+    new_account_count = int(body.get('accountCount', 0))
 
-    # サブスクリプションの取得
+    # フリープランの場合はサブスクリプションを解約
+    if new_price_id == 'price_free':
+        subscription = stripe.Subscription.retrieve(subscription_id)
+        canceled_subscription = stripe.Subscription.delete(subscription_id)
+        return {
+            'message': 'サブスクリプションが正常に解約されました',
+            'subscription': {
+                'id': 'free',
+                'price': new_price_id,
+                'accountCount': 0,
+                'status': canceled_subscription.status
+            }
+        }
+
+    # 他のプランへの変更処理（既存のコード）
     subscription = stripe.Subscription.retrieve(subscription_id)
-
+    
     if new_price_id == 'price_1QJSmjJlLYAT4bpzzPjAgcJj':  # ビジネスプラン
         base_price = 2000
         per_account_price = 300
@@ -206,7 +220,7 @@ def get_payment_methods(body: Dict) -> Dict:
         }
 
 def update_payment_method(body: Dict) -> Dict:
-    """支払い方法更新処理"""
+    """支払い方法更新���理"""
     try:
         customer_id = body['customerId']
         token = body['token']
