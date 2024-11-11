@@ -39,6 +39,10 @@ Parameters:
   WebPushPlatformApplicationArn:
     Type: String
     Default: "arn:aws:sns:ap-northeast-1:394014491996:app/GCM/fluxweek"
+  StripeSecretKey:
+    Type: String
+    Description: "Stripe Secret Key for payment processing"
+    NoEcho: true # セキュリティのため値を隠す
 
 Conditions:
   IsProd: !Equals [!Ref Stage, "prod"]
@@ -474,6 +478,52 @@ Resources:
             RestApiId: !Ref ApiGatewayApi
             Path: /user-tasks
             Method: ANY
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  PaymentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Stage}-payment"
+      CodeUri: ./src/Payment
+      Description: "Manages payment and subscription operations using Stripe"
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          STRIPE_SECRET_KEY: !Ref StripeSecretKey # SSMの参照から直接パラメータ参照に変更
+      Layers:
+        - !Ref CommonLayer
+      Events:
+        CreateSubscription:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /payment/create-subscription
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UpdateSubscription:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /payment/update-subscription
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+        ChangePlan:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /payment/change-plan
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+        PaymentMethods:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /payment/payment-methods
+            Method: POST
             Auth:
               Authorizer: CognitoAuthorizer
 

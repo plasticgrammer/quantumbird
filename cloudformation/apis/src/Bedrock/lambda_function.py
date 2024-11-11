@@ -251,7 +251,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # プロンプトの生成
         prompt = create_prompt(report_content)
-        logger.info(f"Generated prompt: {prompt}")
         
         # Claudeの呼び出し
         claude_response = invoke_claude(prompt)

@@ -1,7 +1,7 @@
 <template>
   <v-container class="pa-0">
     <v-row align="center" justify="start" no-gutters>
-      <v-col cols="auto">
+      <v-col cols="11">
         <v-switch
           v-if="notificationStatus === 'default' || notificationStatus === 'granted'"
           v-model="isSubscribed"
@@ -35,14 +35,6 @@
                   - subscribed: {{ isSubscribed }}<br>
                   - notificationStatus: {{ notificationStatus }}
                 </div>
-                <v-btn
-                  v-if="isServiceWorkerReady" 
-                  icon="mdi-reload"
-                  color="error"
-                  density="comfortable"
-                  @click="resetServiceWorker"
-                >
-                </v-btn>
               </div>
             </v-tooltip>
             {{ statusText }}
@@ -59,7 +51,7 @@
           </v-btn>
         </div>
       </v-col>
-      <v-col v-if="hasError" cols="auto">
+      <v-col v-if="hasError" cols="11">
         <div class="v-input--error">
           <div class="v-messages">
             <div class="v-messages__message pl-4">
@@ -67,6 +59,16 @@
             </div>
           </div>
         </div>
+      </v-col>
+      <v-col v-if="hasError" cols="1" class="d-flex justify-end">
+        <v-btn
+          v-if="isServiceWorkerReady" 
+          icon="mdi-reload"
+          color="error"
+          density="comfortable"
+          @click="resetServiceWorker"
+        >
+        </v-btn>
       </v-col>
       <v-col v-if="!isOnline" cols="auto">
         <v-chip color="warning" small>

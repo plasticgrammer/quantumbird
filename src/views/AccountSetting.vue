@@ -42,10 +42,10 @@
           <v-icon class="ml-1" size="small">mdi-chevron-right</v-icon>
         </v-btn>
 
-        <v-card class="mt-4 mb-2" elevation="0" color="blue-lighten-5 border-thin" outlined>
+        <v-card class="mt-4 mb-2" elevation="0" color="blue-lighten-4 border-md" outlined>
           <v-card-title>契約プラン</v-card-title>
           <v-card-text class="px-6">
-            <p class="mb-3">フリープラン</p>
+            <p class="mb-3">{{ currentPlanName }}</p>
             <v-row>
               <v-col class="d-flex justify-end">
                 <v-btn color="info" @click="router.push({ name: 'Payment' })">
@@ -283,6 +283,29 @@ const isDeleting = ref(false)
 const deleteConfirmText = ref('')
 
 const showConfirmDialog = inject('showConfirmDialog')
+
+// プラン情報を定義
+const plans = [
+  { 
+    planId: 'free',
+    name: 'フリープラン'
+  },
+  { 
+    planId: 'pro',
+    name: 'プロプラン'
+  },
+  {
+    planId: 'business',
+    name: 'ビジネスプラン'
+  }
+]
+
+// 現在のプラン名を取得する computed プロパティ
+const currentPlanName = computed(() => {
+  const subscription = store.getters['auth/currentSubscription']
+  const plan = plans.find(p => p.planId === subscription?.planId)
+  return plan?.name || 'フリープラン'
+})
 
 // パスワードのバリデーションルール
 const passwordRules = [

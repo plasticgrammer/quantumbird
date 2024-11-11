@@ -8,7 +8,22 @@ export const createBaseOptions = (config = {}) => ({
   maintainAspectRatio: false,
   plugins: {
     legend: {
-      position: 'bottom'
+      position: 'bottom',
+      onHover: (event, legendItem, legend) => {
+        const chart = legend.chart
+        chart.data.datasets.forEach((dataset, index) => {
+          chart.setDatasetVisibility(index, false)
+        })
+        chart.setDatasetVisibility(legendItem.datasetIndex, true)
+        chart.update()
+      },
+      onLeave: (event, legendItem, legend) => {
+        const chart = legend.chart
+        chart.data.datasets.forEach((dataset, index) => {
+          chart.setDatasetVisibility(index, true)
+        })
+        chart.update()
+      }
     },
     title: {
       display: false,
@@ -67,13 +82,13 @@ export const updateChartInstance = ({
   chartData,
   isTop3,
   onError = console.error,
-  additionalUpdates = () => {}
+  additionalUpdates = () => { }
 }) => {
   if (!chart) return
 
   try {
     const datasets = getFilteredData(chartData.datasets || [], isTop3)
-    
+
     chart.data = {
       labels: chartData.labels,
       datasets

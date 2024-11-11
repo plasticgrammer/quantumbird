@@ -8,7 +8,8 @@ const AUTH_CONSTANTS = {
     RATE_LIMIT: 'しばらく時間をおいてから再度お試しください',
     GENERIC: 'エラーが発生しました',
     DELETE_ACCOUNT: 'アカウントの削除中にエラーが発生しました',
-    NO_TOKEN: '認証情報が見つかりません。再度ログインしてください'
+    NO_TOKEN: '認証情報が見つかりません。再度ログインしてください',
+    SUBSCRIPTION_UPDATE: 'サブスクリプション情報の更新権限がありません。管理者に連絡してください'
   }
 }
 
@@ -22,7 +23,9 @@ const createErrorHandler = (prefix) => (error) => {
 
 const mapErrorMessage = (error) => {
   if (error.name === 'NotAuthorizedException') {
-    return AUTH_CONSTANTS.ERROR_MESSAGES.AUTH
+    return error.message.includes('unauthorized attribute')
+      ? AUTH_CONSTANTS.ERROR_MESSAGES.SUBSCRIPTION_UPDATE
+      : AUTH_CONSTANTS.ERROR_MESSAGES.AUTH
   }
   if (error.name === 'LimitExceededException') {
     return AUTH_CONSTANTS.ERROR_MESSAGES.RATE_LIMIT
@@ -38,7 +41,11 @@ export default {
     token: null,
     lastTokenFetch: null,
     lastUserFetch: null,
-    cognitoUserSub: null
+    cognitoUserSub: null,
+    subscription: {
+      planId: null,
+      accountCount: 0
+    }
   }),
 
   mutations: {
@@ -62,7 +69,11 @@ export default {
         token: null,
         lastTokenFetch: null,
         lastUserFetch: null,
-        cognitoUserSub: null
+        cognitoUserSub: null,
+        subscription: {
+          planId: null,
+          accountCount: 0
+        }
       })
     },
 
@@ -73,6 +84,17 @@ export default {
           tosVersion: tosVersion || state.user.tosVersion,
           privacyPolicyVersion: privacyPolicyVersion || state.user.privacyPolicyVersion
         }
+      }
+    },
+
+    setSubscription(state, { planId, accountCount }) {
+      state.subscription = {
+        planId: planId || 'price_free',
+        accountCount: parseInt(accountCount || '0', 10)
+      }
+      // ユーザー情報にも同期
+      if (state.user) {
+        state.user.subscription = { ...state.subscription }
       }
     }
   },
@@ -92,11 +114,16 @@ export default {
           username: attributes.name,
           email: attributes.email,
           tosVersion: attributes['custom:tos_version'],
-          privacyPolicyVersion: attributes['custom:pp_version']
+          privacyPolicyVersion: attributes['custom:pp_version'],
+          subscription: {
+            planId: attributes['custom:planId'] || 'price_free',
+            accountCount: parseInt(attributes['custom:accountCount'] || '0', 10)
+          }
         }
 
         commit('setUser', userInfo)
         commit('setCognitoUserSub', attributes.sub)
+        commit('setSubscription', userInfo.subscription)
         return userInfo
       } catch (error) {
         createErrorHandler('fetching user')(error)
@@ -221,6 +248,32 @@ export default {
         createErrorHandler('updating policy acceptance')(error)
         throw error
       }
+    },
+
+    async updateSubscriptionAttributes({ commit, dispatch }, { planId, accountCount }) {
+      try {
+        const updates = {
+          'custom:planId': planId,
+          'custom:accountCount': String(accountCount)
+        }
+
+        await updateUserAttributes({
+          userAttributes: updates
+        })
+
+        // 即座にステートを更新
+        commit('setSubscription', {
+          planId,
+          accountCount
+        })
+
+        // ユーザー情報を再取得して完全な同期を確保
+        await dispatch('fetchUser')
+        return { success: true }
+      } catch (error) {
+        createErrorHandler('updating subscription attributes')(error)
+        throw new Error(mapErrorMessage(error))
+      }
     }
   },
 
@@ -232,6 +285,7 @@ export default {
     token: state => state.token,
     cognitoUserSub: state => state.cognitoUserSub,
     tosVersion: state => state.user?.tosVersion,
-    privacyPolicyVersion: state => state.user?.privacyPolicyVersion
+    privacyPolicyVersion: state => state.user?.privacyPolicyVersion,
+    currentSubscription: state => state.subscription || { planId: 'price_free', accountCount: 0 }
   }
 }
