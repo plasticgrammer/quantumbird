@@ -15,11 +15,12 @@
 
     <v-card class="mx-auto">
       <v-card-title class="text-h5 font-weight-bold text-center pa-4">
-        プラン選択
+        {{ getStepTitle }}
       </v-card-title>
 
-      <!-- プラン選択カード -->
-      <v-card-text>
+      <!-- プラン選択カード - プラン選択ステップの時のみ表示 -->
+      <v-card-text v-if="currentStep === 'plan-selection'">
+        <!-- 既存のプラン選択部分をそのまま使用 -->
         <v-row justify="center">
           <v-col
             v-for="plan in plans"
@@ -101,23 +102,53 @@
             </v-card>
           </v-col>
         </v-row>
+        
+        <!-- プラン選択ボタン部分を変更 -->
+        <v-row justify="center" class="mt-4">
+          <v-col cols="12" sm="8" md="6">
+            <v-btn
+              v-if="formState.selectedPlan && formState.selectedPlan !== currentPlan.value?.planId"
+              color="primary"
+              block
+              :loading="isLoading"
+              :disabled="isLoading"
+              @click="handlePlanSelection"
+            >
+              次へ
+            </v-btn>
+          </v-col>
+        </v-row>
       </v-card-text>
 
-      <!-- 支払い情報フォーム -->
-      <v-card-text 
-        v-show="showPaymentForm"
-        class="px-6 py-4"
-      >
-        <v-divider class="mb-4"></v-divider>
-        <v-row class="d-flex justify-center">
-          <v-col cols="8">
-            <h3 class="text-h6 mb-4">支払い情報の入力</h3>
+      <!-- 支払い情報フォーム - 支払いステップの時のみ表示 -->
+      <template v-else>
+        <v-card-text class="px-6 py-4">
+          <!-- 変更内容カード -->
+          <v-card class="mb-4 pa-4" variant="outlined">
+            <div class="text-subtitle-1 mb-2">変更内容</div>
+            <div class="mb-2">
+              現在のプラン: {{ currentPlan?.name || 'なし' }}
+              <template v-if="currentPlan?.planId === 'business'">
+                <div class="mt-1 ml-2">
+                  現在の月額料金: ¥{{ currentPlan.getPrice(currentPlan.currentAccountCount).toLocaleString() }}
+                </div>
+              </template>
+            </div>
+            <v-divider class="my-2"></v-divider>
+            <div>
+              変更後のプラン: {{ plans.find(p => p.planId === formState.selectedPlan)?.name }}
+              <template v-if="formState.selectedPlan === 'business'">
+                <div class="mt-1 ml-2">
+                  変更後の月額料金: ¥{{ plans.find(p => p.planId === 'business').getPrice(formState.accountCount).toLocaleString() }}
+                </div>
+              </template>
+            </div>
+          </v-card>
+          <!-- ビジネスプラン用のアカウント数設定 -->
+          <template v-if="formState.selectedPlan === 'business'">
             <v-card class="mb-4 pa-4" variant="outlined">
-              <!-- メールアドレス入力フィールドを削除 -->
-              
-              <!-- ビジネスプラン選択時のアカウント数入力 -->
+              <h3 class="text-h6 mb-4">アカウント数の設定</h3>
               <v-text-field
-                v-if="formState.selectedPlan === 'business'"
                 v-model="formState.accountCount"
                 type="number"
                 label="アカウント数"
@@ -126,79 +157,40 @@
                 persistent-hint
                 required
               ></v-text-field>
-
-              <!-- PaymentMethodForm コンポーネント -->
-              <PaymentMethodForm
-                element-id="card-element"
-                submit-button-text="支払いを確定する"
-                :loading="isLoading"
-                @submit="handlePaymentSubmit"
-                @error="errorMessage = $event"
-              />
             </v-card>
-          </v-col>
-        </v-row>
-      </v-card-text>
+          </template>
 
-      <!-- プラン変更確認セクション -->
-      <v-card-text 
-        v-if="showPlanChangeConfirm"
-        class="px-6 py-4"
-      >
-        <v-divider class="mb-4"></v-divider>
-        <v-row class="d-flex justify-center">
-          <v-col cols="8">
-            <h3 class="text-h6 mb-4">
-              {{ formState.selectedPlan === 'free' ? 'プランの解約' : 'プラン変更の確認' }}
-            </h3>
-            
-            <!-- 変更内容カード -->
+          <!-- 支払い方法セクション -->
+          <template v-if="formState.selectedPlan === 'pro' || formState.selectedPlan === 'business'">
             <v-card class="mb-4 pa-4" variant="outlined">
-              <div class="text-subtitle-1 mb-2">変更内容</div>
-              <div>
-                変更後のプラン: {{ formState.selectedPlan === 'free' ? 'プラン解約（フリープラン）' : plans.find(p => p.planId === formState.selectedPlan)?.name }}
-              </div>
-            </v-card>
-
-            <!-- 支払い情報カード - フリープランの場合は非表示 -->
-            <v-card 
-              v-if="formState.selectedPlan !== 'free'"
-              class="mb-4 pa-4" 
-              variant="outlined"
-            >
-              <div class="d-flex justify-space-between align-center">
-                <div class="text-subtitle-1">支払い方法</div>
-                <v-btn
-                  v-if="!showPaymentMethodForm"
-                  variant="text"
-                  color="primary"
-                  @click="showPaymentMethodForm = true"
-                >
-                  変更する
-                </v-btn>
-              </div>
+              <h3 class="text-h6 mb-4">支払い方法</h3>
               
-              <!-- 現在の支払い方法表示 -->
-              <template v-if="!showPaymentMethodForm">
-                <div v-if="currentPaymentMethod" class="mt-2">
-                  <div class="d-flex align-center">
-                    <v-icon class="mr-2">mdi-credit-card</v-icon>
-                    <span>**** **** **** {{ currentPaymentMethod.last4 }}</span>
-                  </div>
-                  <div class="text-caption">
-                    有効期限: {{ String(currentPaymentMethod.expMonth).padStart(2, '0') }}/{{ String(currentPaymentMethod.expYear).slice(-2) }}
-                  </div>
+              <!-- 既存ユーザーの場合は現在の支払い方法を表示 -->
+              <template v-if="!isNewCustomer">
+                <div class="d-flex justify-space-between align-center">
+                  <template v-if="!showPaymentMethodForm">
+                    <div v-if="currentPaymentMethod" class="mt-2">
+                      <div class="d-flex align-center">
+                        <v-icon class="mr-2">mdi-credit-card</v-icon>
+                        <span>**** **** **** {{ currentPaymentMethod.last4 }}</span>
+                      </div>
+                      <div class="text-caption">
+                        有効期限: {{ String(currentPaymentMethod.expMonth).padStart(2, '0') }}/{{ String(currentPaymentMethod.expYear).slice(-2) }}
+                      </div>
+                    </div>
+                    <v-btn
+                      variant="text"
+                      color="primary"
+                      @click="showPaymentMethodForm = true"
+                    >
+                      変更する
+                    </v-btn>
+                  </template>
                 </div>
-              </template>
 
-              <!-- 支払い方法変更フォーム -->
-              <v-form
-                v-else
-                ref="paymentMethodFormRef"
-                class="mt-4"
-                @submit.prevent="handlePaymentMethodUpdate"
-              >
+                <!-- 支払い方法変更フォーム -->
                 <PaymentMethodForm
+                  v-if="showPaymentMethodForm"
                   element-id="card-element-update"
                   :loading="isUpdatingPaymentMethod"
                   @submit="handlePaymentMethodUpdate"
@@ -222,59 +214,44 @@
                     </div>
                   </template>
                 </PaymentMethodForm>
-              </v-form>
+              </template>
+
+              <!-- 新規ユーザーの場合は支払い方法入力フォーム -->
+              <template v-else>
+                <PaymentMethodForm
+                  element-id="card-element"
+                  submit-button-text="支払い方法を登録"
+                  :loading="isLoading"
+                  @submit="handlePaymentSubmit"
+                  @error="errorMessage = $event"
+                />
+              </template>
             </v-card>
-            
-            <v-btn
-              color="primary"
-              block
-              size="large"
-              :loading="isLoading"
-              :disabled="isLoading"
-              @click="handleSubmit"
-            >
-              {{ isLoading ? '処理中...' : formState.selectedPlan === 'free' ? 'プランを解約する' : 'プランを変更する' }}
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-card-text>
+          </template>
 
-      <!-- プラン変更セクション -->
-      <v-card-text v-if="currentPlan?.planId === 'business' && formState.selectedPlan === 'business'" class="mt-4">
-        <v-divider class="mb-6"></v-divider>
-        <h3 class="text-h6 mb-4">アカウント数の変更</h3>
-        
-        <!-- 現在のプラン情報 -->
-        <v-card class="mb-4 pa-4" variant="outlined">
-          <div class="text-subtitle-1 mb-2">現在のプラン情報</div>
-          <div>現在のアカウント数: {{ currentPlan.currentAccountCount }}アカウント</div>
-          <div>現在の月額料金: ¥{{ currentPlan.getPrice(currentPlan.currentAccountCount).toLocaleString() }}/月</div>
-        </v-card>
-
-        <!-- アカウント数変更フォーム -->
-        <v-form ref="accountUpdateFormRef" @submit.prevent="handleAccountUpdate">
-          <v-text-field
-            v-model="accountUpdateForm.newAccountCount"
-            type="number"
-            label="新しいアカウント数"
-            :rules="validationRules.accountCount"
-            :hint="`変更後の月額料金: ¥${currentPlan.getPrice(accountUpdateForm.newAccountCount).toLocaleString()}/月`"
-            persistent-hint
-            required
-          ></v-text-field>
-
+          <!-- プラン変更確認ボタン -->
           <v-btn
-            type="submit"
             color="primary"
-            class="mt-4"
             block
-            :loading="isUpdating"
-            :disabled="isUpdating || accountUpdateForm.newAccountCount == currentPlan.currentAccountCount"
+            size="large"
+            :loading="isLoading"
+            :disabled="isLoading || (showPaymentMethodForm && isUpdatingPaymentMethod)"
+            @click="handleSubmit"
           >
-            {{ isUpdating ? '更新中...' : 'アカウント数を変更する' }}
+            {{ isLoading ? '処理中...' : formState.selectedPlan === 'free' ? 'プランを解約する' : 'プランを変更する' }}
           </v-btn>
-        </v-form>
-      </v-card-text>
+        </v-card-text>
+
+        <!-- 戻るボタン -->
+        <v-card-text class="px-6 py-4">
+          <v-btn
+            variant="outlined"
+            @click="currentStep = 'plan-selection'"
+          >
+            プラン選択に戻る
+          </v-btn>
+        </v-card-text>
+      </template>
     </v-card>
 
     <!-- 完了ダイアログ -->
@@ -302,7 +279,7 @@ import { ref, nextTick, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { useStripe } from '../composables/useStripe'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { createSubscription, updateSubscription, getPaymentMethods, changePlan, updatePaymentMethod } from '../services/paymentService'
+import { createSubscription, getPaymentMethods, changePlan, updatePaymentMethod } from '../services/paymentService'
 import PaymentMethodForm from '../components/PaymentMethodForm.vue'
 
 const router = useRouter()
@@ -310,6 +287,9 @@ const store = useStore()
 const { initializeStripe, cleanup, plans } = useStripe() // plansを追加
 
 const emit = defineEmits(['payment-success']) // emitを定義
+
+// Stripe要素の参照を追加
+const updateCardElement = ref(null)
 
 // カードの色を決定する関数
 const getCardColor = (plan) => {
@@ -325,7 +305,7 @@ const getCardColor = (plan) => {
   return '' // デフォルト
 }
 
-const formRef = ref(null)
+// 使用していない変数の削除
 
 const formState = reactive({
   // emailプロパティを削除
@@ -353,20 +333,14 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const showSuccessDialog = ref(false)
 const currentPaymentMethod = ref(null)
+
+// computed プロパティの修正
 const showPaymentMethodForm = ref(false)
-const paymentMethodFormRef = ref(null)
 const isUpdatingPaymentMethod = ref(false)
 const paymentMethodError = ref('')
-// 支払い方法更新用のStripeカード要素
-const updateCardElement = ref(null)
 
-const resetForm = () => {
-  formState.cardName = ''
-  errorMessage.value = ''
-  if (formRef.value) {
-    formRef.value.reset()
-  }
-}
+const hasPaymentMethod = ref(false)
+const isNewCustomer = computed(() => !hasPaymentMethod.value)
 
 // 現在のプラン情報を取得
 const currentPlan = computed(() => {
@@ -382,33 +356,10 @@ const currentPlan = computed(() => {
   }
 })
 
-const hasPaymentMethod = ref(false)
-const isNewCustomer = computed(() => !hasPaymentMethod.value)
-const showPaymentForm = computed(() => {
-  return (formState.selectedPlan === 'pro' || formState.selectedPlan === 'business') && isNewCustomer.value
-})
-
-const showPlanChangeConfirm = computed(() => {
-  if (!formState.selectedPlan) return false
-  if (isNewCustomer.value) return false
-  if (!currentPlan.value) return false
-  
-  // フリープランへの変更は常に表示する
-  if (formState.selectedPlan === 'free') return true
-  
-  // 現在のプランと同じ場合は表示しない（ただしビジネスプランでアカウント数が変更される場合は除く）
-  if (formState.selectedPlan === currentPlan.value?.planId) {
-    // ビジネスプランの場合、アカウント数が変更される場合は表示する
-    if (formState.selectedPlan === 'business' && 
-        formState.accountCount !== currentPlan.value.currentAccountCount) {
-      return true
-    }
-    return false
-  }
-  
-  // 上記以外の場合（異なるプランを選択した場合）は表示する
-  return true
-})
+const resetForm = () => {
+  formState.cardName = ''
+  errorMessage.value = ''
+}
 
 // フォーム送信処理を修正
 const handleSubmit = async () => {
@@ -466,47 +417,6 @@ const handleSubmit = async () => {
   }
 }
 
-// アカウント数更新用の状態
-const accountUpdateFormRef = ref(null)
-const isUpdating = ref(false)
-const accountUpdateForm = reactive({
-  newAccountCount: 1
-})
-
-// アカウント数更新処理
-const handleAccountUpdate = async () => {
-  const form = accountUpdateFormRef.value
-  if (!form) return
-  
-  const { valid } = await form.validate()
-  if (!valid) return
-
-  isUpdating.value = true
-
-  try {
-    await updateSubscription({
-      newAccountCount: accountUpdateForm.newAccountCount,
-      subscriptionId: currentPlan.value.subscriptionId
-    })
-
-    await store.dispatch('auth/updateSubscriptionAttributes', {
-      planId: currentPlan.value.planId,
-      accountCount: accountUpdateForm.newAccountCount,
-      subscriptionId: currentPlan.value.subscriptionId // 既存のsubscriptionIdを維持
-    })
-
-    showSuccessDialog.value = true
-    // アカウント数の更新のみを行い、フォームはリセットしない
-    await store.dispatch('auth/fetchUser')
-    formState.accountCount = accountUpdateForm.newAccountCount
-
-  } catch (err) {
-    errorMessage.value = err.message || 'アカウント数の更新に失敗しました'
-  } finally {
-    isUpdating.value = false
-  }
-}
-
 const handlePaymentSubmit = async ({ token }) => {
   try {
     const selectedPlan = plans.find(p => p.planId === formState.selectedPlan)
@@ -555,7 +465,6 @@ const handlePaymentMethodUpdate = async ({ token }) => {
       accountCount: currentPlan.value.currentAccountCount
     })
 
-    // 支払い方法の再取得
     await fetchPaymentMethods()
     showPaymentMethodForm.value = false
 
@@ -608,7 +517,6 @@ onMounted(async () => {
         ? currentPlan.value.currentAccountCount 
         : 1
       formState.accountCount = initialAccountCount
-      accountUpdateForm.newAccountCount = initialAccountCount
     }
   } catch (error) {
     if (!error.name === 'AbortError') {
@@ -625,6 +533,28 @@ onUnmounted(() => {
     updateCardElement.value.destroy()
   }
   cleanup()
+})
+
+// ステップ管理用の状態を追加
+const currentStep = ref('plan-selection') // 'plan-selection' または 'payment'
+
+// プラン選択から支払いステップへの遷移
+const handlePlanSelection = () => {
+  //if (formState.selectedPlan && formState.selectedPlan !== currentPlan.value?.planId) {
+  currentStep.value = 'payment'
+  //}
+}
+
+// ステップのタイトルを取得する計算プロパティを追加
+const getStepTitle = computed(() => {
+  switch (currentStep.value) {
+  case 'payment':
+    return formState.selectedPlan === 'business' 
+      ? 'アカウント数設定・支払い情報' 
+      : 'プラン変更'
+  default:
+    return 'プラン選択'
+  }
 })
 </script>
 
@@ -655,11 +585,9 @@ onUnmounted(() => {
 .stripe-element:empty {
   background-color: white;
 }
-
 .price-line {
   line-height: 1.6;
 }
-
 .v-list-item--density-compact.v-list-item--one-line {
   min-height: auto;
 }
