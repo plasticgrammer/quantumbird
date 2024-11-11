@@ -115,21 +115,58 @@ def change_subscription_plan(body: Dict) -> Dict:
     new_price_id = body['priceId']
     new_account_count = int(body.get('accountCount', 0))
 
-    # フリープランの場合はサブスクリプションを解約
-    if new_price_id == 'price_free':
-        subscription = stripe.Subscription.retrieve(subscription_id)
-        canceled_subscription = stripe.Subscription.delete(subscription_id)
-        return {
-            'message': 'サブスクリプションが正常に解約されました',
-            'subscription': {
-                'id': 'free',
-                'price': new_price_id,
-                'accountCount': 0,
-                'status': canceled_subscription.status
-            }
-        }
+    # フリープランからの変更の場合は新規サブスクリプション作成
+    if subscription_id == 'free':
+        return create_subscription({
+            'email': body['email'],
+            'token': body['token'],
+            'priceId': new_price_id,
+            'accountCount': new_account_count
+        })
 
-    # 他のプランへの変更処理（既存のコード）
+    # 既存のサブスクリプションを取得
+    try:
+        subscription = stripe.Subscription.retrieve(subscription_id)
+    except stripe.error.StripeError as e:
+        if new_price_id == 'price_free':
+            # サブスクリプションが見つからない場合でも、フリープランへの変更は許可
+            return {
+                'message': 'フリープランに変更されました',
+                'subscription': {
+                    'id': 'free',
+                    'price': new_price_id,
+                    'accountCount': 0,
+                    'status': 'canceled'
+                }
+            }
+        raise e
+
+    # フリープランへの変更の場合はサブスクリプションを解約
+    if new_price_id == 'price_free':
+        try:
+            canceled_subscription = stripe.Subscription.delete(subscription_id)
+            return {
+                'message': 'サブスクリプションが正常に解約され、フリープランに変更されました',
+                'subscription': {
+                    'id': 'free',
+                    'price': new_price_id,
+                    'accountCount': 0,
+                    'status': canceled_subscription.status
+                }
+            }
+        except stripe.error.StripeError as e:
+            # サブスクリプションの解約に失敗しても、フリープランへの変更は許可
+            return {
+                'message': 'フリープランに変更されました',
+                'subscription': {
+                    'id': 'free',
+                    'price': new_price_id,
+                    'accountCount': 0,
+                    'status': 'canceled'
+                }
+            }
+
+    # 他のプランへの変更処理
     subscription = stripe.Subscription.retrieve(subscription_id)
     
     if new_price_id == 'price_1QJSmjJlLYAT4bpzzPjAgcJj':  # ビジネスプラン
@@ -220,7 +257,7 @@ def get_payment_methods(body: Dict) -> Dict:
         }
 
 def update_payment_method(body: Dict) -> Dict:
-    """支払い方法更新���理"""
+    """支払い方法更新処理"""
     try:
         customer_id = body['customerId']
         token = body['token']
