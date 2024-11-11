@@ -205,6 +205,45 @@ def get_payment_methods(body: Dict) -> Dict:
             'error': str(e)
         }
 
+def update_payment_method(body: Dict) -> Dict:
+    """支払い方法更新処理"""
+    try:
+        customer_id = body['customerId']
+        token = body['token']
+
+        # 既存の支払い方法を削除
+        payment_methods = stripe.PaymentMethod.list(
+            customer=customer_id,
+            type='card'
+        )
+        for pm in payment_methods.data:
+            stripe.PaymentMethod.detach(pm.id)
+
+        # 新しい支払い方法を追加
+        payment_method = stripe.PaymentMethod.create(
+            type='card',
+            card={'token': token}
+        )
+        stripe.PaymentMethod.attach(
+            payment_method.id,
+            customer=customer_id
+        )
+
+        return {
+            'message': '支払い方法が正常に更新されました',
+            'paymentMethod': {
+                'id': payment_method.id,
+                'brand': payment_method.card.brand,
+                'last4': payment_method.card.last4,
+                'expMonth': payment_method.card.exp_month,
+                'expYear': payment_method.card.exp_year
+            }
+        }
+    except Exception as e:
+        return {
+            'error': str(e)
+        }
+
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """メインハンドラー関数"""
     try:
@@ -222,6 +261,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             result = change_subscription_plan(body)
         elif path == '/payment/payment-methods' and method == 'POST':
             result = get_payment_methods(body)
+        elif path == '/payment/update-payment-method' and method == 'POST':
+            result = update_payment_method(body)
         else:
             return create_response(404, {'error': '指定されたエンドポイントは存在しません'})
 

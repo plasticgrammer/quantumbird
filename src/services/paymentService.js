@@ -17,3 +17,7 @@ export const changePlan = async (changeData) => {
 export const getPaymentMethods = async (email) => {
   return await apiClient.post(`${BASE_PATH}/payment-methods`, { email })
 }
+
+export const updatePaymentMethod = async (updateData) => {
+  return apiClient.post(`${BASE_PATH}/update-payment-method`, updateData)
+}

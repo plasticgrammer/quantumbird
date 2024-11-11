@@ -526,6 +526,14 @@ Resources:
             Method: POST
             Auth:
               Authorizer: CognitoAuthorizer
+        UpdatePaymentMethod:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /payment/update-payment-method
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   # ------------------------------------------------------------#
   #  Lambda Layer

@@ -186,7 +186,7 @@
               
               <!-- 現在の支払い方法表示 -->
               <template v-if="!showPaymentMethodForm">
-                <div class="mt-2" v-if="currentPaymentMethod">
+                <div v-if="currentPaymentMethod" class="mt-2">
                   <div class="d-flex align-center">
                     <v-icon class="mr-2">mdi-credit-card</v-icon>
                     <span>**** **** **** {{ currentPaymentMethod.last4 }}</span>
@@ -201,8 +201,8 @@
               <v-form
                 v-else
                 ref="paymentMethodFormRef"
-                @submit.prevent="handlePaymentMethodUpdate"
                 class="mt-4"
+                @submit.prevent="handlePaymentMethodUpdate"
               >
                 <PaymentMethodForm
                   element-id="card-element-update"
