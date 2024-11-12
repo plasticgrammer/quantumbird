@@ -369,7 +369,6 @@
       <v-card class="completion-dialog rounded-xl">
         <div class="completion-background">
           <div class="ripple-effect" />
-          <div class="sparkles" />
         </div>
         <v-card-text class="text-center pa-8 pb-2">
           <div class="completion-icon-wrapper mb-10">
@@ -691,7 +690,7 @@ const handleApprove = async (memberUuid) => {
 const handleResend = async () => {
   const confirmed = await showConfirmDialog(
     '確認',
-    `報告要求を［報告なし${unconfirmedCount.value}名］に送信します。\nよろしいですか？`
+    `報告要求を［報告なし${unconfirmedCount.value}名］に送信します。\nよ���しいですか？`
   )
 
   if (confirmed) {
@@ -699,7 +698,7 @@ const handleResend = async () => {
       await sendRequest(props.organizationId, props.weekString)
       showNotification('報告要求を送信しました')
     } catch (error) {
-      showError('報��要求の送信に失敗しました', error)
+      showError('報告要求の送信に失敗しました', error)
     }
   }
 }
@@ -839,18 +838,6 @@ watchEffect(() => {
   animation: ripple 3s ease-out infinite;
 }
 
-.sparkles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: radial-gradient(circle, #fff 1px, transparent 1px),
-    radial-gradient(circle, #fff 1px, transparent 1px);
-  background-size: 30px 30px;
-  animation: sparkle 4s linear infinite;
-}
-
 .completion-icon-wrapper {
   position: relative;
   display: inline-block;
@@ -961,21 +948,6 @@ watchEffect(() => {
   }
 }
 
-@keyframes sparkle {
-  0% {
-    background-position: 0 0, 15px 15px;
-    opacity: 0.3;
-  }
-  50% {
-    background-position: -15px -15px, 0 0;
-    opacity: 0.5;
-  }
-  100% {
-    background-position: 0 0, 15px 15px;
-    opacity: 0.3;
-  }
-}
-
 @keyframes fadeInUp {
   0% {
     transform: translateY(20px);
@@ -985,21 +957,6 @@ watchEffect(() => {
     transform: translateY(0);
     opacity: 1;
   }
-}
-
-/* v-dialogのトランジション用スタイル */
-:deep(.v-dialog-transition-enter-active) {
-  transition: all 0.3s ease-out;
-}
-
-:deep(.v-dialog-transition-leave-active) {
-  transition: all 0.2s ease-in;
-}
-
-:deep(.v-dialog-transition-enter-from),
-:deep(.v-dialog-transition-leave-to) {
-  transform: scale(0.9);
-  opacity: 0;
 }
 
 .w-100 {
