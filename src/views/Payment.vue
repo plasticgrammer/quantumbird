@@ -70,9 +70,9 @@
                       </div>
                     </div>
                     <div class="text-subtitle-1 font-weight-regular">
-                      選択アカウント数: {{ formState.accountCount }}
+                      アカウント数: {{ formState.accountCount }}
                     </div>
-                    <div class="text-h5 mt-2">
+                    <div class="text-h6 mt-2">
                       合計: ¥{{ plan.getPrice(formState.accountCount).toLocaleString() }}<span class="text-body-1">/月</span>
                     </div>
                   </template>
@@ -122,7 +122,7 @@
 
       <!-- 支払い情報フォーム - 支払いステップの時のみ表示 -->
       <template v-if="currentStep === 'payment'">
-        <v-card-text class="px-6 py-4">
+        <v-card-text class="px-6 pb-4">
           <!-- 変更内容カード -->
           <v-card class="mb-4 pa-4" variant="outlined">
             <div class="text-subtitle-1 mb-2">変更内容</div>
@@ -174,7 +174,6 @@
             <v-card class="mb-4 pa-4" variant="outlined">
               <h3 class="text-h6 mb-4">支払い方法</h3>
 
-              <!-- 支払い方法フォーム -->
               <template v-if="!currentPaymentMethod">
                 <PaymentMethodForm
                   ref="paymentFormRef"
@@ -184,7 +183,6 @@
                 />
               </template>
 
-              <!-- 支払い方法更新フォーム -->
               <template v-else-if="isPaymentMethodUpdateMode">
                 <PaymentMethodForm
                   element-id="payment-update"
@@ -224,7 +222,6 @@
                       有効期限: {{ String(currentPaymentMethod.expMonth).padStart(2, '0') }}/{{ String(currentPaymentMethod.expYear).slice(-2) }}
                     </span>
                   </div>
-                  <!-- 支払い方法変更ボタン - 有料プラン利用中で支払い方法が登録済みの場合のみ表示 -->
                   <v-btn
                     variant="text"
                     color="primary"
@@ -251,7 +248,6 @@
           </v-btn>
         </v-card-text>
 
-        <!-- 戻るボタン -->
         <v-card-text class="px-6 py-4">
           <v-btn
             variant="outlined"
@@ -266,8 +262,33 @@
     <!-- 完了ダイアログ -->
     <v-dialog v-model="showSuccessDialog" max-width="400">
       <v-card>
-        <v-card-title>プラン変更完了</v-card-title>
-        <v-card-text>プラン変更が完了しました。</v-card-text>
+        <v-card-title class="text-h6">プラン変更完了</v-card-title>
+        <v-card-text>
+          <div class="my-2">以下の内容でプランを変更しました。</div>
+          <v-card variant="outlined" class="pa-3">
+            <div class="text-subtitle-1 font-weight-bold mb-2">
+              {{ plans.find(p => p.planId === formState.selectedPlan)?.name }}
+            </div>
+            <template v-if="formState.selectedPlan === 'business'">
+              <div class="text-body-1">
+                アカウント数: {{ formState.accountCount }}
+              </div>
+              <div class="text-body-1">
+                月額料金: ¥{{ plans.find(p => p.planId === 'business').getPrice(formState.accountCount).toLocaleString() }}/月
+              </div>
+            </template>
+            <template v-else-if="formState.selectedPlan === 'pro'">
+              <div class="text-body-1">
+                月額料金: ¥{{ plans.find(p => p.planId === 'pro').price.toLocaleString() }}/月
+              </div>
+            </template>
+            <template v-else>
+              <div class="text-body-1">
+                無料
+              </div>
+            </template>
+          </v-card>
+        </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
@@ -354,27 +375,13 @@ const needsPaymentMethod = computed(() => {
          ['pro', 'business'].includes(formState.selectedPlan)
 })
 
-const getStepTitle = computed(() => {
-  switch (currentStep.value) {
-  case 'payment':
-    return formState.selectedPlan === 'business' 
-      ? 'アカウント数設定・支払い情報' 
-      : 'プラン変更'
-  default:
-    return 'プラン選択'
-  }
-})
+const getStepTitle = computed(() => currentStep.value === 'payment' ? 'プラン変更' : 'プラン選択')
 
-// Methods
 const getCardColor = (plan) => {
-  if (currentPlan.value?.planId === plan.planId && formState.selectedPlan === plan.planId) {
-    return 'blue-darken-1'
-  }
-  if (currentPlan.value?.planId === plan.planId) {
-    return 'blue-lighten-4'
-  }
   if (formState.selectedPlan === plan.planId) {
-    return 'blue-accent-2'
+    return 'indigo-lighten-1'
+  } else if (currentPlan.value?.planId === plan.planId) {
+    return 'indigo-lighten-5'
   }
   return ''
 }
@@ -512,7 +519,7 @@ const handleSubmit = async () => {
         // 新規支払い方法の登録が必要な場合
         const { token } = await paymentFormRef.value.submit()
         if (!token) {
-          showError('支払い情報の取得に失敗しました')
+          showError('支払い情報の���得に失敗しました')
           return
         }
 
@@ -597,18 +604,10 @@ onUnmounted(() => {
   min-height: auto;
 }
 
-.current-plan {
-  border: 2px solid #1867c0;
-}
-
 .plan-card {
   height: 100%;
-  transition: all 0.3s ease;
+  border: 1px solid currentColor;
   position: relative;
-}
-
-.selected-plan {
-  border: 2px solid currentColor;
 }
 
 .stripe-element {
@@ -619,9 +618,11 @@ onUnmounted(() => {
 .stripe-element:empty {
   background-color: white;
 }
+
 .price-line {
   line-height: 1.6;
 }
+
 .v-list-item--density-compact.v-list-item--one-line {
   min-height: auto;
 }

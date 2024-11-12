@@ -1,6 +1,5 @@
 <template>
   <v-form ref="formRef">
-    <!-- カード所有者名 -->
     <v-text-field
       v-model="formData.cardName"
       label="カード名義"
@@ -24,7 +23,6 @@
       </div>
     </div>
 
-    <!-- 送信ボタン - showSubmitButtonがtrueの場合のみ表示 -->
     <slot v-if="showSubmitButton" name="submit-button">
       <v-btn
         type="submit"
@@ -75,15 +73,12 @@ const formData = reactive({
   cardName: ''
 })
 
-// Define validationRules as a reactive const instead of a local variable
-/* eslint-disable-next-line no-unused-vars */
 const validationRules = reactive({
   cardName: [
     v => !!v || 'カード名義は必須です'
   ]
 })
 
-// submitメソッドを外部から呼び出せるように定義
 const submit = async () => {
   const form = formRef.value
   if (!form) return null
@@ -108,18 +103,17 @@ const submit = async () => {
   }
 }
 
-// フォーム送信ハンドラ - ボタンクリック時
+// 外部からアクセスできるようにdefineExpose
+defineExpose({
+  submit
+})
+
 const handleSubmit = async () => {
   const result = await submit()
   if (result) {
     emit('submit', { token: result.token })
   }
 }
-
-// 外部からアクセスできるようにdefineExpose
-defineExpose({
-  submit
-})
 
 onMounted(async () => {
   try {

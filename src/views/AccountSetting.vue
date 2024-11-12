@@ -42,7 +42,7 @@
           <v-icon class="ml-1" size="small">mdi-chevron-right</v-icon>
         </v-btn>
 
-        <v-card class="mt-4 mb-2" elevation="0" color="blue-lighten-4 border-md" outlined>
+        <v-card class="mt-4 mb-2" elevation="0" color="indigo-lighten-5 border-md" outlined>
           <v-card-title>契約プラン</v-card-title>
           <v-card-text class="px-6">
             <p class="mb-3">{{ currentPlanName }}</p>
