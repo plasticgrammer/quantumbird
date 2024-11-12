@@ -30,6 +30,10 @@ organizations_table = dynamodb.Table(organizations_table_name)
 members_table = dynamodb.Table(members_table_name)
 weekly_reports_table = dynamodb.Table(weekly_reports_table_name)
 
+# 定数の追加（ファイル先頭の定数定義部分に追加）
+ADVICE_TICKETS_MAX = 3
+ADVICE_TICKETS_INCREMENT = 3
+
 def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
     try:
@@ -107,7 +111,9 @@ def handle_post_report(event):
             return create_response(404, 'Member not found')
         
         current_tickets = member.get('adviceTickets', 0)
-        member['adviceTickets'] = current_tickets + 3
+        # MAX以上の場合はそのまま、それ以外の場合は加算して最大値制限
+        if current_tickets < ADVICE_TICKETS_MAX:
+            member['adviceTickets'] = min(current_tickets + ADVICE_TICKETS_INCREMENT, ADVICE_TICKETS_MAX)
         
         # トランザクションで両方のテーブルを更新
         transaction_items = [

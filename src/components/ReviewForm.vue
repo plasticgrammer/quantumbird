@@ -360,6 +360,62 @@
         </v-btn>
       </v-col>
     </v-row>
+
+    <!-- 達成確認ダイアログ -->
+    <v-dialog
+      v-model="showCompletionDialog"
+      max-width="400"
+    >
+      <v-card class="completion-dialog rounded-xl">
+        <div class="completion-background">
+          <div class="ripple-effect" />
+          <div class="sparkles" />
+        </div>
+        <v-card-text class="text-center pa-8 pb-2">
+          <div class="completion-icon-wrapper mb-10">
+            <v-icon
+              icon="mdi-check-circle"
+              color="info"
+              size="80"
+              class="completion-icon"
+            />
+            <div class="completion-icon-ring" />
+            <div class="completion-icon-ring delay-1" />
+            <div class="completion-icon-ring delay-2" />
+          </div>
+          <div class="text-h5 font-weight-bold mb-4 completion-title">
+            すべての報告を確認しました！
+          </div>
+          <div class="text-body-1 font-weight-medium mb-2 fade-in-up delay-1">
+            メンバー{{ reports.length }}名の週次報告確認が完了しました
+          </div>
+          <div class="text-subtitle-1 text-grey-darken-1 fade-in-up delay-2">
+            おつかれさまでした<v-icon color="amber-accent-3" class="ml-1 mt-n1">mdi-emoticon-happy-outline</v-icon>
+          </div>
+        </v-card-text>
+        <v-card-actions class="pa-4 d-flex flex-column">
+          <v-btn
+            color="secondary"
+            size="large"
+            class="px-6 fade-in-up delay-3 mb-2 w-100"
+            @click="copyShareUrl"
+          >
+            共有する
+            <v-icon class="ml-2">
+              mdi-share-variant
+            </v-icon>
+          </v-btn>
+          <v-btn
+            color="primary"
+            size="large"
+            class="px-6 fade-in-up delay-3 w-100"
+            @click="showCompletionDialog = false"
+          >
+            閉じる
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -440,6 +496,11 @@ const statusCounts = computed(() => {
     counts[report.status]++
     return counts
   }, { all: reports.value.length, none: 0, pending: 0, feedback: 0, approved: 0 })
+})
+
+// 全員の報告が確認済みかどうかの判定
+const isAllCompleted = computed(() => {
+  return reports.value.length > 0 && reports.value.every(report => report.status === 'approved')
 })
 
 // メモ化されたフィルタリング
@@ -638,7 +699,7 @@ const handleResend = async () => {
       await sendRequest(props.organizationId, props.weekString)
       showNotification('報告要求を送信しました')
     } catch (error) {
-      showError('報告要求の送信に失敗しました', error)
+      showError('報��要求の送信に失敗しました', error)
     }
   }
 }
@@ -693,6 +754,17 @@ onMounted(() => {
     initReportRefs()
   })
 })
+
+const showCompletionDialog = ref(false)
+
+// 全員の報告が確認済みになった時にダイアログを表示
+watchEffect(() => {
+  if (isAllCompleted.value && !props.readonly) {
+    nextTick(() => {
+      showCompletionDialog.value = true
+    })
+  }
+})
 </script>
 
 <style scoped>
@@ -737,5 +809,200 @@ onMounted(() => {
 
 .borderless-textarea :deep(.v-field__outline) {
   display: none;
+}
+
+.completion-dialog {
+  background: linear-gradient(165deg, #ffffff 0%, #f8fbff 100%);
+  overflow: hidden;
+  position: relative;
+}
+
+.completion-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 160px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  opacity: 0.1;
+  overflow: hidden;
+}
+
+.ripple-effect {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  padding-bottom: 200%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(3, 169, 244, 0.1) 0%, transparent 70%);
+  animation: ripple 3s ease-out infinite;
+}
+
+.sparkles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle, #fff 1px, transparent 1px),
+    radial-gradient(circle, #fff 1px, transparent 1px);
+  background-size: 30px 30px;
+  animation: sparkle 4s linear infinite;
+}
+
+.completion-icon-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.completion-icon {
+  position: relative;
+  z-index: 2;
+  animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.completion-icon-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 3px solid #0288d1;
+  opacity: 0;
+  animation: ringPulse 1.5s ease-out 0.4s forwards;
+}
+
+.completion-icon-ring.delay-1 {
+  animation: ringPulse 1.5s ease-out 0.8s infinite;
+}
+
+.completion-icon-ring.delay-2 {
+  animation: ringPulse 1.5s ease-out 1.2s infinite;
+}
+
+.completion-title {
+  background: linear-gradient(45deg, #03a9f4, #0288d1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: slideIn 0.5s ease-out 0.2s both;
+}
+
+.fade-in-up {
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.fade-in-up.delay-1 {
+  animation-delay: 0.3s;
+}
+
+.fade-in-up.delay-2 {
+  animation-delay: 0.5s;
+}
+
+.fade-in-up.delay-3 {
+  animation-delay: 0.7s;
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes ringPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes slideIn {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes sparkle {
+  0% {
+    background-position: 0 0, 15px 15px;
+    opacity: 0.3;
+  }
+  50% {
+    background-position: -15px -15px, 0 0;
+    opacity: 0.5;
+  }
+  100% {
+    background-position: 0 0, 15px 15px;
+    opacity: 0.3;
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* v-dialogのトランジション用スタイル */
+:deep(.v-dialog-transition-enter-active) {
+  transition: all 0.3s ease-out;
+}
+
+:deep(.v-dialog-transition-leave-active) {
+  transition: all 0.2s ease-in;
+}
+
+:deep(.v-dialog-transition-enter-from),
+:deep(.v-dialog-transition-leave-to) {
+  transform: scale(0.9);
+  opacity: 0;
+}
+
+.w-100 {
+  width: 100%;
 }
 </style>
