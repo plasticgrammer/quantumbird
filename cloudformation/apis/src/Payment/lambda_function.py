@@ -32,7 +32,7 @@ def create_subscription(body: Dict) -> Dict:
     # プランに応じた価格設定とサブスクリプション作成
     if price_id == 'price_1QJSmjJlLYAT4bpzzPjAgcJj':  # ビジネスプラン
         base_price = 2000
-        per_account_price = 300
+        per_account_price = 500
         total_price = base_price + (account_count * per_account_price)
         subscription = stripe.Subscription.create(
             customer=customer.id,
@@ -81,7 +81,7 @@ def update_subscription(body: Dict) -> Dict:
 
     # 新しい金額の計算と更新
     base_price = 2000
-    per_account_price = 300
+    per_account_price = 500
     new_price = base_price + (new_account_count * per_account_price)
 
     # サブスクリプションの更新
@@ -141,17 +141,21 @@ def change_subscription_plan(body: Dict) -> Dict:
             }
         raise e
 
-    # フリープランへの変更の場合はサブスクリプションを解約
+    # フリープランへの変更の場合はサブスクリプションを次回支払い日で解約
     if new_price_id == 'price_free':
         try:
-            canceled_subscription = stripe.Subscription.delete(subscription_id)
+            canceled_subscription = stripe.Subscription.delete(
+                subscription_id,
+                at_period_end=True  # 次回支払い日でキャンセル
+            )
             return {
-                'message': 'サブスクリプションが正常に解約され、フリープランに変更されました',
+                'message': '次回支払い日でフリープランに変更されます',
                 'subscription': {
-                    'id': 'free',
+                    'id': subscription_id,  # フリープランに変更されるまでは既存のサブスクリプションIDを保持
                     'price': new_price_id,
                     'accountCount': 0,
-                    'status': canceled_subscription.status
+                    'status': canceled_subscription.status,
+                    'cancelAt': canceled_subscription.cancel_at  # キャンセル予定日
                 }
             }
         except stripe.error.StripeError as e:
@@ -171,7 +175,7 @@ def change_subscription_plan(body: Dict) -> Dict:
     
     if new_price_id == 'price_1QJSmjJlLYAT4bpzzPjAgcJj':  # ビジネスプラン
         base_price = 2000
-        per_account_price = 300
+        per_account_price = 500
         total_price = base_price + (new_account_count * per_account_price)
         
         # 既存のサブスクリプションアイテムを更新

@@ -1,5 +1,5 @@
 <template>
-  <v-form ref="formRef" @submit.prevent="handleSubmit">
+  <v-form ref="formRef">
     <!-- カード所有者名 -->
     <v-text-field
       v-model="formData.cardName"
@@ -24,8 +24,8 @@
       </div>
     </div>
 
-    <!-- 送信ボタン -->
-    <slot name="submit-button">
+    <!-- 送信ボタン - showSubmitButtonがtrueの場合のみ表示 -->
+    <slot v-if="showSubmitButton" name="submit-button">
       <v-btn
         type="submit"
         color="primary"
@@ -34,6 +34,7 @@
         size="large"
         :loading="loading"
         :disabled="loading"
+        @click.prevent="handleSubmit"
       >
         {{ loading ? '処理中...' : submitButtonText }}
       </v-btn>
@@ -57,6 +58,10 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
+  },
+  showSubmitButton: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -70,18 +75,21 @@ const formData = reactive({
   cardName: ''
 })
 
-const validationRules = {
+// Define validationRules as a reactive const instead of a local variable
+/* eslint-disable-next-line no-unused-vars */
+const validationRules = reactive({
   cardName: [
     v => !!v || 'カード名義は必須です'
   ]
-}
+})
 
-const handleSubmit = async () => {
+// submitメソッドを外部から呼び出せるように定義
+const submit = async () => {
   const form = formRef.value
-  if (!form) return
+  if (!form) return null
   
   const { valid } = await form.validate()
-  if (!valid) return
+  if (!valid) return null
 
   error.value = ''
 
@@ -91,14 +99,27 @@ const handleSubmit = async () => {
     })
 
     if (tokenError) throw new Error(tokenError.message)
-
-    await emit('submit', { token })
+    return { token }
     
   } catch (err) {
     error.value = err.message || '処理に失敗しました'
     emit('error', error.value)
+    return null
   }
 }
+
+// フォーム送信ハンドラ - ボタンクリック時
+const handleSubmit = async () => {
+  const result = await submit()
+  if (result) {
+    emit('submit', { token: result.token })
+  }
+}
+
+// 外部からアクセスできるようにdefineExpose
+defineExpose({
+  submit
+})
 
 onMounted(async () => {
   try {

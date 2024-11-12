@@ -142,7 +142,7 @@
                       {{ project.name }}
                     </v-list-item-title>
                     <v-list-item-subtitle class="d-block ml-2 my-2">
-                      <ul class="work-items-list">
+                      <ul class="work-items-list text-black">
                         <li v-for="(item, itemIndex) in project.workItems" :key="itemIndex">
                           {{ item.content }}
                         </li>
