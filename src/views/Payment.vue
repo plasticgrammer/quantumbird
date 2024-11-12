@@ -174,15 +174,18 @@
             <v-card class="mb-4 pa-4" variant="outlined">
               <h3 class="text-h6 mb-4">支払い方法</h3>
 
-              <template v-if="!currentPaymentMethod">
+              <!-- 新規支払い方法入力フォーム -->
+              <template v-if="!currentPaymentMethod || !isSubscriptionActive.value">
                 <PaymentMethodForm
                   ref="paymentFormRef"
-                  :element-id="isNewCustomer ? 'card-element' : 'card-element-update'"
+                  :element-id="'payment-form'"
                   :loading="isLoading"
+                  :show-submit-button="false"
                   @error="errorMessage = $event"
                 />
               </template>
 
+              <!-- 支払い方法更新フォーム -->
               <template v-else-if="isPaymentMethodUpdateMode">
                 <PaymentMethodForm
                   element-id="payment-update"
@@ -212,25 +215,27 @@
                 </PaymentMethodForm>
               </template>
 
-              <!-- 現在の支払い方法を表示 -->
-              <div v-else class="mb-4">
-                <div class="d-flex align-center justify-space-between">
-                  <div class="d-flex align-center">
-                    <v-icon class="mr-2">mdi-credit-card</v-icon>
-                    <span>**** **** **** {{ currentPaymentMethod.last4 }}</span>
-                    <span class="ml-2 text-caption">
-                      有効期限: {{ String(currentPaymentMethod.expMonth).padStart(2, '0') }}/{{ String(currentPaymentMethod.expYear).slice(-2) }}
-                    </span>
+              <!-- 現在の支払い方法表示 -->
+              <template v-else>
+                <div class="mb-4">
+                  <div class="d-flex align-center justify-space-between">
+                    <div class="d-flex align-center">
+                      <v-icon class="mr-2">mdi-credit-card</v-icon>
+                      <span>**** **** **** {{ currentPaymentMethod.last4 }}</span>
+                      <span class="ml-2 text-caption">
+                        有効期限: {{ String(currentPaymentMethod.expMonth).padStart(2, '0') }}/{{ String(currentPaymentMethod.expYear).slice(-2) }}
+                      </span>
+                    </div>
+                    <v-btn
+                      variant="text"
+                      color="primary"
+                      @click="isPaymentMethodUpdateMode = true"
+                    >
+                      支払い方法を変更
+                    </v-btn>
                   </div>
-                  <v-btn
-                    variant="text"
-                    color="primary"
-                    @click="isPaymentMethodUpdateMode = true"
-                  >
-                    支払い方法を変更
-                  </v-btn>
                 </div>
-              </div>
+              </template>
             </v-card>
           </template>
 
@@ -366,8 +371,6 @@ const currentPlan = computed(() => {
   }
 })
 
-const isNewCustomer = computed(() => !currentPaymentMethod.value)
-
 const needsPaymentMethod = computed(() => {
   if (formState.selectedPlan === 'free') return false
   if (!currentPaymentMethod.value) return true
@@ -386,6 +389,11 @@ const getCardColor = (plan) => {
   return ''
 }
 
+const isSubscriptionActive = computed(() => {
+  const subscription = store.getters['auth/currentSubscription']
+  return subscription?.status === 'active'
+})
+
 const handleError = (error, customMessage = '処理に失敗しました') => {
   console.error(error)
   errorMessage.value = error.message || customMessage
@@ -396,23 +404,37 @@ const resetForm = () => {
   errorMessage.value = ''
 }
 
+// fetchPaymentMethodsを修正
 const fetchPaymentMethods = async () => {
   const user = store.state.auth.user
   if (!user) return
 
   try {
+    console.log('Fetching payment methods...')
     const response = await getPaymentMethods(user.email, { 
       signal: abortController.signal 
     })
+    console.log('Payment methods response:', response)
     const methods = response?.data?.paymentMethods || []
-    currentPaymentMethod.value = methods[0] || null
+    if (methods.length > 0) {
+      currentPaymentMethod.value = {
+        last4: methods[0].card.last4,
+        expMonth: methods[0].card.exp_month,
+        expYear: methods[0].card.exp_year
+      }
+      console.log('Current payment method set:', currentPaymentMethod.value)
+    } else {
+      currentPaymentMethod.value = null
+    }
   } catch (error) {
+    console.error('Error fetching payment methods:', error)
     if (!error.name === 'AbortError') {
       showError('支払い方法の取得に失敗しました')
     }
   }
 }
 
+// handlePaymentSubmitメソッドを修正
 const handlePaymentSubmit = async ({ token }) => {
   try {
     const selectedPlan = plans.find(p => p.planId === formState.selectedPlan)
@@ -429,7 +451,8 @@ const handlePaymentSubmit = async ({ token }) => {
     await store.dispatch('auth/updateSubscriptionAttributes', {
       planId: selectedPlan.planId,
       accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0,
-      subscriptionId: subscription.id
+      subscriptionId: subscription.id,
+      status: subscription.status
     })
 
     showSuccessDialog.value = true
@@ -440,11 +463,6 @@ const handlePaymentSubmit = async ({ token }) => {
   } catch (err) {
     handleError(err)
   }
-}
-
-const handlePaymentMethodUpdate = async ({ token }) => {
-  await updatePaymentMethod({ token: token.id })
-  await fetchPaymentMethods()
 }
 
 const handlePlanSelection = async () => {
@@ -491,65 +509,85 @@ const validateForm = () => {
 
 const handleSubmit = async () => {
   try {
+    console.log('handleSubmit start', {
+      selectedPlan: formState.selectedPlan,
+      isActive: isSubscriptionActive.value,
+      needsPayment: needsPaymentMethod.value
+    })
+    
     isLoading.value = true
     errorMessage.value = ''
 
     const selectedPlan = plans.find(p => p.planId === formState.selectedPlan)
     if (!selectedPlan) {
-      showError('無効なプランが選択されました')
-      return
+      throw new Error('無効なプランが選択されました')
     }
 
     const errors = validateForm()
     if (errors.length > 0) {
-      showError(errors[0])
-      return
+      throw new Error(errors[0])
     }
 
     // フリープランへの変更
     if (formState.selectedPlan === 'free') {
-      await changePlan({
+      console.log('Changing to free plan')
+      if (!currentPlan.value?.subscriptionId) {
+        throw new Error('サブスクリプションIDが見つかりません')
+      }
+      
+      const response = await changePlan({
         subscriptionId: currentPlan.value.subscriptionId,
         priceId: selectedPlan.priceId,
         accountCount: 0
       })
+
+      await store.dispatch('auth/updateSubscriptionAttributes', {
+        planId: selectedPlan.planId,
+        accountCount: 0,
+        subscriptionId: currentPlan.value.subscriptionId,
+        status: response.subscription.status
+      })
     } else {
       // 有料プランへの変更
-      if (needsPaymentMethod.value && paymentFormRef.value) {
-        // 新規支払い方法の登録が必要な場合
-        const { token } = await paymentFormRef.value.submit()
-        if (!token) {
-          showError('支払い情報の���得に失敗しました')
-          return
+      if (needsPaymentMethod.value || !isSubscriptionActive.value) {
+        console.log('Need new payment method or subscription')
+        console.log('Payment form ref:', paymentFormRef.value)
+
+        // フォームの存在確認を改善
+        await nextTick()
+        if (!paymentFormRef.value) {
+          throw new Error('支払いフォームの準備ができていません。ページを更新してお試しください。')
         }
 
-        if (isNewCustomer.value) {
-          // 新規顧客の場合は新規サブスクリプション作成
-          await handlePaymentSubmit({ token })
-        } else {
-          // 既存顧客の場合は支払い方法を更新してからプラン変更
-          await handlePaymentMethodUpdate({ token })
-          await changePlan({
-            subscriptionId: currentPlan.value.subscriptionId,
-            priceId: selectedPlan.priceId,
-            accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0
-          })
+        const result = await paymentFormRef.value.submit()
+        console.log('Payment form submit result:', result)
+        
+        if (!result?.token) {
+          throw new Error('支払い情報の取得に失敗しました')
         }
+        
+        // 新規サブスクリプション作成
+        await handlePaymentSubmit({ token: result.token })
       } else {
-        // 支払い方法の更新が不要な場合は直接プラン変更
-        await changePlan({
+        console.log('Updating existing subscription')
+        if (!currentPlan.value?.subscriptionId) {
+          throw new Error('サブスクリプションIDが見つかりません')
+        }
+
+        const response = await changePlan({
           subscriptionId: currentPlan.value.subscriptionId,
           priceId: selectedPlan.priceId,
           accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0
         })
+
+        await store.dispatch('auth/updateSubscriptionAttributes', {
+          planId: selectedPlan.planId,
+          accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0,
+          subscriptionId: currentPlan.value.subscriptionId,
+          status: response.subscription.status
+        })
       }
     }
-
-    await store.dispatch('auth/updateSubscriptionAttributes', {
-      planId: selectedPlan.planId,
-      accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0,
-      subscriptionId: currentPlan.value?.subscriptionId
-    })
 
     showSuccessDialog.value = true
     resetForm()
@@ -557,7 +595,8 @@ const handleSubmit = async () => {
     emit('payment-success')
 
   } catch (err) {
-    handleError(err)
+    console.error('Plan change error:', err)
+    showError(err.message || '処理に失敗しました')
   } finally {
     isLoading.value = false
   }
@@ -576,7 +615,6 @@ onMounted(async () => {
     if (user) {
       formState.email = user.email
       formState.selectedPlan = store.getters['auth/currentSubscription'].planId
-      await fetchPaymentMethods()
     } else {
       formState.selectedPlan = 'free'
     }

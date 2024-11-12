@@ -57,7 +57,8 @@ def create_subscription(body: Dict) -> Dict:
             'subscription': {
                 'id': 'free',
                 'price': price_id,
-                'accountCount': 0
+                'accountCount': 0,
+                'status': 'active'
             }
         }
 
@@ -66,7 +67,8 @@ def create_subscription(body: Dict) -> Dict:
         'subscription': {
             'id': subscription.id,
             'price': price_id,
-            'accountCount': account_count
+            'accountCount': account_count,
+            'status': subscription.status
         }
     }
 
@@ -101,11 +103,14 @@ def update_subscription(body: Dict) -> Dict:
         metadata={'account_count': str(new_account_count)}
     )
 
+    updated_subscription = stripe.Subscription.retrieve(subscription_id)
+
     return {
         'message': 'アカウント数が正常に更新されました',
         'subscription': {
             'id': subscription_id,
-            'accountCount': new_account_count
+            'accountCount': new_account_count,
+            'status': updated_subscription.status
         }
     }
 
@@ -204,12 +209,16 @@ def change_subscription_plan(body: Dict) -> Dict:
             proration_behavior='always_invoice'
         )
 
+    # プラン変更後のサブスクリプション情報を取得
+    updated_subscription = stripe.Subscription.retrieve(subscription_id)
+    
     return {
         'message': 'プランが正常に変更されました',
         'subscription': {
             'id': subscription_id,
             'price': new_price_id,
-            'accountCount': new_account_count
+            'accountCount': new_account_count,
+            'status': updated_subscription.status
         }
     }
 
