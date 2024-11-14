@@ -7,6 +7,21 @@ from common.utils import create_response
 # Stripe APIキーの設定
 stripe.api_key = os.environ['STRIPE_SECRET_KEY']
 
+# プラン関連の定数
+PRICE_ID_FREE = 'price_free'
+PRICE_ID_PRO = 'price_1QJSigJlLYAT4bpznFUNs5eg'
+PRICE_ID_BUSINESS = 'price_1QJSmjJlLYAT4bpzzPjAgcJj'
+PRODUCT_ID_BUSINESS = 'prod_RBqT2Wa1VvXK56'
+
+# 料金関連の定数
+BUSINESS_BASE_PRICE = 2000
+BUSINESS_PER_ACCOUNT_PRICE = 500
+
+# 設定値の定数
+VALID_PRICE_IDS = [PRICE_ID_FREE, PRICE_ID_PRO, PRICE_ID_BUSINESS]
+CURRENCY = 'jpy'
+BILLING_INTERVAL = 'month'
+
 def create_subscription(body: Dict) -> Dict:
     """サブスクリプション作成処理"""
     email = body['email']
@@ -15,7 +30,7 @@ def create_subscription(body: Dict) -> Dict:
     account_count = int(body.get('accountCount', 0))  # 文字列を整数に変換
 
     # プランIDの検証
-    valid_price_ids = ['price_free', 'price_1QJSigJlLYAT4bpznFUNs5eg', 'price_1QJSmjJlLYAT4bpzzPjAgcJj']
+    valid_price_ids = VALID_PRICE_IDS
     if price_id not in valid_price_ids:
         raise ValueError('無効なプランIDです')
 
@@ -30,23 +45,21 @@ def create_subscription(body: Dict) -> Dict:
         )
 
     # プランに応じた価格設定とサブスクリプション作成
-    if price_id == 'price_1QJSmjJlLYAT4bpzzPjAgcJj':  # ビジネスプラン
-        base_price = 2000
-        per_account_price = 500
-        total_price = base_price + (account_count * per_account_price)
+    if price_id == PRICE_ID_BUSINESS:  # ビジネスプラン
+        total_price = BUSINESS_BASE_PRICE + (account_count * BUSINESS_PER_ACCOUNT_PRICE)
         subscription = stripe.Subscription.create(
             customer=customer.id,
             items=[{
                 'price_data': {
-                    'currency': 'jpy',
-                    'product': 'prod_RBqT2Wa1VvXK56',  # 商品IDを直接指定
+                    'currency': CURRENCY,
+                    'product': PRODUCT_ID_BUSINESS,  # 商品IDを直接指定
                     'unit_amount': total_price,
-                    'recurring': {'interval': 'month'}
+                    'recurring': {'interval': BILLING_INTERVAL}
                 }
             }],
             metadata={'account_count': str(account_count)}
         )
-    elif price_id != 'price_free':  # プロプラン
+    elif price_id != PRICE_ID_FREE:  # プロプラン
         subscription = stripe.Subscription.create(
             customer=customer.id,
             items=[{'price': price_id}]
@@ -82,18 +95,18 @@ def update_subscription(body: Dict) -> Dict:
     subscription_item = subscription['items']['data'][0]
 
     # 新しい金額の計算と更新
-    base_price = 2000
-    per_account_price = 500
+    base_price = BUSINESS_BASE_PRICE
+    per_account_price = BUSINESS_PER_ACCOUNT_PRICE
     new_price = base_price + (new_account_count * per_account_price)
 
     # サブスクリプションの更新
     stripe.SubscriptionItem.modify(
         subscription_item.id,
         price_data={
-            'currency': 'jpy',
+            'currency': CURRENCY,
             'product': subscription_item.price.product,
             'unit_amount': new_price,
-            'recurring': {'interval': 'month'}
+            'recurring': {'interval': BILLING_INTERVAL}
         }
     )
 
@@ -133,7 +146,7 @@ def change_subscription_plan(body: Dict) -> Dict:
     try:
         subscription = stripe.Subscription.retrieve(subscription_id)
     except stripe.error.StripeError as e:
-        if new_price_id == 'price_free':
+        if new_price_id == PRICE_ID_FREE:
             # サブスクリプションが見つからない場合でも、フリープランへの変更は許可
             return {
                 'message': 'フリープランに変更されました',
@@ -147,7 +160,7 @@ def change_subscription_plan(body: Dict) -> Dict:
         raise e
 
     # フリープランへの変更の場合はサブスクリプションを次回支払い日で解約
-    if new_price_id == 'price_free':
+    if new_price_id == PRICE_ID_FREE:
         try:
             canceled_subscription = stripe.Subscription.delete(
                 subscription_id,
@@ -177,28 +190,39 @@ def change_subscription_plan(body: Dict) -> Dict:
 
     # 他のプランへの変更処理
     subscription = stripe.Subscription.retrieve(subscription_id)
+    customer_id = subscription.customer
+    current_price_id = subscription['items']['data'][0].price.id
     
-    if new_price_id == 'price_1QJSmjJlLYAT4bpzzPjAgcJj':  # ビジネスプラン
-        base_price = 2000
-        per_account_price = 500
-        total_price = base_price + (new_account_count * per_account_price)
+    # 有���プラン間の変更（ビジネスプランへの変更またはビジネスプランからの変更）
+    if (new_price_id == PRICE_ID_BUSINESS or 
+        current_price_id == PRICE_ID_BUSINESS):
+        # 既存のサブスクリプションを解約
+        stripe.Subscription.delete(subscription_id)
         
-        # 既存のサブスクリプションアイテムを更新
-        stripe.SubscriptionItem.modify(
-            subscription['items']['data'][0].id,
-            price_data={
-                'currency': 'jpy',
-                'product': 'prod_RBqT2Wa1VvXK56',
-                'unit_amount': total_price,
-                'recurring': {'interval': 'month'}
-            }
+        # 新しいサブスクリプション設定を準備
+        if new_price_id == PRICE_ID_BUSINESS:  # ビジネスプランへの変更
+            total_price = BUSINESS_BASE_PRICE + (new_account_count * BUSINESS_PER_ACCOUNT_PRICE)
+            subscription_items = [{
+                'price_data': {
+                    'currency': CURRENCY,
+                    'product': PRODUCT_ID_BUSINESS,
+                    'unit_amount': total_price,
+                    'recurring': {'interval': BILLING_INTERVAL}
+                }
+            }]
+            metadata = {'account_count': str(new_account_count)}
+        else:  # ビジネスプランからの変更
+            subscription_items = [{'price': new_price_id}]
+            metadata = {}
+        
+        # 新しいサブスクリプションを作成
+        subscription_response = stripe.Subscription.create(
+            customer=customer_id,
+            items=subscription_items,
+            metadata=metadata
         )
-        # メタデータの更新
-        stripe.Subscription.modify(
-            subscription_id,
-            metadata={'account_count': str(new_account_count)}
-        )
-    else:  # その他のプラン
+    
+    else:  # その他のプラン間の変更
         # プランの変更
         stripe.Subscription.modify(
             subscription_id,
@@ -208,17 +232,15 @@ def change_subscription_plan(body: Dict) -> Dict:
             }],
             proration_behavior='always_invoice'
         )
+        subscription_response = stripe.Subscription.retrieve(subscription_id)
 
-    # プラン変更後のサブスクリプション情報を取得
-    updated_subscription = stripe.Subscription.retrieve(subscription_id)
-    
     return {
         'message': 'プランが正常に変更されました',
         'subscription': {
-            'id': subscription_id,
+            'id': subscription_response.id,
             'price': new_price_id,
             'accountCount': new_account_count,
-            'status': updated_subscription.status
+            'status': subscription_response.status
         }
     }
 
