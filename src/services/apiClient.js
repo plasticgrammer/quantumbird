@@ -183,6 +183,15 @@ api.interceptors.response.use(
   }
 )
 
+const handleError = (error) => {
+  if (error.response) {
+    // サーバーからのレスポンスにエラーが含まれている場合
+    const errorMessage = error.response.data.error || error.response.data.message || 'エラーが発生しました'
+    throw new Error(errorMessage)
+  }
+  throw error
+}
+
 export const callApi = async (method, path, data = null, queryParams = null, options = {}) => {
   try {
     const config = {
@@ -204,11 +213,8 @@ export const callApi = async (method, path, data = null, queryParams = null, opt
   } catch (error) {
     if (axios.isCancel(error)) {
       console.log('Request canceled:', error.message)
-    } else {
-      // Error is already logged in the response interceptor
-      // You can implement additional custom error handling here if needed
     }
-    throw error
+    throw handleError(error)
   }
 }
 
@@ -243,5 +249,4 @@ export const apiClient = {
   post: (path, data, options) => callApi('POST', path, data, null, options),
   put: (path, data, options) => callApi('PUT', path, data, null, options),
   delete: (path, queryParams, options) => callApi('DELETE', path, null, queryParams, options),
-  // Add more methods as needed
 }

@@ -1,26 +1,87 @@
 import json
 import stripe
 import os
+import time
 from typing import Dict, Any
 from common.utils import create_response
 
-# Stripe APIキーの設定
-stripe.api_key = os.environ['STRIPE_SECRET_KEY']
+# 定数のグループ化
+class PaymentConfig:
+    # Stripe関連
+    API_KEY = os.environ['STRIPE_SECRET_KEY']
+    CURRENCY = 'jpy'
+    BILLING_INTERVAL = 'month'
 
-# プラン関連の定数
-PRICE_ID_FREE = 'price_free'
-PRICE_ID_PRO = 'price_1QJSigJlLYAT4bpznFUNs5eg'
-PRICE_ID_BUSINESS = 'price_1QJSmjJlLYAT4bpzzPjAgcJj'
-PRODUCT_ID_BUSINESS = 'prod_RBqT2Wa1VvXK56'
+    # プラン関連
+    PRICE_ID_FREE = 'price_free'
+    PRICE_ID_PRO = 'price_1QJSigJlLYAT4bpznFUNs5eg'
+    PRICE_ID_BUSINESS = 'price_1QJSmjJlLYAT4bpzzPjAgcJj'
+    PRODUCT_ID_BUSINESS = 'prod_RBqT2Wa1VvXK56'
+    VALID_PRICE_IDS = [PRICE_ID_FREE, PRICE_ID_PRO, PRICE_ID_BUSINESS]
 
-# 料金関連の定数
-BUSINESS_BASE_PRICE = 2000
-BUSINESS_PER_ACCOUNT_PRICE = 500
+    # 料金関連
+    BUSINESS_BASE_PRICE = 2000
+    BUSINESS_PER_ACCOUNT_PRICE = 500
 
-# 設定値の定数
-VALID_PRICE_IDS = [PRICE_ID_FREE, PRICE_ID_PRO, PRICE_ID_BUSINESS]
-CURRENCY = 'jpy'
-BILLING_INTERVAL = 'month'
+    # 時間関連
+    SECONDS_PER_DAY = 24 * 3600
+    DAYS_IN_MONTH = 30
+    PLAN_CHANGE_COOLDOWN_SECONDS = 24 * 3600
+    REACTIVATION_WINDOW_SECONDS = 48 * 3600
+
+# Stripeの設定
+stripe.api_key = PaymentConfig.API_KEY
+
+class PaymentError(Exception):
+    """支払い処理に関するカスタムエラー"""
+    pass
+
+class ResponseMessages:
+    """レスポンスメッセージの定数"""
+    SUBSCRIPTION_CREATED = 'サブスクリプションが正常に作成されました'
+    FREE_PLAN_SELECTED = 'フリープランが選択されました'
+    PLAN_CHANGE_SCHEDULED = 'プラン変更が予約されました'
+    ACCOUNT_COUNT_UPDATED = 'アカウント数が正常に更新されました'
+    PAYMENT_METHOD_UPDATED = '支払い方法が正常に更新されました'
+
+def create_error_response(error: Exception) -> Dict:
+    """エラーレスポンスの生成"""
+    if isinstance(error, stripe.error.StripeError):
+        return create_response(400, {'error': str(error)})
+    if isinstance(error, PaymentError):
+        return create_response(400, {'error': str(error)})
+    return create_response(500, {'error': 'Internal server error'})
+
+def get_or_create_customer(email: str, token: str) -> stripe.Customer:
+    """顧客の取得または作成"""
+    customers = stripe.Customer.list(email=email, limit=1)
+    if customers.data:
+        return customers.data[0]
+    return stripe.Customer.create(email=email, source=token)
+
+def calculate_business_price(account_count: int) -> int:
+    """ビジネスプランの価格計算"""
+    return PaymentConfig.BUSINESS_BASE_PRICE + (account_count * PaymentConfig.BUSINESS_PER_ACCOUNT_PRICE)
+
+def create_subscription_response(subscription: Any, price_id: str, account_count: int, message: str = None) -> Dict:
+    """統一されたサブスクリプションレスポンスの生成"""
+    return {
+        'message': message or ResponseMessages.SUBSCRIPTION_CREATED,
+        'subscription': {
+            'id': subscription.id if hasattr(subscription, 'id') else 'free',
+            'price': price_id,
+            'accountCount': account_count,
+            'status': getattr(subscription, 'status', 'active'),
+            'currentPeriodEnd': getattr(subscription, 'current_period_end', None)
+        }
+    }
+
+def check_plan_change_cooldown(subscription: stripe.Subscription) -> None:
+    """プラン変更のクールダウンチェック"""
+    if subscription.metadata.get('last_change_at'):
+        last_change = int(subscription.metadata.get('last_change_at'))
+        if (time.time() - last_change) < PaymentConfig.PLAN_CHANGE_COOLDOWN_SECONDS:
+            raise PaymentError('プラン変更は24時間に1回までです')
 
 def create_subscription(body: Dict) -> Dict:
     """サブスクリプション作成処理"""
@@ -30,36 +91,29 @@ def create_subscription(body: Dict) -> Dict:
     account_count = int(body.get('accountCount', 0))  # 文字列を整数に変換
 
     # プランIDの検証
-    valid_price_ids = VALID_PRICE_IDS
+    valid_price_ids = PaymentConfig.VALID_PRICE_IDS
     if price_id not in valid_price_ids:
         raise ValueError('無効なプランIDです')
 
     # 顧客の作成または取得
-    customers = stripe.Customer.list(email=email, limit=1)
-    if customers.data:
-        customer = customers.data[0]
-    else:
-        customer = stripe.Customer.create(
-            email=email,
-            source=token
-        )
+    customer = get_or_create_customer(email, token)
 
     # プランに応じた価格設定とサブスクリプション作成
-    if price_id == PRICE_ID_BUSINESS:  # ビジネスプラン
-        total_price = BUSINESS_BASE_PRICE + (account_count * BUSINESS_PER_ACCOUNT_PRICE)
+    if price_id == PaymentConfig.PRICE_ID_BUSINESS:  # ビジネスプラン
+        total_price = calculate_business_price(account_count)
         subscription = stripe.Subscription.create(
             customer=customer.id,
             items=[{
                 'price_data': {
-                    'currency': CURRENCY,
-                    'product': PRODUCT_ID_BUSINESS,  # 商品IDを直接指定
+                    'currency': PaymentConfig.CURRENCY,
+                    'product': PaymentConfig.PRODUCT_ID_BUSINESS,  # 商品IDを直接指定
                     'unit_amount': total_price,
-                    'recurring': {'interval': BILLING_INTERVAL}
+                    'recurring': {'interval': PaymentConfig.BILLING_INTERVAL}
                 }
             }],
             metadata={'account_count': str(account_count)}
         )
-    elif price_id != PRICE_ID_FREE:  # プロプラン
+    elif price_id != PaymentConfig.PRICE_ID_FREE:  # プロプラン
         subscription = stripe.Subscription.create(
             customer=customer.id,
             items=[{'price': price_id}]
@@ -75,15 +129,7 @@ def create_subscription(body: Dict) -> Dict:
             }
         }
 
-    return {
-        'message': 'サブスクリプションが正常に作成されました',
-        'subscription': {
-            'id': subscription.id,
-            'price': price_id,
-            'accountCount': account_count,
-            'status': subscription.status
-        }
-    }
+    return create_subscription_response(subscription, price_id, account_count)
 
 def update_subscription(body: Dict) -> Dict:
     """サブスクリプション更新処理"""
@@ -95,18 +141,16 @@ def update_subscription(body: Dict) -> Dict:
     subscription_item = subscription['items']['data'][0]
 
     # 新しい金額の計算と更新
-    base_price = BUSINESS_BASE_PRICE
-    per_account_price = BUSINESS_PER_ACCOUNT_PRICE
-    new_price = base_price + (new_account_count * per_account_price)
+    new_price = calculate_business_price(new_account_count)
 
     # サブスクリプションの更新
     stripe.SubscriptionItem.modify(
         subscription_item.id,
         price_data={
-            'currency': CURRENCY,
+            'currency': PaymentConfig.CURRENCY,
             'product': subscription_item.price.product,
             'unit_amount': new_price,
-            'recurring': {'interval': BILLING_INTERVAL}
+            'recurring': {'interval': PaymentConfig.BILLING_INTERVAL}
         }
     )
 
@@ -127,148 +171,142 @@ def update_subscription(body: Dict) -> Dict:
         }
     }
 
+def create_free_plan_response() -> Dict:
+    """フリープランレスポンスの生成"""
+    return {
+        'message': 'フリープランが選択されました',
+        'subscription': {
+            'id': 'free',
+            'price': PaymentConfig.PRICE_ID_FREE,
+            'accountCount': 0,
+            'status': 'active'
+        }
+    }
+
+def handle_free_plan_change(subscription: stripe.Subscription, body: Dict) -> Dict:
+    """フリープランへの変更処理"""
+    # 現在のサブスクリプションをキャンセル
+    canceled_subscription = stripe.Subscription.modify(
+        subscription.id,
+        cancel_at_period_end=True,
+        metadata={'last_change_at': str(int(time.time()))}
+    )
+    
+    return {
+        'message': 'プラン変更が予約されました',
+        'subscription': {
+            'id': subscription.id,
+            'price': PaymentConfig.PRICE_ID_FREE,
+            'status': 'canceled',
+            'currentPeriodEnd': canceled_subscription.current_period_end
+        }
+    }
+
+def handle_paid_plan_change(subscription: stripe.Subscription, new_price_id: str, new_account_count: int) -> Dict:
+    """有料プラン間の変更処理"""
+    # サブスクリプションアイテムへのアクセス方法を修正
+    subscription_item = subscription['items']['data'][0]
+    
+    # 新しいプランの設定
+    update_params = (
+        {
+            'price_data': {
+                'currency': PaymentConfig.CURRENCY,
+                'product': PaymentConfig.PRODUCT_ID_BUSINESS,
+                'unit_amount': calculate_business_price(new_account_count),
+                'recurring': {'interval': PaymentConfig.BILLING_INTERVAL}
+            }
+        }
+        if new_price_id == PaymentConfig.PRICE_ID_BUSINESS
+        else {'price': new_price_id}
+    )
+    
+    # サブスクリプションアイテムの更新
+    stripe.SubscriptionItem.modify(subscription_item.id, **update_params)
+
+    # メタデータの更新
+    stripe.Subscription.modify(
+        subscription.id,
+        metadata={
+            'account_count': str(new_account_count),
+            'last_change_at': str(int(time.time()))
+        }
+    )
+    
+    updated_subscription = stripe.Subscription.retrieve(subscription.id)
+    return create_subscription_response(updated_subscription, new_price_id, new_account_count)
+
 def change_subscription_plan(body: Dict) -> Dict:
     """プラン変更処理"""
     subscription_id = body['subscriptionId']
     new_price_id = body['priceId']
     new_account_count = int(body.get('accountCount', 0))
 
-    # フリープランからの変更の場合は新規サブスクリプション作成
-    if subscription_id == 'free':
-        return create_subscription({
-            'email': body['email'],
-            'token': body['token'],
-            'priceId': new_price_id,
-            'accountCount': new_account_count
-        })
+    # フリープランからの変更の場合
+    if subscription_id == PaymentConfig.PRICE_ID_FREE:
+        return create_subscription(body)
 
-    # 既存のサブスクリプションを取得
     try:
         subscription = stripe.Subscription.retrieve(subscription_id)
-    except stripe.error.StripeError as e:
-        if new_price_id == PRICE_ID_FREE:
-            # サブスクリプションが見つからない場合でも、フリープランへの変更は許可
-            return {
-                'message': 'フリープランに変更されました',
-                'subscription': {
-                    'id': 'free',
-                    'price': new_price_id,
-                    'accountCount': 0,
-                    'status': 'canceled'
-                }
-            }
+        
+        # プラン変更ロジック
+        if new_price_id == PaymentConfig.PRICE_ID_FREE:
+            return handle_free_plan_change(subscription, body)
+            
+        # フリープラン以外への変更時のみクールダウンチェックを実行
+        check_plan_change_cooldown(subscription)
+        
+        if (subscription['items']['data'][0]['price']['id'] == PaymentConfig.PRICE_ID_BUSINESS and 
+              new_price_id == PaymentConfig.PRICE_ID_BUSINESS):
+            return update_subscription(body)
+        else:
+            return handle_paid_plan_change(subscription, new_price_id, new_account_count)
+
+    except stripe.error.InvalidRequestError as e:
+        if new_price_id == PaymentConfig.PRICE_ID_FREE:
+            return create_free_plan_response()
         raise e
 
-    # フリープランへの変更の場合はサブスクリプションを次回支払い日で解約
-    if new_price_id == PRICE_ID_FREE:
-        try:
-            canceled_subscription = stripe.Subscription.delete(
-                subscription_id,
-                at_period_end=True  # 次回支払い日でキャンセル
-            )
-            return {
-                'message': '次回支払い日でフリープランに変更されます',
-                'subscription': {
-                    'id': subscription_id,  # フリープランに変更されるまでは既存のサブスクリプションIDを保持
-                    'price': new_price_id,
-                    'accountCount': 0,
-                    'status': canceled_subscription.status,
-                    'cancelAt': canceled_subscription.cancel_at  # キャンセル予定日
-                }
-            }
-        except stripe.error.StripeError as e:
-            # サブスクリプションの解約に失敗しても、フリープランへの変更は許可
-            return {
-                'message': 'フリープランに変更されました',
-                'subscription': {
-                    'id': 'free',
-                    'price': new_price_id,
-                    'accountCount': 0,
-                    'status': 'canceled'
-                }
-            }
-
-    # 他のプランへの変更処理
-    subscription = stripe.Subscription.retrieve(subscription_id)
-    customer_id = subscription.customer
-    current_price_id = subscription['items']['data'][0].price.id
+def reactivate_subscription(body: Dict) -> Dict:
+    """解約後のサブスクリプション再開処理（新規関数）"""
+    customer_id = body['customerId']
+    price_id = body['priceId']
     
-    # 有���プラン間の変更（ビジネスプランへの変更またはビジネスプランからの変更）
-    if (new_price_id == PRICE_ID_BUSINESS or 
-        current_price_id == PRICE_ID_BUSINESS):
-        # 既存のサブスクリプションを解約
-        stripe.Subscription.delete(subscription_id)
-        
-        # 新しいサブスクリプション設定を準備
-        if new_price_id == PRICE_ID_BUSINESS:  # ビジネスプランへの変更
-            total_price = BUSINESS_BASE_PRICE + (new_account_count * BUSINESS_PER_ACCOUNT_PRICE)
-            subscription_items = [{
-                'price_data': {
-                    'currency': CURRENCY,
-                    'product': PRODUCT_ID_BUSINESS,
-                    'unit_amount': total_price,
-                    'recurring': {'interval': BILLING_INTERVAL}
-                }
-            }]
-            metadata = {'account_count': str(new_account_count)}
-        else:  # ビジネスプランからの変更
-            subscription_items = [{'price': new_price_id}]
-            metadata = {}
-        
-        # 新しいサブスクリプションを作成
-        subscription_response = stripe.Subscription.create(
-            customer=customer_id,
-            items=subscription_items,
-            metadata=metadata
-        )
+    # 過去のサブスクリプション履歴を確認
+    subscriptions = stripe.Subscription.list(
+        customer=customer_id,
+        status='canceled',
+        limit=1
+    )
     
-    else:  # その他のプラン間の変更
-        # プランの変更
-        stripe.Subscription.modify(
-            subscription_id,
-            items=[{
-                'id': subscription['items']['data'][0].id,
-                'price': new_price_id
-            }],
-            proration_behavior='always_invoice'
-        )
-        subscription_response = stripe.Subscription.retrieve(subscription_id)
-
-    return {
-        'message': 'プランが正常に変更されました',
-        'subscription': {
-            'id': subscription_response.id,
-            'price': new_price_id,
-            'accountCount': new_account_count,
-            'status': subscription_response.status
-        }
-    }
+    if subscriptions.data:
+        old_subscription = subscriptions.data[0]
+        reactivation_window = PaymentConfig.REACTIVATION_WINDOW_SECONDS
+        if (time.time() - old_subscription.canceled_at) < reactivation_window:
+            return create_subscription({
+                'email': body['email'],
+                'token': body['token'],
+                'priceId': price_id,
+                'accountCount': body.get('accountCount', 0),
+                'billing_cycle_anchor': old_subscription.current_period_end
+            })
+    
+    # 通常の新規サブスクリプション作成
+    return create_subscription(body)
 
 def get_payment_methods(body: Dict) -> Dict:
     """支払い方法取得処理"""
     try:
         email = body.get('email')
         if not email:
-            return {
-                'data': {
-                    'paymentMethods': []
-                }
-            }
+            return {'data': {'paymentMethods': []}}
         
-        # メールアドレスから顧客を検索
         customers = stripe.Customer.list(email=email, limit=1)
         if not customers.data:
-            return {
-                'data': {
-                    'paymentMethods': []
-                }
-            }
+            return {'data': {'paymentMethods': []}}
         
-        customer = customers.data[0]
-        
-        # 顧客の支払い方法を取得
         payment_methods = stripe.PaymentMethod.list(
-            customer=customer.id,
+            customer=customers.data[0].id,
             type='card'
         )
         
@@ -284,12 +322,7 @@ def get_payment_methods(body: Dict) -> Dict:
             }
         }
     except Exception as e:
-        return {
-            'data': {
-                'paymentMethods': []
-            },
-            'error': str(e)
-        }
+        return {'data': {'paymentMethods': []}, 'error': str(e)}
 
 def update_payment_method(body: Dict) -> Dict:
     """支払い方法更新処理"""
@@ -331,30 +364,38 @@ def update_payment_method(body: Dict) -> Dict:
         }
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
-    """メインハンドラー関数"""
+    """メインハ���ドラー関数"""
     try:
-        # パスの取得とルーティング
         path = event.get('path', '')
         method = event.get('httpMethod', '')
         body = json.loads(event.get('body', '{}'))
 
-        # パスベースでの処理分岐
-        if path == '/payment/create-subscription' and method == 'POST':
-            result = create_subscription(body)
-        elif path == '/payment/update-subscription' and method == 'POST':
-            result = update_subscription(body)
-        elif path == '/payment/change-plan' and method == 'POST':
-            result = change_subscription_plan(body)
-        elif path == '/payment/payment-methods' and method == 'POST':
-            result = get_payment_methods(body)
-        elif path == '/payment/update-payment-method' and method == 'POST':
-            result = update_payment_method(body)
-        else:
+        handlers = {
+            '/payment/create-subscription': create_subscription,
+            '/payment/update-subscription': update_subscription,
+            '/payment/change-plan': change_subscription_plan,
+            '/payment/payment-methods': get_payment_methods,
+            '/payment/update-payment-method': update_payment_method
+        }
+
+        if method != 'POST' or path not in handlers:
             return create_response(404, {'error': '指定されたエンドポイントは存在しません'})
 
+        result = handlers[path](body)
         return create_response(200, result)
 
+    except PaymentError as e:
+        # PaymentErrorは400エラーとして返す
+        return create_response(400, {'error': str(e)})
     except stripe.error.StripeError as e:
+        # Stripeのエラーも400エラーとして返す
         return create_response(400, {'error': str(e)})
     except Exception as e:
-        return create_response(500, {'error': str(e)})
+        import traceback
+        error_message = {
+            'error': 'システムエラーが発生しました',  # ユーザー向けの一般的なエラーメッセージ
+            'detail': str(e),  # 詳細なエラー情報
+            'traceback': traceback.format_exc()  # デバッグ用のスタックトレース
+        }
+        print('Error:', error_message)  # ログ出力
+        return create_response(500, {'error': 'システムエラーが発生しました'})  # クライアントへの応答

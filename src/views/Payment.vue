@@ -246,8 +246,8 @@
             block
             size="large"
             :loading="isLoading"
-            :disabled="isLoading"
-            @click="handleSubmit"
+            :disabled="isLoading || !formState.selectedPlan"
+            @click.prevent="handleSubmit"
           >
             {{ isLoading ? '処理中...' : formState.selectedPlan === 'free' ? 'プランを解約する' : 'プランを変更する' }}
           </v-btn>
@@ -269,7 +269,9 @@
       <v-card>
         <v-card-title class="text-h6">プラン変更完了</v-card-title>
         <v-card-text>
-          <div class="my-2">以下の内容でプランを変更しました。</div>
+          <div class="my-2">
+            {{ dialogMessage || '以下の内容でプランを変更しました。' }}
+          </div>
           <v-card variant="outlined" class="pa-3">
             <div class="text-subtitle-1 font-weight-bold mb-2">
               {{ plans.find(p => p.planId === formState.selectedPlan)?.name }}
@@ -356,6 +358,7 @@ const isPaymentMethodUpdateMode = ref(false)
 const currentStep = ref('plan-selection')
 const abortController = new AbortController()
 const initializingPayment = ref(false)
+const dialogMessage = ref('')
 
 // Computed Properties
 const currentPlan = computed(() => {
@@ -372,8 +375,11 @@ const currentPlan = computed(() => {
 })
 
 const needsPaymentMethod = computed(() => {
+  // フリープランの場合は支払い方法不要
   if (formState.selectedPlan === 'free') return false
-  if (!currentPaymentMethod.value) return true
+  // 既存の支払い方法がある場合は新しい支払い方法不要
+  if (currentPaymentMethod.value) return false
+  // フリープランから有料プランに変更する場合のみ支払い方法が必要
   return currentPlan.value?.planId === 'free' && 
          ['pro', 'business'].includes(formState.selectedPlan)
 })
@@ -389,9 +395,10 @@ const getCardColor = (plan) => {
   return ''
 }
 
-const handleError = (error, customMessage = '処理に失敗しました') => {
-  console.error(error)
-  errorMessage.value = error.message || customMessage
+const handleError = (error) => {
+  console.error('Error:', error)
+  // エラーメッセージを直接表示
+  showError(error.message || 'エラーが発生しました')
 }
 
 const resetForm = () => {
@@ -401,6 +408,7 @@ const resetForm = () => {
 
 const handleSuccess = () => {
   showSuccessDialog.value = true
+  dialogMessage.value = ''
   resetForm()
   currentStep.value = 'plan-selection'
   emit('payment-success')
@@ -492,21 +500,67 @@ const handlePaymentMethodOnlyUpdate = async ({ token }) => {
 }
 
 const validateForm = () => {
+  console.log('Validating form:', {
+    selectedPlan: formState.selectedPlan,
+    accountCount: formState.accountCount,
+    currentPlanId: currentPlan.value?.planId,
+    currentAccountCount: currentPlan.value?.currentAccountCount
+  })
+
   const errors = []
   if (formState.selectedPlan === 'business' && (!formState.accountCount || formState.accountCount < 1)) {
     errors.push('アカウント数は1以上を指定してください')
   }
-  if (formState.selectedPlan === currentPlan.value?.planId &&
-      formState.accountCount === currentPlan.value?.currentAccountCount) {
-    errors.push('現在のプランと同じです')
-  }
+  // 同じプランへの変更チェックを削除（必要に応じて）
   return errors
 }
 
-const handleSubmit = async () => {
+const handlePlanChange = async (params) => {
   try {
     isLoading.value = true
     errorMessage.value = ''
+    dialogMessage.value = ''
+
+    const response = await changePlan(params)
+    
+    if (response.message) {
+      if (response.subscription?.cancelAt) {
+        showSuccessDialog.value = true
+        dialogMessage.value = response.message
+      } else {
+        handleSuccess()
+      }
+    }
+    
+    if (response.subscription) {
+      await store.dispatch('auth/updateSubscriptionAttributes', {
+        planId: formState.selectedPlan,
+        accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0,
+        subscriptionId: response.subscription.id
+      })
+    }
+
+    return true
+  } catch (err) {
+    handleError(err)
+    return false
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handleSubmit = async () => {
+  console.log('handleSubmit started', {
+    currentPaymentMethod: currentPaymentMethod.value,
+    needsPaymentMethod: needsPaymentMethod.value
+  })
+
+  try {
+    const errors = validateForm()
+    if (errors.length > 0) {
+      showError(errors[0])
+      return
+    }
 
     const selectedPlan = plans.find(p => p.planId === formState.selectedPlan)
     if (!selectedPlan) {
@@ -514,75 +568,29 @@ const handleSubmit = async () => {
       return
     }
 
-    const errors = validateForm()
-    if (errors.length > 0) {
-      showError(errors[0])
-      return
-    }
-
     // フリープランへの変更
     if (formState.selectedPlan === 'free') {
-      if (!currentPlan.value?.subscriptionId) {
-        showError('サブスクリプションIDが見つかりません')
-        return
-      }
-      
-      await changePlan({
-        subscriptionId: currentPlan.value.subscriptionId,
-        priceId: selectedPlan.priceId,
-        accountCount: 0
-      })
-
-      await store.dispatch('auth/updateSubscriptionAttributes', {
-        planId: selectedPlan.planId,
-        accountCount: 0,
-        subscriptionId: null
-      })
-      
-      handleSuccess()
+      // ...existing code...
     } else {
       // 有料プランへの変更
-      if (needsPaymentMethod.value) {
-        await nextTick()
-        if (!paymentFormRef.value) {
-          showError('支払いフォームの準備ができていません。ページを更新してお試しください。')
-          return
-        }
-
-        const result = await paymentFormRef.value.submit()
-        if (!result?.token) {
-          showError('支払い情報の取得に失敗しました')
-          return
-        }
+      if (needsPaymentMethod.value && !currentPaymentMethod.value) {
+        console.log('New payment method needed')
+        const result = await paymentFormRef.value?.submit()
+        if (!result?.token) return
         
-        // 新規サブスクリプション作成
         await handlePaymentSubmit({ token: result.token })
       } else {
-        if (!currentPlan.value?.subscriptionId) {
-          throw new Error('サブスクリプションIDが見つかりません')
-        }
-
-        await changePlan({
+        console.log('Using existing payment method')
+        await handlePlanChange({
           subscriptionId: currentPlan.value.subscriptionId,
           priceId: selectedPlan.priceId,
           accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0
         })
-
-        await store.dispatch('auth/updateSubscriptionAttributes', {
-          planId: selectedPlan.planId,
-          accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0,
-          subscriptionId: currentPlan.value.subscriptionId
-        })
-
-        handleSuccess()
       }
     }
-
   } catch (err) {
-    console.error('Plan change error:', err)
+    console.error('Submit error:', err)
     showError(err.message || '処理に失敗しました')
-  } finally {
-    isLoading.value = false
   }
 }
 
