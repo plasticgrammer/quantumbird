@@ -1,5 +1,16 @@
 <template>
   <v-container class="content-container">
+    <StarBackground
+      :total-stars="13"
+      :max-size="50"
+      :min-size="15"
+      star-color="#CFE8FC"
+      :base-speed="10"
+      :speed-variation="3"
+      :move-up="true"
+      :move-distance="160"
+    />
+
     <v-alert
       :icon="isMobile ? undefined : 'mdi-comment-text'"
       class="mx-auto mt-8 mb-12 border-md text-center"
@@ -93,6 +104,7 @@ import { useCalendar } from '../composables/useCalendar'
 import { useResponsive } from '../composables/useResponsive'
 import { getOrganization } from '../services/organizationService'
 import { getReportStatus } from '../services/reportService'
+import StarBackground from '../components/StarBackground.vue'
 
 const store = useStore()
 const organizationId = store.getters['auth/organizationId']
