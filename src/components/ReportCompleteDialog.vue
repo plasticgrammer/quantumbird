@@ -21,10 +21,20 @@
           class="ticket-chip"
           variant="outlined"
         >
-          <v-icon class="mr-1" :color="advisorState.remainingTickets ? 'primary' : 'grey-lighten-1'">
-            {{ advisorState.remainingTickets ? 'mdi-ticket' : 'mdi-ticket-outline' }}
-          </v-icon>
-          <span class="text-caption">{{ advisorState.remainingTickets }}</span>
+          <template v-if="advisorState.remainingTickets <= 3">
+            <v-icon
+              v-for="i in 3"
+              :key="i"
+              :color="i <= advisorState.remainingTickets ? 'primary' : 'grey-lighten-1'"
+              class="mr-1"
+            >
+              {{ i <= advisorState.remainingTickets ? 'mdi-ticket' : 'mdi-ticket-outline' }}
+            </v-icon>
+          </template>
+          <template v-else>
+            <v-icon class="mr-1" color="primary">mdi-ticket</v-icon>
+            <span class="text-caption">{{ advisorState.remainingTickets }}</span>
+          </template>
           <v-tooltip activator="parent" location="bottom">
             アドバイスチケット残数
           </v-tooltip>
@@ -356,7 +366,7 @@ watch(() => props.reportContent,
 }
 
 .ticket-chip {
-  border: solid 1px #607d8b;
+  border: solid 1px #E0E0E0;
 }
 
 .v-window {

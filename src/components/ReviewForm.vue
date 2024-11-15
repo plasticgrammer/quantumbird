@@ -361,7 +361,7 @@
       </v-col>
     </v-row>
 
-    <ReviewCompletionDialog
+    <ReviewCompleteDialog
       v-model="showCompletionDialog"
       :report-count="reports.length"
       @share="copyShareUrl"
@@ -382,7 +382,7 @@ import { rootUrl } from '../config/environment'
 import OvertimeDisplay from '../components/OvertimeDisplay.vue'
 const RatingItem = defineAsyncComponent(() => import('../components/RatingItem.vue'))
 const ScrollNavigation = defineAsyncComponent(() => import('../components/ScrollNavigation.vue'))
-import ReviewCompletionDialog from './ReviewCompletionDialog.vue'
+import ReviewCompleteDialog from './ReviewCompleteDialog.vue'
 
 const { formatDateTimeJp, formatDateJp, getPreviousWeekString } = useCalendar()
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
