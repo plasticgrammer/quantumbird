@@ -26,14 +26,14 @@
               v-for="i in 3"
               :key="i"
               :color="i <= advisorState.remainingTickets ? 'primary' : 'grey-lighten-1'"
-              class="mr-1"
+              class="ticket-icon"
             >
               {{ i <= advisorState.remainingTickets ? 'mdi-ticket' : 'mdi-ticket-outline' }}
             </v-icon>
           </template>
           <template v-else>
-            <v-icon class="mr-1" color="primary">mdi-ticket</v-icon>
-            <span class="text-caption">{{ advisorState.remainingTickets }}</span>
+            <v-icon class="ticket-icon" color="primary">mdi-ticket</v-icon>
+            <span class="text-caption ml-1">{{ advisorState.remainingTickets }}</span>
           </template>
           <v-tooltip activator="parent" location="bottom">
             アドバイスチケット残数
@@ -366,7 +366,13 @@ watch(() => props.reportContent,
 }
 
 .ticket-chip {
-  border: solid 1px #E0E0E0;
+  border: solid 1px #e0e0e0;
+}
+
+.ticket-icon {
+  transform: rotate(-35deg);
+  margin-left: 2px;
+  margin-right: 2px;
 }
 
 .v-window {

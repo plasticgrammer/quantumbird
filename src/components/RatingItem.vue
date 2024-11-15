@@ -27,6 +27,9 @@
     </v-col>
     <v-col cols="12" md="7" class="d-flex align-middle pa-2">
       <v-rating
+        ref="rating"
+        class="custom-rating"
+        :class="{ 'rating-negative': negative }"
         :model-value="modelValue"
         :item-labels="itemLabels"
         :length="length"
@@ -34,11 +37,15 @@
         :empty-icon="'mdi-emoticon-neutral-outline'"
         :full-icon="fullIcon"
         :half-icon="'mdi-emoticon-neutral-outline'"
-        :active-color="activeIconColor" 
+        :active-color="activeIconColor"
         size="x-large"
         density="compact"
         color="grey-lighten-2"
         :aria-label="`${label}の評価: ${modelValue}/${length}`"
+        :style="{
+          '--active-icon-color': activeIconColor,
+          '--hover-icon-color': modelValue ? activeIconColor : maxActiveIconColor
+        }"
         @update:model-value="handleModelValueUpdate"
       ></v-rating>
     </v-col>
@@ -82,6 +89,7 @@ const {
   length,
   fullIcon,
   activeIconColor,
+  maxActiveIconColor,
   comparisonIcon,
   comparisonColor,
   comparisonLabel,
@@ -110,10 +118,25 @@ onMounted(() => {
 .v-rating__item .v-btn .v-btn__content i {
   transform: scale(1.2);
 }
+
+/* アクティブなアイコンの色設定 */
+.v-rating__wrapper:nth-child(-n + var(--active-rating)) .v-rating__item .v-btn .v-icon {
+  color: var(--active-icon-color) !important;
+}
+
+/* ホバー時のアイコン色変更 */
+.v-rating > .v-rating__wrapper:has(~ .v-rating__wrapper:hover) .v-rating__item .v-btn .v-icon,
+.v-rating > .v-rating__wrapper:hover .v-rating__item .v-btn .v-icon {
+  color: var(--hover-icon-color) !important;
+}
+
+.v-rating .v-btn .v-icon {
+  transition: color 0.2s ease;
+}
 </style>
 
 <style scoped>
 .fluctuation-icon {
-  font-size: .875em;
+  font-size: 0.875em;
 }
 </style>
