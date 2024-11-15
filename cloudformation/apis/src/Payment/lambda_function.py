@@ -224,13 +224,14 @@ def handle_paid_plan_change(subscription: stripe.Subscription, new_price_id: str
     # サブスクリプションアイテムの更新
     stripe.SubscriptionItem.modify(subscription_item.id, **update_params)
 
-    # メタデータの更新
+    # メタデータの更新とキャンセル予定の解除
     stripe.Subscription.modify(
         subscription.id,
         metadata={
             'account_count': str(new_account_count),
             'last_change_at': str(int(time.time()))
-        }
+        },
+        cancel_at_period_end=False  # キャンセル予定を解除
     )
     
     updated_subscription = stripe.Subscription.retrieve(subscription.id)
@@ -364,7 +365,7 @@ def update_payment_method(body: Dict) -> Dict:
         }
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
-    """メインハ���ドラー関数"""
+    """メインハンドラー関数"""
     try:
         path = event.get('path', '')
         method = event.get('httpMethod', '')
