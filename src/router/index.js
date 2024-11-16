@@ -135,10 +135,7 @@ router.beforeEach(async (to, from, next) => {
     try {
       const token = await store.dispatch('auth/fetchAuthToken')
       if (token) {
-        // ユーザー情報がない場合のみ取得
-        if (!store.state.auth.user) {
-          await store.dispatch('auth/fetchUser')
-        }
+        await store.dispatch('auth/fetchUser')
         next()
       } else {
         // ユーザーが認証されていない場合、サインインページにリダイレクト

@@ -370,7 +370,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watchEffect, onMounted, inject, nextTick, defineAsyncComponent } from 'vue'
+import { ref, computed, watchEffect, onMounted, inject, nextTick, defineAsyncComponent, watch } from 'vue'
 import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
 import { listReports, listMembers } from '../services/publicService'
@@ -606,7 +606,7 @@ const handleFeedback = async (memberUuid) => {
 const handleApprove = async (memberUuid) => {
   let confirmMessage = ''
   if (newFeedbacks.value[memberUuid]?.trim() !== '') {
-    confirmMessage = 'フィードバックが未送信です。\nフィー��バックの入力を破棄して、報告を確認済みとします。よろしいですか？'
+    confirmMessage = 'フィードバックが未送信です。\nフィードバックの入力を破棄して、報告を確認済みとします。よろしいですか？'
   } else {
     confirmMessage = '報告を確認済みとします。よろしいですか？'
   }
@@ -678,6 +678,8 @@ const fetchData = async () => {
     }, {})
     nextTick(() => {
       updateExpandedPanels()
+      previousCompletionState.value = isAllCompleted.value
+      isInitialized.value = true
     })
 
   } catch (err) {
@@ -707,14 +709,15 @@ onMounted(() => {
 })
 
 const showCompletionDialog = ref(false)
+const isInitialized = ref(false)
+const previousCompletionState = ref(false)
 
-// 全員の報告が確認済みになった時にダイアログを表示
-watchEffect(() => {
-  if (isAllCompleted.value && !props.readonly) {
-    nextTick(() => {
-      showCompletionDialog.value = true
-    })
+// 初期化完了後のみ監視を実行し、確認済み直後のみダイアログを表示
+watch(isAllCompleted, (currentlyComplete) => {
+  if (isInitialized.value && !props.readonly && currentlyComplete && !previousCompletionState.value) {
+    showCompletionDialog.value = true
   }
+  previousCompletionState.value = currentlyComplete
 })
 </script>
 
@@ -741,11 +744,11 @@ watchEffect(() => {
 }
 
 .v-list-item__title {
-  font-size: 0.875rem !important;
+  font-size: 0.875rem !重要;
 }
 
 .v-list-item__subtitle {
-  font-size: 0.75rem !important;
+  font-size: 0.75rem !重要;
 }
 
 .v-expansion-panel-title {
@@ -753,9 +756,9 @@ watchEffect(() => {
 }
 
 .v-expansion-panel--active > .v-expansion-panel-title:not(.v-expansion-panel-title--static) {
-  min-height: auto !important;
-  padding-top: 13px !important;
-  padding-bottom: 12px !important;
+  min-height: auto !重要;
+  padding-top: 13px !重要;
+  padding-bottom: 12px !重要;
 }
 
 .borderless-textarea :deep(.v-field__outline) {

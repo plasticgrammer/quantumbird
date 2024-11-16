@@ -56,9 +56,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onBeforeUnmount, watch } from 'vue'
 
-defineProps({
+const props = defineProps({
   modelValue: {
     type: Boolean,
     required: true
@@ -74,7 +74,11 @@ const emit = defineEmits(['update:modelValue', 'share'])
 const countdown = ref(10)
 let timer
 
-onMounted(() => {
+const startCountdown = () => {
+  if (timer) {
+    clearInterval(timer)
+  }
+  countdown.value = 10
   timer = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) {
@@ -82,6 +86,16 @@ onMounted(() => {
       emit('update:modelValue', false)
     }
   }, 1000)
+}
+
+watch(() => props.modelValue, (newVal) => {
+  if (newVal) {
+    startCountdown()
+  } else {
+    if (timer) {
+      clearInterval(timer)
+    }
+  }
 })
 
 onBeforeUnmount(() => {
@@ -153,7 +167,7 @@ onBeforeUnmount(() => {
 }
 
 .completion-title {
-  background: linear-gradient(45deg, #2962FF, #448AFF);
+  background: linear-gradient(45deg, #2962ff, #448aff);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

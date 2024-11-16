@@ -417,13 +417,13 @@ const getColor = (index) => {
   const colorPalette = [
     'rgb(54, 162, 235)', // 青色
     'rgb(75, 192, 192)', // シアン
-    'rgb(199, 199, 199)', // 灰色
+    'rgb(83, 102, 255)', // 青紫色
     'rgb(255, 99, 132)', // 赤色
     'rgb(153, 102, 255)', // 紫色
     'rgb(255, 159, 64)', // オレンジ
-    'rgb(83, 102, 255)', // 青紫色
     'rgb(0, 0, 255)', // 青色
-    'rgb(255, 0, 0)', // 鮮やかな赤色
+    'rgb(144, 238, 144)', // ライトグリーン
+    'rgb(255, 0, 0)', // 赤色
     'rgb(0, 255, 0)' // 緑色
   ]
   return index < colorPalette.length ? colorPalette[index] : getRandomColor()

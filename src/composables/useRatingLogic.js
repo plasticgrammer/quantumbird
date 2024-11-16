@@ -43,8 +43,8 @@ export function useRatingLogic(props) {
 
     // 中央値からの距離を計算（0-0.5の範囲）
     const distanceFromCenter = Math.abs(position - 0.5)
-    // 中央に近いほど透明に（0.4-1.0の範囲）
-    const alpha = 0.4 + distanceFromCenter * 1.2
+    // 中央に近いほど透明に（0.4-0.9の範囲）
+    const alpha = 0.4 + distanceFromCenter * 1.0
 
     // negativeフラグに応じて色の方向を反転
     let startColor, endColor
