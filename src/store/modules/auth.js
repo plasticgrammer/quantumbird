@@ -1,5 +1,6 @@
 import { fetchUserAttributes, fetchAuthSession, signOut, updateUserAttributes, updatePassword, deleteUser } from 'aws-amplify/auth'
 import { termsOfServiceVersion, privacyPolicyVersion } from '@/config/environment'
+import { getSubscriptionInfo } from '@/services/paymentService'
 
 const AUTH_CONSTANTS = {
   CACHE_DURATION: 5 * 60 * 1000, // 5分
@@ -45,7 +46,8 @@ export default {
     subscription: {
       planId: null,
       accountCount: 0,
-      subscriptionId: null
+      subscriptionId: null,
+      stripeCustomerId: null
     }
   }),
 
@@ -74,7 +76,8 @@ export default {
         subscription: {
           planId: null,
           accountCount: 0,
-          subscriptionId: null
+          subscriptionId: null,
+          stripeCustomerId: null
         }
       })
     },
@@ -88,16 +91,15 @@ export default {
       }
     },
 
-    setSubscription(state, { planId, accountCount, subscriptionId }) {
-      Object.assign(state.subscription, {
+    setSubscription(state, { planId, priceId, accountCount, subscriptionId, stripeCustomerId }) {
+      const subscription = {
         planId,
+        priceId,
         accountCount: parseInt(accountCount || '0', 10),
-        subscriptionId: subscriptionId || null
-      })
-      // ユーザー情報にも同期
-      if (state.user) {
-        Object.assign(state.user.subscription, { ...state.subscription })
+        subscriptionId: subscriptionId || null,
+        stripeCustomerId: stripeCustomerId || null
       }
+      state.subscription = subscription
     }
   },
 
@@ -105,7 +107,6 @@ export default {
     async fetchUser({ commit, state, dispatch }) {
       try {
         if (state.user && Date.now() - state.lastUserFetch < AUTH_CONSTANTS.CACHE_DURATION) {
-          // キャッシュ期間内の場合、トークンの有効性を確認
           await dispatch('validateToken')
           return state.user
         }
@@ -117,21 +118,45 @@ export default {
           email: attributes.email,
           tosVersion: attributes['custom:tos_version'],
           privacyPolicyVersion: attributes['custom:pp_version'],
-          subscription: {
-            planId: attributes['custom:planId'] || 'free',
-            accountCount: parseInt(attributes['custom:accountCount'] || '0', 10),
-            subscriptionId: attributes['custom:subscriptionId'] || null
-          }
+          stripeCustomerId: attributes['custom:stripeCustomerId']
         }
 
         commit('setUser', userInfo)
         commit('setCognitoUserSub', attributes.sub)
-        commit('setSubscription', userInfo.subscription)
+
+        // Stripe顧客IDが存在する場合、サブスクリプション情報を取得
+        if (attributes['custom:stripeCustomerId']) {
+          const { data } = await dispatch('fetchSubscriptionInfo', attributes['custom:stripeCustomerId'])
+          commit('setSubscription', {
+            ...data,
+            stripeCustomerId: attributes['custom:stripeCustomerId'] // 顧客IDを維持
+          })
+        } else {
+          commit('setSubscription', {
+            planId: 'free',
+            accountCount: 0,
+            subscriptionId: null,
+            stripeCustomerId: null
+          })
+        }
+
         return userInfo
       } catch (error) {
         createErrorHandler('fetching user')(error)
         commit('setUser', null)
         commit('setCognitoUserSub', null)
+        throw error
+      }
+    },
+
+    // Stripeからサブスクリプション情報を取得
+    async fetchSubscriptionInfo({ commit }, customerId) {
+      try {
+        const response = await getSubscriptionInfo(customerId)
+        commit('setSubscription', response.data)
+        return response
+      } catch (error) {
+        console.error('Error fetching subscription info:', error)
         throw error
       }
     },
@@ -251,28 +276,35 @@ export default {
       }
     },
 
-    async updateSubscriptionAttributes({ commit }, { planId, accountCount, subscriptionId }) {
+    async updateSubscriptionAttributes({ commit, dispatch }, { stripeCustomerId }) {
       try {
-        const updates = {
-          'custom:planId': planId,
-          'custom:accountCount': String(accountCount),
-          'custom:subscriptionId': subscriptionId || ''
-        }
-
+        // CognitoのstripeCustomerIdを更新
         await updateUserAttributes({
-          userAttributes: updates
+          userAttributes: {
+            'custom:stripeCustomerId': stripeCustomerId || ''
+          }
         })
 
-        // 即座にステートを更新
-        commit('setSubscription', {
-          planId,
-          accountCount,
-          subscriptionId
-        })
+        // Stripeから最新のサブスクリプション情報を取得
+        if (stripeCustomerId) {
+          const { data } = await dispatch('fetchSubscriptionInfo', stripeCustomerId)
+          commit('setSubscription', {
+            ...data,
+            stripeCustomerId
+          })
+        } else {
+          // stripeCustomerIdがない場合はフリープラン状態にリセット
+          commit('setSubscription', {
+            planId: 'free',
+            accountCount: 0,
+            subscriptionId: null,
+            stripeCustomerId: null
+          })
+        }
 
         return { success: true }
       } catch (error) {
-        createErrorHandler('updating subscription attributes')(error)
+        createErrorHandler('updating subscription info')(error)
         throw new Error(mapErrorMessage(error))
       }
     }

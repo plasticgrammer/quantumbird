@@ -43,14 +43,29 @@
         </v-btn>
 
         <v-card class="mt-4 mb-2" elevation="0" color="indigo-lighten-5 border-md" outlined>
-          <v-card-title>契約プラン</v-card-title>
+          <v-card-title>お支払い設定</v-card-title>
           <v-card-text class="px-6">
-            <p class="mb-3">{{ currentPlanName }}</p>
-            <v-row>
-              <v-col class="d-flex justify-end">
-                <v-btn color="info" @click="router.push({ name: 'Payment' })">
-                  <v-icon class="mr-2">mdi-card-account-details-outline</v-icon>
-                  プラン変更
+            <v-row align="center">
+              <v-col>
+                <div class="d-flex align-center">
+                  <p class="mb-0 mr-4">現在のプラン：{{ currentPlanName }}</p>
+                  <v-chip
+                    v-if="isTrialPeriod"
+                    color="warning"
+                    size="small"
+                    class="mr-2"
+                  >
+                    トライアル期間中
+                  </v-chip>
+                </div>
+                <p class="text-caption text-grey mt-1">
+                  プランの変更、支払い履歴の確認、請求書のダウンロードは支払い設定ページで行えます。
+                </p>
+              </v-col>
+              <v-col cols="auto">
+                <v-btn color="primary" @click="router.push({ name: 'Billing' })">
+                  <v-icon class="mr-2">mdi-currency-usd</v-icon>
+                  支払い設定
                 </v-btn>
               </v-col>
             </v-row>
@@ -105,7 +120,7 @@
               :type="showNewPassword ? 'text' : 'password'"
               :rules="[
                 v => !!v || 'パスワードを確認してください',
-                v => v === passwordData.newPassword || 'パスワードが一致しません'
+                v => v === passwordData.newPassword || '���スワードが一致しません'
               ]"
               hide-details="auto"
               class="mb-4"
@@ -185,7 +200,7 @@
           アカウントの引き継ぎを行うと：
           <div class="mb-4">
             <ul class="ml-4">
-              <li>ユーザーアカウント情報、組織情報は削除されます</li>
+              <li>ユーザーア���ウント情報、組織情報は削除されます</li>
               <li>メンバー情報、週次報告履歴は保持されます</li>
               <li>削除後に組織ID「<span class="text-error">{{ organizationId }}</span>」でサインアップしたユーザーが、<br>組織の新しい管理者となります</li>
             </ul>
@@ -292,6 +307,12 @@ const currentPlanName = computed(() => {
   const subscription = store.getters['auth/currentSubscription']
   const plan = plans.find(p => p.planId === subscription?.planId)
   return plan?.name || 'フリープラン'
+})
+
+// isTrialPeriod computed propertyを追加
+const isTrialPeriod = computed(() => {
+  const subscription = store.getters['auth/currentSubscription']
+  return subscription?.trialEnd && new Date(subscription.trialEnd) > new Date()
 })
 
 // パスワードのバリデーションルール
@@ -413,7 +434,7 @@ const exportData = async () => {
     document.body.appendChild(a)
     a.click()
     window.URL.revokeObjectURL(url)
-    exportStatus.value = 'エクスポートが完了しました'
+    exportStatus.value = 'エクスポー���が完了しました'
   } catch (error) {
     console.error('Data export failed:', error)
     exportStatus.value = 'エクスポートに失敗しました'

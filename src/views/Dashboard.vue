@@ -1,6 +1,6 @@
 <template>
-  <v-container fluid class="p-2">
-    <v-row dense class="pb-2">
+  <v-container>
+    <v-row dense class="pb-4">
       <v-col cols="10">
         <h3>
           <v-icon 

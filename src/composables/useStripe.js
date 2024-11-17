@@ -3,14 +3,14 @@ import { loadStripe } from '@stripe/stripe-js'
 
 // プラン情報を定義
 const plans = [
-  { 
+  {
     planId: 'free',
     priceId: 'price_free',
     name: 'フリープラン',
     price: 0,
     features: ['基本機能が使用可能', '最大5名まで登録可能']
   },
-  { 
+  {
     planId: 'pro',
     priceId: 'price_1QJSigJlLYAT4bpznFUNs5eg',
     name: 'プロプラン',
@@ -34,6 +34,7 @@ const plans = [
 ]
 
 export function useStripe() {
+  // 既存のref/reactive
   const stripe = ref(null)
   const elements = ref(null)
   const cards = reactive({})
@@ -142,10 +143,13 @@ export function useStripe() {
   }
 
   return {
+    // 状態
     stripe,
     elements,
     cards,
-    plans, // プラン情報を追加
+    plans,
+
+    // メソッド
     initializeStripe,
     createCardElement,
     createToken,

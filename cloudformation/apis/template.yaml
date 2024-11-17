@@ -534,6 +534,22 @@ Resources:
             Method: POST
             Auth:
               Authorizer: CognitoAuthorizer
+        Invoices:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /payment/invoices
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+        SubscriptionInfo:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /payment/subscription-info
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   # ------------------------------------------------------------#
   #  Lambda Layer

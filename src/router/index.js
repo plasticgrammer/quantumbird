@@ -106,9 +106,10 @@ const routes = [
     component: () => import('../views/AccountSetting.vue')
   },
   {
-    path: '/payment',
-    name: 'Payment',
-    component: () => import('../views/Payment.vue')
+    path: '/billing',
+    name: 'Billing',
+    component: () => import('../views/Billing.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/member/mail/:memberUuid',
