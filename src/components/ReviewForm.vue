@@ -530,26 +530,27 @@ const fetchReports = async (weekString) => {
   }
 }
 
-const fetchMembers = async () => {
-  try {
-    return await listMembers(props.organizationId)
-  } catch (err) {
-    console.error('Failed to fetch members:', err)
-    throw err
-  }
+const sortReports = (reports) => {
+  const statusOrder = { none: 0, pending: 1, feedback: 2, approved: 3 }
+  return [...reports].sort((a, b) => {
+    // ステータスでの比較
+    const statusDiff = statusOrder[a.status] - statusOrder[b.status]
+    if (statusDiff !== 0) return statusDiff
+    
+    // memberUuidでの比較（第2ソートキー）
+    return a.memberUuid.localeCompare(b.memberUuid)
+  })
 }
 
 const processReports = (fetchedReports, members) => {
-  const statusOrder = { none: 0, pending: 1, feedback: 2, approved: 3 }
   const reportMap = new Map(fetchedReports.map(r => [r.memberUuid, r]))
   
-  return members.map(member => {
+  const processedReports = members.map(member => {
     const report = reportMap.get(member.memberUuid) || {
       memberUuid: member.memberUuid,
       status: 'none',
       projects: [],
     }
-
     return {
       ...report,
       memberId: member.id,
@@ -557,10 +558,9 @@ const processReports = (fetchedReports, members) => {
       projects: report.projects || [],
       status: report.status || 'none',
     }
-  }).sort((a, b) => {
-    if (a.status === b.status) return a.memberId.localeCompare(b.memberId)
-    return (statusOrder[a.status] ?? Number.MAX_SAFE_INTEGER) - (statusOrder[b.status] ?? Number.MAX_SAFE_INTEGER)
   })
+
+  return sortReports(processedReports)
 }
 
 const handleFeedback = async (memberUuid) => {
@@ -582,7 +582,10 @@ const handleFeedback = async (memberUuid) => {
       }
       
       await submitFeedback(memberUuid, props.weekString, feedback)
+      showNotification('フィードバックを送信しました')
       
+      // 入力欄をクリア
+      newFeedbacks.value[memberUuid] = ''
       // ローカルの状態を更新
       const updatedReport = {
         ...report,
@@ -594,9 +597,8 @@ const handleFeedback = async (memberUuid) => {
           ? updatedReport
           : r
       )
-      // 入力欄をクリア
-      newFeedbacks.value[memberUuid] = ''
-      showNotification('フィードバックを送信しました')
+      reports.value = sortReports(reports.value)
+
     } catch (error) {
       showError('フィードバックの送信に失敗しました', error)
     }
@@ -604,38 +606,39 @@ const handleFeedback = async (memberUuid) => {
 }
 
 const handleApprove = async (memberUuid) => {
-  let confirmMessage = ''
-  if (newFeedbacks.value[memberUuid]?.trim() !== '') {
-    confirmMessage = 'フィードバックが未送信です。\nフィードバックの入力を破棄して、報告を確認済みとします。よろしいですか？'
-  } else {
-    confirmMessage = '報告を確認済みとします。よろしいですか？'
-  }
-  const confirmed = await showConfirmDialog('確認', confirmMessage)
-  if (!confirmed) {
-    return
-  }
+  const confirmMessage = newFeedbacks.value[memberUuid]?.trim() 
+    ? 'フィードバックが未送信です。\nフィードバックの入力を破棄して、報告を確認済みとします。よろしいですか？'
+    : '報告を確認済みとします。よろしいですか？'
 
-  const now = new Date()
+  const confirmed = await showConfirmDialog('確認', confirmMessage)
+  if (!confirmed) return
+
   const report = reports.value.find(r => r.memberUuid === memberUuid)
-  if (report) {
-    try {
-      const updatedReport = {
-        ...report,
-        status: 'approved',
-        approvedAt: now.toISOString()
-      }
-      await updateReport(updatedReport)
-      showNotification('報告を確認済みとしました')
-      
-      // ローカルの状態を更新
-      reports.value = reports.value.map(r =>
+  if (!report) return
+
+  try {
+    const now = new Date()
+    const updateData = {
+      status: 'approved',
+      approvedAt: now.toISOString()
+    }
+
+    await updateReport({
+      ...report,
+      ...updateData
+    })
+    showNotification('報告を確認済みとしました')
+
+    // ローカル状態の更新
+    reports.value = sortReports(
+      reports.value.map(r => 
         r.memberUuid === memberUuid 
-          ? { ...r, status: 'approved', approvedAt: now.toLocaleString() }
+          ? { ...r, ...updateData }
           : r
       )
-    } catch (error) {
-      showError('報告の承認に失敗しました', error)
-    }
+    )
+  } catch (error) {
+    showError('報告の承認に失敗しました', error)
   }
 }
 
@@ -660,13 +663,14 @@ const fetchData = async () => {
   error.value = null
   try {
     const previousWeekString = getPreviousWeekString(props.weekString)
+    
     const [fetchedReports, fetchedPrevReports, members] = await Promise.all([
       fetchReports(props.weekString), 
-      fetchReports(previousWeekString), 
-      fetchMembers()
+      fetchReports(previousWeekString),
+      listMembers(props.organizationId)
     ])
     reports.value = processReports(fetchedReports, members)
-    // 各メンバーのフィードバック入力欄とLastWeekRating表示状態を初期化
+    
     reports.value.forEach(report => {
       newFeedbacks.value[report.memberUuid] = ''
     })
@@ -744,11 +748,11 @@ watch(isAllCompleted, (currentlyComplete) => {
 }
 
 .v-list-item__title {
-  font-size: 0.875rem !重要;
+  font-size: 0.875rem !important;
 }
 
 .v-list-item__subtitle {
-  font-size: 0.75rem !重要;
+  font-size: 0.75rem !important;
 }
 
 .v-expansion-panel-title {
@@ -756,9 +760,9 @@ watch(isAllCompleted, (currentlyComplete) => {
 }
 
 .v-expansion-panel--active > .v-expansion-panel-title:not(.v-expansion-panel-title--static) {
-  min-height: auto !重要;
-  padding-top: 13px !重要;
-  padding-bottom: 12px !重要;
+  min-height: auto !important;
+  padding-top: 13px !important;
+  padding-bottom: 12px !important;
 }
 
 .borderless-textarea :deep(.v-field__outline) {
