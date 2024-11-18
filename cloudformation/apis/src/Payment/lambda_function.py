@@ -417,7 +417,7 @@ def get_invoices(body: Dict) -> Dict:
                     'amount': invoice.amount_paid,
                     'status': invoice.status,
                     'description': invoice.lines.data[0].description if invoice.lines.data else '',
-                    'pdf': invoice.invoice_pdf
+                    'url': invoice.hosted_invoice_url
                 } for invoice in invoices.data]
             }
         }

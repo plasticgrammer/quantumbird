@@ -27,18 +27,6 @@
       <v-list class="pa-0 brightness120" :bg-color="bgColor">
         <v-list-item>
           <v-list-item-title class="text-body-2 py-2 opacity-60">{{ user.email }}</v-list-item-title>
-          <v-list-item-title class="text-body-2 py-2 opacity-60">
-            <v-icon class="mr-2" size="small">mdi-currency-usd</v-icon>
-            {{ currentPlanName }}
-            <v-chip
-              v-if="isTrialPeriod"
-              color="warning"
-              size="x-small"
-              class="ml-2"
-            >
-              トライアル中
-            </v-chip>
-          </v-list-item-title>
         </v-list-item>
         <v-divider></v-divider>
         <v-list-item
@@ -130,9 +118,6 @@ const user = computed(() => ({
   username: store.getters['auth/name'],
   email: store.getters['auth/email']
 }))
-
-const currentPlanName = computed(() => store.getters['auth/currentPlanName'])
-const isTrialPeriod = computed(() => store.getters['auth/isTrialPeriod'])
 
 const handleMouseEnter = () => {
   emit('update:modelValue', true)

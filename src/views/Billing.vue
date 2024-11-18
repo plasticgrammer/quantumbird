@@ -71,9 +71,9 @@
                   variant="text"
                   size="small"
                   color="primary"
-                  @click="downloadInvoice(invoice.id)"
+                  @click="openInvoice(invoice.url)"
                 >
-                  <v-icon size="small">mdi-download</v-icon>
+                  <v-icon size="large">mdi-open-in-new</v-icon>
                 </v-btn>
               </td>
             </tr>
@@ -141,6 +141,12 @@ const formatDate = (date) => {
 const handlePaymentSuccess = async () => {
   if (currentSubscription.value?.stripeCustomerId) {
     await fetchInvoices(currentSubscription.value.stripeCustomerId)
+  }
+}
+
+const openInvoice = (url) => {
+  if (url) {
+    window.open(url, '_blank')
   }
 }
 
