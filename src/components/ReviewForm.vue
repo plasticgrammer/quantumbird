@@ -537,8 +537,8 @@ const sortReports = (reports) => {
     const statusDiff = statusOrder[a.status] - statusOrder[b.status]
     if (statusDiff !== 0) return statusDiff
     
-    // memberUuidでの比較（第2ソートキー）
-    return a.memberUuid.localeCompare(b.memberUuid)
+    // memberIdでの比較（第2ソートキー）
+    return a.memberId.localeCompare(b.memberId)
   })
 }
 
