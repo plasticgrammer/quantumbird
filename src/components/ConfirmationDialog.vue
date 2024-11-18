@@ -4,7 +4,7 @@
     max-width="400px"
     persistent
   >
-    <v-card class="bg-plain">
+    <v-card class="bg-plain" rounded="lg">
       <v-card-title class="bg-primary">
         {{ currentTitle }}
       </v-card-title>

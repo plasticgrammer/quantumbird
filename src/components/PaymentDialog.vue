@@ -13,30 +13,29 @@
         ></v-btn>
       </v-card-title>
       <v-card-text>
-        <v-card class="mx-auto">
-          <!-- プラン選択カード - プラン選択ステップの時のみ表示 -->
-          <v-card-text v-if="currentStep === 'plan-selection'" class="pt-8">
-            <!-- 既存のプラン選択部分をそのまま使用 -->
-            <v-row justify="center">
-              <v-col
-                v-for="plan in plans"
-                :key="plan.planId"
-                cols="12"
-                sm="6"
-                md="4"
-                class="pa-4"
+        <!-- プラン選択カード -->
+        <div v-if="currentStep === 'plan-selection'" class="px-4 py-0">
+          <v-row justify="center">
+            <v-col
+              v-for="plan in plans"
+              :key="plan.planId"
+              cols="12"
+              sm="6"
+              md="4"
+              class="pa-4"
+            >
+              <v-card
+                :color="getCardColor(plan)"
+                :class="[
+                  'plan-card',
+                  formState.selectedPlan === plan.planId ? 'selected-plan' : '',
+                  currentPlan?.planId === plan.planId ? 'current-plan' : ''
+                ]"
+                class="rounded-lg cursor-pointer position-relative"
+                elevation="4"
+                @click="formState.selectedPlan = plan.planId"
               >
-                <v-card
-                  :color="getCardColor(plan)"
-                  :class="[
-                    'plan-card',
-                    formState.selectedPlan === plan.planId ? 'selected-plan' : '',
-                    currentPlan?.planId === plan.planId ? 'current-plan' : ''
-                  ]"
-                  class="rounded-lg cursor-pointer position-relative"
-                  elevation="4"
-                  @click="formState.selectedPlan = plan.planId"
-                >
+                <div style="min-height:30px">
                   <!-- 現在のプランバッジ -->
                   <v-chip
                     v-if="currentPlan?.planId === plan.planId"
@@ -47,218 +46,216 @@
                   >
                     現在のプラン
                   </v-chip>
-                  <div v-else class="mb-8"></div>
+                </div>
 
-                  <!-- 既存のカード内容 -->
-                  <v-card-title class="text-center pt-2">
-                    <div class="text-h6 font-weight-bold">{{ plan.name }}</div>
-                  </v-card-title>
+                <!-- 既存のカード内容 -->
+                <v-card-title class="text-center pt-2">
+                  <div class="text-h6 font-weight-bold">{{ plan.name }}</div>
+                </v-card-title>
 
-                  <v-card-text>
-                    <div class="text-h4 font-weight-bold mb-2 text-center">
-                      <div>
-                        ¥{{ plan.price.toLocaleString() }}<span class="text-body-1">/月</span>
+                <v-card-text>
+                  <div class="text-h4 font-weight-bold mb-2 text-center" style="min-height:130px">
+                    <div>
+                      ¥{{ plan.price.toLocaleString() }}<span class="text-body-1">/月</span>
+                    </div>
+                    <template v-if="plan.planId === 'business'">
+                      <div class="text-body-1 mb-2">
+                        <div v-for="(line, index) in plan.priceDescription" :key="index" class="price-line">
+                          {{ line }}
+                        </div>
                       </div>
-                      <template v-if="plan.planId === 'business'">
-                        <div class="text-body-1 mb-2">
-                          <div v-for="(line, index) in plan.priceDescription" :key="index" class="price-line">
-                            {{ line }}
-                          </div>
-                        </div>
-                        <div class="text-subtitle-1 font-weight-regular">
-                          アカウント数: {{ formState.accountCount }}
-                        </div>
-                        <div class="text-h6 mt-2">
-                          合計: ¥{{ plan.getPrice(formState.accountCount).toLocaleString() }}<span class="text-body-1">/月</span>
-                        </div>
-                      </template>
-                    </div>
-                    <v-divider class="mb-4"></v-divider>
-                    <v-list
-                      class="bg-transparent"
-                      density="compact"
+                      <div class="text-subtitle-1 font-weight-regular">
+                        アカウント数: {{ formState.accountCount }}
+                      </div>
+                      <div class="text-h6 mt-2">
+                        合計: ¥{{ plan.getPrice(formState.accountCount).toLocaleString() }}<span class="text-body-1">/月</span>
+                      </div>
+                    </template>
+                  </div>
+                  <v-divider class="mb-4"></v-divider>
+                  <v-list
+                    class="bg-transparent"
+                    density="compact"
+                  >
+                    <v-list-item
+                      v-for="(feature, index) in plan.features"
+                      :key="index"
+                      :class="formState.selectedPlan === plan.planId ? 'text-white' : ''"
                     >
-                      <v-list-item
-                        v-for="(feature, index) in plan.features"
-                        :key="index"
-                        :class="formState.selectedPlan === plan.planId ? 'text-white' : ''"
-                      >
-                        <template #prepend>
-                          <v-icon
-                            :color="formState.selectedPlan === plan.planId ? 'white' : 'primary'"
-                            size="small"
-                          >
-                            mdi-check-circle
-                          </v-icon>
-                        </template>
-                        {{ feature }}
-                      </v-list-item>
-                    </v-list>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-            
-            <!-- プラン選択ボタン部分を修正 -->
-            <v-row justify="center" class="mt-5 mb-1">
-              <v-col cols="12" sm="8" md="6">
-                <v-btn
-                  v-if="formState.selectedPlan && formState.selectedPlan !== currentPlan.value?.planId"
-                  color="primary"
-                  block
-                  :loading="initializingPayment"
-                  :disabled="initializingPayment"
-                  @click="handlePlanSelection"
-                >
-                  {{ initializingPayment ? '読み込み中...' : '次へ' }}
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card-text>
-
-          <!-- 支払い情報フォーム - 支払いステップの時のみ表示 -->
-          <template v-if="currentStep === 'payment'">
-            <v-card-text class="px-6 pb-4">
-              <!-- 変更内容カード -->
-              <v-card class="mb-4 pa-4" variant="outlined">
-                <div class="text-subtitle-1 mb-2">変更内容</div>
-                <div class="mb-2">
-                  現在のプラン: {{ currentPlan?.name || 'なし' }}
-                  <template v-if="currentPlan?.planId === 'business'">
-                    <div class="mt-1 ml-2">
-                      現在のアカウント数: {{ currentPlan.currentAccountCount }}
-                      <div>現在の月額料金: ¥{{ currentPlan.getPrice(currentPlan.currentAccountCount).toLocaleString() }}/月</div>
-                    </div>
-                  </template>
-                  <template v-else-if="currentPlan?.planId === 'pro'">
-                    <div class="mt-1 ml-2">
-                      現在の月額料金: ¥{{ currentPlan.price.toLocaleString() }}/月
-                    </div>
-                  </template>
-                </div>
-                <v-divider class="my-3"></v-divider>
-                <div>
-                  変更後のプラン: {{ plans.find(p => p.planId === formState.selectedPlan)?.name }}
-                  <template v-if="formState.selectedPlan === 'business'">
-                    <v-text-field
-                      v-model="formState.accountCount"
-                      type="number"
-                      label="アカウント数"
-                      class="mt-3 mb-2 ml-2"
-                      :rules="validationRules.accountCount"
-                      hide-details="auto"
-                      density="compact"
-                      variant="outlined"
-                      max-width="130px"
-                      required
-                    ></v-text-field>
-                    
-                    <div class="ml-2">
-                      変更後の月額料金: ¥{{ plans.find(p => p.planId === 'business').getPrice(formState.accountCount).toLocaleString() }}/月
-                    </div>
-                  </template>
-                  <template v-if="formState.selectedPlan === 'pro'">
-                    <div class="mt-1 ml-2">
-                      変更後の月額料金: ¥{{ plans.find(p => p.planId === 'pro').price.toLocaleString() }}/月
-                    </div>
-                  </template>
-                </div>
-              </v-card>
-
-              <!-- 支払い方法セクション -->
-              <template v-if="formState.selectedPlan === 'pro' || formState.selectedPlan === 'business'">
-                <v-card class="mb-4 pa-4" variant="outlined">
-                  <h3 class="text-h6 mb-4">支払い方法</h3>
-
-                  <!-- 新規支払い方法入力フォーム -->
-                  <template v-if="!currentPaymentMethod">
-                    <PaymentMethodForm
-                      ref="paymentFormRef"
-                      :element-id="'payment-form'"
-                      :loading="isLoading"
-                      :show-submit-button="false"
-                      @error="errorMessage = $event"
-                    />
-                  </template>
-
-                  <!-- 支払い方法更新フォーム -->
-                  <template v-else-if="isPaymentMethodUpdateMode">
-                    <PaymentMethodForm
-                      element-id="payment-update"
-                      :loading="isUpdatingPayment"
-                      :show-submit-button="true"
-                      @submit="handlePaymentMethodOnlyUpdate"
-                      @error="errorMessage = $event"
-                    >
-                      <template #submit-button>
-                        <div class="d-flex gap-2 pt-2">
-                          <v-btn
-                            color="primary"
-                            type="submit"
-                            :loading="isUpdatingPayment"
-                          >
-                            支払い方法を更新
-                          </v-btn>
-                          <span class="mx-2"></span>
-                          <v-btn
-                            variant="outlined"
-                            @click="isPaymentMethodUpdateMode = false"
-                          >
-                            キャンセル
-                          </v-btn>
-                        </div>
-                      </template>
-                    </PaymentMethodForm>
-                  </template>
-
-                  <!-- 現在の支払い方法表示 -->
-                  <template v-else>
-                    <div class="mb-4">
-                      <div class="d-flex align-center justify-space-between">
-                        <div class="d-flex align-center">
-                          <v-icon class="mr-2">mdi-credit-card</v-icon>
-                          <span>**** **** **** {{ currentPaymentMethod.last4 }}</span>
-                          <span class="ml-2 text-caption">
-                            有効期限: {{ String(currentPaymentMethod.expMonth).padStart(2, '0') }}/{{ String(currentPaymentMethod.expYear).slice(-2) }}
-                          </span>
-                        </div>
-                        <v-btn
-                          variant="text"
-                          color="primary"
-                          @click="isPaymentMethodUpdateMode = true"
+                      <template #prepend>
+                        <v-icon
+                          :color="formState.selectedPlan === plan.planId ? 'white' : 'primary'"
+                          size="small"
                         >
-                          支払い方法を変更
-                        </v-btn>
-                      </div>
-                    </div>
-                  </template>
-                </v-card>
-              </template>
-
-              <!-- プラン変更確認ボタン - 支払い方法更新モード時は非表示 -->
+                          mdi-check-circle
+                        </v-icon>
+                      </template>
+                      {{ feature }}
+                    </v-list-item>
+                  </v-list>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+          
+          <v-row justify="center" class="mt-5 mb-1">
+            <v-col cols="12" sm="8" md="6">
               <v-btn
-                v-if="!isPaymentMethodUpdateMode"
+                v-if="formState.selectedPlan && formState.selectedPlan !== currentPlan.value?.planId"
                 color="primary"
                 block
-                size="large"
-                :loading="isLoading"
-                :disabled="isLoading || !formState.selectedPlan"
-                @click.prevent="handleSubmit"
+                :loading="initializingPayment"
+                :disabled="initializingPayment"
+                @click="handlePlanSelection"
               >
-                {{ isLoading ? '処理中...' : formState.selectedPlan === 'free' ? 'プランを解約する' : 'プランを変更する' }}
+                {{ initializingPayment ? '読み込み中...' : '次へ' }}
               </v-btn>
-            </v-card-text>
+            </v-col>
+          </v-row>
+        </div>
 
-            <v-card-text class="px-6 py-4">
-              <v-btn
-                variant="outlined"
-                @click="currentStep = 'plan-selection'"
-              >
-                プラン選択に戻る
-              </v-btn>
-            </v-card-text>
-          </template>
-        </v-card>
+        <!-- 支払い情報フォーム -->
+        <template v-if="currentStep === 'payment'">
+          <v-card-text class="px-6 pb-4">
+            <!-- 変更内容カード -->
+            <v-card class="mb-4 pa-4" variant="outlined">
+              <div class="text-subtitle-1 mb-2">変更内容</div>
+              <div class="mb-2">
+                現在のプラン: {{ currentPlan?.name || 'なし' }}
+                <template v-if="currentPlan?.planId === 'business'">
+                  <div class="mt-1 ml-2">
+                    現在のアカウント数: {{ currentPlan.currentAccountCount }}
+                    <div>現在の月額料金: ¥{{ currentPlan.getPrice(currentPlan.currentAccountCount).toLocaleString() }}/月</div>
+                  </div>
+                </template>
+                <template v-else-if="currentPlan?.planId === 'pro'">
+                  <div class="mt-1 ml-2">
+                    現在の月額料金: ¥{{ currentPlan.price.toLocaleString() }}/月
+                  </div>
+                </template>
+              </div>
+              <v-divider class="my-3"></v-divider>
+              <div>
+                変更後のプラン: {{ plans.find(p => p.planId === formState.selectedPlan)?.name }}
+                <template v-if="formState.selectedPlan === 'business'">
+                  <v-text-field
+                    v-model="formState.accountCount"
+                    type="number"
+                    label="アカウント数"
+                    class="mt-3 mb-2 ml-2"
+                    :rules="validationRules.accountCount"
+                    hide-details="auto"
+                    density="compact"
+                    variant="outlined"
+                    max-width="130px"
+                    required
+                  ></v-text-field>
+                  
+                  <div class="ml-2">
+                    変更後の月額料金: ¥{{ plans.find(p => p.planId === 'business').getPrice(formState.accountCount).toLocaleString() }}/月
+                  </div>
+                </template>
+                <template v-if="formState.selectedPlan === 'pro'">
+                  <div class="mt-1 ml-2">
+                    変更後の月額料金: ¥{{ plans.find(p => p.planId === 'pro').price.toLocaleString() }}/月
+                  </div>
+                </template>
+              </div>
+            </v-card>
+
+            <!-- 支払い方法セクション -->
+            <template v-if="formState.selectedPlan === 'pro' || formState.selectedPlan === 'business'">
+              <v-card class="mb-4 pa-4" variant="outlined">
+                <h3 class="text-h6 mb-4">支払い方法</h3>
+
+                <!-- 新規支払い方法入力フォーム -->
+                <template v-if="!currentPaymentMethod">
+                  <PaymentMethodForm
+                    ref="paymentFormRef"
+                    :element-id="'payment-form'"
+                    :loading="isLoading"
+                    :show-submit-button="false"
+                    @error="errorMessage = $event"
+                  />
+                </template>
+
+                <!-- 支払い方法更新フォーム -->
+                <template v-else-if="isPaymentMethodUpdateMode">
+                  <PaymentMethodForm
+                    element-id="payment-update"
+                    :loading="isUpdatingPayment"
+                    :show-submit-button="true"
+                    @submit="handlePaymentMethodOnlyUpdate"
+                    @error="errorMessage = $event"
+                  >
+                    <template #submit-button>
+                      <div class="d-flex gap-2 pt-2">
+                        <v-btn
+                          color="primary"
+                          type="submit"
+                          :loading="isUpdatingPayment"
+                        >
+                          支払い方法を更新
+                        </v-btn>
+                        <span class="mx-2"></span>
+                        <v-btn
+                          variant="outlined"
+                          @click="isPaymentMethodUpdateMode = false"
+                        >
+                          キャンセル
+                        </v-btn>
+                      </div>
+                    </template>
+                  </PaymentMethodForm>
+                </template>
+
+                <!-- 現在の支払い方法表示 -->
+                <template v-else>
+                  <div class="mb-4">
+                    <div class="d-flex align-center justify-space-between">
+                      <div class="d-flex align-center">
+                        <v-icon class="mr-2">mdi-credit-card</v-icon>
+                        <span>**** **** **** {{ currentPaymentMethod.last4 }}</span>
+                        <span class="ml-2 text-caption">
+                          有効期限: {{ String(currentPaymentMethod.expMonth).padStart(2, '0') }}/{{ String(currentPaymentMethod.expYear).slice(-2) }}
+                        </span>
+                      </div>
+                      <v-btn
+                        variant="text"
+                        color="primary"
+                        @click="isPaymentMethodUpdateMode = true"
+                      >
+                        支払い方法を変更
+                      </v-btn>
+                    </div>
+                  </div>
+                </template>
+              </v-card>
+            </template>
+
+            <!-- プラン変更確認ボタン - 支払い方法更新モード時は非表示 -->
+            <v-btn
+              v-if="!isPaymentMethodUpdateMode"
+              color="primary"
+              block
+              size="large"
+              :loading="isLoading"
+              :disabled="isLoading || !formState.selectedPlan"
+              @click.prevent="handleSubmit"
+            >
+              {{ isLoading ? '処理中...' : formState.selectedPlan === 'free' ? 'プランを解約する' : 'プランを変更する' }}
+            </v-btn>
+          </v-card-text>
+
+          <v-card-text class="px-6 py-4">
+            <v-btn
+              variant="outlined"
+              @click="currentStep = 'plan-selection'"
+            >
+              プラン選択に戻る
+            </v-btn>
+          </v-card-text>
+        </template>
 
         <!-- 完了ダイアログ -->
         <v-dialog v-model="showSuccessDialog" max-width="400">
