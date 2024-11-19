@@ -59,12 +59,19 @@ def create_error_response(error: Exception) -> Dict:
         return create_response(400, {'error': str(error)})
     return create_response(500, {'error': 'Internal server error'})
 
-def get_or_create_customer(email: str, token: str) -> stripe.Customer:
+def get_or_create_customer(email: str, token: str, client_ip: str) -> stripe.Customer:
     """顧客の取得または作成"""
     customers = stripe.Customer.list(email=email, limit=1)
     if customers.data:
         return customers.data[0]
-    return stripe.Customer.create(email=email, source=token)
+    return stripe.Customer.create(
+        email=email,
+        source=token,
+        preferred_locales=['ja'],  # 言語を日本語に設定
+        tax={
+            'ip_address': client_ip  # クライアントのIPアドレスを使用
+        }
+    )
 
 def calculate_business_price(account_count: int) -> int:
     """ビジネスプランの価格計算"""
@@ -99,7 +106,7 @@ def check_plan_change_cooldown(subscription: stripe.Subscription) -> None:
         if (time.time() - last_change) < PaymentConfig.PLAN_CHANGE_COOLDOWN_SECONDS:
             raise PaymentError('プラン変更は24時間に1回までです')
 
-def create_subscription(body: Dict) -> Dict:
+def create_subscription(body: Dict, client_ip: str) -> Dict:
     """サブスクリプション作成処理"""
     email = body['email']
     token = body.get('token')
@@ -116,7 +123,7 @@ def create_subscription(body: Dict) -> Dict:
     if customer_id:
         customer = stripe.Customer.retrieve(customer_id)
     else:
-        customer = get_or_create_customer(email, token)
+        customer = get_or_create_customer(email, token, client_ip)
         # Cognitoの更新は不要（フロントエンドで行う）
 
     # フリープランの場合の処理を修正
@@ -398,29 +405,51 @@ def update_payment_method(body: Dict) -> Dict:
         }
 
 def get_invoices(body: Dict) -> Dict:
-    """請求履歴取得処理"""
     try:
         customer_id = body.get('customerId')
         if not customer_id:
             return {'data': {'invoices': []}}
 
+        # インボイスの取得
         invoices = stripe.Invoice.list(
             customer=customer_id,
-            limit=6  # 直近6ヶ月分
+            limit=6,
+            expand=['data.charge']  # chargeを展開して返金情報にアクセス
         )
 
-        return {
-            'data': {
-                'invoices': [{
-                    'id': invoice.id,
-                    'date': invoice.created * 1000,  # 秒をミリ秒に変換
-                    'amount': invoice.amount_paid,
-                    'status': invoice.status,
-                    'description': invoice.lines.data[0].description if invoice.lines.data else '',
-                    'url': invoice.hosted_invoice_url
-                } for invoice in invoices.data]
-            }
-        }
+        formatted_transactions = []
+        
+        for invoice in invoices.data:
+            # インボイス情報を追加
+            formatted_transactions.append({
+                'id': invoice.id,
+                'date': invoice.created * 1000,
+                'amount': invoice.amount_paid,
+                'status': invoice.status,
+                'type': 'charge',
+                'description': invoice.lines.data[0].description if invoice.lines.data else '',
+                'url': invoice.hosted_invoice_url
+            })
+            
+            # 関連する返金情報があれば追加
+            if invoice.charge:
+                refunds = stripe.Refund.list(charge=invoice.charge)
+                for refund in refunds.data:
+                    formatted_transactions.append({
+                        'id': refund.id,
+                        'date': refund.created * 1000,
+                        'amount': -refund.amount,
+                        'status': refund.status,
+                        'type': 'refund',
+                        'description': '返金',
+                        'url': None
+                    })
+
+        # 日付でソート
+        formatted_transactions.sort(key=lambda x: x['date'], reverse=True)
+
+        return {'data': {'invoices': formatted_transactions}}
+        
     except Exception as e:
         return {'data': {'invoices': []}, 'error': str(e)}
 
@@ -472,9 +501,12 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         path = event.get('path', '')
         method = event.get('httpMethod', '')
         body = json.loads(event.get('body', '{}'))
+        
+        # クライアントIPアドレスの取得
+        client_ip = event.get('requestContext', {}).get('identity', {}).get('sourceIp', 'auto')
 
         handlers = {
-            '/payment/create-subscription': create_subscription,
+            '/payment/create-subscription': lambda body: create_subscription(body, client_ip),
             '/payment/update-subscription': update_subscription,
             '/payment/change-plan': change_subscription_plan,
             '/payment/payment-methods': get_payment_methods,

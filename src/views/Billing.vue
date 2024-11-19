@@ -49,8 +49,8 @@
               <th>日付</th>
               <th>内容</th>
               <th>金額</th>
-              <th>ステータス</th>
-              <th>請求書</th>
+              <th class="text-center">ステータス</th>
+              <th class="text-center">請求書</th>
             </tr>
           </thead>
           <tbody>
@@ -58,7 +58,7 @@
               <td>{{ formatDate(invoice.date) }}</td>
               <td>{{ invoice.description }}</td>
               <td>{{ invoice.amount }}円</td>
-              <td>
+              <td class="text-center">
                 <v-chip
                   :color="invoice.status === 'paid' ? 'success' : 'warning'"
                   size="small"
@@ -66,10 +66,11 @@
                   {{ invoice.status === 'paid' ? '支払い済み' : '未払い' }}
                 </v-chip>
               </td>
-              <td>
+              <td class="text-center">
                 <v-btn
+                  v-if="invoice.url"
                   variant="text"
-                  size="small"
+                  size="large"
                   color="primary"
                   @click="openInvoice(invoice.url)"
                 >
