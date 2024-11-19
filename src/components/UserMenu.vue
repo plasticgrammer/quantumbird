@@ -75,6 +75,12 @@
                 @click="openPrivacyPolicy"
               >
               </v-list-item>
+              <v-list-item
+                prepend-icon="mdi-shopping-outline"
+                title="特定商取引法に基づく表記"
+                @click="openSpecifiedCommercialTransactions"
+              >
+              </v-list-item>
             </v-list>
           </v-menu>
         </v-list-item>
@@ -93,7 +99,7 @@
 import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
-import { feedbackUrl, termsOfServiceUrl, privacyPolicyUrl } from '@/config/environment'
+import { feedbackUrl, termsOfServiceUrl, privacyPolicyUrl, specifiedCommercialTransactionsUrl } from '@/config/environment'
 
 defineProps({
   modelValue: {
@@ -150,6 +156,10 @@ const openTermsOfService = () => {
 
 const openPrivacyPolicy = () => {
   window.open(privacyPolicyUrl, '_blank', 'noopener,noreferrer')
+}
+
+const openSpecifiedCommercialTransactions = () => {
+  window.open(specifiedCommercialTransactionsUrl, '_blank', 'noopener,noreferrer')
 }
 
 const handleSignOut = async () => {

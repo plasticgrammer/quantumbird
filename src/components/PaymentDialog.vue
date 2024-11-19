@@ -160,6 +160,18 @@
                     変更後の月額料金: ¥{{ plans.find(p => p.planId === 'pro').price.toLocaleString() }}/月
                   </div>
                 </template>
+                
+                <v-alert
+                  type="warning"
+                  class="my-2"
+                  variant="tonal"
+                  density="compact"
+                >
+                  <ul class="mb-0">
+                    <li>プラン料金は毎月自動で請求されます</li>
+                    <li>プラン変更は即時適用されます</li>
+                  </ul>
+                </v-alert>
               </div>
             </v-card>
 
@@ -168,6 +180,30 @@
               <v-card class="mb-4 pa-4" variant="outlined">
                 <h3 class="text-h6 mb-4">支払い方法</h3>
 
+                <v-alert
+                  type="info"
+                  icon="mdi-shield-check"
+                  class="mb-4"
+                  variant="tonal"
+                  border="start"
+                >
+                  <div class="d-flex align-center">
+                    <div>
+                      <div class="font-weight-bold mb-1">安全な決済処理</div>
+                      <div class="text-body-2">
+                        決済処理は<a href="https://stripe.com/jp" target="_blank" rel="noopener" class="text-indigo">Stripe</a>を利用しています。<br>
+                        カード情報は暗号化され、Stripeの安全な環境で処理されます。当サービスではカード情報を保持しません。<br>
+                        詳細は<a
+                          :href="specifiedCommercialTransactionsUrl"
+                          target="_blank"
+                          rel="noopener"
+                          class="text-indigo"
+                        >特定商取引法に基づく表記</a>をご確認ください。
+                      </div>
+                    </div>
+                  </div>
+                </v-alert>
+                
                 <!-- 新規支払い方法入力フォーム -->
                 <template v-if="!currentPaymentMethod">
                   <PaymentMethodForm
@@ -317,6 +353,7 @@ import {
   updatePaymentMethod
 } from '../services/paymentService'
 import PaymentMethodForm from '../components/PaymentMethodForm.vue'
+import { specifiedCommercialTransactionsUrl } from '../config/environment'
 
 // 新しく追加するpropsとemits
 const props = defineProps({
