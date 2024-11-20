@@ -22,8 +22,9 @@
       :color="getNotificationColor"
       :timeout="5000"
       location="top"
-      width="90%"
-      class="mx-auto rounded-lg"
+      max-width="960px"
+      :width="`calc(100vw - ${(isRailModeActive ? 56 : 255) + 20}px)`"
+      class="custom-snackbar"
       role="alert"
       aria-live="assertive"
     >
@@ -460,6 +461,14 @@ watch(isRailMode, (newValue) => {
   75% {
     transform: translateX(-51%) translateY(-35px);
   }
+}
+
+.custom-snackbar .v-snackbar__wrapper {
+  border-radius: 8px !important;
+}
+
+.custom-snackbar .v-snackbar__content {
+  border-radius: 8px !important;
 }
 </style>
 

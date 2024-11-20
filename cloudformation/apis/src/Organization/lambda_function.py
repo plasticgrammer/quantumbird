@@ -408,6 +408,7 @@ def prepare_member_item(member_data, existing_member=None):
         'organizationId': member_data.get('organizationId', existing_member.get('organizationId')),
         'name': member_data.get('name', existing_member.get('name')),
         'email': member_data.get('email', existing_member.get('email')),
+        'extraInfo': member_data.get('extraInfo', existing_member.get('extraInfo', {})),
         'projects': member_data.get('projects', existing_member.get('projects', [])),
         'adviceTickets': member_data.get('adviceTickets', existing_member.get('adviceTickets', 0))
     }
