@@ -137,7 +137,7 @@ def prepare_member_item(member_data):
         'organizationId': member_data['organizationId'],
         'name': member_data.get('name'),
         'email': member_data.get('email'),
-        'goal': member_data.get('goal'),
+        'extraInfo': member_data.get('extraInfo', {}),
         'projects': member_data.get('projects', []),
         'adviceTickets': float_to_decimal(member_data.get('adviceTickets'))
     }

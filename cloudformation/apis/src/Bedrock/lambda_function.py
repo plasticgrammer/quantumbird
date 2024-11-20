@@ -80,7 +80,7 @@ def get_advisor_role_config(role_id: str) -> Dict[str, str]:
         }
     return ADVISOR_ROLES[role_id]
 
-def create_prompt(report: Dict[str, Any]) -> str:
+def create_prompt(report: Dict[str, Any], member: Dict[str, Any]) -> str:
     """週次報告の内容からプロンプトを生成する"""
 
     # クライアントから送られてきたロールIDを使用
@@ -89,6 +89,11 @@ def create_prompt(report: Dict[str, Any]) -> str:
     
     adviser_role = sanitize_input(role_config['role'])
     advise_point = sanitize_input(role_config['point'])
+
+    # メンバーの職業と目標を取得
+    extra_info = member.get('extraInfo', {})
+    occupation = extra_info.get('occupation', '')
+    goal = extra_info.get('goal', '')
 
     # 評価指標の解析
     rating = report.get('rating', {})
@@ -103,11 +108,22 @@ def create_prompt(report: Dict[str, Any]) -> str:
     adviser_role = sanitize_input(adviser_role)
     advise_point = sanitize_input(advise_point)
     projects_str = sanitize_input(projects_str)
+    occupation = sanitize_input(occupation)
+    goal = sanitize_input(goal)
+
+    # 付加情報を作成（アドバイザーが付加情報を利用可能＆情報がある場合のみ）
+    member_info = ""
+    if role_config['useInfo'] and (occupation or goal):
+        member_info = "\n【メンバー情報】"
+        if occupation:
+            member_info += f"\n・職業: {occupation}"
+        if goal:
+            member_info += f"\n・目標: {goal}"
 
     # 週次報告内容
     report_content = f"""
 【実施した作業】
-{projects_str}
+{projects_str}{member_info}
 
 【振り返り（成果と課題）】
 {report.get('issues', '記載なし')}
@@ -170,7 +186,7 @@ def invoke_claude(prompt: str) -> str:
         logger.error(f"Error invoking Bedrock: {str(e)}")
         raise Exception("アドバイスの生成中にエラーが発生しました。")
     
-def check_and_update_advice_tickets(member_uuid: str) -> tuple[bool, int]:
+def check_and_update_advice_tickets(member: Dict[str, Any], member_uuid: str) -> tuple[bool, int]:
     """
     アドバイスチケットの残数をチェックし、利用可能な場合は1枚消費する
     
@@ -178,15 +194,6 @@ def check_and_update_advice_tickets(member_uuid: str) -> tuple[bool, int]:
         tuple[bool, int]: (チケットが利用可能かどうか, 残りチケット数)
     """
     try:
-        # メンバー情報を取得
-        response = members_table.get_item(
-            Key={'memberUuid': member_uuid}
-        )
-        member = response.get('Item')
-        
-        if not member:
-            raise Exception('Member not found')
-            
         current_tickets = member.get('adviceTickets', 0)
         
         # チケットが0枚の場合は利用不可
@@ -199,7 +206,7 @@ def check_and_update_advice_tickets(member_uuid: str) -> tuple[bool, int]:
             UpdateExpression="SET adviceTickets = adviceTickets - :val",
             ExpressionAttributeValues={':val': 1, ':zero': 0},
             ConditionExpression="adviceTickets > :zero",
-            ReturnValues="UPDATED_NEW"  # 更新後の値を取得
+            ReturnValues="UPDATED_NEW"
         )
         
         # 更新後のチケット数を取得
@@ -214,6 +221,7 @@ def check_and_update_advice_tickets(member_uuid: str) -> tuple[bool, int]:
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """Lambda関数のメインハンドラー"""
+    remaining_tickets = 0  # Initialize at the start
     try:
         if 'body' not in event:
             return {
@@ -236,9 +244,17 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'statusCode': 400,
                 'body': json.dumps({'error': 'memberUuidが必要です。'}, cls=DecimalEncoder)
             }
-            
+
+        # メンバー情報を取得
+        response = members_table.get_item(
+            Key={'memberUuid': member_uuid}
+        )
+        member = response.get('Item')
+        if not member:
+            raise Exception('Member not found')
+                    
         # チケットのチェックと消費
-        is_available, remaining_tickets = check_and_update_advice_tickets(member_uuid)
+        is_available, remaining_tickets = check_and_update_advice_tickets(member, member_uuid)
         if not is_available:
             return {
                 'statusCode': 403,
@@ -250,7 +266,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         # プロンプトの生成
-        prompt = create_prompt(report_content)
+        prompt = create_prompt(report_content, member)
         
         # Claudeの呼び出し
         claude_response = invoke_claude(prompt)

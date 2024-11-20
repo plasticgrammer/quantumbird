@@ -241,8 +241,8 @@ export default {
       }
     },
 
-    async checkPolicyAcceptance({ state, dispatch }) {
-      const user = state.user || await dispatch('fetchUser')
+    async checkPolicyAcceptance({ dispatch }) {
+      const user = await dispatch('fetchUser')
       return {
         needsTosAcceptance: user.tosVersion !== termsOfServiceVersion,
         needsPrivacyPolicyAcceptance: user.privacyPolicyVersion !== privacyPolicyVersion

@@ -15,19 +15,32 @@
         ></v-btn>
       </v-card-title>
       <v-divider class="mb-4"></v-divider>
-      <v-card-text>
-        <div class="text-medium-emphasis mb-4">
+      <v-card-text class="py-0">
+        <div class="text-subtitle-1 mb-4">
           週次報告システムへようこそ。<br>
-          あなたのお役に立てる機能をただいま開発中です。<br>
+        </div>
+        <div class="text-subtitle-2">
+          AIアドバイザーからの回答を向上させるために、付加情報を指定できます。<br>
           <br>
+          <v-text-field
+            v-model="editableOccupation"
+            label="あなたの職業"
+            :rules="[v => !v || v.length <= 20 || '職業は20文字以内で入力してください']"
+            maxlength="20"
+            counter
+            outlined
+            hide-details="auto"
+          />
           <v-textarea
-            v-if="false"
             v-model="editableGoal"
             label="あなたの目標"
+            :rules="[v => !v || v.length <= 50 || '目標は50文字以内で入力してください']"
+            maxlength="50"
+            counter
             rows="3"
             auto-grow
             outlined
-            hide-details
+            hide-details="auto"
           />
         </div>
       </v-card-text>
@@ -39,8 +52,8 @@
           @click="closeDialog"
         ></v-btn>
         <v-btn
-          v-if="false"
           prepend-icon="mdi-check"
+          color="primary"
           class="text-none"
           text="保存"
           @click="saveAndCloseDialog"
@@ -51,8 +64,8 @@
 </template>
 
 <script setup>
-import { ref, inject, watch } from 'vue'
-import { updateMemberGoal } from '../services/publicService'
+import { ref, inject } from 'vue'
+import { updateMemberExtraInfo } from '../services/publicService'
 
 const props = defineProps({
   member: {
@@ -65,27 +78,25 @@ const emit = defineEmits(['update:member'])
 
 const showNotification = inject('showNotification')
 const dialog = ref(false)
+const editableOccupation = ref('')
 const editableGoal = ref('')
 
-watch(() => props.member.goal, (newGoal) => {
-  editableGoal.value = newGoal
-}, { immediate: true })
-
 const openDialog = () => {
-  editableGoal.value = props.member.goal
+  editableOccupation.value = props.member.extraInfo?.occupation
+  editableGoal.value = props.member.extraInfo?.goal
   dialog.value = true
 }
 
 const saveAndCloseDialog = async () => {
   try {
-    await updateMemberGoal(props.member.memberUuid, editableGoal.value)
-    // Update the member object with the new goal
-    const updatedMember = { ...props.member, goal: editableGoal.value }
+    const extraInfo = { occupation: editableOccupation.value, goal: editableGoal.value }
+    await updateMemberExtraInfo(props.member.memberUuid, extraInfo)
+    const updatedMember = { ...props.member, extraInfo }
     emit('update:member', updatedMember)
     showNotification('情報を更新しました。')
     dialog.value = false
   } catch (error) {
-    console.error('Goal update failed:', error)
+    console.error('ExtraInfo update failed:', error)
     showNotification('情報の更新に失敗しました。', 'error')
   }
 }
