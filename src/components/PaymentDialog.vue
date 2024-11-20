@@ -101,11 +101,11 @@
           <v-row justify="center" class="mt-5 mb-1">
             <v-col cols="12" sm="8" md="6">
               <v-btn
-                v-if="formState.selectedPlan && formState.selectedPlan !== currentPlan.value?.planId"
+                v-if="formState.selectedPlan"
                 color="primary"
                 block
                 :loading="initializingPayment"
-                :disabled="initializingPayment"
+                :disabled="initializingPayment || !isValidPlanChange"
                 @click="handlePlanSelection"
               >
                 {{ initializingPayment ? '読み込み中...' : '次へ' }}
@@ -136,42 +136,47 @@
               </div>
               <v-divider class="my-3"></v-divider>
               <div>
-                変更後のプラン: {{ plans.find(p => p.planId === formState.selectedPlan)?.name }}
-                <template v-if="formState.selectedPlan === 'business'">
-                  <v-text-field
-                    v-model="formState.accountCount"
-                    type="number"
-                    label="アカウント数"
-                    class="mt-3 mb-2 ml-2"
-                    :rules="validationRules.accountCount"
-                    hide-details="auto"
-                    density="compact"
-                    variant="outlined"
-                    max-width="130px"
-                    required
-                  ></v-text-field>
-                  
-                  <div class="ml-2">
-                    変更後の月額料金: ¥{{ plans.find(p => p.planId === 'business').getPrice(formState.accountCount).toLocaleString() }}/月
-                  </div>
-                </template>
-                <template v-if="formState.selectedPlan === 'pro'">
-                  <div class="mt-1 ml-2">
-                    変更後の月額料金: ¥{{ plans.find(p => p.planId === 'pro').price.toLocaleString() }}/月
-                  </div>
-                </template>
-                
-                <v-alert
-                  type="warning"
-                  class="my-2"
-                  variant="tonal"
-                  density="compact"
-                >
-                  <ul class="mb-0">
-                    <li>プラン料金は毎月自動で請求されます</li>
-                    <li>プラン変更は即時適用されます</li>
-                  </ul>
-                </v-alert>
+                <v-row>
+                  <v-col cols="6">
+                    変更後のプラン: {{ plans.find(p => p.planId === formState.selectedPlan)?.name }}
+                    <template v-if="formState.selectedPlan === 'business'">
+                      <v-text-field
+                        v-model="formState.accountCount"
+                        type="number"
+                        label="アカウント数"
+                        class="mt-3 mb-2 ml-2"
+                        :rules="validationRules.accountCount"
+                        hide-details="auto"
+                        density="compact"
+                        variant="outlined"
+                        max-width="130px"
+                        required
+                      ></v-text-field>
+                      
+                      <div class="ml-2">
+                        変更後の月額料金: ¥{{ plans.find(p => p.planId === 'business').getPrice(formState.accountCount).toLocaleString() }}/月
+                      </div>
+                    </template>
+                    <template v-if="formState.selectedPlan === 'pro'">
+                      <div class="mt-1 ml-2">
+                        変更後の月額料金: ¥{{ plans.find(p => p.planId === 'pro').price.toLocaleString() }}/月
+                      </div>
+                    </template>
+                  </v-col>
+                  <v-col cols="6">
+                    <v-alert
+                      type="warning"
+                      class="my-2"
+                      variant="tonal"
+                      density="compact"
+                    >
+                      <ul class="mb-0">
+                        <li v-if="formState.selectedPlan !== 'free'">プラン料金は毎月自動で請求されます</li>
+                        <li>プラン変更は即時適用されます</li>
+                      </ul>
+                    </v-alert>
+                  </v-col>
+                </v-row>
               </div>
             </v-card>
 
@@ -283,7 +288,7 @@
             </v-btn>
           </v-card-text>
 
-          <v-card-text class="px-6 py-4">
+          <v-card-text class="px-6 pt-4">
             <v-btn
               variant="outlined"
               @click="currentStep = 'plan-selection'"
@@ -510,6 +515,7 @@ const fetchPaymentMethods = async () => {
 const handlePlanSelection = async () => {
   try {
     initializingPayment.value = true
+    isPaymentMethodUpdateMode.value = false
     await fetchPaymentMethods()
     currentStep.value = 'payment'
   } catch (error) {
@@ -676,6 +682,16 @@ const handleSubmit = async () => {
     isLoading.value = false
   }
 }
+
+const isValidPlanChange = computed(() => {
+  // 選択されたプランと現在のプランが同じ場合
+  if (formState.selectedPlan === currentPlan.value?.planId) {
+    // ビジネスプランの場合のみ許可
+    return formState.selectedPlan === 'business'
+  }
+  // 異なるプランの場合は許可
+  return true
+})
 
 // Lifecycle Hooks
 onMounted(async () => {

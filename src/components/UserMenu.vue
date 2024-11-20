@@ -44,8 +44,8 @@
         >
         </v-list-item>
         <v-list-item
-          prepend-icon="mdi-information-outline"
-          title="その他"
+          prepend-icon="mdi-help-circle-outline"
+          title="ヘルプとサポート"
         >
           <template #append>
             <v-icon icon="mdi-chevron-right"></v-icon>
@@ -172,12 +172,15 @@ const handleSignOut = async () => {
 }
 </script>
 
+<style>
+.v-list-item-title {
+  font-size: 0.925rem;
+  font-weight: 400;
+}
+</style>
+
 <style scoped>
 .user-menu-wrapper {
   width: 100%;
-}
-
-.v-list-item-title {
-  font-size: 0.925rem;
 }
 </style>
