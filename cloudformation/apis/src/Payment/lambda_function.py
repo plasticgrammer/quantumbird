@@ -407,14 +407,15 @@ def update_payment_method(body: Dict) -> Dict:
 def get_invoices(body: Dict) -> Dict:
     try:
         customer_id = body.get('customerId')
+        # 顧客IDがない場合のみ空配列を返す
         if not customer_id:
             return {'data': {'invoices': []}}
 
-        # インボイスの取得
+        # インボイスの取得（過去の請求履歴も含めて取得）
         invoices = stripe.Invoice.list(
             customer=customer_id,
-            limit=6,
-            expand=['data.charge']  # chargeを展開して返金情報にアクセス
+            limit=12,  # 過去の履歴をより多く表示
+            expand=['data.charge']
         )
 
         formatted_transactions = []
@@ -451,6 +452,7 @@ def get_invoices(body: Dict) -> Dict:
         return {'data': {'invoices': formatted_transactions}}
         
     except Exception as e:
+        print(f"Error fetching invoices: {e}")
         return {'data': {'invoices': []}, 'error': str(e)}
 
 def get_subscription_info(customer_id: str) -> Dict:
@@ -532,7 +534,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         error_message = {
             'error': 'システムエラーが発生しました',  # ユーザー向けの一般的なエラーメッセージ
             'detail': str(e),  # 詳細なエラー情報
-            'traceback': traceback.format_exc()  # デバッグ用のスタックトレース
+            'traceback': traceback.format_exc()
         }
         print('Error:', error_message)  # ログ出力
         return create_response(500, {'error': 'システムエラーが発生しました'})  # クライアントへの応答

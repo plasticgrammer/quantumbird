@@ -43,7 +43,7 @@
     <v-card class="mt-4">
       <v-card-title>請求履歴</v-card-title>
       <v-card-text>
-        <v-table>
+        <v-table v-if="invoices.length > 0">
           <thead>
             <tr>
               <th>日付</th>
@@ -80,6 +80,11 @@
             </tr>
           </tbody>
         </v-table>
+        <div v-else class="text-center py-4">
+          <p class="text-body-1 text-medium-emphasis">
+            {{ isLoading ? '読み込み中...' : '請求履歴がありません' }}
+          </p>
+        </div>
       </v-card-text>
     </v-card>
   </v-container>
@@ -123,8 +128,14 @@ const fetchInvoices = async (customerId) => {
   try {
     isLoading.value = true
     error.value = null
-    const response = await getInvoices(customerId)
-    invoices.value = response.data.invoices
+    
+    // 顧客IDがあれば請求履歴を取得
+    if (currentSubscription.value?.stripeCustomerId) {
+      const response = await getInvoices(customerId)
+      invoices.value = response.data.invoices
+    } else {
+      invoices.value = []
+    }
   } catch (err) {
     error.value = '請求履歴の取得に失敗しました'
     console.error('Failed to fetch invoices:', err)
