@@ -407,38 +407,51 @@ def update_payment_method(body: Dict) -> Dict:
 def get_invoices(body: Dict) -> Dict:
     try:
         customer_id = body.get('customerId')
-        # 顧客IDがない場合のみ空配列を返す
         if not customer_id:
             return {'data': {'invoices': []}}
 
-        # インボイスの取得（過去の請求履歴も含めて取得）
         invoices = stripe.Invoice.list(
             customer=customer_id,
-            limit=12,  # 過去の履歴をより多く表示
-            expand=['data.charge']
+            limit=12,
+            expand=['data.charge', 'data.lines.data']
         )
 
         formatted_transactions = []
         
         for invoice in invoices.data:
-            # インボイス情報を追加
-            formatted_transactions.append({
-                'id': invoice.id,
-                'date': invoice.created * 1000,
-                'amount': invoice.amount_paid,
-                'status': invoice.status,
-                'type': 'charge',
-                'description': invoice.lines.data[0].description if invoice.lines.data else '',
-                'url': invoice.hosted_invoice_url
-            })
-            
-            # 関連する返金情報があれば追加
+            # 通常の請求
+            amount = invoice.amount_paid
+            if invoice.status == 'paid':
+                formatted_transactions.append({
+                    'id': invoice.id,
+                    'date': invoice.created,  # Unixタイムスタンプをそのまま使用
+                    'amount': amount,
+                    'status': invoice.status,
+                    'type': 'charge',
+                    'description': invoice.lines.data[0].description if invoice.lines.data else '定期購読料金',
+                    'url': invoice.hosted_invoice_url
+                })
+
+            # プロレート返金がある場合
+            for line in invoice.lines.data:
+                if line.type == 'invoiceitem' and line.amount < 0:
+                    formatted_transactions.append({
+                        'id': f"{invoice.id}_prorate",
+                        'date': line.period.start,  # 期間の開始日を使用
+                        'amount': line.amount,
+                        'status': 'succeeded',
+                        'type': 'refund',
+                        'description': 'プラン変更に伴う返金',
+                        'url': None
+                    })
+
+            # 手動返金がある場合
             if invoice.charge:
                 refunds = stripe.Refund.list(charge=invoice.charge)
                 for refund in refunds.data:
                     formatted_transactions.append({
                         'id': refund.id,
-                        'date': refund.created * 1000,
+                        'date': refund.created,  # Unixタイムスタンプをそのまま使用
                         'amount': -refund.amount,
                         'status': refund.status,
                         'type': 'refund',
@@ -446,13 +459,13 @@ def get_invoices(body: Dict) -> Dict:
                         'url': None
                     })
 
-        # 日付でソート
+        # 日付でソート（新しい順）
         formatted_transactions.sort(key=lambda x: x['date'], reverse=True)
 
         return {'data': {'invoices': formatted_transactions}}
         
     except Exception as e:
-        print(f"Error fetching invoices: {e}")
+        print(f"Error fetching invoices: {str(e)}")  # エラーの詳細を出力
         return {'data': {'invoices': []}, 'error': str(e)}
 
 def get_subscription_info(customer_id: str) -> Dict:

@@ -57,13 +57,15 @@
             <tr v-for="invoice in invoices" :key="invoice.id">
               <td>{{ formatDate(invoice.date) }}</td>
               <td>{{ invoice.description }}</td>
-              <td>{{ invoice.amount }}円</td>
+              <td :class="{ 'text-error': invoice.amount < 0 }">
+                {{ formatAmount(invoice.amount) }}
+              </td>
               <td class="text-center">
                 <v-chip
-                  :color="invoice.status === 'paid' ? 'success' : 'warning'"
+                  :color="getStatusColor(invoice)"
                   size="small"
                 >
-                  {{ invoice.status === 'paid' ? '支払い済み' : '未払い' }}
+                  {{ getStatusText(invoice) }}
                 </v-chip>
               </td>
               <td class="text-center">
@@ -145,9 +147,25 @@ const fetchInvoices = async (customerId) => {
   }
 }
 
-const formatDate = (date) => {
+const formatDate = (timestamp) => {
+  const date = new Date(timestamp * 1000)  // UnixタイムスタンプをDateオブジェクトに変換
   const options = { year: 'numeric', month: '2-digit', day: '2-digit' }
-  return new Date(date).toLocaleDateString('ja-JP', options)
+  return date.toLocaleDateString('ja-JP', options)
+}
+
+const formatAmount = (amount) => {
+  const prefix = amount < 0 ? '-' : ''
+  return `${prefix}${Math.abs(amount).toLocaleString()}円`
+}
+
+const getStatusColor = (invoice) => {
+  if (invoice.type === 'refund') return 'info'
+  return invoice.status === 'paid' ? 'success' : 'warning'
+}
+
+const getStatusText = (invoice) => {
+  if (invoice.type === 'refund') return '返金済み'
+  return invoice.status === 'paid' ? '支払い済み' : '未払い'
 }
 
 const handlePaymentSuccess = async () => {
@@ -173,3 +191,9 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style>
+.text-error {
+  color: var(--v-error-base);
+}
+</style>
