@@ -54,6 +54,9 @@
             v-model="showLearnMoreSubmenu"
             activator="parent"
             location="right"
+            open-on-hover
+            :close-delay="300"
+            :open-delay="100"
           >
             <v-list class="pa-0 brightness120" :bg-color="bgColor">
               <v-list-item
