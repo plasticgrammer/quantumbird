@@ -19,7 +19,7 @@
         <div class="text-subtitle-1 mb-4">
           週次報告システムへようこそ。<br>
         </div>
-        <div class="text-subtitle-2">
+        <div v-if="props.isAdviceEnabled" class="text-subtitle-2">
           AIアドバイザーからの回答を向上させるために、付加情報を指定できます。<br>
           <br>
           <v-text-field
@@ -43,6 +43,12 @@
             hide-details="auto"
           />
         </div>
+        <div v-else class="text-subtitle-2">
+          ここではAIアドバイザーからの回答を向上させるために付加情報を指定できます。<br>
+          ・職業<br>
+          ・目標<br>
+          無料版ではこの機能を利用できません。
+        </div>
       </v-card-text>
       <v-divider class="mt-2"></v-divider>
       <v-card-actions class="my-2 d-flex justify-end">
@@ -52,6 +58,7 @@
           @click="closeDialog"
         ></v-btn>
         <v-btn
+          v-if="props.isAdviceEnabled"
           prepend-icon="mdi-check"
           color="primary"
           class="text-none"
@@ -71,6 +78,10 @@ const props = defineProps({
   member: {
     type: Object,
     required: true
+  },
+  isAdviceEnabled: {
+    type: Boolean,
+    default: false
   }
 })
 

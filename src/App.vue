@@ -23,7 +23,7 @@
       :timeout="5000"
       location="top"
       max-width="960px"
-      :width="`calc(100vw - ${(isRailModeActive ? 56 : 255) + 20}px)`"
+      :width="`calc(100vw - ${navigationWidth + 20}px)`"
       class="custom-snackbar"
       role="alert"
       aria-live="assertive"
@@ -203,13 +203,16 @@ router.beforeEach((to, from, next) => {
 })
 
 const isRailModeActive = computed(() => !isMobile.value && isRailMode.value && !(isHovered.value || showUserMenu.value))
+const navigationWidth = computed(() => isRailModeActive.value ? 56 : 255)
 
 const appStyle = computed(() => ({
   paddingBottom: (router.currentRoute.value.meta.hideAnimation ? 30 : 260) + 'px'
 }))
 
 const bgImageStyle = computed(() => ({
-  marginLeft: (isMobile.value || router.currentRoute.value.meta.hideNavigation ? 20 : (isRailModeActive.value ? 56 : 200)) + 'px !important',
+  marginLeft: (isMobile.value || router.currentRoute.value.meta.hideNavigation 
+    ? 20 
+    : 20 + navigationWidth.value / 2) + 'px !important',
   bottom: (isMobile.value ? 30 : -10) + 'px !important'
 }))
 

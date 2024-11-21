@@ -93,7 +93,7 @@
                     label
                   >
                     {{ status.text }}: {{ statusCounts[status.value] }}
-                  </v-chip>                  
+                  </v-chip>
                 </span>
               </v-col>
             </v-row>
@@ -492,6 +492,12 @@ onMounted(() => {
   })
 })
 </script>
+
+<style>
+.v-overlay.v-tooltip .v-overlay__content {
+  max-width: 200px !important;
+}
+</style>
 
 <style scoped>
 .widget {

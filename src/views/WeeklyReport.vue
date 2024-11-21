@@ -86,6 +86,7 @@
       v-if="member"
       ref="memberInfoDialog"
       v-model:member="member"
+      :is-advice-enabled="isAdviceEnabled"
     />
 
     <StressCheckDialog
