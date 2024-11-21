@@ -444,7 +444,7 @@ watch(isRailMode, (newValue) => {
   bottom: -10px;
   left: 50%;
   transform: translateX(-50%);
-  transition: margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: margin-left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
   animation: float 16s ease-in-out infinite;
   z-index: -2;
@@ -489,7 +489,7 @@ watch(isRailMode, (newValue) => {
 
 .navigation-drawer {
   z-index: 1000;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #main .v-main.noshift {
