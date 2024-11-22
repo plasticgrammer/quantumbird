@@ -275,6 +275,7 @@ import { useRouter } from 'vue-router'
 import { exportReports } from '../services/reportService'
 import { deleteOrganization, deleteOrganizationCompletely } from '../services/organizationService'
 import { useStripe } from '../composables/useStripe'
+import { cancelSubscription } from '../services/paymentService'
 
 const store = useStore()
 const router = useRouter()
@@ -366,6 +367,21 @@ const resetPasswordForm = () => {
   passwordForm.value?.reset()
 }
 
+const changeToFreePlan = async () => {
+  const subscription = store.getters['auth/currentSubscription']
+  // フリープランの場合はスキップ
+  if (!subscription?.stripeCustomerId || subscription.planId === 'free') {
+    return
+  }
+
+  await cancelSubscription(subscription.stripeCustomerId)
+  await store.dispatch('auth/updateSubscriptionAttributes', {
+    planId: 'free',
+    accountCount: null,
+    stripeCustomerId: subscription.stripeCustomerId
+  })
+}
+
 const deleteAccount = async () => {
   const confirmed = await showConfirmDialog('確認', 'アカウントを削除します。よろしいですか？')
   if (!confirmed) return
@@ -373,7 +389,9 @@ const deleteAccount = async () => {
   isDeleting.value = true
   try {
     // Cognitoユーザの削除を後にしないとトークンが無効となる
+    await changeToFreePlan()
     await deleteOrganization(organizationId)
+    
     await store.dispatch('auth/deleteUserAccount')
 
     store.dispatch('showNotification', {
@@ -400,7 +418,9 @@ const deleteAccountCompletely = async () => {
   isDeleting.value = true
   try {
     // Cognitoユーザの削除を後にしないとトークンが無効となる
+    await changeToFreePlan()
     await deleteOrganizationCompletely(organizationId)
+
     await store.dispatch('auth/deleteUserAccount')
 
     store.dispatch('showNotification', {
@@ -434,7 +454,7 @@ const exportData = async () => {
     document.body.appendChild(a)
     a.click()
     window.URL.revokeObjectURL(url)
-    exportStatus.value = 'エクスポー���が完了しました'
+    exportStatus.value = 'エクスポートが完了しました'
   } catch (error) {
     console.error('Data export failed:', error)
     exportStatus.value = 'エクスポートに失敗しました'

@@ -493,12 +493,6 @@ onMounted(() => {
 })
 </script>
 
-<style>
-.v-overlay.v-tooltip .v-overlay__content {
-  max-width: 200px !important;
-}
-</style>
-
 <style scoped>
 .widget {
   min-height: 165px;

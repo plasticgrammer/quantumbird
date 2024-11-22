@@ -227,8 +227,8 @@ onUnmounted(() => {
 
 .day.today {
   background-color: #f3f9ff;
-  border: 1px solid #a5d3ff;
-  border-radius: 10px;
+  border: 1px solid #82B1FF;
+  border-radius: 12px;
   font-weight: 600;
   color: #3b82c4;
   overflow: hidden;

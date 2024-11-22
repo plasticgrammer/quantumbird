@@ -40,3 +40,11 @@ export const getSubscriptionInfo = async (customerId) => {
   const response = await apiClient.post(`${BASE_PATH}/subscription-info`, { customerId })
   return response
 }
+
+export const cancelSubscription = async (customerId) => {
+  return changePlan({
+    subscriptionId: customerId,
+    priceId: 'price_free',
+    accountCount: 0
+  })
+}
