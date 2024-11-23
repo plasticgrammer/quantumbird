@@ -106,6 +106,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useStripe } from '../composables/useStripe'
 import { getInvoices } from '../services/paymentService'
+import { updateOrganizationFeatures } from '../services/organizationService'
 import PaymentDialog from '../components/PaymentDialog.vue'
 
 const store = useStore()
@@ -180,8 +181,21 @@ const getStatusText = (invoice) => {
 }
 
 const handlePaymentSuccess = async () => {
-  if (currentSubscription.value?.stripeCustomerId) {
-    await fetchInvoices(currentSubscription.value.stripeCustomerId)
+  const organizationId = store.getters['auth/organizationId']
+
+  try {
+    const currentPlanId = currentSubscription.value?.planId || 'free'
+    const currentPlan = plans.find(p => p.planId === currentPlanId)
+    if (!currentPlan) {
+      throw new Error('Invalid plan')
+    }
+    await updateOrganizationFeatures(organizationId, currentPlan.systemFeatures)
+    
+    if (currentSubscription.value?.stripeCustomerId) {
+      await fetchInvoices(currentSubscription.value.stripeCustomerId)
+    }
+  } catch (error) {
+    console.error('Failed to update features:', error)
   }
 }
 

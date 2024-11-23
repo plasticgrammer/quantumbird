@@ -8,14 +8,24 @@ const plans = [
     priceId: 'price_free',
     name: 'フリープラン',
     price: 0,
-    features: ['基本機能が使用可能', '最大5名まで登録可能']
+    features: ['基本機能が使用可能', '最大5名まで登録可能'],
+    systemFeatures: {
+      maxMembers: 5,
+      weeklyReportAdvice: false,
+      accountManagement: false
+    }
   },
   {
     planId: 'pro',
     priceId: 'price_1QJSigJlLYAT4bpznFUNs5eg',
     name: 'プロプラン',
     price: 1000,
-    features: ['全機能が使用可能', 'メンバー数無制限']
+    features: ['全機能が使用可能', 'メンバー数無制限'],
+    systemFeatures: {
+      maxMembers: -1, // 無制限
+      weeklyReportAdvice: true,
+      accountManagement: false
+    }
   },
   {
     planId: 'business',
@@ -29,7 +39,12 @@ const plans = [
       '全機能が使用可能',
       'アカウント管理機能',
       '請求書発行対応'
-    ]
+    ],
+    systemFeatures: {
+      maxMembers: -1, // 無制限
+      weeklyReportAdvice: true,
+      accountManagement: true
+    }
   }
 ]
 

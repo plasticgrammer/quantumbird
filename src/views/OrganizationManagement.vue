@@ -46,13 +46,24 @@
           </v-col>
         </v-row>
 
-        <v-skeleton-loader
-          v-if="loading"
-          elevation="4"
-          type="table-tbody"
-        />
-
         <v-card elevation="0" class="pa-1">
+          <v-alert
+            v-if="isMaxMembersReached"
+            type="warning"
+            density="compact"
+            variant="tonal"
+            class="mb-4"
+          >
+            メンバー数が上限（{{ getOrganizationFeatures.maxMembers }}名）に達しています。<br>
+            より多くのメンバーを追加するには、プランのアップグレードが必要です。
+          </v-alert>
+
+          <v-skeleton-loader
+            v-if="loading"
+            elevation="4"
+            type="table-tbody"
+          />
+          
           <v-card 
             v-for="member in organization.members" 
             :key="member.id"
@@ -162,6 +173,7 @@
           <v-col cols="12" sm="2" class="px-1">
             <v-btn
               color="secondary"
+              :disabled="isMaxMembersReached"
               @click="handleAddMember"
             >
               メンバーを追加
@@ -192,6 +204,7 @@ import { reactive, toRefs, ref, onMounted, inject, computed, watch } from 'vue'
 import { useStore } from 'vuex'
 import { submitOrganization, updateOrganization, getOrganization } from '../services/organizationService'
 import { isValidEmail } from '../utils/string-utils'
+import { useStripe } from '../composables/useStripe'
 
 const store = useStore()
 const form = ref(null)
@@ -199,11 +212,15 @@ const showConfirmDialog = inject('showConfirmDialog')
 const showNotification = inject('showNotification')
 const showError = inject('showError')
 
+const { plans } = useStripe()
+const freePlan = plans.find(plan => plan.planId === 'free')
+
 const state = reactive({
   organization: {
     organizationId: store.getters['auth/organizationId'],
     name: '',
-    members: []
+    members: [],
+    features: freePlan.systemFeatures // 初期値としてフリープランのfeaturesを設定
   },
   newMember: { id: '', name: '', email: '' },
   editingMember: null,
@@ -276,6 +293,26 @@ const isOrganizationValid = computed(() => {
   return organization.value.name.trim() !== ''
 })
 
+// フリープランのfeaturesをベースにorganizationのfeaturesを上書きする関数
+const mergeFeatures = (orgFeatures) => {
+  if (!orgFeatures) return { ...freePlan.systemFeatures }
+  return {
+    ...freePlan.systemFeatures,
+    ...orgFeatures
+  }
+}
+
+// featuresの取得方法を修正
+const getOrganizationFeatures = computed(() => {
+  return mergeFeatures(organization.value.features)
+})
+
+// isMaxMembersReachedの修正
+const isMaxMembersReached = computed(() => {
+  const maxMembers = getOrganizationFeatures.value.maxMembers
+  return maxMembers !== -1 && organization.value.members.length >= maxMembers
+})
+
 // Group related functions
 const memberManagement = {
   setEditingMember(member) {
@@ -283,7 +320,13 @@ const memberManagement = {
     editValidationErrors.value = { name: '', email: '' }
   },
 
-  handleAddMember() {
+  async handleAddMember() {
+    if (isMaxMembersReached.value) {
+      const maxMembers = getOrganizationFeatures.value.maxMembers
+      showError('エラー', `現在のプランでは${maxMembers === -1 ? '無制限です。' : `最大${maxMembers}名まで`}しか登録できません。`)
+      return
+    }
+    
     if (validateNewMember()) {
       organization.value.members.push({
         id: newMember.value.id,
@@ -317,12 +360,17 @@ const memberManagement = {
   }
 }
 
+// formManagementのhandleSubmitを修正
 const formManagement = {
   handleFormChange() {
     isFormChanged.value = true
   },
 
   async validateForm() {
+    if (!form.value) {
+      isFormValid.value = false
+      return
+    }
     const validation = await form.value.validate()
     isFormValid.value = validation.valid
   },
@@ -333,6 +381,9 @@ const formManagement = {
     }
 
     try {
+      // 送信前にfeaturesを更新
+      organization.value.features = mergeFeatures(organization.value.features)
+
       if (isNew.value) {
         await submitOrganization(organization.value)
         showNotification('組織情報を登録しました')
@@ -355,6 +406,7 @@ onMounted(async () => {
     try {
       const result = await getOrganization(organizationId)
       if (result && Object.keys(result).length > 0) {
+        result.features = mergeFeatures(result.features)
         organization.value = result
         state.originalOrganization = JSON.parse(JSON.stringify(result))
         isNew.value = false
