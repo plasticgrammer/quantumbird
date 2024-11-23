@@ -476,11 +476,11 @@ const handlePaymentSubmit = async ({ token }) => {
 }
 
 const handleSuccess = async () => {
-  showSuccessDialog.value = true
   dialogMessage.value = ''
   resetForm()
   currentStep.value = 'plan-selection'
   emit('payment-success')
+  showSuccessDialog.value = true
 }
 
 const fetchPaymentMethods = async () => {

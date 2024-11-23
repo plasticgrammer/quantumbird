@@ -331,23 +331,56 @@ def handle_paid_plan_change(subscription: stripe.Subscription, new_price_id: str
             
         else:
             # 異なるプラン間の変更の場合
-            update_params = {
-                'proration_behavior': 'always_invoice',  # 即時請求に変更
-                'collection_method': 'charge_automatically'
-            }
-
             if new_price_id == PaymentConfig.PRICE_ID_BUSINESS:
-                update_params['price_data'] = {
-                    'currency': PaymentConfig.CURRENCY,
-                    'product': PaymentConfig.PRODUCT_ID_BUSINESS,
-                    'unit_amount': calculate_business_price(new_account_count),
-                    'recurring': {'interval': PaymentConfig.BILLING_INTERVAL}
-                }
+                # ビジネスプランへの変更（プロレーションあり）
+                proration_date = int(time.time())
+                preview_invoice = stripe.Invoice.upcoming(
+                    customer=subscription.customer,
+                    subscription=subscription.id,
+                    subscription_items=[{
+                        'id': subscription_item.id,
+                        'price_data': {
+                            'currency': PaymentConfig.CURRENCY,
+                            'product': PaymentConfig.PRODUCT_ID_BUSINESS,
+                            'unit_amount': calculate_business_price(new_account_count),
+                            'recurring': {'interval': PaymentConfig.BILLING_INTERVAL}
+                        }
+                    }],
+                    subscription_proration_date=proration_date
+                )
+                
+                print(f"Debug - Preview invoice for plan change: {json.dumps(preview_invoice, indent=2)}")
+                
+                stripe.SubscriptionItem.modify(
+                    subscription_item.id,
+                    price_data={
+                        'currency': PaymentConfig.CURRENCY,
+                        'product': PaymentConfig.PRODUCT_ID_BUSINESS,
+                        'unit_amount': calculate_business_price(new_account_count),
+                        'recurring': {'interval': PaymentConfig.BILLING_INTERVAL}
+                    },
+                    proration_behavior='always_invoice'
+                )
             else:
-                update_params['price'] = new_price_id
-
-            # サブスクリプションアイテムの更新
-            stripe.SubscriptionItem.modify(subscription_item.id, **update_params)
+                # プロプランへの変更（プロレーションあり）
+                proration_date = int(time.time())
+                preview_invoice = stripe.Invoice.upcoming(
+                    customer=subscription.customer,
+                    subscription=subscription.id,
+                    subscription_items=[{
+                        'id': subscription_item.id,
+                        'price': new_price_id
+                    }],
+                    subscription_proration_date=proration_date
+                )
+                
+                print(f"Debug - Preview invoice for plan change: {json.dumps(preview_invoice, indent=2)}")
+                
+                stripe.SubscriptionItem.modify(
+                    subscription_item.id,
+                    price=new_price_id,
+                    proration_behavior='always_invoice'
+                )
 
         # メタデータの更新
         updated_subscription = stripe.Subscription.modify(
