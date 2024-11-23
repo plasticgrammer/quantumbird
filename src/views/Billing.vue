@@ -29,6 +29,9 @@
             <p v-if="currentSubscription?.accountCount > 0" class="text-caption  px-4">
               アカウント数: {{ currentSubscription.accountCount }}
             </p>
+            <p v-if="currentSubscription?.currentPeriodEnd" class="text-caption px-4 text-warning">
+              ※ {{ formatDate(currentSubscription.currentPeriodEnd) }}まで現在のプランが有効です
+            </p>
           </v-col>
           <v-col cols="auto">
             <v-btn color="primary" @click="showPlanSelector = true">
@@ -154,6 +157,7 @@ const fetchInvoices = async (customerId) => {
 }
 
 const formatDate = (timestamp) => {
+  if (!timestamp) return ''
   const date = new Date(timestamp * 1000)
   const options = { year: 'numeric', month: '2-digit', day: '2-digit' }
   return date.toLocaleDateString('ja-JP', options)

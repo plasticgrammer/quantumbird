@@ -565,14 +565,27 @@ const handlePlanChange = async (params) => {
     errorMessage.value = ''
     dialogMessage.value = ''
 
-    const response = await changePlan(params)
+    // ビジネスプラン内でのアカウント数変更時は特別な処理
+    const isBusinessAccountUpdate = 
+      currentPlan.value?.planId === 'business' && 
+      params.priceId === plans.find(p => p.planId === 'business').priceId
+
+    const changeParams = {
+      ...params,
+      // ビジネスプラン内でのアカウント数変更時はプロレーションを無効化
+      proration_behavior: isBusinessAccountUpdate ? 'none' : 'create_prorations',
+      payment_behavior: 'default_incomplete',
+      collection_method: 'charge_automatically',
+      billing_cycle_anchor: isBusinessAccountUpdate ? 'unchanged' : 'now'
+    }
+
+    const response = await changePlan(changeParams)
     
     if (response.message) {
       if (response.subscription?.cancelAt) {
         showSuccessDialog.value = true
         dialogMessage.value = response.message
       } else {
-        // Update store before calling handleSuccess
         await store.dispatch('auth/updateSubscriptionAttributes', {
           planId: formState.selectedPlan,
           accountCount: formState.selectedPlan === 'business' ? formState.accountCount : null,
@@ -620,8 +633,10 @@ const handleSubmit = async () => {
             customerId: currentStripeCustomerId
           })
           
+          // フリープランの情報で完全に更新（priceIdも含める）
           await store.dispatch('auth/updateSubscriptionAttributes', {
             planId: 'free',
+            priceId: 'price_free',
             accountCount: null,
             subscriptionId: null,
             stripeCustomerId: response.subscription.stripeCustomerId || currentStripeCustomerId
@@ -630,17 +645,18 @@ const handleSubmit = async () => {
           if (response.message) {
             dialogMessage.value = response.message
           }
+          handleSuccess()
         } else {
-          // フリープランの場合でも顧客IDを保持
+          // フリープランへの直接変更
           await store.dispatch('auth/updateSubscriptionAttributes', {
             planId: 'free',
+            priceId: 'price_free',
             accountCount: null,
             subscriptionId: null,
             stripeCustomerId: currentStripeCustomerId
           })
+          handleSuccess()
         }
-        
-        handleSuccess()
       } catch (err) {
         handleError(err)
       }

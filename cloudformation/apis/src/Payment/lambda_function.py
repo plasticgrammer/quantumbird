@@ -101,7 +101,7 @@ def create_subscription_response(subscription: Any, price_id: str, account_count
     }
 
 def check_plan_change_cooldown(subscription: stripe.Subscription) -> None:
-    """プラン変更のクール��ウンチェック"""
+    """プラン変更のクールダウンチェック"""
     if subscription.metadata.get('last_change_at'):
         last_change = int(subscription.metadata.get('last_change_at'))
         if (time.time() - last_change) < PaymentConfig.PLAN_CHANGE_COOLDOWN_SECONDS:
@@ -132,7 +132,7 @@ def create_subscription(body: Dict, client_ip: str) -> Dict:
         return create_subscription_response(None, PaymentConfig.PRICE_ID_FREE, 0)
     
     try:
-        # プランに応じた価格設定とサブスクリプ���ョン作成
+        # プランに応じた価格設定とサブスクリプション作成
         if price_id == PaymentConfig.PRICE_ID_BUSINESS:  # ビジネスプラン
             total_price = calculate_business_price(account_count)
             subscription = stripe.Subscription.create(
@@ -164,17 +164,16 @@ def create_subscription(body: Dict, client_ip: str) -> Dict:
 
 def update_subscription(body: Dict) -> Dict:
     """サブスクリプション更新処理"""
-    new_account_count = int(body.get('newAccountCount', 0))  # 文字列を整数に変換
+    new_account_count = int(body.get('newAccountCount', 0))
     subscription_id = body['subscriptionId']
 
-    # サブスクリプションの取得と更新
     subscription = stripe.Subscription.retrieve(subscription_id)
     subscription_item = subscription['items']['data'][0]
 
-    # 新しい金額の計算と更新
+    # 新しい金額を計算
     new_price = calculate_business_price(new_account_count)
 
-    # サブスクリプションの更新
+    # アカウント数のみの変更なのでプロレーションなし
     stripe.SubscriptionItem.modify(
         subscription_item.id,
         price_data={
@@ -182,25 +181,145 @@ def update_subscription(body: Dict) -> Dict:
             'product': subscription_item.price.product,
             'unit_amount': new_price,
             'recurring': {'interval': PaymentConfig.BILLING_INTERVAL}
-        }
+        },
+        proration_behavior='none'  # プロレーションを無効化
     )
 
-    # メタデータの更新
+    # メタデータの更新のみ
     stripe.Subscription.modify(
         subscription_id,
         metadata={'account_count': str(new_account_count)}
     )
 
-    updated_subscription = stripe.Subscription.retrieve(subscription_id)
+    return create_subscription_response(
+        stripe.Subscription.retrieve(subscription_id),
+        PaymentConfig.PRICE_ID_BUSINESS,
+        new_account_count,
+        message=ResponseMessages.ACCOUNT_COUNT_UPDATED
+    )
 
-    return {
-        'message': 'アカウント数が正常に更新されました',
-        'subscription': {
-            'id': subscription_id,
-            'accountCount': new_account_count,
-            'status': updated_subscription.status
-        }
-    }
+def handle_paid_plan_change(subscription: stripe.Subscription, new_price_id: str, new_account_count: int) -> Dict:
+    """有料プラン間の変更処理"""
+    try:
+        subscription_item = subscription['items']['data'][0]
+        current_product = subscription_item.price.product
+        
+        # 同じビジネスプラン内でのアカウント数変更の場合
+        if (new_price_id == PaymentConfig.PRICE_ID_BUSINESS and 
+            current_product == PaymentConfig.PRODUCT_ID_BUSINESS):
+            
+            # 即時のアカウント数と金額更新
+            new_price = calculate_business_price(new_account_count)
+            
+            # 現在のインボイス期間を取得
+            current_period_start = subscription.current_period_start
+            current_period_end = subscription.current_period_end
+            
+            # プロレーション金額を計算（日割り）
+            proration_date = int(time.time())
+            preview_invoice = stripe.Invoice.upcoming(
+                customer=subscription.customer,
+                subscription=subscription.id,
+                subscription_items=[{
+                    'id': subscription_item.id,
+                    'price_data': {
+                        'currency': PaymentConfig.CURRENCY,
+                        'product': PaymentConfig.PRODUCT_ID_BUSINESS,
+                        'unit_amount': new_price,
+                        'recurring': {'interval': PaymentConfig.BILLING_INTERVAL}
+                    }
+                }],
+                subscription_proration_date=proration_date
+            )
+            
+            # インボイスプレビューをログ出力
+            print(f"Debug - Preview invoice: {json.dumps(preview_invoice, indent=2)}")
+            
+            # サブスクリプションアイテムの更新（プロレーションあり）
+            stripe.SubscriptionItem.modify(
+                subscription_item.id,
+                price_data={
+                    'currency': PaymentConfig.CURRENCY,
+                    'product': PaymentConfig.PRODUCT_ID_BUSINESS,
+                    'unit_amount': new_price,
+                    'recurring': {'interval': PaymentConfig.BILLING_INTERVAL}
+                },
+                proration_behavior='always_invoice'  # 即時請求に変更
+            )
+            
+        else:
+            # 異なるプラン間の変更の場合
+            update_params = {
+                'proration_behavior': 'always_invoice',  # 即時請求に変更
+                'collection_method': 'charge_automatically'
+            }
+
+            if new_price_id == PaymentConfig.PRICE_ID_BUSINESS:
+                update_params['price_data'] = {
+                    'currency': PaymentConfig.CURRENCY,
+                    'product': PaymentConfig.PRODUCT_ID_BUSINESS,
+                    'unit_amount': calculate_business_price(new_account_count),
+                    'recurring': {'interval': PaymentConfig.BILLING_INTERVAL}
+                }
+            else:
+                update_params['price'] = new_price_id
+
+            # サブスクリプションアイテムの更新
+            stripe.SubscriptionItem.modify(subscription_item.id, **update_params)
+
+        # メタデータの更新
+        updated_subscription = stripe.Subscription.modify(
+            subscription.id,
+            metadata={
+                'account_count': str(new_account_count),
+                'last_change_at': str(int(time.time())),
+                'plan_id': PaymentConfig.PRICE_TO_PLAN_MAP.get(new_price_id, 'free')
+            },
+            cancel_at_period_end=False
+        )
+        
+        return create_subscription_response(
+            updated_subscription,
+            new_price_id,
+            new_account_count
+        )
+        
+    except stripe.error.StripeError as e:
+        print(f"Error in handle_paid_plan_change: {str(e)}")
+        raise PaymentError(f'プラン変更に失敗しました: {str(e)}')
+
+def change_subscription_plan(body: Dict) -> Dict:
+    """プラン変更処理"""
+    try:
+        subscription_id = body['subscriptionId']
+        new_price_id = body['priceId']
+        new_account_count = int(body.get('accountCount', 0))
+        customer_id = body.get('customerId')
+
+        # フリープランからの変更
+        if subscription_id == PaymentConfig.PRICE_ID_FREE:
+            return create_subscription({
+                **body,
+                'customerId': customer_id
+            }, body.get('clientIp', 'auto'))
+
+        subscription = stripe.Subscription.retrieve(subscription_id)
+        
+        # フリープランへの変更
+        if new_price_id == PaymentConfig.PRICE_ID_FREE:
+            return handle_free_plan_change(subscription, {
+                **body,
+                'customerId': subscription.customer
+            })
+
+        # 通常のプラン変更
+        check_plan_change_cooldown(subscription)
+        return handle_paid_plan_change(subscription, new_price_id, new_account_count)
+
+    except stripe.error.InvalidRequestError as e:
+        if new_price_id == PaymentConfig.PRICE_ID_FREE:
+            return create_free_plan_response(customer_id or body.get('customerId'))
+        raise e
 
 def create_free_plan_response(customer_id: str = None) -> Dict:
     """フリープランレスポンスの生成"""
@@ -217,106 +336,60 @@ def create_free_plan_response(customer_id: str = None) -> Dict:
         }
     }
 
+def calculate_days_from_timestamp(start_time: int, end_time: int) -> int:
+    """2つのタイムスタンプ間の日数を計算（1日未満は切り上げ）"""
+    seconds_diff = end_time - start_time
+    days = (seconds_diff + PaymentConfig.SECONDS_PER_DAY - 1) // PaymentConfig.SECONDS_PER_DAY
+    return max(1, int(days))  # 最低1日として扱う
+
 def handle_free_plan_change(subscription: stripe.Subscription, body: Dict) -> Dict:
     """フリープランへの変更処理"""
-    customer_id = subscription.customer  # 顧客IDを保存
+    customer_id = subscription.customer
     
-    # 現在のサブスクリプションをキャンセル
-    canceled_subscription = stripe.Subscription.modify(
-        subscription.id,
-        cancel_at_period_end=True,
-        metadata={'last_change_at': str(int(time.time()))}
-    )
-    
-    # レスポンスにcustomerIdを含める
-    return {
-        'message': 'プラン変更が予約されました',
-        'subscription': {
-            'id': subscription.id,  # 既存のサブスクリプションIDを維持
-            'planId': 'free',
-            'priceId': PaymentConfig.PRICE_ID_FREE,
-            'status': canceled_subscription.status,
-            'currentPeriodEnd': canceled_subscription.current_period_end,
-            'stripeCustomerId': customer_id,  # 顧客IDを明示的に設定
-            'accountCount': 0,
-            'cancelAt': canceled_subscription.cancel_at
-        }
-    }
-
-def handle_paid_plan_change(subscription: stripe.Subscription, new_price_id: str, new_account_count: int) -> Dict:
-    """有料プラン間の変更処理"""
-    subscription_item = subscription['items']['data'][0]
-    
-    # 新しいプランIDを取得
-    new_plan_id = PaymentConfig.PRICE_TO_PLAN_MAP.get(new_price_id, 'free')
-    
-    # 新しいプランの設定
-    if new_price_id == PaymentConfig.PRICE_ID_BUSINESS:
-        update_params = {
-            'price_data': {
-                'currency': PaymentConfig.CURRENCY,
-                'product': PaymentConfig.PRODUCT_ID_BUSINESS,
-                'unit_amount': calculate_business_price(new_account_count),
-                'recurring': {'interval': PaymentConfig.BILLING_INTERVAL}
+    try:
+        current_time = int(time.time())
+        period_end = subscription.current_period_end
+        period_start = subscription.current_period_start
+        
+        # 利用日数の計算（1日未満は1日として計算）
+        used_days = calculate_days_from_timestamp(period_start, current_time)
+        total_days = calculate_days_from_timestamp(period_start, period_end)
+        
+        # まず請求書を作成して日割り金額を計算
+        upcoming_invoice = stripe.Invoice.upcoming(
+            customer=customer_id,
+            subscription=subscription.id
+        )
+        
+        # サブスクリプションを即時キャンセル
+        canceled_subscription = stripe.Subscription.delete(
+            subscription.id,
+            prorate=True,  # 日割り計算を有効化
+            invoice_now=True  # 即時請求
+        )
+        
+        print(f"Debug - Subscription canceled with proration: used_days={used_days}, total_days={total_days}")
+        print(f"Debug - Upcoming invoice: {json.dumps(upcoming_invoice, indent=2)}")
+        print(f"Debug - Cancel details: {json.dumps(canceled_subscription, indent=2)}")
+        
+        return {
+            'message': f'プランを解約し、フリープランに変更しました（利用日数: {used_days}日）',
+            'subscription': {
+                'id': 'free',
+                'planId': 'free',
+                'priceId': PaymentConfig.PRICE_ID_FREE,
+                'status': 'active',
+                'stripeCustomerId': customer_id,
+                'accountCount': 0,
+                'subscriptionId': None,
+                'usedDays': used_days,
+                'totalDays': total_days
             }
         }
-    else:
-        update_params = {'price': new_price_id}
-    
-    # サブスクリプションアイテムの更新
-    stripe.SubscriptionItem.modify(subscription_item.id, **update_params)
-
-    # メタデータの更新とキャンセル予定の解除
-    updated_subscription = stripe.Subscription.modify(
-        subscription.id,
-        metadata={
-            'account_count': str(new_account_count),
-            'last_change_at': str(int(time.time())),
-            'plan_id': new_plan_id  # plan_idを更新
-        },
-        cancel_at_period_end=False
-    )
-    
-    return create_subscription_response(updated_subscription, new_price_id, new_account_count)
-
-def change_subscription_plan(body: Dict) -> Dict:
-    """プラン変更処理"""
-    try:
-        subscription_id = body['subscriptionId']
-        new_price_id = body['priceId']
-        new_account_count = int(body.get('accountCount', 0))
-        customer_id = body.get('customerId')  # 既存の顧客IDを受け取る
-
-        # フリープランからの変更の場合
-        if subscription_id == PaymentConfig.PRICE_ID_FREE:
-            if customer_id:  # 既存の顧客IDがある場合
-                return create_subscription({**body, 'customerId': customer_id})
-            return create_subscription(body)
-
-        subscription = stripe.Subscription.retrieve(subscription_id)
         
-        # プラン変更ロジック
-        if new_price_id == PaymentConfig.PRICE_ID_FREE:
-            # 顧客IDを保持して変更
-            return handle_free_plan_change(subscription, {
-                **body,
-                'customerId': subscription.customer  # 既存の顧客IDを明示的に渡す
-            })
-            
-        # フリープラン以外への変更時のみクールダウンチェックを実行
-        check_plan_change_cooldown(subscription)
-        
-        if (subscription['items']['data'][0]['price']['id'] == PaymentConfig.PRICE_ID_BUSINESS and 
-              new_price_id == PaymentConfig.PRICE_ID_BUSINESS):
-            return update_subscription(body)
-        else:
-            return handle_paid_plan_change(subscription, new_price_id, new_account_count)
-
-    except stripe.error.InvalidRequestError as e:
-        if new_price_id == PaymentConfig.PRICE_ID_FREE:
-            # 顧客IDを明示的に渡してフリープランレスポンスを生成
-            return create_free_plan_response(customer_id or body.get('customerId'))
-        raise e
+    except stripe.error.StripeError as e:
+        print(f"Error canceling subscription: {str(e)}")
+        raise PaymentError(f'プラン変更に失敗しました: {str(e)}')
 
 def reactivate_subscription(body: Dict) -> Dict:
     """解約後のサブスクリプション再開処理（新規関数）"""
@@ -422,74 +495,55 @@ def get_invoices(body: Dict) -> Dict:
 
         formatted_transactions = []
 
-        # すべての請求書を取得（Stripeが許可するステータスのみ指定）
+        # すべての請求書を取得（最新の状態を含める）
         invoices = stripe.Invoice.list(
             customer=customer_id,
-            limit=12,
-            expand=['data.charge', 'data.lines.data'],
-            status='paid'  # paidの請求書のみ取得
+            limit=24,  # 取得上限を増やす
+            expand=['data.charge', 'data.lines.data']
         )
 
-        # Draft, open, voidの請求書も取得
-        for status in ['draft', 'open', 'void']:
-            temp_invoices = stripe.Invoice.list(
-                customer=customer_id,
-                limit=12,
-                expand=['data.charge', 'data.lines.data'],
-                status=status
-            )
-            invoices.data.extend(temp_invoices.data)
-
-        # 保留中のインボイスを取得
+        # 保留中のインボイスを取得（プロレーション含む）
         try:
             upcoming = stripe.Invoice.upcoming(
                 customer=customer_id,
                 expand=['lines.data']
             )
+            print(f"Debug - Upcoming invoice: {json.dumps(upcoming, indent=2)}")  # デバッグログ追加
+            
             # 保留中のインボイスアイテムを処理
             for line in upcoming.lines.data:
-                if line.type == 'invoiceitem':
-                    formatted_transactions.append({
-                        'id': f"upcoming_{line.id}",
-                        'date': line.period.start,
-                        'amount': line.amount,
-                        'status': 'upcoming',
-                        'type': 'proration',
-                        'description': line.description or 'プラン変更に伴う調整',
-                        'url': None,
-                        'upcoming': True
-                    })
-        except stripe.error.InvalidRequestError:
-            # 保留中のインボイスがない場合はスキップ
+                formatted_transactions.append({
+                    'id': f"upcoming_{line.id}",
+                    'date': line.period.start,
+                    'amount': line.amount,
+                    'status': 'upcoming',
+                    'type': 'proration' if line.type == 'invoiceitem' else 'charge',
+                    'description': line.description or 'プラン変更に伴う調整',
+                    'url': None,
+                    'upcoming': True
+                })
+        except stripe.error.InvalidRequestError as e:
+            print(f"Debug - No upcoming invoice: {str(e)}")
             pass
 
-        # すべてのインボイスを処理
+        # 既存のインボイス処理
         for invoice in invoices.data:
-            # 請求の処理
-            formatted_transactions.append({
-                'id': invoice.id,
-                'date': invoice.created,
-                'amount': invoice.amount_paid or invoice.amount_due,
-                'status': invoice.status,
-                'type': 'charge',
-                'description': invoice.lines.data[0].description if invoice.lines.data else '定期購読料金',
-                'url': invoice.hosted_invoice_url
-            })
-
-            # プロレート返金の処理
+            print(f"Debug - Processing invoice: {invoice.id}")  # デバッグログ追加
+            
+            # 通常の請求とプロレーション処理
             for line in invoice.lines.data:
-                if line.type == 'invoiceitem' and line.amount < 0:
-                    formatted_transactions.append({
-                        'id': f"{invoice.id}_prorate",
-                        'date': line.period.start,
-                        'amount': line.amount,
-                        'status': 'succeeded',
-                        'type': 'refund',
-                        'description': 'プラン変更に伴う返金',
-                        'url': None
-                    })
+                amount = line.amount
+                formatted_transactions.append({
+                    'id': f"{invoice.id}_{line.id}",
+                    'date': line.period.start,
+                    'amount': amount,
+                    'status': invoice.status,
+                    'type': 'proration' if line.type == 'invoiceitem' else 'charge',
+                    'description': line.description or '定期購読料金',
+                    'url': invoice.hosted_invoice_url
+                })
 
-            # 手動返金の処理
+            # 返金処理
             if invoice.charge:
                 refunds = stripe.Refund.list(charge=invoice.charge)
                 for refund in refunds.data:
@@ -505,9 +559,8 @@ def get_invoices(body: Dict) -> Dict:
 
         # 日付でソート（新しい順）
         formatted_transactions.sort(key=lambda x: x['date'], reverse=True)
-
-        # デバッグ出力
-        print(f"Debug - Formatted transactions: {json.dumps(formatted_transactions, indent=2)}")
+        
+        print(f"Debug - Final transactions: {json.dumps(formatted_transactions, indent=2)}")
 
         return {'data': {'invoices': formatted_transactions}}
         
@@ -523,12 +576,13 @@ def get_subscription_info(customer_id: str) -> Dict:
             customer=customer_id,
             limit=1,
             status='active',
-            expand=['data.items.data.price']  # priceの詳細情報を展開
+            expand=['data.items.data.price']
         )
 
         if not subscriptions.data:
             return {
                 'planId': 'free',
+                'priceId': PaymentConfig.PRICE_ID_FREE,  # 明示的に設定
                 'accountCount': 0,
                 'subscriptionId': None,
                 'stripeCustomerId': customer_id
@@ -585,7 +639,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         return create_response(200, result)
 
     except PaymentError as e:
-        # PaymentErrorは400エラーとして返す
+        # PaymentErrorを400エラーとして返す
         return create_response(400, {'error': str(e)})
     except stripe.error.StripeError as e:
         # Stripeのエラーも400エラーとして返す
