@@ -2,9 +2,16 @@ import json
 import stripe
 import os
 import time
-import traceback  # tracebackモジュールを追加
+import traceback
+import uuid
+import logging
+import datetime
 from typing import Dict, Any
 from common.utils import create_response
+
+# ロガーの設定
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 # 定数のグループ化
 class PaymentConfig:
@@ -37,6 +44,27 @@ class PaymentConfig:
         PRICE_ID_BUSINESS: 'business'
     }
 
+    # 環境設定
+    STAGE_TO_ENV_MAP = {
+        'dev': 'development',
+        'prod': 'production'
+    }
+    ENVIRONMENT = STAGE_TO_ENV_MAP.get(os.environ.get('STAGE', 'dev'), 'development')
+
+    # 冪等性設定
+    IDEMPOTENCY_KEY_TTL = 24 * 3600  # 24時間
+    
+    # カードエラーメッセージ（国際化対応）
+    CARD_ERROR_MESSAGES = {
+        'card_declined': '決済が拒否されました。',
+        'expired_card': 'カードの有効期限が切れています。',
+        'incorrect_cvc': 'セキュリティコードが正しくありません。',
+        'processing_error': '決済処理中にエラーが発生しました。',
+        'incorrect_number': 'カード番号が正しくありません。',
+        'invalid_expiry_month': '有効期限の月が無効です。',
+        'invalid_expiry_year': '有効期限の年が無効です。'
+    }
+
 # Stripeの設定
 stripe.api_key = PaymentConfig.API_KEY
 
@@ -51,6 +79,30 @@ class ResponseMessages:
     PLAN_CHANGE_SCHEDULED = 'プラン変更が予約されました'
     ACCOUNT_COUNT_UPDATED = 'アカウント数が正常に更新されました'
     PAYMENT_METHOD_UPDATED = '支払い方法が正常に更新されました'
+
+def log_error(error: Exception, additional_info: dict = None) -> None:
+    """エラーログの記録"""
+    error_info = {
+        'error_type': type(error).__name__,
+        'error_message': str(error),
+        'timestamp': time.time(),
+        'environment': PaymentConfig.ENVIRONMENT
+    }
+    if additional_info:
+        error_info.update(additional_info)
+    
+    logger.error(f"Payment Error: {json.dumps(error_info)}")
+    if isinstance(error, stripe.error.StripeError):
+        logger.error(f"Stripe Error Details: {error.json_body}")
+
+def get_card_error_message(error: stripe.error.CardError) -> str:
+    """カードエラーメッセージの取得"""
+    error_code = error.code
+    decline_code = error.decline_code
+    return PaymentConfig.CARD_ERROR_MESSAGES.get(
+        decline_code or error_code,
+        'カード決済に失敗しました。'
+    )
 
 def create_error_response(error: Exception) -> Dict:
     """エラーレスポンスの生成"""
@@ -109,57 +161,87 @@ def check_plan_change_cooldown(subscription: stripe.Subscription) -> None:
 
 def create_subscription(body: Dict, client_ip: str) -> Dict:
     """サブスクリプション作成処理"""
-    email = body['email']
-    token = body.get('token')
-    price_id = body['priceId']
-    account_count = int(body.get('accountCount', 0))
-    customer_id = body.get('customerId')
-
-    # プランIDの検証
-    valid_price_ids = PaymentConfig.VALID_PRICE_IDS
-    if price_id not in valid_price_ids:
-        raise ValueError('無効なプランIDです')
-
-    # 顧客の取得または作成
-    if customer_id:
-        customer = stripe.Customer.retrieve(customer_id)
-    else:
-        customer = get_or_create_customer(email, token, client_ip)
-        # Cognitoの更新は不要（フロントエンドで行う）
-
-    # フリープランの場合の処理を修正
-    if price_id == PaymentConfig.PRICE_ID_FREE:
-        return create_subscription_response(None, PaymentConfig.PRICE_ID_FREE, 0)
-    
     try:
-        # プランに応じた価格設定とサブスクリプション作成
-        if price_id == PaymentConfig.PRICE_ID_BUSINESS:  # ビジネスプラン
-            total_price = calculate_business_price(account_count)
-            subscription = stripe.Subscription.create(
-                customer=customer.id,
-                items=[{
-                    'price_data': {
-                        'currency': PaymentConfig.CURRENCY,
-                        'product': PaymentConfig.PRODUCT_ID_BUSINESS,  # 商品IDを直接指定
-                        'unit_amount': total_price,
-                        'recurring': {'interval': PaymentConfig.BILLING_INTERVAL}
-                    }
-                }],
-                metadata={
-                    'account_count': str(account_count),
-                    'plan_id': 'business'  # planIdをメタデータに保存
-                }
-            )
-        else:  # プロプラン
-            subscription = stripe.Subscription.create(
-                customer=customer.id,
-                items=[{'price': price_id}],
-                metadata={'plan_id': 'pro'}  # planIdをメタデータに保存
-            )
+        # 冪等性キーの取得
+        idempotency_key = body.get('idempotencyKey', str(uuid.uuid4()))
         
-        return create_subscription_response(subscription, price_id, account_count)
+        email = body['email']
+        token = body.get('token')
+        price_id = body['priceId']
+        account_count = int(body.get('accountCount', 0))
+        customer_id = body.get('customerId')
+
+        # プランIDの検証
+        valid_price_ids = PaymentConfig.VALID_PRICE_IDS
+        if price_id not in valid_price_ids:
+            raise ValueError('無効なプランIDです')
+
+        # 顧客の取得または作成
+        if customer_id:
+            customer = stripe.Customer.retrieve(customer_id)
+        else:
+            customer = get_or_create_customer(email, token, client_ip)
+            # Cognitoの更新は不要（フロントエンドで行う）
+
+        # Stripe APIコールの共通パラメータ
+        stripe_params = {
+            'idempotency_key': idempotency_key,
+            'stripe_version': '2023-10-16'
+        }
+
+        # フリープランの場合の処理を修正
+        if price_id == PaymentConfig.PRICE_ID_FREE:
+            return create_subscription_response(None, PaymentConfig.PRICE_ID_FREE, 0)
+        
+        try:
+            # プランに応じた価格設定とサブスクリプション作成
+            if price_id == PaymentConfig.PRICE_ID_BUSINESS:  # ビジネスプラン
+                total_price = calculate_business_price(account_count)
+                subscription = stripe.Subscription.create(
+                    customer=customer.id,
+                    items=[{
+                        'price_data': {
+                            'currency': PaymentConfig.CURRENCY,
+                            'product': PaymentConfig.PRODUCT_ID_BUSINESS,  # 商品IDを直接指定
+                            'unit_amount': total_price,
+                            'recurring': {'interval': PaymentConfig.BILLING_INTERVAL}
+                        }
+                    }],
+                    metadata={
+                        'account_count': str(account_count),
+                        'plan_id': 'business',  # planIdをメタデータに保存
+                        'environment': PaymentConfig.ENVIRONMENT,
+                        'created_at': str(int(time.time()))
+                    },
+                    payment_behavior='error_if_incomplete',
+                    **stripe_params
+                )
+            else:  # プロプラン
+                subscription = stripe.Subscription.create(
+                    customer=customer.id,
+                    items=[{'price': price_id}],
+                    metadata={
+                        'plan_id': 'pro',  # planIdをメタデータに保存
+                        'environment': PaymentConfig.ENVIRONMENT,
+                        'created_at': str(int(time.time()))
+                    },
+                    payment_behavior='error_if_incomplete',
+                    **stripe_params
+                )
+            
+            logger.info(f"Subscription created successfully: {subscription.id}")
+            return create_subscription_response(subscription, price_id, account_count)
+            
+        except stripe.error.CardError as e:
+            error_msg = get_card_error_message(e)
+            log_error(e, {'customer_id': customer.id, 'price_id': price_id})
+            raise PaymentError(error_msg)
+        except stripe.error.StripeError as e:
+            log_error(e, {'customer_id': customer.id, 'price_id': price_id})
+            raise
+            
     except Exception as e:
-        print(f"Subscription creation error: {e}")
+        log_error(e, {'body': body})
         raise
 
 def update_subscription(body: Dict) -> Dict:
@@ -419,7 +501,7 @@ def reactivate_subscription(body: Dict) -> Dict:
     return create_subscription(body)
 
 def get_payment_methods(body: Dict) -> Dict:
-    """支払い方法取得処理"""
+    """支払い方��取得処理"""
     try:
         email = body.get('email')
         if not email:
@@ -487,6 +569,36 @@ def update_payment_method(body: Dict) -> Dict:
             'error': str(e)
         }
 
+def format_date_for_description(timestamp):
+    """説明文用の日付フォーマット"""
+    date = datetime.datetime.fromtimestamp(timestamp)
+    return date.strftime('%Y/%m/%d')
+
+def convert_description_date(description: str, period_start: int) -> str:
+    """説明文内の日付と料金表記を変換"""
+    if not description:
+        return description
+
+    # より後の日付の変換
+    if 'より後の' in description:
+        parts = description.split('より後の')
+        if len(parts) == 2:
+            date_str = format_date_for_description(period_start)
+            description = f'{date_str}より後の{parts[1]}'
+    
+    # プラン名と料金表記の変換
+    if ' × ' in description and '/ month)' in description:
+        # 1 × ビジネスプラン (at ¥4,500 / month) → ビジネスプラン (¥4,500 / 月)
+        parts = description.split(' × ')
+        if len(parts) == 2:
+            plan_part = parts[1]
+            if '(at ' in plan_part and ' / month)' in plan_part:
+                plan_name = plan_part.split(' (at ')[0].strip()
+                price = plan_part.split(' (at ')[1].replace(' / month)', ' / 月')
+                description = f'{plan_name} ({price})'
+    
+    return description
+
 def get_invoices(body: Dict) -> Dict:
     try:
         customer_id = body.get('customerId')
@@ -508,17 +620,19 @@ def get_invoices(body: Dict) -> Dict:
                 customer=customer_id,
                 expand=['lines.data']
             )
-            print(f"Debug - Upcoming invoice: {json.dumps(upcoming, indent=2)}")  # デバッグログ追加
+            print(f"Debug - Upcoming invoice: {json.dumps(upcoming, indent=2)}")
             
             # 保留中のインボイスアイテムを処理
             for line in upcoming.lines.data:
+                description = convert_description_date(line.description, line.period.start)
+                
                 formatted_transactions.append({
                     'id': f"upcoming_{line.id}",
                     'date': line.period.start,
                     'amount': line.amount,
                     'status': 'upcoming',
                     'type': 'proration' if line.type == 'invoiceitem' else 'charge',
-                    'description': line.description or 'プラン変更に伴う調整',
+                    'description': description or 'プラン変更に伴う調整',
                     'url': None,
                     'upcoming': True
                 })
@@ -528,18 +642,19 @@ def get_invoices(body: Dict) -> Dict:
 
         # 既存のインボイス処理
         for invoice in invoices.data:
-            print(f"Debug - Processing invoice: {invoice.id}")  # デバッグログ追加
+            print(f"Debug - Processing invoice: {invoice.id}")
             
             # 通常の請求とプロレーション処理
             for line in invoice.lines.data:
-                amount = line.amount
+                description = convert_description_date(line.description, line.period.start)
+                
                 formatted_transactions.append({
                     'id': f"{invoice.id}_{line.id}",
                     'date': line.period.start,
-                    'amount': amount,
+                    'amount': line.amount,
                     'status': invoice.status,
                     'type': 'proration' if line.type == 'invoiceitem' else 'charge',
-                    'description': line.description or '定期購読料金',
+                    'description': description or '定期購読料金',
                     'url': invoice.hosted_invoice_url
                 })
 
@@ -614,6 +729,9 @@ def get_subscription_info(customer_id: str) -> Dict:
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """メインハンドラー関数"""
+    request_id = context.aws_request_id
+    logger.info(f"Processing request: {request_id}")
+    
     try:
         path = event.get('path', '')
         method = event.get('httpMethod', '')
@@ -639,17 +757,15 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         return create_response(200, result)
 
     except PaymentError as e:
-        # PaymentErrorを400エラーとして返す
+        log_error(e, {'request_id': request_id, 'path': event.get('path')})
         return create_response(400, {'error': str(e)})
     except stripe.error.StripeError as e:
-        # Stripeのエラーも400エラーとして返す
+        log_error(e, {'request_id': request_id, 'path': event.get('path')})
         return create_response(400, {'error': str(e)})
     except Exception as e:
-        import traceback
-        error_message = {
-            'error': 'システムエラーが発生しました',  # ユーザー向けの一般的なエラーメッセージ
-            'detail': str(e),  # 詳細なエラー情報
+        log_error(e, {
+            'request_id': request_id,
+            'path': event.get('path'),
             'traceback': traceback.format_exc()
-        }
-        print('Error:', error_message)  # ログ出力
-        return create_response(500, {'error': 'システムエラーが発生しました'})  # クライアントへの応答
+        })
+        return create_response(500, {'error': 'システムエラーが発生しました'})

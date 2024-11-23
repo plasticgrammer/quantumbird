@@ -111,7 +111,6 @@ import PaymentDialog from '../components/PaymentDialog.vue'
 const store = useStore()
 const { plans } = useStripe()
 
-// 状態の追加
 const isLoading = ref(false)
 const error = ref(null)
 const invoices = ref([])
@@ -171,7 +170,7 @@ const formatAmount = (amount) => {
 const getStatusColor = (invoice) => {
   if (invoice.upcoming) return 'warning'
   if (invoice.type === 'refund') return 'info'
-  return invoice.status === 'paid' ? 'success' : 'warning'
+  return invoice.status === 'paid' ? 'light-blue-lighten-4' : 'warning'
 }
 
 const getStatusText = (invoice) => {
