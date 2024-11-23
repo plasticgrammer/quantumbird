@@ -607,25 +607,38 @@ const handleSubmit = async () => {
 
     isLoading.value = true
 
-    // フリープランへの変更
     if (formState.selectedPlan === 'free') {
       try {
+        const currentStripeCustomerId = currentPlan.value?.stripeCustomerId
+        
         // サブスクリプションIDがある場合のみchangePlanを呼び出し
         if (currentPlan.value?.subscriptionId) {
           const response = await changePlan({
             subscriptionId: currentPlan.value.subscriptionId,
             priceId: 'price_free',
-            accountCount: 0
+            accountCount: 0,
+            customerId: currentStripeCustomerId
+          })
+          
+          await store.dispatch('auth/updateSubscriptionAttributes', {
+            planId: 'free',
+            accountCount: null,
+            subscriptionId: null,
+            stripeCustomerId: response.subscription.stripeCustomerId || currentStripeCustomerId
           })
           
           if (response.message) {
             dialogMessage.value = response.message
           }
+        } else {
+          // フリープランの場合でも顧客IDを保持
+          await store.dispatch('auth/updateSubscriptionAttributes', {
+            planId: 'free',
+            accountCount: null,
+            subscriptionId: null,
+            stripeCustomerId: currentStripeCustomerId
+          })
         }
-        
-        await store.dispatch('auth/updateSubscriptionAttributes', {
-          stripeCustomerId: currentPlan.value?.stripeCustomerId 
-        })
         
         handleSuccess()
       } catch (err) {

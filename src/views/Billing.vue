@@ -48,7 +48,7 @@
             <tr>
               <th>日付</th>
               <th>内容</th>
-              <th>金額</th>
+              <th class="text-center">金額</th>
               <th class="text-center">ステータス</th>
               <th class="text-center">請求書</th>
             </tr>
@@ -56,13 +56,19 @@
           <tbody>
             <tr v-for="invoice in invoices" :key="invoice.id">
               <td>{{ formatDate(invoice.date) }}</td>
-              <td>{{ invoice.description }}</td>
-              <td :class="{ 'text-error': invoice.amount < 0 }">
+              <td>
+                <div>{{ invoice.description }}</div>
+                <div v-if="invoice.upcoming" class="text-caption text-warning">
+                  ※次回請求時に反映
+                </div>
+              </td>
+              <td :class="[{ 'text-error': invoice.amount < 0, 'text-warning': invoice.upcoming }, 'text-right']">
                 {{ formatAmount(invoice.amount) }}
               </td>
               <td class="text-center">
                 <v-chip
                   :color="getStatusColor(invoice)"
+                  :variant="invoice.upcoming ? 'outlined' : 'flat'"
                   size="small"
                 >
                   {{ getStatusText(invoice) }}
@@ -131,8 +137,8 @@ const fetchInvoices = async (customerId) => {
     isLoading.value = true
     error.value = null
     
-    // 顧客IDがあれば請求履歴を取得
-    if (currentSubscription.value?.stripeCustomerId) {
+    // 顧客IDがあれば請求履歴を取得（stripeCustomerIdの存在チェックを削除）
+    if (customerId) {
       const response = await getInvoices(customerId)
       invoices.value = response.data.invoices
     } else {
@@ -159,11 +165,13 @@ const formatAmount = (amount) => {
 }
 
 const getStatusColor = (invoice) => {
+  if (invoice.upcoming) return 'warning'
   if (invoice.type === 'refund') return 'info'
   return invoice.status === 'paid' ? 'success' : 'warning'
 }
 
 const getStatusText = (invoice) => {
+  if (invoice.upcoming) return '保留中'
   if (invoice.type === 'refund') return '返金済み'
   return invoice.status === 'paid' ? '支払い済み' : '未払い'
 }
@@ -182,7 +190,7 @@ const openInvoice = (url) => {
 
 onMounted(async () => {
   try {
-    // 非同期でStripe情報を取得
+    // 非同期でStripe情報を取得（条件チェックを変更）
     if (currentSubscription.value?.stripeCustomerId) {
       await fetchInvoices(currentSubscription.value.stripeCustomerId)
     }
@@ -195,5 +203,9 @@ onMounted(async () => {
 <style>
 .text-error {
   color: var(--v-error-base);
+}
+
+.text-warning {
+  color: var(--v-warning-base);
 }
 </style>

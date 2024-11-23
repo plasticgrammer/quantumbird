@@ -2,6 +2,7 @@ import json
 import stripe
 import os
 import time
+import traceback  # tracebackモジュールを追加
 from typing import Dict, Any
 from common.utils import create_response
 
@@ -100,7 +101,7 @@ def create_subscription_response(subscription: Any, price_id: str, account_count
     }
 
 def check_plan_change_cooldown(subscription: stripe.Subscription) -> None:
-    """プラン変更のクールダウンチェック"""
+    """プラン変更のクール��ウンチェック"""
     if subscription.metadata.get('last_change_at'):
         last_change = int(subscription.metadata.get('last_change_at'))
         if (time.time() - last_change) < PaymentConfig.PLAN_CHANGE_COOLDOWN_SECONDS:
@@ -131,7 +132,7 @@ def create_subscription(body: Dict, client_ip: str) -> Dict:
         return create_subscription_response(None, PaymentConfig.PRICE_ID_FREE, 0)
     
     try:
-        # プランに応じた価格設定とサブスクリプション作成
+        # プランに応じた価格設定とサブスクリプ���ョン作成
         if price_id == PaymentConfig.PRICE_ID_BUSINESS:  # ビジネスプラン
             total_price = calculate_business_price(account_count)
             subscription = stripe.Subscription.create(
@@ -207,16 +208,19 @@ def create_free_plan_response(customer_id: str = None) -> Dict:
         'message': 'フリープランが選択されました',
         'subscription': {
             'id': 'free',
-            'planId': 'free',  # planIdを明示的に設定
-            'price': PaymentConfig.PRICE_ID_FREE,
+            'planId': 'free',
+            'priceId': PaymentConfig.PRICE_ID_FREE,  # priceをpriceIdに変更
             'accountCount': 0,
             'status': 'active',
-            'stripeCustomerId': customer_id  # 顧客IDを維持
+            'stripeCustomerId': customer_id,
+            'subscriptionId': None
         }
     }
 
 def handle_free_plan_change(subscription: stripe.Subscription, body: Dict) -> Dict:
     """フリープランへの変更処理"""
+    customer_id = subscription.customer  # 顧客IDを保存
+    
     # 現在のサブスクリプションをキャンセル
     canceled_subscription = stripe.Subscription.modify(
         subscription.id,
@@ -224,17 +228,18 @@ def handle_free_plan_change(subscription: stripe.Subscription, body: Dict) -> Di
         metadata={'last_change_at': str(int(time.time()))}
     )
     
-    # 既存の顧客IDを維持してレスポンスを返す
+    # レスポンスにcustomerIdを含める
     return {
         'message': 'プラン変更が予約されました',
         'subscription': {
-            'id': subscription.id,
-            'planId': 'free',  # planIdを明示的に設定
-            'price': PaymentConfig.PRICE_ID_FREE,
-            'status': 'canceled',
+            'id': subscription.id,  # 既存のサブスクリプションIDを維持
+            'planId': 'free',
+            'priceId': PaymentConfig.PRICE_ID_FREE,
+            'status': canceled_subscription.status,
             'currentPeriodEnd': canceled_subscription.current_period_end,
-            'stripeCustomerId': subscription.customer,  # 顧客IDを維持
-            'cancelAt': canceled_subscription.cancel_at  # キャンセル予定日を追加
+            'stripeCustomerId': customer_id,  # 顧客IDを明示的に設定
+            'accountCount': 0,
+            'cancelAt': canceled_subscription.cancel_at
         }
     }
 
@@ -276,23 +281,27 @@ def handle_paid_plan_change(subscription: stripe.Subscription, new_price_id: str
 
 def change_subscription_plan(body: Dict) -> Dict:
     """プラン変更処理"""
-    subscription_id = body['subscriptionId']
-    new_price_id = body['priceId']
-    new_account_count = int(body.get('accountCount', 0))
-    customer_id = body.get('customerId')  # 既存の顧客IDを受け取る
-
-    # フリープランからの変更の場合
-    if subscription_id == PaymentConfig.PRICE_ID_FREE:
-        if customer_id:  # 既存の顧客IDがある場合
-            return create_subscription({**body, 'customerId': customer_id})
-        return create_subscription(body)
-
     try:
+        subscription_id = body['subscriptionId']
+        new_price_id = body['priceId']
+        new_account_count = int(body.get('accountCount', 0))
+        customer_id = body.get('customerId')  # 既存の顧客IDを受け取る
+
+        # フリープランからの変更の場合
+        if subscription_id == PaymentConfig.PRICE_ID_FREE:
+            if customer_id:  # 既存の顧客IDがある場合
+                return create_subscription({**body, 'customerId': customer_id})
+            return create_subscription(body)
+
         subscription = stripe.Subscription.retrieve(subscription_id)
         
         # プラン変更ロジック
         if new_price_id == PaymentConfig.PRICE_ID_FREE:
-            return handle_free_plan_change(subscription, body)
+            # 顧客IDを保持して変更
+            return handle_free_plan_change(subscription, {
+                **body,
+                'customerId': subscription.customer  # 既存の顧客IDを明示的に渡す
+            })
             
         # フリープラン以外への変更時のみクールダウンチェックを実行
         check_plan_change_cooldown(subscription)
@@ -305,7 +314,8 @@ def change_subscription_plan(body: Dict) -> Dict:
 
     except stripe.error.InvalidRequestError as e:
         if new_price_id == PaymentConfig.PRICE_ID_FREE:
-            return create_free_plan_response(customer_id)  # 顧客IDを渡す
+            # 顧客IDを明示的に渡してフリープランレスポンスを生成
+            return create_free_plan_response(customer_id or body.get('customerId'))
         raise e
 
 def reactivate_subscription(body: Dict) -> Dict:
@@ -410,34 +420,68 @@ def get_invoices(body: Dict) -> Dict:
         if not customer_id:
             return {'data': {'invoices': []}}
 
+        formatted_transactions = []
+
+        # すべての請求書を取得（Stripeが許可するステータスのみ指定）
         invoices = stripe.Invoice.list(
             customer=customer_id,
             limit=12,
-            expand=['data.charge', 'data.lines.data']
+            expand=['data.charge', 'data.lines.data'],
+            status='paid'  # paidの請求書のみ取得
         )
 
-        formatted_transactions = []
-        
-        for invoice in invoices.data:
-            # 通常の請求
-            amount = invoice.amount_paid
-            if invoice.status == 'paid':
-                formatted_transactions.append({
-                    'id': invoice.id,
-                    'date': invoice.created,  # Unixタイムスタンプをそのまま使用
-                    'amount': amount,
-                    'status': invoice.status,
-                    'type': 'charge',
-                    'description': invoice.lines.data[0].description if invoice.lines.data else '定期購読料金',
-                    'url': invoice.hosted_invoice_url
-                })
+        # Draft, open, voidの請求書も取得
+        for status in ['draft', 'open', 'void']:
+            temp_invoices = stripe.Invoice.list(
+                customer=customer_id,
+                limit=12,
+                expand=['data.charge', 'data.lines.data'],
+                status=status
+            )
+            invoices.data.extend(temp_invoices.data)
 
-            # プロレート返金がある場合
+        # 保留中のインボイスを取得
+        try:
+            upcoming = stripe.Invoice.upcoming(
+                customer=customer_id,
+                expand=['lines.data']
+            )
+            # 保留中のインボイスアイテムを処理
+            for line in upcoming.lines.data:
+                if line.type == 'invoiceitem':
+                    formatted_transactions.append({
+                        'id': f"upcoming_{line.id}",
+                        'date': line.period.start,
+                        'amount': line.amount,
+                        'status': 'upcoming',
+                        'type': 'proration',
+                        'description': line.description or 'プラン変更に伴う調整',
+                        'url': None,
+                        'upcoming': True
+                    })
+        except stripe.error.InvalidRequestError:
+            # 保留中のインボイスがない場合はスキップ
+            pass
+
+        # すべてのインボイスを処理
+        for invoice in invoices.data:
+            # 請求の処理
+            formatted_transactions.append({
+                'id': invoice.id,
+                'date': invoice.created,
+                'amount': invoice.amount_paid or invoice.amount_due,
+                'status': invoice.status,
+                'type': 'charge',
+                'description': invoice.lines.data[0].description if invoice.lines.data else '定期購読料金',
+                'url': invoice.hosted_invoice_url
+            })
+
+            # プロレート返金の処理
             for line in invoice.lines.data:
                 if line.type == 'invoiceitem' and line.amount < 0:
                     formatted_transactions.append({
                         'id': f"{invoice.id}_prorate",
-                        'date': line.period.start,  # 期間の開始日を使用
+                        'date': line.period.start,
                         'amount': line.amount,
                         'status': 'succeeded',
                         'type': 'refund',
@@ -445,13 +489,13 @@ def get_invoices(body: Dict) -> Dict:
                         'url': None
                     })
 
-            # 手動返金がある場合
+            # 手動返金の処理
             if invoice.charge:
                 refunds = stripe.Refund.list(charge=invoice.charge)
                 for refund in refunds.data:
                     formatted_transactions.append({
                         'id': refund.id,
-                        'date': refund.created,  # Unixタイムスタンプをそのまま使用
+                        'date': refund.created,
                         'amount': -refund.amount,
                         'status': refund.status,
                         'type': 'refund',
@@ -462,10 +506,14 @@ def get_invoices(body: Dict) -> Dict:
         # 日付でソート（新しい順）
         formatted_transactions.sort(key=lambda x: x['date'], reverse=True)
 
+        # デバッグ出力
+        print(f"Debug - Formatted transactions: {json.dumps(formatted_transactions, indent=2)}")
+
         return {'data': {'invoices': formatted_transactions}}
         
     except Exception as e:
-        print(f"Error fetching invoices: {str(e)}")  # エラーの詳細を出力
+        print(f"Error fetching invoices: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
         return {'data': {'invoices': []}, 'error': str(e)}
 
 def get_subscription_info(customer_id: str) -> Dict:
