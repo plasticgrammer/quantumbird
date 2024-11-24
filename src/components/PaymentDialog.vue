@@ -359,6 +359,7 @@ import {
 } from '../services/paymentService'
 import PaymentMethodForm from '../components/PaymentMethodForm.vue'
 import { specifiedCommercialTransactionsUrl } from '../config/environment'
+import { getCurrentPlan, getCurrentSubscription } from '@/config/plans'
 
 // 新しく追加するpropsとemits
 const props = defineProps({
@@ -416,16 +417,17 @@ const dialogMessage = ref('')
 
 // Computed Properties
 const currentPlan = computed(() => {
-  const subscription = store.getters['auth/currentSubscription']
-  if (!subscription || !subscription.planId) return null
+  const subscription = getCurrentSubscription()
+  if (!subscription) return null
   
-  const plan = plans.find(p => p.planId === subscription.planId) || plans[0]
+  const plan = getCurrentPlan()
   
   return {
     ...plan,
     subscriptionId: subscription.subscriptionId || null,
     currentAccountCount: subscription.accountCount || 0,
-    planId: subscription.planId
+    planId: subscription.planId,
+    stripeCustomerId: subscription.stripeCustomerId
   }
 })
 
@@ -622,7 +624,8 @@ const handleSubmit = async () => {
 
     if (formState.selectedPlan === 'free') {
       try {
-        const currentStripeCustomerId = currentPlan.value?.stripeCustomerId
+        const subscription = getCurrentSubscription()
+        const currentStripeCustomerId = subscription?.stripeCustomerId
         
         // サブスクリプションIDがある場合のみchangePlanを呼び出し
         if (currentPlan.value?.subscriptionId) {
@@ -662,7 +665,8 @@ const handleSubmit = async () => {
       }
     } else {
       // フリープランからの変更時は常に新規サブスクリプション作成
-      const isFromFreePlan = !currentPlan.value?.subscriptionId || currentPlan.value.planId === 'free'
+      const subscription = getCurrentSubscription()
+      const isFromFreePlan = !subscription?.subscriptionId || subscription?.planId === 'free'
       
       if (isFromFreePlan) {
         console.log('Creating new subscription...')
@@ -684,7 +688,7 @@ const handleSubmit = async () => {
             token: null, // 既存の支払い方法を使用
             priceId: selectedPlan.priceId,
             accountCount: formState.selectedPlan === 'business' ? formState.accountCount : 0,
-            customerId: store.getters['auth/currentSubscription'].stripeCustomerId
+            customerId: getCurrentSubscription()?.stripeCustomerId
           })
           
           if (response.subscription) {

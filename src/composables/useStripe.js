@@ -1,52 +1,6 @@
 import { ref, reactive } from 'vue'
 import { loadStripe } from '@stripe/stripe-js'
-
-// プラン情報を定義
-const plans = [
-  {
-    planId: 'free',
-    priceId: 'price_free',
-    name: 'フリープラン',
-    price: 0,
-    features: ['基本機能が使用可能', '最大5名まで登録可能'],
-    systemFeatures: {
-      maxMembers: 5,
-      weeklyReportAdvice: false,
-      accountManagement: false
-    }
-  },
-  {
-    planId: 'pro',
-    priceId: 'price_1QJSigJlLYAT4bpznFUNs5eg',
-    name: 'プロプラン',
-    price: 1000,
-    features: ['全機能が使用可能', 'メンバー数無制限'],
-    systemFeatures: {
-      maxMembers: -1, // 無制限
-      weeklyReportAdvice: true,
-      accountManagement: false
-    }
-  },
-  {
-    planId: 'business',
-    priceId: 'price_1QJSmjJlLYAT4bpzzPjAgcJj',
-    name: 'ビジネスプラン',
-    price: 2000,
-    pricePerAccount: 500,
-    getPrice: (accountCount) => 2000 + (accountCount * 500),
-    priceDescription: ['+ ¥500/アカウント'],
-    features: [
-      '全機能が使用可能',
-      'アカウント管理機能',
-      '請求書発行対応'
-    ],
-    systemFeatures: {
-      maxMembers: -1, // 無制限
-      weeklyReportAdvice: true,
-      accountManagement: true
-    }
-  }
-]
+import { plans } from '@/config/plans'
 
 export function useStripe() {
   // 既存のref/reactive

@@ -108,6 +108,7 @@ import { useStripe } from '../composables/useStripe'
 import { getInvoices } from '../services/paymentService'
 import { updateOrganizationFeatures } from '../services/organizationService'
 import PaymentDialog from '../components/PaymentDialog.vue'
+import { getCurrentPlan, getCurrentSubscription } from '../config/plans'
 
 const store = useStore()
 const { plans } = useStripe()
@@ -117,22 +118,16 @@ const error = ref(null)
 const invoices = ref([])
 const showPlanSelector = ref(false)
 
-const currentSubscription = computed(() => store.getters['auth/currentSubscription'])
+const currentPlan = computed(() => getCurrentPlan())
+const currentSubscription = computed(() => getCurrentSubscription())
 
-const currentPlanName = computed(() => {
-  if (!currentSubscription.value?.planId) return 'フリープラン'
-  const plan = plans.find(p => p.planId === currentSubscription.value.planId)
-  return plan?.name || 'フリープラン'
-})
+const currentPlanName = computed(() => currentPlan.value.name)
 
 const currentPlanPrice = computed(() => {
-  if (!currentSubscription.value?.planId) return 0
-  const plan = plans.find(p => p.planId === currentSubscription.value.planId)
-  if (!plan) return 0
-  
-  return plan.planId === 'business' && currentSubscription.value.accountCount
-    ? plan.getPrice(currentSubscription.value.accountCount)
-    : plan.price || 0
+  if (currentPlan.value.planId === 'business' && currentSubscription.value?.accountCount) {
+    return currentPlan.value.getPrice(currentSubscription.value.accountCount)
+  }
+  return currentPlan.value.price
 })
 
 const fetchInvoices = async (customerId) => {

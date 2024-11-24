@@ -174,6 +174,7 @@ import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { useResponsive } from './composables/useResponsive'
 import UserMenu from './components/UserMenu.vue'
+import { getCurrentPlan } from './config/plans'
 
 const ConfirmationDialog = defineAsyncComponent(() => import('./components/ConfirmationDialog.vue'))
 const LoadingOverlay = defineAsyncComponent(() => import('./components/LoadingOverlay.vue'))
@@ -182,6 +183,49 @@ const PolicyAcceptanceDialog = defineAsyncComponent(() => import('./components/P
 const router = useRouter()
 const store = useStore()
 const { isMobile } = useResponsive()
+
+const currentPlan = computed(() => getCurrentPlan())
+
+// Convert navigationItems to computed property
+const navigationItems = computed(() => {
+  const items = [
+    { 
+      icon: 'mdi-view-dashboard', 
+      title: 'ダッシュボード', 
+      value: 'Dashboard', 
+      route: { name: 'Dashboard' }
+    },
+    { 
+      icon: 'mdi-calendar-multiple-check', 
+      title: '週次報告レビュー', 
+      value: 'WeeklyReview', 
+      route: { name: 'WeeklyReviewSelector' }
+    },
+    { 
+      icon: 'mdi-domain', 
+      title: '組織情報管理', 
+      value: 'Organization', 
+      route: { name: 'OrganizationManagement' }
+    },
+    { 
+      icon: 'mdi-mail', 
+      title: '報告依頼設定', 
+      value: 'RequestSetting', 
+      route: { name: 'RequestSetting' }
+    },
+  ]
+
+  if (currentPlan.value.adminFeatures.accountManagement) {
+    items.push({
+      icon: 'mdi-account-cog',
+      title: 'アカウント管理',
+      value: 'AccountManagement',
+      route: { name: 'AccountManagement' }
+    })
+  }
+
+  return items
+})
 
 const confirmDialog = ref(null)
 const drawer = ref(true)
@@ -220,33 +264,6 @@ const toggleDrawerMode = () => {
   isRailMode.value = !isRailMode.value
   isHovered.value = false
 }
-
-const navigationItems = [
-  { 
-    icon: 'mdi-view-dashboard', 
-    title: 'ダッシュボード', 
-    value: 'Dashboard', 
-    route: { name: 'Dashboard' }
-  },
-  { 
-    icon: 'mdi-calendar-multiple-check', 
-    title: '週次報告レビュー', 
-    value: 'WeeklyReview', 
-    route: { name: 'WeeklyReviewSelector' }
-  },
-  { 
-    icon: 'mdi-domain', 
-    title: '組織情報管理', 
-    value: 'Organization', 
-    route: { name: 'OrganizationManagement' }
-  },
-  { 
-    icon: 'mdi-mail', 
-    title: '報告依頼設定', 
-    value: 'RequestSetting', 
-    route: { name: 'RequestSetting' }
-  },
-]
 
 const notification = reactive({
   show: false,
@@ -490,9 +507,8 @@ watch(isRailMode, (newValue) => {
 .navigation-drawer {
   z-index: 1000;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px -1px rgba(0,0,0,.2),
-              0 4px 5px 0 rgba(0,0,0,.14),
-              0 1px 10px 0 rgba(0,0,0,.12) !important;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2), 0 4px 5px 0 rgba(0, 0, 0, 0.14),
+    0 1px 10px 0 rgba(0, 0, 0, 0.12) !important;
 }
 
 #main .v-main.noshift {
