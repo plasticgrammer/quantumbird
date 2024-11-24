@@ -6,7 +6,7 @@ export const plans = [
     priceId: 'price_free',
     name: 'フリープラン',
     price: 0,
-    features: ['基本機能が使用可能', '最大5名まで登録可能'],
+    features: ['基本機能が使用可', 'メンバー数最大5名', 'AIアドバイスが利用不可'],
     adminFeatures: {
       maxMembers: 5,
       accountManagement: false
@@ -20,7 +20,7 @@ export const plans = [
     priceId: 'price_1QJSigJlLYAT4bpznFUNs5eg',
     name: 'プロプラン',
     price: 1000,
-    features: ['全機能が使用可能', 'メンバー数無制限'],
+    features: ['基本機能が使用可', 'メンバー数無制限', 'AIアドバイスが利用可'],
     adminFeatures: {
       maxMembers: -1,
       accountManagement: false
@@ -38,9 +38,10 @@ export const plans = [
     getPrice: (accountCount) => 2000 + (accountCount * 500),
     priceDescription: ['+ ¥500/アカウント'],
     features: [
-      '全機能が使用可能',
+      '基本機能が使用可',
       'アカウント管理機能',
-      '請求書発行対応'
+      'メンバー数無制限',
+      'AIアドバイスが利用可'
     ],
     adminFeatures: {
       maxMembers: -1,
