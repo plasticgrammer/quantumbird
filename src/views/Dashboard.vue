@@ -25,13 +25,14 @@
     </v-row>
 
     <v-row v-if="!isLoading" dense>
-      <v-col cols="12" class="mb-2">
+      <v-col :cols="12" class="mb-2">
         <v-card class="widget">
           <v-card-title class="text-subtitle-1">
             <v-icon
               small
               class="mr-1"
               aria-hidden="true"
+              @dblclick="toggleWidget('calendar')"
             >
               mdi-calendar-multiple-check
             </v-icon>
@@ -101,10 +102,22 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="6" class="mb-2">
+      <v-col 
+        :cols="12" 
+        :md="widgetExpand.overtime ? 12 : 6" 
+        class="mb-2 widget-container"
+      >
         <v-card class="widget">
-          <v-card-title class="text-subtitle-1">
-            <v-icon small class="mr-1" aria-hidden="true">
+          <v-card-title 
+            class="text-subtitle-1"
+            style="cursor: pointer"
+            @dblclick="toggleWidget('overtime')"
+          >
+            <v-icon 
+              small 
+              class="mr-1" 
+              aria-hidden="true"
+            >
               mdi-chart-line
             </v-icon>
             残業時間の遷移（過去5週間）
@@ -123,10 +136,22 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="6" class="mb-2">
+      <v-col 
+        :cols="12" 
+        :md="widgetExpand.stress ? 12 : 6" 
+        class="mb-2 widget-container"
+      >
         <v-card class="widget">
-          <v-card-title class="text-subtitle-1">
-            <v-icon small class="mr-1" aria-hidden="true">
+          <v-card-title 
+            class="text-subtitle-1"
+            style="cursor: pointer"
+            @dblclick="toggleWidget('stress')"
+          >
+            <v-icon 
+              small 
+              class="mr-1" 
+              aria-hidden="true"
+            >
               mdi-chart-line
             </v-icon>
             ストレス評価の遷移（過去5週間）
@@ -145,9 +170,17 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="6" class="mb-2">
+      <v-col 
+        :cols="12" 
+        :md="widgetExpand.organization ? 12 : 6" 
+        class="mb-2 widget-container"
+      >
         <v-card class="widget">
-          <v-card-title class="text-subtitle-1">
+          <v-card-title 
+            class="text-subtitle-1"
+            style="cursor: pointer"
+            @dblclick="toggleWidget('organization')"
+          >
             <v-icon small class="mr-1" aria-hidden="true">
               mdi-domain
             </v-icon>
@@ -174,9 +207,17 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="6" class="mb-2">
+      <v-col 
+        :cols="12" 
+        :md="widgetExpand.reportRequest ? 12 : 6" 
+        class="mb-2 widget-container"
+      >
         <v-card class="widget">
-          <v-card-title class="text-subtitle-1">
+          <v-card-title 
+            class="text-subtitle-1"
+            style="cursor: pointer"
+            @dblclick="toggleWidget('reportRequest')"
+          >
             <v-icon small class="mr-1" aria-hidden="true">
               mdi-mail
             </v-icon>
@@ -214,13 +255,25 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="6" class="mb-2">
-        <TodoListCard />
+      <v-col 
+        :cols="12" 
+        :md="widgetExpand.todo ? 12 : 6" 
+        class="mb-2 widget-container"
+      >
+        <TodoListCard class="widget" @dblclick.capture="toggleWidget('todo')" />
       </v-col>
 
-      <v-col cols="12" md="6" class="mb-2">
+      <v-col 
+        :cols="12" 
+        :md="widgetExpand.weeklyReport ? 12 : 6" 
+        class="mb-2 widget-container"
+      >
         <v-card class="widget">
-          <v-card-title class="text-subtitle-1">
+          <v-card-title 
+            class="text-subtitle-1"
+            style="cursor: pointer"
+            @dblclick="toggleWidget('weeklyReport')"
+          >
             <v-icon small class="mr-1" aria-hidden="true">
               mdi-calendar-account
             </v-icon>
@@ -312,7 +365,22 @@ const nextRequestDateTimeString = ref('')
 const overtimeData = ref({ labels: [], datasets: [] })
 const stressData = ref({ labels: [], datasets: [] })
 
-// Computed properties
+// ウィジェット毎の展開状態管理
+const widgetExpand = ref({
+  calendar: false,
+  overtime: false,
+  stress: false,
+  organization: false,
+  reportRequest: false,
+  todo: false,
+  weeklyReport: false
+})
+
+// トグル関数を修正
+const toggleWidget = (widgetId) => {
+  widgetExpand.value[widgetId] = !widgetExpand.value[widgetId]
+}
+
 const members = computed(() => organization.value?.members || [])
 const memberCount = computed(() => members.value.length)
 const weekString = computed(() => getStringFromWeek(calendarWeeks[weekIndex.value]))
@@ -533,5 +601,13 @@ onMounted(() => {
 
 .calendar-nav-btn-right {
   right: -30px;
+}
+
+.text-subtitle-1 {
+  user-select: none; /* テキスト選択を防ぐ */
+}
+
+.widget-container {
+  transition: all 0.3s ease-in-out;
 }
 </style>

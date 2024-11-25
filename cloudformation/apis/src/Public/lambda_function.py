@@ -384,7 +384,7 @@ def send_push_notification_to_admins(organization_id, notification_type, report_
                         'default': json.dumps(notification),
                         'GCM': json.dumps({
                             'notification': {
-                                'title': f'［{organization_id}］週次報告',
+                                'title': f'[{organization_id}] 週次報告',
                                 'body': f'{notification_type}: {report_data["weekString"]}',
                                 #'click_action': 'FLUTTER_NOTIFICATION_CLICK', # Flutterアプリの場合
                                 'sound': 'default'
