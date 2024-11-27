@@ -14,7 +14,10 @@
         </h3>
       </v-col>
       <v-col cols="6" class="d-flex justify-end align-center pe-3">
-        <v-menu v-model="isMenuOpen">
+        <v-menu 
+          v-model="isMenuOpen"
+          :close-on-content-click="false"
+        >
           <template #activator="{ props }">
             <v-btn
               v-tooltip="'ウィジェットの表示設定'"
@@ -25,10 +28,15 @@
               density="comfortable"
             ></v-btn>
           </template>
-          <v-list>
+          <v-list class="rounded-lg">
             <v-list-subheader>表示するウィジェット</v-list-subheader>
-            <v-list-item v-for="id in widgetOrder" :key="id">
-              <v-list-item-title>{{ widgetTitles[id] }}</v-list-item-title>
+            <v-list-item 
+              v-for="id in widgetOrder" 
+              :key="id" 
+              class="px-5"
+              @click.stop="handleVisibilityChange(id)"
+            >
+              <v-list-item-title class="text-body-2">{{ widgetTitles[id] }}</v-list-item-title>
               <template #append>
                 <v-switch
                   :model-value="store.state.widget.widgetVisibility[id]"
@@ -37,7 +45,6 @@
                   density="compact"
                   color="primary"
                   @click.stop
-                  @update:model-value="() => handleVisibilityChange(id)"
                 ></v-switch>
               </template>
             </v-list-item>

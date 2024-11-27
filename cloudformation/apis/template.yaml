@@ -34,8 +34,12 @@ Parameters:
     AllowedValues:
       - dev
       - prod
-  UserPoolArn:
+  UserPoolId:
     Type: String
+    Description: "Cognito User Pool ID"
+  UserPoolRegion:
+    Type: String
+    Description: "Region where the Cognito User Pool is located"
   WebPushPlatformApplicationArn:
     Type: String
     Default: "arn:aws:sns:ap-northeast-1:394014491996:app/GCM/fluxweek"
@@ -85,7 +89,7 @@ Resources:
       Auth:
         Authorizers:
           CognitoAuthorizer:
-            UserPoolArn: !Sub "${UserPoolArn}"
+            UserPoolArn: !Sub "arn:aws:cognito-idp:${UserPoolRegion}:${AWS::AccountId}:userpool/${UserPoolId}"
 
   ApiGatewayLogGroup:
     Type: AWS::Logs::LogGroup
@@ -548,6 +552,39 @@ Resources:
             RestApiId: !Ref ApiGatewayApi
             Path: /payment/subscription-info
             Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  AccountFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Stage}-account"
+      CodeUri: ./src/Account
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:ListUsers
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminDeleteUser
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminInitiateAuth
+              Resource: !Sub "arn:aws:cognito-idp:${UserPoolRegion}:${AWS::AccountId}:userpool/${UserPoolId}"
+      Description: "Manages account operations"
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          USER_POOL_ID: !Ref UserPoolId
+          USER_POOL_REGION: !Ref UserPoolRegion
+      Layers:
+        - !Ref CommonLayer
+      Events:
+        AccountApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /account
+            Method: ANY
             Auth:
               Authorizer: CognitoAuthorizer
 

@@ -8,6 +8,7 @@ import WeeklyReport from '../views/WeeklyReport.vue'
 import WeeklyReview from '../views/WeeklyReview.vue'
 import WeeklyReportSummary from '../views/WeeklyReportSummary.vue'
 import OrganizationManagement from '../views/OrganizationManagement.vue'
+import AccountManagement from '../views/AccountManagement.vue'
 import RequestSetting from '../views/RequestSetting.vue'
 
 const routes = [
@@ -57,6 +58,12 @@ const routes = [
     path: '/admin/organization',
     name: 'OrganizationManagement',
     component: OrganizationManagement,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/accounts',
+    name: 'AccountManagement',
+    component: AccountManagement,
     meta: { requiresAuth: true }
   },
   {

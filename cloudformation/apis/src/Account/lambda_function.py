@@ -7,7 +7,7 @@ from common.exception import ApplicationException
 from common.cognito_util import admin_create_user, admin_delete_user, list_users, admin_get_user
 
 USER_POOL_ID = os.environ.get('USER_POOL_ID')
-USER_POOL_REGION = os.environ.get('USER_POOL_REGION', 'ap-northeast-1')
+USER_POOL_REGION = os.environ.get('USER_POOL_REGION')  # デフォルト値を削除
 cognito = boto3.client('cognito-idp', region_name=USER_POOL_REGION)
 
 def lambda_handler(event, context):
