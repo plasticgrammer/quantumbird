@@ -89,8 +89,8 @@ const components = {
   StressChart: defineAsyncComponent(() => 
     import('../components/chart/StressChart.vue').then(m => markRaw(m.default))
   ),
-  TodoListCard: defineAsyncComponent(() => 
-    import('../components/widget/TodoListCard.vue').then(m => markRaw(m.default))
+  TodoListWidget: defineAsyncComponent(() => 
+    import('../components/widget/TodoListWidget.vue').then(m => markRaw(m.default))
   )
 }
 
@@ -345,7 +345,7 @@ const sortableWidgets = computed(() => {
         }
       }),
       todo: markRaw({
-        component: components.TodoListCard,
+        component: components.TodoListWidget,
         props: {}
       }),
       weeklyReport: markRaw({

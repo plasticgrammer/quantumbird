@@ -28,7 +28,7 @@ export default {
 
     return {
       expandStates: {
-        calendar: false,
+        calendar: true,
         overtime: false,
         stress: false,
         organization: false,
