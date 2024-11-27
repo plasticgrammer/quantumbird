@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-row dense class="pb-2">
-      <v-col cols="8">
+      <v-col cols="6">
         <h3>
           <v-icon 
             size="large" 
@@ -13,7 +13,36 @@
           ダッシュボード
         </h3>
       </v-col>
-      <v-col cols="4" class="d-flex justify-end align-center pe-3">
+      <v-col cols="6" class="d-flex justify-end align-center pe-3">
+        <v-menu v-model="isMenuOpen">
+          <template #activator="{ props }">
+            <v-btn
+              v-tooltip="'ウィジェットの表示設定'"
+              v-bind="props"
+              icon="mdi-cog"
+              aria-label="ウィジェット設定"
+              class="opacity-80 mr-2"
+              density="comfortable"
+            ></v-btn>
+          </template>
+          <v-list>
+            <v-list-subheader>表示するウィジェット</v-list-subheader>
+            <v-list-item v-for="id in widgetOrder" :key="id">
+              <v-list-item-title>{{ widgetTitles[id] }}</v-list-item-title>
+              <template #append>
+                <v-switch
+                  v-model="widgetVisibility[id]"
+                  hide-details
+                  inset
+                  density="compact"
+                  color="primary"
+                  @click.stop
+                  @change="handleVisibilityChange(id)"
+                ></v-switch>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-menu>
         <v-btn
           v-tooltip="'データを最新の状態に更新'"
           icon="mdi-reload"
@@ -28,7 +57,11 @@
     <v-row v-if="!isLoading" dense>
       <v-container fluid class="widgets-container pa-0">
         <VueDraggable
-          :model-value="sortableWidgets"
+          :model-value="visibleWidgets.map(id => ({
+            id,
+            component: components[widgetComponents[id]],
+            props: getWidgetProps(id)
+          }))"
           :component-data="{
             tag: 'div',
             type: 'transition-group',
@@ -282,75 +315,80 @@ onMounted(() => {
 
 const expanded = computed(() => store.state.widget.expandStates['calendar'])
 
-const { widgetOrder, updateOrder } = useWidgets()
+const { widgetOrder, updateOrder, visibleWidgets, toggleVisibility } = useWidgets()
 
-const sortableWidgets = computed(() => {
-  if (!weekIndex.value) return []
+const widgetComponents = {
+  calendar: 'CalendarWidget',
+  overtime: 'StatsWidget',
+  stress: 'StatsWidget',
+  organization: 'OrganizationWidget',
+  reportRequest: 'ReportRequestWidget',
+  todo: 'TodoListWidget',
+  weeklyReport: 'WeeklyReportWidget'
+}
 
-  return widgetOrder.value.map(id => {
-    const widgets = {
-      calendar: markRaw({
-        component: components.CalendarWidget,
-        props: {
-          calendarWeeks,
-          weekIndex: weekIndex.value,
-          'onUpdate:weekIndex': (v) => weekIndex.value = v,
-          statusCounts: statusCounts.value,
-          statusMembers: statusMembers.value,
-          filteredStatusOptions: filteredStatusOptions.value,
-          weekString: weekString.value
-        }
-      }),
-      overtime: markRaw({
-        component: components.StatsWidget,
-        props: {
-          widgetId: 'overtime',
-          title: '残業時間の遷移（過去5週間）',
-          chartComponent: components.OvertimeChart,
-          chartData: overtimeData.value,
-          isDataReady: isOvertimeDataReady.value
-        }
-      }),
-      stress: markRaw({
-        component: components.StatsWidget,
-        props: {
-          widgetId: 'stress',
-          title: 'ストレス評価の遷移（過去5週間）',
-          chartComponent: components.StressChart,
-          chartData: stressData.value,
-          isDataReady: isStressDataReady.value
-        }
-      }),
-      organization: markRaw({
-        component: components.OrganizationWidget,
-        props: {
-          organization: organization.value
-        }
-      }),
-      reportRequest: markRaw({
-        component: components.ReportRequestWidget,
-        props: {
-          organization: organization.value,
-          nextRequestDateTime: nextRequestDateTime.value,
-          nextRequestDateTimeString: nextRequestDateTimeString.value
-        }
-      }),
-      todo: markRaw({
-        component: components.TodoListWidget,
-        props: {}
-      }),
-      weeklyReport: markRaw({
-        component: components.WeeklyReportWidget,
-        props: {
-          members: members.value,
-          weekString: weekString.value,
-          organizationId: organizationId
-        }
-      })
+const getWidgetProps = (id) => {
+  const props = {
+    calendar: {
+      calendarWeeks,
+      weekIndex: weekIndex.value,
+      'onUpdate:weekIndex': (v) => weekIndex.value = v,
+      statusCounts: statusCounts.value,
+      statusMembers: statusMembers.value,
+      filteredStatusOptions: filteredStatusOptions.value,
+      weekString: weekString.value
+    },
+    overtime: {
+      widgetId: 'overtime',
+      title: '残業時間の遷移（過去5週間）',
+      chartComponent: components.OvertimeChart,
+      chartData: overtimeData.value,
+      isDataReady: isOvertimeDataReady.value
+    },
+    stress: {
+      widgetId: 'stress',
+      title: 'ストレス評価の遷移（過去5週間）',
+      chartComponent: components.StressChart,
+      chartData: stressData.value,
+      isDataReady: isStressDataReady.value
+    },
+    organization: {
+      organization: organization.value
+    },
+    reportRequest: {
+      organization: organization.value,
+      nextRequestDateTime: nextRequestDateTime.value,
+      nextRequestDateTimeString: nextRequestDateTimeString.value
+    },
+    todo: {},
+    weeklyReport: {
+      members: members.value,
+      weekString: weekString.value,
+      organizationId: organizationId
     }
-    return markRaw({ id, ...widgets[id] })
-  })
-})
+  }
+  return props[id]
+}
+
+const widgetTitles = {
+  calendar: '報告状況',
+  overtime: '残業時間の遷移',
+  stress: 'ストレス評価の遷移',
+  organization: '組織情報',
+  reportRequest: '報告依頼',
+  todo: 'やることリスト',
+  weeklyReport: 'メンバーの週次報告'
+}
+
+// widgetVisibilityの監視
+const widgetVisibility = computed(() => 
+  Object.fromEntries(
+    widgetOrder.value.map(id => [
+      id, 
+      store.state.widget.widgetVisibility[id]
+    ])
+  )
+)
 
 // リストの更新を処理
 const handleListUpdate = (newList) => {
@@ -365,6 +403,12 @@ onMounted(() => {
     fetchSecondary()
   })
 })
+
+const isMenuOpen = ref(false)
+
+const handleVisibilityChange = (id) => {
+  toggleVisibility(id)
+}
 </script>
 
 <style scoped>

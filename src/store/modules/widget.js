@@ -2,7 +2,6 @@ export default {
   namespaced: true,
   
   state: () => {
-    // 初期化時に必ずデフォルト値を持つように
     const defaultOrder = [
       'calendar',
       'overtime',
@@ -13,17 +12,14 @@ export default {
       'weeklyReport'
     ]
 
-    let savedOrder
-    try {
-      savedOrder = JSON.parse(localStorage.getItem('widgetOrder'))
-      // 保存された順序が有効か検証
-      if (!Array.isArray(savedOrder) || 
-          !savedOrder.every(id => defaultOrder.includes(id)) ||
-          savedOrder.length !== defaultOrder.length) {
-        savedOrder = null
-      }
-    } catch {
-      savedOrder = null
+    const defaultVisibility = {
+      calendar: true,
+      overtime: true,
+      stress: true,
+      organization: true,
+      reportRequest: true,
+      todo: true,
+      weeklyReport: true
     }
 
     return {
@@ -36,7 +32,8 @@ export default {
         todo: false,
         weeklyReport: false
       },
-      widgetOrder: savedOrder || defaultOrder
+      widgetOrder: defaultOrder,
+      widgetVisibility: defaultVisibility
     }
   },
 
@@ -46,7 +43,12 @@ export default {
     },
     SET_WIDGET_ORDER(state, order) {
       state.widgetOrder = [...order]
-      localStorage.setItem('widgetOrder', JSON.stringify(order))
+    },
+    SET_WIDGET_VISIBILITY(state, { widgetId, isVisible }) {
+      state.widgetVisibility = {
+        ...state.widgetVisibility,
+        [widgetId]: isVisible
+      }
     }
   },
 
@@ -59,6 +61,12 @@ export default {
     },
     updateWidgetOrder({ commit }, order) {
       commit('SET_WIDGET_ORDER', order)
+    },
+    toggleWidgetVisibility({ commit, state }, widgetId) {
+      commit('SET_WIDGET_VISIBILITY', {
+        widgetId,
+        isVisible: !state.widgetVisibility[widgetId]
+      })
     }
   }
 }

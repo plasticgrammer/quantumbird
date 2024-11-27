@@ -22,11 +22,26 @@ export const useWidgets = () => {
     store.dispatch('widget/toggleWidget', widgetId)
   }
 
+  const visibleWidgets = computed(() => 
+    widgetOrder.value.filter(id => store.state.widget.widgetVisibility[id])
+  )
+
+  const isVisible = (widgetId) => {
+    return computed(() => store.state.widget.widgetVisibility[widgetId])
+  }
+
+  const toggleVisibility = (widgetId) => {
+    store.dispatch('widget/toggleWidgetVisibility', widgetId)
+  }
+
   return {
     widgetOrder,
     isReordering,
     updateOrder,
     isExpanded,
-    toggleExpand
+    toggleExpand,
+    visibleWidgets,
+    isVisible,
+    toggleVisibility
   }
 }
