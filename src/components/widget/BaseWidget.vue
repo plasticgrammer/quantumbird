@@ -1,13 +1,8 @@
 <template>
-  <v-col 
-    :cols="12" 
-    :md="expanded ? 12 : 6" 
-    class="mb-2 widget-container"
-  >
+  <div class="widget-wrapper" :class="{ 'widget-expanded': expanded }">
     <v-card class="widget">
       <v-card-title 
-        class="text-subtitle-1"
-        style="cursor: pointer"
+        class="text-subtitle-1 widget-title"
         @dblclick="handleDblClick"
       >
         <div class="d-flex justify-space-between align-center w-100">
@@ -28,7 +23,7 @@
         <slot></slot>
       </v-card-text>
     </v-card>
-  </v-col>
+  </div>
 </template>
 
 <script setup>
@@ -51,6 +46,10 @@ const props = defineProps({
   contentClass: {
     type: String,
     default: 'pt-1 pb-3'
+  },
+  defaultCols: {
+    type: Number,
+    default: 6
   }
 })
 
@@ -64,12 +63,28 @@ const handleDblClick = () => {
 </script>
 
 <style scoped>
+.widget-wrapper {
+  padding: 8px;
+  width: 50%;
+  transition: all 0.3s ease-in-out;
+}
+
+.widget-wrapper.widget-expanded {
+  width: 100%;
+}
+
 .widget {
   min-height: 165px;
+  height: 100%;
   border-radius: 12px;
 }
 
 .widget-container {
   transition: all 0.3s ease-in-out;
+}
+
+.widget-title {
+  cursor: pointer;
+  user-select: none;
 }
 </style>
