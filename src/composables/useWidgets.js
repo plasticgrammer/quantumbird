@@ -45,11 +45,8 @@ export const useWidgets = () => {
   const store = useStore()
   const isReordering = ref(false)
 
-  // デフォルトのウィジェット順序を定義
-  const defaultWidgetOrder = Object.keys(WIDGET_DEFINITIONS)
-
-  // widgetOrderの定義を修正
-  const widgetOrder = computed(() => defaultWidgetOrder)
+  // ストアからwidgetOrderを取得
+  const widgetOrder = computed(() => store.state.widget.widgetOrder)
 
   const updateOrder = (newOrder) => {
     if (Array.isArray(newOrder) && newOrder.length > 0) {

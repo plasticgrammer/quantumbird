@@ -51,9 +51,16 @@ export default {
       state.widgetOrder = [...newOrder, ...remainingIds]
     },
     SET_WIDGET_VISIBILITY(state, { widgetId, isVisible }) {
+      // 可視性の更新
       state.widgetVisibility = {
         ...state.widgetVisibility,
         [widgetId]: isVisible
+      }
+
+      // widgetOrderの更新
+      if (isVisible && !state.widgetOrder.includes(widgetId)) {
+        // 表示に切り替えた場合、widgetOrderに追加
+        state.widgetOrder.push(widgetId)
       }
     }
   },

@@ -31,12 +31,12 @@
           <v-list class="rounded-lg">
             <v-list-subheader>表示するウィジェット</v-list-subheader>
             <v-list-item 
-              v-for="id in widgetOrder" 
+              v-for="(def, id) in WIDGET_DEFINITIONS" 
               :key="id" 
               class="px-5"
               @click.stop="handleVisibilityChange(id)"
             >
-              <v-list-item-title class="text-body-2">{{ widgetTitles[id] }}</v-list-item-title>
+              <v-list-item-title class="text-body-2">{{ def.title }}</v-list-item-title>
               <template #append>
                 <v-switch
                   :model-value="store.state.widget.widgetVisibility[id]"
@@ -44,7 +44,6 @@
                   inset
                   density="compact"
                   color="primary"
-                  @click.stop
                 ></v-switch>
               </template>
             </v-list-item>
@@ -64,11 +63,7 @@
     <v-row v-if="!isLoading" dense>
       <v-container fluid class="widgets-container pa-0">
         <VueDraggable
-          :model-value="visibleWidgets.map(id => ({
-            id,
-            component: components[widgetComponents[id]],
-            props: getWidgetProps(id)
-          }))"
+          v-model="currentWidgets"
           :component-data="{
             tag: 'div',
             type: 'transition-group',
@@ -79,7 +74,6 @@
           handle=".widget-title"
           :animation="200"
           ghost-class="widget-ghost"
-          @update:model-value="handleListUpdate"
         >
           <template #item="{ element }">
             <div :class="['widget-item', store.state.widget.expandStates[element.id] ? 'expanded' : '']">
@@ -336,18 +330,8 @@ onMounted(() => {
 
 const { 
   widgetOrder,
-  updateOrder, 
-  visibleWidgets, 
   WIDGET_DEFINITIONS
 } = useWidgets()
-
-const widgetComponents = Object.fromEntries(
-  Object.entries(WIDGET_DEFINITIONS).map(([id, def]) => [id, def.component])
-)
-
-const widgetTitles = Object.fromEntries(
-  Object.entries(WIDGET_DEFINITIONS).map(([id, def]) => [id, def.title])
-)
 
 const getWidgetProps = (id) => {
   const props = {
@@ -406,10 +390,37 @@ const getWidgetProps = (id) => {
   return props[id]
 }
 
-// widgetVisibility の計算を修正
-const handleListUpdate = (newList) => {
-  updateOrder(newList.map(widget => widget.id))
-}
+// currentWidgetsの定義を修正
+// デバッグロ���を追加
+const currentWidgets = computed({
+  get: () => {
+    console.log('WIDGET_DEFINITIONS:', WIDGET_DEFINITIONS)
+    console.log('widgetOrder:', widgetOrder.value)
+    console.log('visibility:', store.state.widget.widgetVisibility)
+    
+    // 全てのウィジェットIDを取得
+    const allWidgetIds = Object.keys(WIDGET_DEFINITIONS)
+    
+    return allWidgetIds
+      .filter(id => store.state.widget.widgetVisibility[id])
+      .map(id => {
+        const componentName = WIDGET_DEFINITIONS[id].component
+        const component = components[componentName]
+        console.log(`Widget ${id} component:`, componentName, component)
+        
+        return {
+          id,
+          component,
+          props: getWidgetProps(id)
+        }
+      })
+  },
+  set: (newList) => {
+    if (newList && newList.length > 0) {
+      store.dispatch('widget/updateWidgetOrder', newList.map(item => item.id))
+    }
+  }
+})
 
 onMounted(() => {
   weekIndex.value = calendarWeeks.length - 2 // 先週
