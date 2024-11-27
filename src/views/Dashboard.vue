@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <v-row dense class="pb-4">
+    <v-row dense class="pb-2">
       <v-col cols="8">
         <h3>
           <v-icon 
@@ -14,14 +14,6 @@
         </h3>
       </v-col>
       <v-col cols="4" class="d-flex justify-end align-center pe-3">
-        <v-btn
-          v-tooltip="isReordering ? 'ウィジェットの並び替えを完了' : 'ウィジェットの並び替えモードに切り替え'"
-          :icon="isReordering ? 'mdi-check' : 'mdi-drag'"
-          :aria-label="isReordering ? '並び替えを完了' : 'ウィジェットを並び替え'"
-          class="opacity-80 me-2"
-          density="comfortable"
-          @click="isReordering = !isReordering"
-        ></v-btn>
         <v-btn
           v-tooltip="'データを最新の状態に更新'"
           icon="mdi-reload"
@@ -40,11 +32,10 @@
           :component-data="{
             tag: 'div',
             type: 'transition-group',
-            name: !isReordering ? null : 'flip-list'
+            name: 'flip-list'
           }"
           class="widgets-grid"
           item-key="id"
-          :disabled="!isReordering"
           handle=".widget-title"
           :animation="200"
           ghost-class="widget-ghost"
@@ -291,7 +282,7 @@ onMounted(() => {
 
 const expanded = computed(() => store.state.widget.expandStates['calendar'])
 
-const { widgetOrder, isReordering, updateOrder } = useWidgets()
+const { widgetOrder, updateOrder } = useWidgets()
 
 const sortableWidgets = computed(() => {
   if (!weekIndex.value) return []
@@ -455,7 +446,7 @@ onMounted(() => {
   transition: box-shadow 0.3s ease;
 }
 
-/* 並び換えモード時のスタイル */
+/* 常に並び換え可能な状態を示すスタイル */
 :deep(.widget-title) {
   cursor: move;
 }

@@ -6,7 +6,7 @@
         @dblclick="handleDblClick"
       >
         <div class="d-flex justify-space-between align-center w-100">
-          <div>
+          <div class="py-1">
             <v-icon 
               small 
               class="mr-1" 
