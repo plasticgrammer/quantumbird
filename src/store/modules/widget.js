@@ -1,8 +1,17 @@
 export default {
   namespaced: true,
   
-  state: () => {
-    const defaultOrder = [
+  state: () => ({
+    expandStates: {
+      calendar: true,
+      overtime: false,
+      stress: false,
+      organization: false,
+      reportRequest: false,
+      todo: false,
+      weeklyReport: false
+    },
+    widgetOrder: [
       'calendar',
       'overtime',
       'stress',
@@ -10,9 +19,8 @@ export default {
       'reportRequest',
       'todo',
       'weeklyReport'
-    ]
-
-    const defaultVisibility = {
+    ],
+    widgetVisibility: {
       calendar: true,
       overtime: true,
       stress: true,
@@ -21,21 +29,7 @@ export default {
       todo: true,
       weeklyReport: true
     }
-
-    return {
-      expandStates: {
-        calendar: true,
-        overtime: false,
-        stress: false,
-        organization: false,
-        reportRequest: false,
-        todo: false,
-        weeklyReport: false
-      },
-      widgetOrder: defaultOrder,
-      widgetVisibility: defaultVisibility
-    }
-  },
+  }),
 
   mutations: {
     SET_WIDGET_STATE(state, { widgetId, isExpanded }) {

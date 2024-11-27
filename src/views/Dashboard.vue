@@ -31,13 +31,13 @@
               <v-list-item-title>{{ widgetTitles[id] }}</v-list-item-title>
               <template #append>
                 <v-switch
-                  v-model="widgetVisibility[id]"
+                  :model-value="store.state.widget.widgetVisibility[id]"
                   hide-details
                   inset
                   density="compact"
                   color="primary"
                   @click.stop
-                  @change="handleVisibilityChange(id)"
+                  @update:model-value="() => handleVisibilityChange(id)"
                 ></v-switch>
               </template>
             </v-list-item>
@@ -313,19 +313,20 @@ onMounted(() => {
   })
 })
 
-const expanded = computed(() => store.state.widget.expandStates['calendar'])
+const { 
+  widgetOrder,
+  updateOrder, 
+  visibleWidgets, 
+  WIDGET_DEFINITIONS
+} = useWidgets()
 
-const { widgetOrder, updateOrder, visibleWidgets, toggleVisibility } = useWidgets()
+const widgetComponents = Object.fromEntries(
+  Object.entries(WIDGET_DEFINITIONS).map(([id, def]) => [id, def.component])
+)
 
-const widgetComponents = {
-  calendar: 'CalendarWidget',
-  overtime: 'StatsWidget',
-  stress: 'StatsWidget',
-  organization: 'OrganizationWidget',
-  reportRequest: 'ReportRequestWidget',
-  todo: 'TodoListWidget',
-  weeklyReport: 'WeeklyReportWidget'
-}
+const widgetTitles = Object.fromEntries(
+  Object.entries(WIDGET_DEFINITIONS).map(([id, def]) => [id, def.title])
+)
 
 const getWidgetProps = (id) => {
   const props = {
@@ -370,32 +371,11 @@ const getWidgetProps = (id) => {
   return props[id]
 }
 
-const widgetTitles = {
-  calendar: '報告状況',
-  overtime: '残業時間の遷移',
-  stress: 'ストレス評価の遷移',
-  organization: '組織情報',
-  reportRequest: '報告依頼',
-  todo: 'やることリスト',
-  weeklyReport: 'メンバーの週次報告'
-}
-
-// widgetVisibilityの監視
-const widgetVisibility = computed(() => 
-  Object.fromEntries(
-    widgetOrder.value.map(id => [
-      id, 
-      store.state.widget.widgetVisibility[id]
-    ])
-  )
-)
-
-// リストの更新を処理
+// widgetVisibility の計算を修正
 const handleListUpdate = (newList) => {
   updateOrder(newList.map(widget => widget.id))
 }
 
-// 初期化時の処理
 onMounted(() => {
   weekIndex.value = calendarWeeks.length - 2 // 先週
   fetchInitial()
@@ -407,57 +387,11 @@ onMounted(() => {
 const isMenuOpen = ref(false)
 
 const handleVisibilityChange = (id) => {
-  toggleVisibility(id)
+  store.dispatch('widget/toggleWidgetVisibility', id)
 }
 </script>
 
 <style scoped>
-.calendar-small :deep(.v-date-picker-month) {
-  height: 240px;
-}
-
-.calendar-small :deep(.v-date-picker-month__day) {
-  width: 28px;
-  height: 28px;
-  font-size: 0.9rem;
-}
-
-.calendar-small :deep(.v-date-picker-controls) {
-  display: none;
-}
-
-.calendar-card {
-  overflow: visible !important;
-  max-width: v-bind(expanded ? '560px' : '100%');
-  margin: 0 auto;
-}
-
-.position-relative {
-  position: relative;
-}
-
-.calendar-nav-btn {
-  opacity: 0.6;
-  position: absolute;
-  bottom: 6px;
-}
-
-.calendar-nav-btn-left {
-  left: -30px;
-}
-
-.calendar-nav-btn-right {
-  right: -30px;
-}
-
-.widget :deep(.v-card-title) {
-  user-select: none;
-}
-
-.status-chip-wrapper {
-  display: inline-block;
-}
-
 .widgets-container :deep(.v-col) {
   transition: all 0.3s ease;
 }

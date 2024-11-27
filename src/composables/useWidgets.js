@@ -1,12 +1,47 @@
 import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
 
+// ウィジェット定義の型
+const WIDGET_DEFINITIONS = {
+  calendar: {
+    component: 'CalendarWidget',
+    title: '報告状況'
+  },
+  overtime: {
+    component: 'StatsWidget',
+    title: '残業時間の遷移'
+  },
+  stress: {
+    component: 'StatsWidget',
+    title: 'ストレス評価の遷移'
+  },
+  organization: {
+    component: 'OrganizationWidget',
+    title: '組織情報'
+  },
+  reportRequest: {
+    component: 'ReportRequestWidget',
+    title: '報告依頼'
+  },
+  todo: {
+    component: 'TodoListWidget',
+    title: 'やることリスト'
+  },
+  weeklyReport: {
+    component: 'WeeklyReportWidget',
+    title: 'メンバーの週次報告'
+  }
+}
+
 export const useWidgets = () => {
   const store = useStore()
   const isReordering = ref(false)
   
-  // storeからの値を確実に取得
-  const widgetOrder = computed(() => [...store.state.widget.widgetOrder])
+  // デフォルトのウィジェット順序を定義
+  const defaultWidgetOrder = Object.keys(WIDGET_DEFINITIONS)
+  
+  // widgetOrderの定義を修正
+  const widgetOrder = computed(() => defaultWidgetOrder)
   
   const updateOrder = (newOrder) => {
     if (Array.isArray(newOrder) && newOrder.length > 0) {
@@ -34,6 +69,18 @@ export const useWidgets = () => {
     store.dispatch('widget/toggleWidgetVisibility', widgetId)
   }
 
+  const getWidgetDefinition = (widgetId) => {
+    return WIDGET_DEFINITIONS[widgetId]
+  }
+
+  const getWidgetComponent = (widgetId) => {
+    return WIDGET_DEFINITIONS[widgetId]?.component
+  }
+
+  const getWidgetTitle = (widgetId) => {
+    return WIDGET_DEFINITIONS[widgetId]?.title
+  }
+
   return {
     widgetOrder,
     isReordering,
@@ -42,6 +89,10 @@ export const useWidgets = () => {
     toggleExpand,
     visibleWidgets,
     isVisible,
-    toggleVisibility
+    toggleVisibility,
+    getWidgetDefinition,
+    getWidgetComponent,
+    getWidgetTitle,
+    WIDGET_DEFINITIONS
   }
 }
