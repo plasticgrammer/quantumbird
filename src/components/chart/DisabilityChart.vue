@@ -15,15 +15,15 @@ const chartOptions = {
       stepSize: 1,
       precision: 0,
       callback: (value) => {
-        if (value === 1) return '余裕'
-        if (value === 5) return '極限'
+        if (value === 1) return '易しい'
+        if (value === 5) return '難しい'
         return ''
       },
       includeBounds: false
     },
     title: {
       display: true,
-      text: 'ストレス評価'
+      text: 'タスク難易度'
     },
     grid: {
       color: (context) => context.tick.value === 5 ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.1)'
@@ -38,23 +38,3 @@ defineProps({
   }
 })
 </script>
-
-<style scoped>
-.chart-container {
-  width: 100%;
-}
-
-.chart-wrapper {
-  position: relative;
-  height: 180px;
-  width: 100%;
-}
-
-.chart-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100% !important;
-  height: 100% !important;
-}
-</style>

@@ -120,6 +120,12 @@ const components = {
   StressChart: defineAsyncComponent(() => 
     import('../components/chart/StressChart.vue').then(m => markRaw(m.default))
   ),
+  DisabilityChart: defineAsyncComponent(() => 
+    import('../components/chart/DisabilityChart.vue').then(m => markRaw(m.default))
+  ),
+  AchievementChart: defineAsyncComponent(() => 
+    import('../components/chart/AchievementChart.vue').then(m => markRaw(m.default))
+  ),
   TodoListWidget: defineAsyncComponent(() => 
     import('../components/widget/TodoListWidget.vue').then(m => markRaw(m.default))
   )
@@ -148,9 +154,13 @@ const isLoading = ref(true)
 const error = ref(null)
 const isOvertimeDataReady = ref(false)
 const isStressDataReady = ref(false)
+const isDisabilityDataReady = ref(false)
+const isAchievementDataReady = ref(false)
 const nextRequestDateTimeString = ref('')
 const overtimeData = ref({ labels: [], datasets: [] })
 const stressData = ref({ labels: [], datasets: [] })
+const disabilityData = ref({ labels: [], datasets: [] })
+const achievementData = ref({ labels: [], datasets: [] })
 
 const members = computed(() => organization.value?.members || [])
 const weekString = computed(() => 
@@ -291,8 +301,12 @@ const fetchSecondary = async () => {
     const statsData = await getStatsData(organizationId)
     overtimeData.value = formatChartData(statsData, 'overtimeHours')
     stressData.value = formatChartData(statsData, 'stress')
+    disabilityData.value = formatChartData(statsData, 'disability')
+    achievementData.value = formatChartData(statsData, 'achievement')
     isOvertimeDataReady.value = true
     isStressDataReady.value = true
+    isDisabilityDataReady.value = true
+    isAchievementDataReady.value = true
   } catch (err) {
     console.error('Error fetching secondary data:', err)
     error.value = '追加データの取得に失敗しました: ' + err.message
@@ -359,6 +373,20 @@ const getWidgetProps = (id) => {
       chartComponent: components.StressChart,
       chartData: stressData.value,
       isDataReady: isStressDataReady.value
+    },
+    disability: {
+      widgetId: 'disability',
+      title: 'タスク難易度の遷移（過去5週間）',
+      chartComponent: components.DisabilityChart,
+      chartData: disabilityData.value,
+      isDataReady: isDisabilityDataReady.value
+    },
+    achievement: {
+      widgetId: 'achievement',
+      title: 'タスク達成度の遷移（過去5週間）',
+      chartComponent: components.AchievementChart,
+      chartData: achievementData.value,
+      isDataReady: isAchievementDataReady.value
     },
     organization: {
       organization: organization.value

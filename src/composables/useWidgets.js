@@ -30,19 +30,27 @@ const WIDGET_DEFINITIONS = {
   weeklyReport: {
     component: 'WeeklyReportWidget',
     title: 'メンバーの週次報告'
+  },
+  disability: {
+    component: 'StatsWidget',
+    title: 'タスク難易度の遷移'
+  },
+  achievement: {
+    component: 'StatsWidget',
+    title: 'タスク達成度の遷移'
   }
 }
 
 export const useWidgets = () => {
   const store = useStore()
   const isReordering = ref(false)
-  
+
   // デフォルトのウィジェット順序を定義
   const defaultWidgetOrder = Object.keys(WIDGET_DEFINITIONS)
-  
+
   // widgetOrderの定義を修正
   const widgetOrder = computed(() => defaultWidgetOrder)
-  
+
   const updateOrder = (newOrder) => {
     if (Array.isArray(newOrder) && newOrder.length > 0) {
       store.dispatch('widget/updateWidgetOrder', newOrder)
@@ -57,7 +65,7 @@ export const useWidgets = () => {
     store.dispatch('widget/toggleWidget', widgetId)
   }
 
-  const visibleWidgets = computed(() => 
+  const visibleWidgets = computed(() =>
     widgetOrder.value.filter(id => store.state.widget.widgetVisibility[id])
   )
 
