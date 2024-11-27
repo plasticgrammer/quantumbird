@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-row dense class="pb-4">
-      <v-col cols="10">
+      <v-col cols="8">
         <h3>
           <v-icon 
             size="large" 
@@ -13,8 +13,17 @@
           ダッシュボード
         </h3>
       </v-col>
-      <v-col cols="2" class="d-flex justify-end align-center pe-3">
+      <v-col cols="4" class="d-flex justify-end align-center pe-3">
         <v-btn
+          v-tooltip="isReordering ? 'ウィジェットの並び替えを完了' : 'ウィジェットの並び替えモードに切り替え'"
+          :icon="isReordering ? 'mdi-check' : 'mdi-drag'"
+          :aria-label="isReordering ? '並び替えを完了' : 'ウィジェットを並び替え'"
+          class="opacity-80 me-2"
+          density="comfortable"
+          @click="isReordering = !isReordering"
+        ></v-btn>
+        <v-btn
+          v-tooltip="'データを最新の状態に更新'"
           icon="mdi-reload"
           aria-label="データを更新"
           class="opacity-80"
@@ -25,242 +34,67 @@
     </v-row>
 
     <v-row v-if="!isLoading" dense>
-      <div class="widgets-container">
-        <BaseWidget
-          widget-id="calendar"
-          title="報告状況"
-          icon="mdi-calendar-multiple-check"
+      <v-container fluid class="widgets-container pa-0">
+        <VueDraggable
+          :model-value="sortableWidgets"
+          :component-data="{
+            tag: 'div',
+            type: 'transition-group',
+            name: !isReordering ? null : 'flip-list'
+          }"
+          class="widgets-grid"
+          item-key="id"
+          :disabled="!isReordering"
+          handle=".widget-title"
+          :animation="200"
+          ghost-class="widget-ghost"
+          @update:model-value="handleListUpdate"
         >
-          <v-row class="pb-1">
-            <v-col cols="12" :md="expanded ? 9 : 12">
-              <v-card max-width="560" class="mx-auto calendar-card">
-                <v-container class="pa-0 position-relative">
-                  <div v-for="(week, index) in calendarWeeks" :key="index" :class="{ 'd-none': index !== weekIndex }">
-                    <Calendar :calendar-weeks="[week]" />
-                  </div>
-                  <v-btn
-                    v-if="weekIndex > 0"
-                    class="calendar-nav-btn calendar-nav-btn-left"
-                    icon="mdi-arrow-left-thick"
-                    size="small"
-                    fab
-                    aria-label="前の週へ"
-                    @click="weekIndex = Math.max(0, weekIndex - 1)"
-                  ></v-btn>
-                  <v-btn
-                    v-if="weekIndex < calendarWeeks.length - 1"
-                    class="calendar-nav-btn calendar-nav-btn-right"
-                    icon="mdi-arrow-right-thick"
-                    size="small"
-                    fab
-                    aria-label="次の週へ"
-                    @click="weekIndex = Math.min(calendarWeeks.length - 1, weekIndex + 1)"
-                  ></v-btn>
-                </v-container>
-              </v-card>
-              <v-badge 
-                class="mt-6"
-                :color="statusCounts['pending'] ? 'info' : 'transparent'"
-                :content="statusCounts['pending'] || ''"
-              >
-                <v-btn 
-                  color="black" variant="outlined"
-                  :to="{ name: 'WeeklyReview', params: { weekString } }"
-                  aria-label="週次報告レビューへ移動"
-                >
-                  <v-icon class="mr-1" small left aria-hidden="true">
-                    mdi-calendar-multiple-check
-                  </v-icon>
-                  週次報告レビュー
-                </v-btn>
-              </v-badge>
-            </v-col>
-            <v-col 
-              cols="12" 
-              :md="expanded ? 3 : 12" 
-              :class="[
-                'd-flex',
-                expanded ? 'flex-sm-column' : 'flex-wrap',
-                'align-start',
-                'pt-2'
-              ]"
-            >
-              <span 
-                v-for="status in filteredStatusOptions" 
-                :key="status.value"
-                :class="{ 'status-chip-wrapper': !expanded }"
-              >
-                <v-chip
-                  v-if="statusCounts[status.value] > 0"
-                  v-tooltip:end="statusMembers[status.value]?.join(', ') || ''"
-                  class="ma-1"
-                  :value="status.value"
-                  :color="status.color"
-                  label
-                >
-                  {{ status.text }}: {{ statusCounts[status.value] }}
-                </v-chip>
-              </span>
-            </v-col>
-          </v-row>
-        </BaseWidget>
-
-        <BaseWidget
-          widget-id="overtime"
-          title="残業時間の遷移（過去5週間）"
-          icon="mdi-chart-line"
-          content-class="pb-1"
-        >
-          <Suspense v-if="isOvertimeDataReady">
-            <template #default>
-              <OvertimeChart :chart-data="overtimeData" />
-            </template>
-            <template #fallback>
-              <div aria-live="polite">読み込み中...</div>
-            </template>
-          </Suspense>
-          <div v-else aria-live="polite">準備中...</div>
-        </BaseWidget>
-
-        <BaseWidget
-          widget-id="stress"
-          title="ストレス評価の遷移（過去5週間）"
-          icon="mdi-chart-line"
-          content-class="pb-1"
-        >
-          <Suspense v-if="isStressDataReady">
-            <template #default>
-              <StressChart :chart-data="stressData" />
-            </template>
-            <template #fallback>
-              <div aria-live="polite">読み込み中...</div>
-            </template>
-          </Suspense>
-          <div v-else aria-live="polite">準備中...</div>
-        </BaseWidget>
-
-        <BaseWidget
-          widget-id="organization"
-          title="組織情報"
-          icon="mdi-domain"
-        >
-          <p class="text-body-1 mb-2">
-            {{ organization.name }}
-          </p>
-          <p class="text-body-2 mb-1">
-            メンバー: {{ memberCount }} 人
-          </p>
-          <v-btn
-            color="black" variant="outlined" class="mt-3"
-            :to="{ name: 'OrganizationManagement' }"
-            aria-label="組織情報管理ページへ移動"
-          >
-            <v-icon class="mr-1" small aria-hidden="true">
-              mdi-domain
-            </v-icon>
-            組織情報管理
-          </v-btn>
-        </BaseWidget>
-
-        <BaseWidget
-          widget-id="reportRequest"
-          title="報告依頼"
-          icon="mdi-mail"
-        >
-          <p class="text-body-2 mb-1">
-            <span>自動報告依頼設定: </span>
-            <v-icon
-              :color="organization.requestEnabled ? 'success' : 'grey'"
-              class="mx-1"
-              aria-hidden="true"
-            >
-              {{ organization.requestEnabled ? 'mdi-timer-outline' : 'mdi-timer-off-outline' }}
-            </v-icon>
-            <span class="text-subtitle-1">
-              <strong>{{ organization.requestEnabled ? '有効' : '無効' }}</strong>
-            </span>
-          </p>
-          <p v-if="organization.requestEnabled && nextRequestDateTime" class="text-body-2 mb-1">
-            <span class="mr-2">次回報告依頼日時: </span>
-            <span class="text-subtitle-1">{{ nextRequestDateTimeString }}</span>
-          </p>
-          <v-btn
-            color="black" variant="outlined" class="mt-3"
-            :to="{ name: 'RequestSetting' }"
-            aria-label="報告依頼設定ページへ移動"
-          >
-            <v-icon class="mr-1" small aria-hidden="true">
-              mdi-mail
-            </v-icon>
-            報告依頼設定
-          </v-btn>
-        </BaseWidget>
-
-        <TodoListCard />
-
-        <BaseWidget
-          widget-id="weeklyReport"
-          title="メンバーの週次報告"
-          icon="mdi-calendar-account"
-        >
-          <v-row>
-            <v-col cols="6">
-              <v-select
-                v-model="selectedMember"
-                :items="members"
-                item-title="name"
-                item-value="memberUuid"
-                label="メンバー選択"
-                density="comfortable"
-                variant="outlined"
-                hide-details
-              ></v-select>
-            </v-col>
-            <v-col cols="12">
-              <v-btn
-                color="black"
-                variant="outlined"
-                :href="weeklyReportLink"
-                target="_blank"
-                rel="noopener noreferrer"
-                :disabled="!selectedMember"
-                x-small
-                aria-label="選択したメンバーの週次報告ページを新しいタブで開く"
-              >
-                週次報告（代理入力）
-                <v-icon icon="mdi-open-in-new" end small aria-hidden="true" />
-              </v-btn>
-            </v-col>
-          </v-row>
-        </BaseWidget>
-      </div>
+          <template #item="{ element }">
+            <div :class="['widget-item', store.state.widget.expandStates[element.id] ? 'expanded' : '']">
+              <component :is="element.component" v-bind="element.props" />
+            </div>
+          </template>
+        </VueDraggable>
+      </v-container>
     </v-row>
   </v-container>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted, defineAsyncComponent, nextTick } from 'vue'
+import { markRaw } from 'vue'
+import VueDraggable from 'vuedraggable'
 import { useStore } from 'vuex'
-import { useRouter } from 'vue-router'
 import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
+import { useWidgets } from '../composables/useWidgets'
 import { getOrganization } from '../services/organizationService'
 import { getReportStatus, getStatsData } from '../services/reportService'
-import Calendar from '../components/Calendar.vue'
-import BaseWidget from '../components/widget/BaseWidget.vue'
+import CalendarWidget from '../components/widget/CalendarWidget.vue'
+import StatsWidget from '../components/widget/StatsWidget.vue'
+import OrganizationWidget from '../components/widget/OrganizationWidget.vue'
+import ReportRequestWidget from '../components/widget/ReportRequestWidget.vue'
+import WeeklyReportWidget from '../components/widget/WeeklyReportWidget.vue'
 
-const OvertimeChart = defineAsyncComponent(() => 
-  import(/* webpackChunkName: "widget" */ '../components/chart/OvertimeChart.vue')
-)
-const StressChart = defineAsyncComponent(() => 
-  import(/* webpackChunkName: "widget" */ '../components/chart/StressChart.vue')
-)
-const TodoListCard = defineAsyncComponent(() => 
-  import(/* webpackChunkName: "widget" */ '../components/widget/TodoListCard.vue')
-)
+const components = {
+  CalendarWidget: markRaw(CalendarWidget),
+  StatsWidget: markRaw(StatsWidget),
+  OrganizationWidget: markRaw(OrganizationWidget),
+  ReportRequestWidget: markRaw(ReportRequestWidget),
+  WeeklyReportWidget: markRaw(WeeklyReportWidget),
+  OvertimeChart: defineAsyncComponent(() => 
+    import('../components/chart/OvertimeChart.vue').then(m => markRaw(m.default))
+  ),
+  StressChart: defineAsyncComponent(() => 
+    import('../components/chart/StressChart.vue').then(m => markRaw(m.default))
+  ),
+  TodoListCard: defineAsyncComponent(() => 
+    import('../components/widget/TodoListCard.vue').then(m => markRaw(m.default))
+  )
+}
 
 const store = useStore()
-const router = useRouter()
 const { createWeeks, getStringFromWeek, formatFullDateTimeJp } = useCalendar()
 const { statusOptions } = useReport()
 
@@ -279,7 +113,6 @@ const calendarWeeks = createWeeks(6)
 const weekIndex = ref(null)
 
 const organization = ref(null)
-const selectedMember = ref(null)
 const isLoading = ref(true)
 const error = ref(null)
 const isOvertimeDataReady = ref(false)
@@ -289,8 +122,9 @@ const overtimeData = ref({ labels: [], datasets: [] })
 const stressData = ref({ labels: [], datasets: [] })
 
 const members = computed(() => organization.value?.members || [])
-const memberCount = computed(() => members.value.length)
-const weekString = computed(() => getStringFromWeek(calendarWeeks[weekIndex.value]))
+const weekString = computed(() => 
+  weekIndex.value !== null ? getStringFromWeek(calendarWeeks[weekIndex.value]) : null
+)
 const filteredStatusOptions = computed(() => 
   statusOptions.filter(option => option.value !== 'all')
 )
@@ -316,18 +150,6 @@ const statusMembers = computed(() => ({
   feedback: reportStatus.value.inFeedback.members,
   approved: reportStatus.value.confirmed.members,
 }))
-
-const weeklyReportLink = computed(() => {
-  if (!selectedMember.value) return '#'
-  return router.resolve({
-    name: 'WeeklyReport',
-    params: {
-      organizationId: organizationId,
-      memberUuid: selectedMember.value,
-      weekString: weekString.value,
-    },
-  }).href
-})
 
 const nextRequestDateTime = computed(() => {
   if (!organization.value?.requestEnabled) {
@@ -468,6 +290,90 @@ onMounted(() => {
 })
 
 const expanded = computed(() => store.state.widget.expandStates['calendar'])
+
+const { widgetOrder, isReordering, updateOrder } = useWidgets()
+
+const sortableWidgets = computed(() => {
+  if (!weekIndex.value) return []
+
+  return widgetOrder.value.map(id => {
+    const widgets = {
+      calendar: markRaw({
+        component: components.CalendarWidget,
+        props: {
+          calendarWeeks,
+          weekIndex: weekIndex.value,
+          'onUpdate:weekIndex': (v) => weekIndex.value = v,
+          statusCounts: statusCounts.value,
+          statusMembers: statusMembers.value,
+          filteredStatusOptions: filteredStatusOptions.value,
+          weekString: weekString.value
+        }
+      }),
+      overtime: markRaw({
+        component: components.StatsWidget,
+        props: {
+          widgetId: 'overtime',
+          title: '残業時間の遷移（過去5週間）',
+          chartComponent: components.OvertimeChart,
+          chartData: overtimeData.value,
+          isDataReady: isOvertimeDataReady.value
+        }
+      }),
+      stress: markRaw({
+        component: components.StatsWidget,
+        props: {
+          widgetId: 'stress',
+          title: 'ストレス評価の遷移（過去5週間）',
+          chartComponent: components.StressChart,
+          chartData: stressData.value,
+          isDataReady: isStressDataReady.value
+        }
+      }),
+      organization: markRaw({
+        component: components.OrganizationWidget,
+        props: {
+          organization: organization.value
+        }
+      }),
+      reportRequest: markRaw({
+        component: components.ReportRequestWidget,
+        props: {
+          organization: organization.value,
+          nextRequestDateTime: nextRequestDateTime.value,
+          nextRequestDateTimeString: nextRequestDateTimeString.value
+        }
+      }),
+      todo: markRaw({
+        component: components.TodoListCard,
+        props: {}
+      }),
+      weeklyReport: markRaw({
+        component: components.WeeklyReportWidget,
+        props: {
+          members: members.value,
+          weekString: weekString.value,
+          organizationId: organizationId
+        }
+      })
+    }
+    return markRaw({ id, ...widgets[id] })
+  })
+})
+
+// リストの更新を処理
+const handleListUpdate = (newList) => {
+  updateOrder(newList.map(widget => widget.id))
+}
+
+// 初期化時の処理
+onMounted(() => {
+  weekIndex.value = calendarWeeks.length - 2 // 先週
+  fetchInitial()
+  nextTick(() => {
+    fetchSecondary()
+  })
+})
 </script>
 
 <style scoped>
@@ -517,10 +423,44 @@ const expanded = computed(() => store.state.widget.expandStates['calendar'])
   display: inline-block;
 }
 
-.widgets-container {
-  display: flex;
-  flex-wrap: wrap;
-  margin: -8px;
-  width: 100%;
+.widgets-container :deep(.v-col) {
+  transition: all 0.3s ease;
+}
+
+.widget-ghost {
+  opacity: 0.5;
+}
+
+.widgets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 6px;
+}
+
+.widget-item {
+  grid-column: auto / span 1;
+  transition: all 0.3s ease;
+}
+
+.widget-item.expanded {
+  grid-column: 1 / -1;
+}
+
+.widget-title {
+  cursor: default;
+}
+
+.widget-item :deep(.v-card) {
+  transition: box-shadow 0.3s ease;
+}
+
+/* 並び換えモード時のスタイル */
+:deep(.widget-title) {
+  cursor: move;
+}
+
+.widget-item:hover :deep(.v-card) {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 </style>

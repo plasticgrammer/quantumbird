@@ -1,5 +1,5 @@
 <template>
-  <div class="widget-wrapper" :class="{ 'widget-expanded': expanded }">
+  <div class="widget-container">
     <v-card class="widget">
       <v-card-title 
         class="text-subtitle-1 widget-title"
@@ -27,7 +27,6 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import { useStore } from 'vuex'
 
 const props = defineProps({
@@ -55,7 +54,7 @@ const props = defineProps({
 
 const store = useStore()
 
-const expanded = computed(() => store.state.widget.expandStates[props.widgetId])
+// const expanded = computed(() => store.state.widget.expandStates[props.widgetId])
 
 const handleDblClick = () => {
   store.dispatch('widget/toggleWidget', props.widgetId)
@@ -63,28 +62,34 @@ const handleDblClick = () => {
 </script>
 
 <style scoped>
-.widget-wrapper {
-  padding: 8px;
-  width: 50%;
-  transition: all 0.3s ease-in-out;
-}
-
-.widget-wrapper.widget-expanded {
-  width: 100%;
-}
-
 .widget {
   min-height: 165px;
-  height: 100%;
   border-radius: 12px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .widget-container {
   transition: all 0.3s ease-in-out;
+  height: 100%;
+}
+
+.widget :deep(.v-card-text) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .widget-title {
   cursor: pointer;
   user-select: none;
+  /* ドラッグ時のカーソルスタイル */
+  &:hover {
+    cursor: grab;
+  }
+  &:active {
+    cursor: grabbing;
+  }
 }
 </style>
