@@ -1,12 +1,10 @@
 <template>
-  <v-card class="widget">
-    <v-card-title class="text-subtitle-1 d-flex justify-space-between align-center">
-      <div class="mb-1">
-        <v-icon small class="mr-1">
-          mdi-clipboard-check-outline
-        </v-icon>
-        やることリスト
-      </div>
+  <BaseWidget
+    widget-id="todo"
+    title="やることリスト"
+    icon="mdi-clipboard-check-outline"
+  >
+    <template #header-append>
       <v-btn
         v-if="hasCompletedTasks"
         color="error"
@@ -16,47 +14,46 @@
       >
         完了済み削除
       </v-btn>
-    </v-card-title>
-    <v-card-text class="pb-4">
-      <div v-if="tasks.length > 0" class="pa-0">
-        <v-checkbox
-          v-for="task in tasks"
-          :key="task.taskId"
-          v-model="task.completed"
-          color="info"
-          class="todo-item pa-0"
-          :label="task.title"
-          hide-details
-          density="compact"
-          @change="handleTaskCompletion(task)"
-        >
-          <template #label>
-            <span :class="{ 'text-decoration-line-through': task.completed }">
-              {{ task.title }}
-            </span>
-          </template>
-        </v-checkbox>
-      </div>
-      <p v-else>タスクがありません</p>
-      <v-text-field
-        v-model="newTaskTitle"
-        label="新しいタスク"
+    </template>
+
+    <div v-if="tasks.length > 0" class="pa-0">
+      <v-checkbox
+        v-for="task in tasks"
+        :key="task.taskId"
+        v-model="task.completed"
+        color="info"
+        class="todo-item pa-0"
         hide-details
-        single-line
         density="compact"
-        class="mt-2"
-        append-inner-icon="mdi-plus"
-        @click:append-inner="addTask"
-        @keydown.enter="handleNewTaskKeydown($event)"
-      ></v-text-field>
-    </v-card-text>
-  </v-card>
+        @change="handleTaskCompletion(task)"
+      >
+        <template #label>
+          <span :class="{ 'text-decoration-line-through': task.completed }">
+            {{ task.title }}
+          </span>
+        </template>
+      </v-checkbox>
+    </div>
+    <p v-else>タスクがありません</p>
+    <v-text-field
+      v-model="newTaskTitle"
+      label="新しいタスク"
+      hide-details
+      single-line
+      density="compact"
+      class="mt-2"
+      append-inner-icon="mdi-plus"
+      @click:append-inner="addTask"
+      @keydown.enter="handleNewTaskKeydown($event)"
+    ></v-text-field>
+  </BaseWidget>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { submitUserTasks, updateUserTasks, deleteUserTasks, listUserTasks } from '@/services/userTasksService'
+import BaseWidget from './BaseWidget.vue'
 
 const store = useStore()
 const error = ref(null)

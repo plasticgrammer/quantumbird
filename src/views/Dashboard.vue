@@ -102,216 +102,134 @@
         </v-card>
       </v-col>
 
-      <v-col 
-        :cols="12" 
-        :md="widgetExpand.overtime ? 12 : 6" 
-        class="mb-2 widget-container"
+      <BaseWidget
+        widget-id="overtime"
+        title="残業時間の遷移（過去5週間）"
+        icon="mdi-chart-line"
+        content-class="pb-1"
       >
-        <v-card class="widget">
-          <v-card-title 
-            class="text-subtitle-1"
-            style="cursor: pointer"
-            @dblclick="toggleWidget('overtime')"
-          >
-            <v-icon 
-              small 
-              class="mr-1" 
-              aria-hidden="true"
-            >
-              mdi-chart-line
-            </v-icon>
-            残業時間の遷移（過去5週間）
-          </v-card-title>
-          <v-card-text class="pb-1">
-            <Suspense v-if="isOvertimeDataReady">
-              <template #default>
-                <OvertimeChart :chart-data="overtimeData" />
-              </template>
-              <template #fallback>
-                <div aria-live="polite">読み込み中...</div>
-              </template>
-            </Suspense>
-            <div v-else aria-live="polite">準備中...</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
+        <Suspense v-if="isOvertimeDataReady">
+          <template #default>
+            <OvertimeChart :chart-data="overtimeData" />
+          </template>
+          <template #fallback>
+            <div aria-live="polite">読み込み中...</div>
+          </template>
+        </Suspense>
+        <div v-else aria-live="polite">準備中...</div>
+      </BaseWidget>
 
-      <v-col 
-        :cols="12" 
-        :md="widgetExpand.stress ? 12 : 6" 
-        class="mb-2 widget-container"
+      <BaseWidget
+        widget-id="stress"
+        title="ストレス評価の遷移（過去5週間）"
+        icon="mdi-chart-line"
+        content-class="pb-1"
       >
-        <v-card class="widget">
-          <v-card-title 
-            class="text-subtitle-1"
-            style="cursor: pointer"
-            @dblclick="toggleWidget('stress')"
-          >
-            <v-icon 
-              small 
-              class="mr-1" 
-              aria-hidden="true"
-            >
-              mdi-chart-line
-            </v-icon>
-            ストレス評価の遷移（過去5週間）
-          </v-card-title>
-          <v-card-text class="pb-1">
-            <Suspense v-if="isStressDataReady">
-              <template #default>
-                <StressChart :chart-data="stressData" />
-              </template>
-              <template #fallback>
-                <div aria-live="polite">読み込み中...</div>
-              </template>
-            </Suspense>
-            <div v-else aria-live="polite">準備中...</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
+        <Suspense v-if="isStressDataReady">
+          <template #default>
+            <StressChart :chart-data="stressData" />
+          </template>
+          <template #fallback>
+            <div aria-live="polite">読み込み中...</div>
+          </template>
+        </Suspense>
+        <div v-else aria-live="polite">準備中...</div>
+      </BaseWidget>
 
-      <v-col 
-        :cols="12" 
-        :md="widgetExpand.organization ? 12 : 6" 
-        class="mb-2 widget-container"
+      <BaseWidget
+        widget-id="organization"
+        title="組織情報"
+        icon="mdi-domain"
       >
-        <v-card class="widget">
-          <v-card-title 
-            class="text-subtitle-1"
-            style="cursor: pointer"
-            @dblclick="toggleWidget('organization')"
+        <p class="text-body-1 mb-2">
+          {{ organization.name }}
+        </p>
+        <p class="text-body-2 mb-1">
+          メンバー: {{ memberCount }} 人
+        </p>
+        <v-btn
+          color="black" variant="outlined" class="mt-3"
+          :to="{ name: 'OrganizationManagement' }"
+          aria-label="組織情報管理ページへ移動"
+        >
+          <v-icon class="mr-1" small aria-hidden="true">
+            mdi-domain
+          </v-icon>
+          組織情報管理
+        </v-btn>
+      </BaseWidget>
+
+      <BaseWidget
+        widget-id="reportRequest"
+        title="報告依頼"
+        icon="mdi-mail"
+      >
+        <p class="text-body-2 mb-1">
+          <span>自動報告依頼設定: </span>
+          <v-icon
+            :color="organization.requestEnabled ? 'success' : 'grey'"
+            class="mx-1"
+            aria-hidden="true"
           >
-            <v-icon small class="mr-1" aria-hidden="true">
-              mdi-domain
-            </v-icon>
-            組織情報
-          </v-card-title>
-          <v-card-text class="pt-2 pb-3">
-            <p class="text-body-1 mb-2">
-              {{ organization.name }}
-            </p>
-            <p class="text-body-2 mb-1">
-              メンバー: {{ memberCount }} 人
-            </p>
+            {{ organization.requestEnabled ? 'mdi-timer-outline' : 'mdi-timer-off-outline' }}
+          </v-icon>
+          <span class="text-subtitle-1">
+            <strong>{{ organization.requestEnabled ? '有効' : '無効' }}</strong>
+          </span>
+        </p>
+        <p v-if="organization.requestEnabled && nextRequestDateTime" class="text-body-2 mb-1">
+          <span class="mr-2">次回報告依頼日時: </span>
+          <span class="text-subtitle-1">{{ nextRequestDateTimeString }}</span>
+        </p>
+        <v-btn
+          color="black" variant="outlined" class="mt-3"
+          :to="{ name: 'RequestSetting' }"
+          aria-label="報告依頼設定ページへ移動"
+        >
+          <v-icon class="mr-1" small aria-hidden="true">
+            mdi-mail
+          </v-icon>
+          報告依頼設定
+        </v-btn>
+      </BaseWidget>
+
+      <TodoListCard />
+
+      <BaseWidget
+        widget-id="weeklyReport"
+        title="メンバーの週次報告"
+        icon="mdi-calendar-account"
+      >
+        <v-row>
+          <v-col cols="6">
+            <v-select
+              v-model="selectedMember"
+              :items="members"
+              item-title="name"
+              item-value="memberUuid"
+              label="メンバー選択"
+              density="comfortable"
+              variant="outlined"
+              hide-details
+            ></v-select>
+          </v-col>
+          <v-col cols="12">
             <v-btn
-              color="black" variant="outlined" class="mt-3"
-              :to="{ name: 'OrganizationManagement' }"
-              aria-label="組織情報管理ページへ移動"
+              color="black"
+              variant="outlined"
+              :href="weeklyReportLink"
+              target="_blank"
+              rel="noopener noreferrer"
+              :disabled="!selectedMember"
+              x-small
+              aria-label="選択したメンバーの週次報告ページを新しいタブで開く"
             >
-              <v-icon class="mr-1" small aria-hidden="true">
-                mdi-domain
-              </v-icon>
-              組織情報管理
+              週次報告（代理入力）
+              <v-icon icon="mdi-open-in-new" end small aria-hidden="true" />
             </v-btn>
-          </v-card-text>
-        </v-card>
-      </v-col>
-
-      <v-col 
-        :cols="12" 
-        :md="widgetExpand.reportRequest ? 12 : 6" 
-        class="mb-2 widget-container"
-      >
-        <v-card class="widget">
-          <v-card-title 
-            class="text-subtitle-1"
-            style="cursor: pointer"
-            @dblclick="toggleWidget('reportRequest')"
-          >
-            <v-icon small class="mr-1" aria-hidden="true">
-              mdi-mail
-            </v-icon>
-            報告依頼
-          </v-card-title>
-          <v-card-text class="pt-1 pb-3">
-            <p class="text-body-2 mb-1">
-              <span>自動報告依頼設定: </span>
-              <v-icon
-                :color="organization.requestEnabled ? 'success' : 'grey'"
-                class="mx-1"
-                aria-hidden="true"
-              >
-                {{ organization.requestEnabled ? 'mdi-timer-outline' : 'mdi-timer-off-outline' }}
-              </v-icon>
-              <span class="text-subtitle-1">
-                <strong>{{ organization.requestEnabled ? '有効' : '無効' }}</strong>
-              </span>
-            </p>
-            <p v-if="organization.requestEnabled && nextRequestDateTime" class="text-body-2 mb-1">
-              <span class="mr-2">次回報告依頼日時: </span>
-              <span class="text-subtitle-1">{{ nextRequestDateTimeString }}</span>
-            </p>
-            <v-btn
-              color="black" variant="outlined" class="mt-3"
-              :to="{ name: 'RequestSetting' }"
-              aria-label="報告依頼設定ページへ移動"
-            >
-              <v-icon class="mr-1" small aria-hidden="true">
-                mdi-mail
-              </v-icon>
-              報告依頼設定
-            </v-btn>
-          </v-card-text>
-        </v-card>
-      </v-col>
-
-      <v-col 
-        :cols="12" 
-        :md="widgetExpand.todo ? 12 : 6" 
-        class="mb-2 widget-container"
-      >
-        <TodoListCard class="widget" @dblclick.capture="toggleWidget('todo')" />
-      </v-col>
-
-      <v-col 
-        :cols="12" 
-        :md="widgetExpand.weeklyReport ? 12 : 6" 
-        class="mb-2 widget-container"
-      >
-        <v-card class="widget">
-          <v-card-title 
-            class="text-subtitle-1"
-            style="cursor: pointer"
-            @dblclick="toggleWidget('weeklyReport')"
-          >
-            <v-icon small class="mr-1" aria-hidden="true">
-              mdi-calendar-account
-            </v-icon>
-            メンバーの週次報告
-          </v-card-title>
-          <v-card-text class="pt-1 pb-3">
-            <v-row>
-              <v-col cols="6">
-                <v-select
-                  v-model="selectedMember"
-                  :items="members"
-                  item-title="name"
-                  item-value="memberUuid"
-                  label="メンバー選択"
-                  density="comfortable"
-                  variant="outlined"
-                  hide-details
-                ></v-select>
-              </v-col>
-              <v-col cols="12">
-                <v-btn
-                  color="black"
-                  variant="outlined"
-                  :href="weeklyReportLink"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  :disabled="!selectedMember"
-                  x-small
-                  aria-label="選択したメンバーの週次報告ページを新しいタブで開く"
-                >
-                  週次報告（代理入力）
-                  <v-icon icon="mdi-open-in-new" end small aria-hidden="true" />
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
+          </v-col>
+        </v-row>
+      </BaseWidget>
     </v-row>
   </v-container>
 </template>
@@ -325,6 +243,7 @@ import { useReport } from '../composables/useReport'
 import { getOrganization } from '../services/organizationService'
 import { getReportStatus, getStatsData } from '../services/reportService'
 import Calendar from '../components/Calendar.vue'
+import BaseWidget from '../components/widget/BaseWidget.vue'
 
 const OvertimeChart = defineAsyncComponent(() => 
   import(/* webpackChunkName: "widget" */ '../components/chart/OvertimeChart.vue')
@@ -365,20 +284,9 @@ const nextRequestDateTimeString = ref('')
 const overtimeData = ref({ labels: [], datasets: [] })
 const stressData = ref({ labels: [], datasets: [] })
 
-// ウィジェット毎の展開状態管理
-const widgetExpand = ref({
-  calendar: false,
-  overtime: false,
-  stress: false,
-  organization: false,
-  reportRequest: false,
-  todo: false,
-  weeklyReport: false
-})
-
 // トグル関数を修正
 const toggleWidget = (widgetId) => {
-  widgetExpand.value[widgetId] = !widgetExpand.value[widgetId]
+  store.dispatch('widget/toggleWidget', widgetId)
 }
 
 const members = computed(() => organization.value?.members || [])
@@ -562,11 +470,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.widget {
-  min-height: 165px;
-  border-radius: 12px;
-}
-
 .calendar-small :deep(.v-date-picker-month) {
   height: 240px;
 }
@@ -605,9 +508,5 @@ onMounted(() => {
 
 .text-subtitle-1 {
   user-select: none; /* テキスト選択を防ぐ */
-}
-
-.widget-container {
-  transition: all 0.3s ease-in-out;
 }
 </style>
