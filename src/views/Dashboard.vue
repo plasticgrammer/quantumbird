@@ -80,7 +80,7 @@
             <div 
               :class="[
                 'widget-item', 
-                { 'expanded': expandStates[element.id] }
+                { 'expanded': isMobile || expandStates[element.id] }
               ]"
             >
               <component :is="element.component" v-bind="element.props" />
@@ -106,6 +106,7 @@ import CalendarWidget from '../components/widget/CalendarWidget.vue'
 import OrganizationWidget from '../components/widget/OrganizationWidget.vue'
 import ReportRequestWidget from '../components/widget/ReportRequestWidget.vue'
 import WeeklyReportWidget from '../components/widget/WeeklyReportWidget.vue'
+import { useResponsive } from '../composables/useResponsive'
 
 const components = {
   CalendarWidget: markRaw(CalendarWidget),
@@ -132,6 +133,7 @@ const components = {
 const store = useStore()
 const { createWeeks, getStringFromWeek, formatFullDateTimeJp } = useCalendar()
 const { statusOptions } = useReport()
+const { isMobile } = useResponsive()
 
 const dayOfWeekToNumber = {
   sunday: 0,
