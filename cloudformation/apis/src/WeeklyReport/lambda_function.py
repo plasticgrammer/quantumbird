@@ -241,7 +241,7 @@ def get_all_members(organization_id):
         return []
 
 def get_member_names(member_uuids):
-    member_names = {}
+    member_info = {}
     for i in range(0, len(member_uuids), 100):
         batch = member_uuids[i:i+100]
         try:
@@ -249,17 +249,20 @@ def get_member_names(member_uuids):
                 RequestItems={
                     members_table_name: {
                         'Keys': [{'memberUuid': uuid} for uuid in batch],
-                        'ProjectionExpression': 'memberUuid, #n',
+                        'ProjectionExpression': 'memberUuid, #n, id',
                         'ExpressionAttributeNames': {'#n': 'name'}
                     }
                 }
             )
             for item in response.get('Responses', {}).get(members_table_name, []):
-                member_names[item['memberUuid']] = item.get('name', 'Unknown')
+                member_info[item['memberUuid']] = {
+                    'name': item.get('name', 'Unknown'),
+                    'id': item.get('id')
+                }
         except Exception as e:
-            logger.error(f"Error fetching member names: {str(e)}", exc_info=True)
+            logger.error(f"Error fetching member info: {str(e)}", exc_info=True)
     
-    return member_names
+    return member_info
 
 def get_last_5_weeks():
     today = datetime.now(TIMEZONE)
@@ -320,17 +323,22 @@ def handle_get_stats_data(event):
             logger.error(f"Error processing reports for week {week}: {str(e)}", exc_info=True)
             # Continue to next week instead of breaking the loop
 
-    member_names = get_member_names(list(member_uuids))
-    logger.info(f"Retrieved names for {len(member_names)} members")
+    member_info = get_member_names(list(member_uuids))
+    logger.info(f"Retrieved info for {len(member_info)} members")
 
+    # データセットの作成とソート
     stats_data['datasets'] = [
         {
             'memberUuid': member_uuid,
-            'label': member_names.get(member_uuid, f'Unknown ({member_uuid})'),
+            'id': member_info.get(member_uuid, {}).get('id', 0),
+            'label': member_info.get(member_uuid, {}).get('name', f'Unknown ({member_uuid})'),
             'data': member_data['data']
         }
         for member_uuid, member_data in members.items()
     ]
+    
+    # idでソート
+    stats_data['datasets'].sort(key=lambda x: x.get('id', 0))
 
     logger.info(f"Final stats_data: {json.dumps(stats_data, default=str)}")
     return create_response(200, stats_data)
@@ -410,7 +418,7 @@ def send_feedback_mail(organization, member, week_string, feedback):
         bodyText += f"詳細はこちら: {link}"
         
         member_email = member.get('email')
-        if member_email:
+        if (member_email):
             common.publisher.send_mail(sendFrom, [member_email], subject, bodyText)
         else:
             logger.warning(f"No email address found for member: {member.get('memberUuid', 'Unknown UUID')}")
@@ -455,7 +463,7 @@ def get_member(member_uuid):
         return None
 
 def handle_export(event):
-    """組織単���での週次レポートデータのエクスポートを処理する"""
+    """組織単位での週次レポートデータのエクスポートを処理する"""
     params = event.get('queryStringParameters', {}) or {}
     if 'organizationId' not in params:
         return create_response(400, 'Missing organizationId parameter')

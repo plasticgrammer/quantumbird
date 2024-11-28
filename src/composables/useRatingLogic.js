@@ -152,7 +152,7 @@ export function useRatingLogic(props) {
     return modelValue > comparison ^ negative ? RATING_CONSTANTS.IMPROVEMENT_LABEL : RATING_CONSTANTS.DECLINE_LABEL
   })
 
-  const maxActiveIconColor = calcActiveIconColor(length.value)
+  const inactiveIconColor = calcActiveIconColor((length.value + 1) / 2)
 
   return {
     length,
@@ -163,6 +163,6 @@ export function useRatingLogic(props) {
     comparisonColor,
     comparisonLabel,
     updateActiveIcon,
-    maxActiveIconColor
+    inactiveIconColor
   }
 }

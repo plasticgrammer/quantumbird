@@ -44,7 +44,7 @@
         :aria-label="`${label}の評価: ${modelValue}/${length}`"
         :style="{
           '--active-icon-color': activeIconColor,
-          '--hover-icon-color': modelValue ? activeIconColor : maxActiveIconColor
+          '--hover-icon-color': modelValue ? activeIconColor : inactiveIconColor
         }"
         @update:model-value="handleModelValueUpdate"
       ></v-rating>
@@ -89,7 +89,7 @@ const {
   length,
   fullIcon,
   activeIconColor,
-  maxActiveIconColor,
+  inactiveIconColor,
   comparisonIcon,
   comparisonColor,
   comparisonLabel,

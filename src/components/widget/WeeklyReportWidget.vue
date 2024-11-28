@@ -59,6 +59,6 @@ const selectedMember = ref(null)
 
 const weeklyReportLink = computed(() => {
   if (!selectedMember.value) return '#'
-  return `/organizations/${props.organizationId}/members/${selectedMember.value}/weekly-reports/${props.weekString}`
+  return `/reports/${props.organizationId}/${selectedMember.value}/${props.weekString}`
 })
 </script>

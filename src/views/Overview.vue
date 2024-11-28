@@ -1,7 +1,7 @@
 <template>
   <v-container class="content-container">
     <StarBackground
-      :total-stars="13"
+      :total-stars="6"
       :max-size="50"
       :min-size="15"
       star-color="#CFE8FC"
