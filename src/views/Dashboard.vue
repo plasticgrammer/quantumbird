@@ -67,16 +67,22 @@
           :component-data="{
             tag: 'div',
             type: 'transition-group',
-            name: 'flip-list'
+            name: !isLoading ? 'flip-list' : null
           }"
           class="widgets-grid"
           item-key="id"
           handle=".widget-title"
           :animation="200"
           ghost-class="widget-ghost"
+          :disabled="isLoading"
         >
           <template #item="{ element }">
-            <div :class="['widget-item', store.state.widget.expandStates[element.id] ? 'expanded' : '']">
+            <div 
+              :class="[
+                'widget-item', 
+                { 'expanded': expandStates[element.id] }
+              ]"
+            >
               <component :is="element.component" v-bind="element.props" />
             </div>
           </template>
@@ -97,14 +103,12 @@ import { useWidgets } from '../composables/useWidgets'
 import { getOrganization } from '../services/organizationService'
 import { getReportStatus, getStatsData } from '../services/reportService'
 import CalendarWidget from '../components/widget/CalendarWidget.vue'
-import StatsWidget from '../components/widget/StatsWidget.vue'
 import OrganizationWidget from '../components/widget/OrganizationWidget.vue'
 import ReportRequestWidget from '../components/widget/ReportRequestWidget.vue'
 import WeeklyReportWidget from '../components/widget/WeeklyReportWidget.vue'
 
 const components = {
   CalendarWidget: markRaw(CalendarWidget),
-  StatsWidget: markRaw(StatsWidget),
   OrganizationWidget: markRaw(OrganizationWidget),
   ReportRequestWidget: markRaw(ReportRequestWidget),
   WeeklyReportWidget: markRaw(WeeklyReportWidget),
@@ -328,14 +332,18 @@ onMounted(() => {
   })
 })
 
+// ウィジェット関連の設定をより宣言的に
 const { 
-  widgetOrder,
-  WIDGET_DEFINITIONS
+  WIDGET_DEFINITIONS,
+  getWidgetComponent,
+  visibleWidgets,
+  expandStates,
+  updateOrder
 } = useWidgets()
 
 const getWidgetProps = (id) => {
-  const props = {
-    calendar: {
+  const propConfigs = {
+    calendar: () => ({
       calendarWeeks,
       weekIndex: weekIndex.value,
       'onUpdate:weekIndex': (v) => weekIndex.value = v,
@@ -343,81 +351,46 @@ const getWidgetProps = (id) => {
       statusMembers: statusMembers.value,
       filteredStatusOptions: filteredStatusOptions.value,
       weekString: weekString.value
-    },
-    overtime: {
-      widgetId: 'overtime',
-      title: '残業時間の遷移（過去5週間）',
-      chartComponent: components.OvertimeChart,
-      chartData: overtimeData.value,
-      isDataReady: isOvertimeDataReady.value
-    },
-    stress: {
-      widgetId: 'stress',
-      title: 'ストレス評価の遷移（過去5週間）',
-      chartComponent: components.StressChart,
-      chartData: stressData.value,
-      isDataReady: isStressDataReady.value
-    },
-    disability: {
-      widgetId: 'disability',
-      title: 'タスク難易度の遷移（過去5週間）',
-      chartComponent: components.DisabilityChart,
-      chartData: disabilityData.value,
-      isDataReady: isDisabilityDataReady.value
-    },
-    achievement: {
-      widgetId: 'achievement',
-      title: 'タスク達成度の遷移（過去5週間）',
-      chartComponent: components.AchievementChart,
-      chartData: achievementData.value,
-      isDataReady: isAchievementDataReady.value
-    },
-    organization: {
-      organization: organization.value
-    },
-    reportRequest: {
+    }),
+    overtime: () => createChartProps('overtime', overtimeData.value, isOvertimeDataReady.value),
+    stress: () => createChartProps('stress', stressData.value, isStressDataReady.value),
+    disability: () => createChartProps('disability', disabilityData.value, isDisabilityDataReady.value),
+    achievement: () => createChartProps('achievement', achievementData.value, isAchievementDataReady.value),
+    organization: () => ({ organization: organization.value }),
+    reportRequest: () => ({
       organization: organization.value,
       nextRequestDateTime: nextRequestDateTime.value,
       nextRequestDateTimeString: nextRequestDateTimeString.value
-    },
-    todo: {},
-    weeklyReport: {
+    }),
+    todo: () => ({}),
+    weeklyReport: () => ({
       members: members.value,
       weekString: weekString.value,
-      organizationId: organizationId
-    }
+      organizationId
+    })
   }
-  return props[id]
+
+  return (propConfigs[id] || (() => ({})))()
 }
 
-// currentWidgetsの定義を修正
-// デバッグロ���を追加
+const createChartProps = (widgetId, chartData, isDataReady) => ({
+  widgetId,
+  title: WIDGET_DEFINITIONS[widgetId].title,
+  chartData,
+  isDataReady
+})
+
 const currentWidgets = computed({
   get: () => {
-    console.log('WIDGET_DEFINITIONS:', WIDGET_DEFINITIONS)
-    console.log('widgetOrder:', widgetOrder.value)
-    console.log('visibility:', store.state.widget.widgetVisibility)
-    
-    // 全てのウィジェットIDを取得
-    const allWidgetIds = Object.keys(WIDGET_DEFINITIONS)
-    
-    return allWidgetIds
-      .filter(id => store.state.widget.widgetVisibility[id])
-      .map(id => {
-        const componentName = WIDGET_DEFINITIONS[id].component
-        const component = components[componentName]
-        console.log(`Widget ${id} component:`, componentName, component)
-        
-        return {
-          id,
-          component,
-          props: getWidgetProps(id)
-        }
-      })
+    return visibleWidgets.value.map(id => ({
+      id,
+      component: components[getWidgetComponent(id)],
+      props: getWidgetProps(id)
+    }))
   },
   set: (newList) => {
-    if (newList && newList.length > 0) {
-      store.dispatch('widget/updateWidgetOrder', newList.map(item => item.id))
+    if (newList?.length) {
+      updateOrder(newList.map(item => item.id))
     }
   }
 })

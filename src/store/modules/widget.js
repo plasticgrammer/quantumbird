@@ -1,54 +1,92 @@
+export const WIDGET_DEFINITIONS = {
+  calendar: {
+    component: 'CalendarWidget',
+    title: '報告状況',
+    defaultExpanded: true,
+    defaultVisible: true
+  },
+  overtime: {
+    component: 'OvertimeChart',
+    title: '残業時間の遷移',
+    defaultExpanded: false,
+    defaultVisible: true
+  },
+  stress: {
+    component: 'StressChart',
+    title: 'ストレス評価の遷移',
+    defaultExpanded: false,
+    defaultVisible: true
+  },
+  disability: {
+    component: 'DisabilityChart',
+    title: 'タスク難易度の遷移',
+    defaultExpanded: false,
+    defaultVisible: false
+  },
+  achievement: {
+    component: 'AchievementChart',
+    title: 'タスク達成度の遷移',
+    defaultExpanded: false,
+    defaultVisible: false
+  },
+  organization: {
+    component: 'OrganizationWidget',
+    title: '組織情報',
+    defaultExpanded: false,
+    defaultVisible: true
+  },
+  reportRequest: {
+    component: 'ReportRequestWidget',
+    title: '報告依頼',
+    defaultExpanded: false,
+    defaultVisible: true
+  },
+  todo: {
+    component: 'TodoListWidget',
+    title: 'やることリスト',
+    defaultExpanded: false,
+    defaultVisible: true
+  },
+  weeklyReport: {
+    component: 'WeeklyReportWidget',
+    title: 'メンバーの週次報告',
+    defaultExpanded: false,
+    defaultVisible: true
+  }
+}
+
+const createInitialState = () => ({
+  expandStates: Object.fromEntries(
+    Object.entries(WIDGET_DEFINITIONS)
+      .map(([id, def]) => [id, def.defaultExpanded ?? false])
+  ),
+  widgetOrder: Object.keys(WIDGET_DEFINITIONS),
+  widgetVisibility: Object.fromEntries(
+    Object.entries(WIDGET_DEFINITIONS)
+      .map(([id, def]) => [id, def.defaultVisible ?? false])
+  )
+})
+
 export default {
   namespaced: true,
-
-  state: () => ({
-    expandStates: {
-      calendar: true,
-      overtime: false,
-      stress: false,
-      disability: false,
-      achievement: false,
-      organization: false,
-      reportRequest: false,
-      todo: false,
-      weeklyReport: false,
-    },
-    widgetOrder: [
-      'calendar',
-      'overtime',
-      'stress',
-      'disability',
-      'achievement',
-      'organization',
-      'reportRequest',
-      'todo',
-      'weeklyReport',
-    ],
-    widgetVisibility: {
-      calendar: true,
-      overtime: true,
-      stress: true,
-      disability: false,
-      achievement: false,
-      organization: true,
-      reportRequest: true,
-      todo: true,
-      weeklyReport: true,
-    }
-  }),
+  state: createInitialState,
 
   mutations: {
     SET_WIDGET_STATE(state, { widgetId, isExpanded }) {
       state.expandStates[widgetId] = isExpanded
     },
     SET_WIDGET_ORDER(state, order) {
-      // 新しい順序を設定する前に、既存のウィジェットIDが全て含まれていることを確認
-      const existingIds = new Set(state.widgetOrder)
-      const newOrder = order.filter(id => existingIds.has(id))
+      // 表示中のウィジェットと非表示のウィジェットを分離して管理
+      const currentVisible = state.widgetOrder
+        .filter(id => state.widgetVisibility[id])
+      const hidden = state.widgetOrder
+        .filter(id => !state.widgetVisibility[id])
 
-      // 表示されていないウィジェットの順序を維持
-      const remainingIds = state.widgetOrder.filter(id => !order.includes(id))
-      state.widgetOrder = [...newOrder, ...remainingIds]
+      // 順序の整合性チェック
+      if (order.length === currentVisible.length &&
+          order.every(id => state.widgetVisibility[id])) {
+        state.widgetOrder = [...order, ...hidden]
+      }
     },
     SET_WIDGET_VISIBILITY(state, { widgetId, isVisible }) {
       // 可視性の更新

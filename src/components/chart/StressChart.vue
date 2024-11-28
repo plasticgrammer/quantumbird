@@ -1,13 +1,38 @@
 <template>
-  <line-chart :chart-data="chartData" :options="chartOptions" />
+  <BaseWidget
+    :widget-id="widgetId"
+    :title="title"
+    icon="mdi-chart-line"
+  >
+    <LineChart :chart-data="chartData" :options="chartOptions" />
+  </BaseWidget>
 </template>
 
 <script setup>
-import { defineProps } from 'vue'
+import { computed } from 'vue'
+import BaseWidget from '../widget/BaseWidget.vue'
 import LineChart from './LineChart.vue'
 
-const chartOptions = {
-  beginAtZero: false,
+defineProps({
+  widgetId: {
+    type: String,
+    required: true
+  },
+  title: {
+    type: String,
+    required: true
+  },
+  chartData: {
+    type: Object,
+    required: true,
+    default: () => ({
+      labels: [],
+      datasets: []
+    })
+  }
+})
+
+const chartOptions = computed(() => ({
   yAxis: {
     min: 0.8,
     max: 5.2,
@@ -29,14 +54,7 @@ const chartOptions = {
       color: (context) => context.tick.value === 5 ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.1)'
     }
   }
-}
-
-defineProps({
-  chartData: {
-    type: Object,
-    required: true
-  }
-})
+}))
 </script>
 
 <style scoped>
