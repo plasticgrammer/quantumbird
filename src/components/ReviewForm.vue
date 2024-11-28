@@ -128,7 +128,7 @@
                 </div>
                 <v-list
                   dense
-                  class="tasks pa-0 mb-3"
+                  class="bg-transparent pa-0 mb-3"
                 >
                   <v-list-item
                     v-for="(project, projectIndex) in report.projects"
@@ -225,7 +225,7 @@
             </v-card>
             
             <v-row
-              v-if="(report.status !== 'approved' && !readonly) || report.feedbacks.length" 
+              v-if="(!readonly) || report.feedbacks.length" 
               class="mt-2"
             >
               <v-col cols="12">
@@ -233,6 +233,7 @@
                   v-model="expandedPanels[report.memberUuid]" 
                   elevation="2"
                   eager
+                  @update:model-value="value => expandedPanels[report.memberUuid] = value"
                 >
                   <v-expansion-panel>
                     <v-expansion-panel-title class="bg-plain">
@@ -287,7 +288,7 @@
                       </div>
 
                       <div 
-                        v-if="report.status !== 'approved' && !readonly"
+                        v-if="!readonly"
                         class="mt-2 px-1"
                       >
                         <v-textarea
@@ -370,7 +371,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watchEffect, onMounted, inject, nextTick, defineAsyncComponent, watch } from 'vue'
+import { ref, computed, watchEffect, onMounted, inject, defineAsyncComponent, watch, nextTick } from 'vue'
 import { useCalendar } from '../composables/useCalendar'
 import { useReport } from '../composables/useReport'
 import { listReports, listMembers } from '../services/publicService'
@@ -380,9 +381,9 @@ import { sendRequest } from '../services/sendRequestService'
 import { rootUrl } from '../config/environment'
 
 import OvertimeDisplay from '../components/OvertimeDisplay.vue'
+import ReviewCompleteDialog from './ReviewCompleteDialog.vue'
 const RatingItem = defineAsyncComponent(() => import('../components/RatingItem.vue'))
 const ScrollNavigation = defineAsyncComponent(() => import('../components/ScrollNavigation.vue'))
-import ReviewCompleteDialog from './ReviewCompleteDialog.vue'
 
 const { formatDateTimeJp, formatDateJp, getPreviousWeekString } = useCalendar()
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()
@@ -444,9 +445,9 @@ watchEffect(() => {
 // メモ化されたステータスカウント
 const statusCounts = computed(() => {
   return reports.value.reduce((counts, report) => {
-    counts[report.status]++
+    counts[report.status] = (counts[report.status] || 0) + 1
     return counts
-  }, { all: reports.value.length, none: 0, pending: 0, feedback: 0, approved: 0 })
+  }, { all: reports.value.length })
 })
 
 // 全員の報告が確認済みかどうかの判定
@@ -606,17 +607,20 @@ const handleFeedback = async (memberUuid) => {
 }
 
 const handleApprove = async (memberUuid) => {
-  const confirmMessage = newFeedbacks.value[memberUuid]?.trim() 
-    ? 'フィードバックが未送信です。\nフィードバックの入力を破棄して、報告を確認済みとします。よろしいですか？'
-    : '報告を確認済みとします。よろしいですか？'
-
-  const confirmed = await showConfirmDialog('確認', confirmMessage)
-  if (!confirmed) return
-
-  const report = reports.value.find(r => r.memberUuid === memberUuid)
-  if (!report) return
-
   try {
+    const confirmMessage = newFeedbacks.value[memberUuid]?.trim() 
+      ? 'フィードバックが未送信です。\nフィードバックの入力を破棄して、報告を確認済みとします。よろしいですか？'
+      : '報告を確認済みとします。よろしいですか？'
+
+    const confirmed = await showConfirmDialog('確認', confirmMessage)
+    if (!confirmed) return
+
+    const report = reports.value.find(r => r.memberUuid === memberUuid)
+    if (!report) {
+      showError('報告の確認に失敗しました')
+      return
+    }
+
     const now = new Date()
     const updateData = {
       status: 'approved',
@@ -627,18 +631,22 @@ const handleApprove = async (memberUuid) => {
       ...report,
       ...updateData
     })
-    showNotification('報告を確認済みとしました')
 
-    // ローカル状態の更新
-    reports.value = sortReports(
-      reports.value.map(r => 
-        r.memberUuid === memberUuid 
-          ? { ...r, ...updateData }
-          : r
-      )
+    // フィードバック入力欄をクリアし、パネルを閉じる
+    newFeedbacks.value[memberUuid] = ''
+    expandedPanels.value[memberUuid] = []
+
+    // トランザクション的な処理の改善
+    const updatedReports = reports.value.map(r => 
+      r.memberUuid === memberUuid 
+        ? { ...r, ...updateData }
+        : r
     )
+    
+    reports.value = sortReports(updatedReports)
+    showNotification('報告を確認済みとしました')
   } catch (error) {
-    showError('報告の承認に失敗しました', error)
+    showError('報告の確認に失敗しました', error)
   }
 }
 
@@ -661,37 +669,60 @@ const handleResend = async () => {
 const fetchData = async () => {
   isLoading.value = true
   error.value = null
+  
   try {
     const previousWeekString = getPreviousWeekString(props.weekString)
-    
-    const [fetchedReports, fetchedPrevReports, members] = await Promise.all([
+    const [fetchedReports, fetchedPrevReports, members] = await Promise.allSettled([
       fetchReports(props.weekString), 
       fetchReports(previousWeekString),
       listMembers(props.organizationId)
     ])
-    reports.value = processReports(fetchedReports, members)
-    
-    reports.value.forEach(report => {
-      newFeedbacks.value[report.memberUuid] = ''
-    })
-    lastWeekRatings.value = fetchedPrevReports.reduce((acc, report) => {
-      if (report.rating) {
-        acc[report.memberUuid] = report.rating
-      }
-      return acc
-    }, {})
-    nextTick(() => {
-      updateExpandedPanels()
-      previousCompletionState.value = isAllCompleted.value
-      isInitialized.value = true
-    })
 
+    // membersの取得が必須なのでエラーチェック
+    if (members.status === 'rejected') {
+      throw new Error('メンバー情報の取得に失敗しました')
+    }
+    // 現在週のレポートは必須なのでエラーチェック
+    if (fetchedReports.status === 'rejected') {
+      throw new Error('現在の週のレポート取得に失敗しました')
+    }
+
+    reports.value = processReports(fetchedReports.value, members.value)
+    // 前週のデータは失敗を許容（フォールバック処理）
+    lastWeekRatings.value = fetchedPrevReports.status === 'fulfilled' 
+      ? fetchedPrevReports.value.reduce((acc, report) => {
+        if (report?.rating) {
+          acc[report.memberUuid] = report.rating
+        }
+        return acc
+      }, {})
+      : {}
+
+    // 初期状態の設定
+    initializeState()
+    
   } catch (err) {
-    console.error('Error in fetchData:', err)
     error.value = `データの取得に失敗しました: ${err.message}`
+    showError('データの読み込みに失敗しました', err)
   } finally {
     isLoading.value = false
   }
+}
+
+// 状態初期化を別関数に分離
+const initializeState = () => {
+  // フィードバック入力欄の初期化
+  reports.value.forEach(report => {
+    newFeedbacks.value[report.memberUuid] = ''
+  })
+  
+  // その他の状態初期化
+  nextTick(() => {
+    updateExpandedPanels()
+    previousCompletionState.value = isAllCompleted.value
+    isInitialized.value = true
+    initReportRefs()
+  })
 }
 
 const reportRefs = ref([])
@@ -743,10 +774,6 @@ watch(isAllCompleted, (currentlyComplete) => {
   margin-top: 24px !important;
 }
 
-.tasks {
-  background-color: transparent;
-}
-
 .v-list-item__title {
   font-size: 0.875rem !important;
 }
@@ -769,7 +796,14 @@ watch(isAllCompleted, (currentlyComplete) => {
   display: none;
 }
 
-.w-100 {
-  width: 100%;
+/* 5. レスポンシブ対応の改善 */
+@media (max-width: 600px) {
+  .review-form-container {
+    padding: 8px 0 16px;
+  }
+  
+  .default-card + .default-card {
+    margin-top: 16px !important;
+  }
 }
 </style>
