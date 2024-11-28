@@ -3,15 +3,6 @@
     <div class="chart-wrapper">
       <canvas ref="chartRef" class="chart-canvas"></canvas>
     </div>
-    <v-row v-if="totalCount > 3" class="align-center pa-2">
-      <v-col cols="auto" class="py-0">
-        <v-checkbox v-model="isTop3" color="info" density="compact" hide-details>
-          <template #label="{ props: itemProps }">
-            <label v-bind="itemProps" class="cursor-pointer text-body-2">上位3件のみ表示</label>
-          </template>
-        </v-checkbox>
-      </v-col>
-    </v-row>
   </div>
 </template>
 
@@ -24,30 +15,45 @@ const props = defineProps({
     type: Object,
     required: true,
     validator: (value) => {
-      return value && Array.isArray(value.labels) && Array.isArray(value.datasets)
+      if (!value || !Array.isArray(value.labels) || !Array.isArray(value.datasets)) {
+        return false
+      }
+      // データセットの構造を検証
+      return value.datasets.every(dataset => 
+        dataset && Array.isArray(dataset.data) && 
+        dataset.data.length === value.labels.length
+      )
     }
   },
   options: {
     type: Object,
     default: () => ({})
+  },
+  isTop3: {
+    type: Boolean,
+    default: true
   }
 })
 
 const emit = defineEmits(['error'])
 const chartRef = ref(null)
 const chart = shallowRef(null)
-const isTop3 = ref(true)
 const totalCount = ref(0)
 
+function handleError(message, error) {
+  console.error(message, error)
+  emit('error', { message, error })
+}
+
 function updateChart() {
+  if (!chart.value || !props.chartData) return
+  
   updateChartInstance({
     chart: chart.value,
     chartData: props.chartData,
-    isTop3: isTop3.value,
-    onError: (message, error) => {
-      console.error(message, error)
-      emit('error', error)
-    }
+    isTop3: props.isTop3,
+    options: props.options,
+    onError: handleError
   })
   totalCount.value = props.chartData.datasets?.length || 0
 }
@@ -58,11 +64,8 @@ onMounted(() => {
     chartRef: chartRef.value,
     chartData: props.chartData,
     options: chartOptions,
-    isTop3: isTop3.value,
-    onError: (message, error) => {
-      console.error(message, error)
-      emit('error', error)
-    }
+    isTop3: props.isTop3,
+    onError: handleError
   })
   totalCount.value = props.chartData.datasets?.length || 0
 })
@@ -74,8 +77,11 @@ onUnmounted(() => {
   }
 })
 
-watch(isTop3, updateChart)
-watch(() => props.chartData, updateChart, { deep: true })
+watch(
+  [() => props.options, () => props.chartData, () => props.isTop3],
+  updateChart,
+  { deep: true }
+)
 </script>
 
 <style scoped>

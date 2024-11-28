@@ -39,12 +39,12 @@ export const createBaseOptions = (config = {}) => ({
 })
 
 export const getFilteredData = (datasets, isTop3) => {
-  if (!isTop3) return datasets
+  if (!datasets?.length || !isTop3) return datasets || []
 
   return [...datasets]
     .sort((a, b) => {
-      const aSum = a.data.reduce((sum, val) => sum + (val || 0), 0)
-      const bSum = b.data.reduce((sum, val) => sum + (val || 0), 0)
+      const aSum = a.data.reduce((sum, val) => sum + (Number(val) || 0), 0)
+      const bSum = b.data.reduce((sum, val) => sum + (Number(val) || 0), 0)
       return bSum - aSum
     })
     .slice(0, 3)
@@ -81,22 +81,21 @@ export const updateChartInstance = ({
   chart,
   chartData,
   isTop3,
-  onError = console.error,
-  additionalUpdates = () => { }
+  options,
+  onError = console.error
 }) => {
-  if (!chart) return
+  if (!chart || !chartData) return
 
   try {
-    const datasets = getFilteredData(chartData.datasets || [], isTop3)
-
-    chart.data = {
-      labels: chartData.labels,
-      datasets
+    const datasets = getFilteredData(chartData.datasets, isTop3)
+    
+    chart.data = { labels: chartData.labels, datasets }
+    if (options) {
+      chart.options = createBaseOptions(options)
     }
-
-    additionalUpdates(chart)
-    chart.update('none')
+    
+    chart.update()
   } catch (error) {
-    onError('Error updating chart:', error)
+    onError('チャートの更新に失敗しました', error)
   }
 }

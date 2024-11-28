@@ -1,17 +1,17 @@
 <template>
-  <BaseWidget
+  <BaseChart
     :widget-id="widgetId"
     :title="title"
-    icon="mdi-chart-line"
-  >
-    <LineChart :chart-data="chartData" :options="chartOptions" />
-  </BaseWidget>
+    :chart-data="chartData"
+    :min="0"
+    :max="currentMaxValue"
+    :y-axis-config="yAxisConfig"
+  />
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import BaseWidget from '../widget/BaseWidget.vue'
-import LineChart from './LineChart.vue'
+import BaseChart from './BaseChart.vue'
 
 const props = defineProps({
   widgetId: {
@@ -36,43 +36,20 @@ const props = defineProps({
   }
 })
 
-const chartOptions = computed(() => ({
-  yAxis: {
-    min: 0,
-    max: getMaxValue(props.chartData.datasets || []),
-    ticks: {
-      stepSize: Math.ceil(getMaxValue(props.chartData.datasets || []) / 5)
-    },
-    title: {
-      display: true,
-      text: props.yAxisTitle
-    }
-  }
-}))
-
 function getMaxValue(datasets) {
-  if (!datasets.length) return 3.0
-  const allValues = datasets.flatMap(d => d.data)
-  return Math.max(...allValues.filter(v => typeof v === 'number'), 3.0)
+  if (!datasets?.length) return 3.0
+  const allValues = datasets.flatMap(d => d.data || [])
+    .filter(v => v !== null && v !== undefined)
+    .map(v => Number(v))
+    .filter(v => !isNaN(v))
+  return allValues.length > 0 ? Math.max(...allValues) : 3.0
 }
+
+const currentMaxValue = computed(() => getMaxValue(props.chartData.datasets))
+const currentStepSize = computed(() => Math.max(1, Math.ceil(currentMaxValue.value / 5)))
+
+const yAxisConfig = computed(() => ({
+  ticks: { stepSize: currentStepSize.value },
+  title: { display: true, text: props.yAxisTitle }
+}))
 </script>
-
-<style scoped>
-.chart-container {
-  width: 100%;
-}
-
-.chart-wrapper {
-  position: relative;
-  height: 180px;
-  width: 100%;
-}
-
-.chart-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100% !important;
-  height: 100% !important;
-}
-</style>
