@@ -119,6 +119,7 @@
               </v-col>
               <v-col cols="3" md="4" class="d-flex justify-end">
                 <v-btn
+                  v-tooltip="'プロジェクトを削除'"
                   icon
                   class="project-delete-btn"
                   tabindex="-1"
@@ -147,6 +148,7 @@
                   >
                     <template #append>
                       <v-icon 
+                        v-tooltip="'作業内容を削除'"
                         :color="item.content ? 'grey darken-2' : 'grey lighten-1'"
                         tabindex="-1"
                         @click="removeWorkItem(project, itemIndex)"
@@ -161,6 +163,7 @@
           </v-card-text>
         </v-card>
         <v-fab
+          v-tooltip="'プロジェクトを追加'"
           class="me-md-5 mt-n5 mt-md-n2"
           location="top end"
           color="secondary"

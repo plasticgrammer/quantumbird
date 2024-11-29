@@ -20,6 +20,7 @@
         <template #append>
           <v-btn
             v-if="projectNames.includes(item.title)"
+            v-tooltip="'選択リストより削除'"
             icon="mdi-close"
             size="small"
             flat
@@ -28,6 +29,7 @@
           ></v-btn>
           <v-btn
             v-else
+            v-tooltip="'選択リストに追加'"
             icon="mdi-plus"
             size="small"
             color="primary"

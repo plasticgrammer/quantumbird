@@ -1,7 +1,7 @@
 <template>
   <v-dialog 
     :model-value="modelValue"
-    :max-width="isAdviceEnabled ? 680 : 480"
+    :max-width="isAdviceEnabled ? 600 : 480"
     persistent
     @update:model-value="handleDialogUpdate"
   >
@@ -27,12 +27,13 @@
               :key="i"
               :color="i <= advisorState.remainingTickets ? 'primary' : 'grey-lighten-1'"
               class="ticket-icon"
+              size="small" 
             >
               {{ i <= advisorState.remainingTickets ? 'mdi-ticket' : 'mdi-ticket-outline' }}
             </v-icon>
           </template>
           <template v-else>
-            <v-icon class="ticket-icon" color="primary">mdi-ticket</v-icon>
+            <v-icon class="ticket-icon" size="small" color="primary">mdi-ticket</v-icon>
             <span class="text-caption ml-1">{{ advisorState.remainingTickets }}</span>
           </template>
           <v-tooltip activator="parent" location="bottom">
@@ -95,14 +96,13 @@
                     <div class="advisor-image-container d-flex align-end justify-center">
                       <v-img
                         :src="advisor.image"
-                        max-height="170"
-                        max-width="200"
+                        max-width="160"
                         :class="['advisor-image mb-2 mx-auto', { 'scale-up': advisorState.isButtonHovering || advisorState.isLoading }]"
                         :position="'top'"
                       >
                       </v-img>
                     </div>
-                    <v-card-item>
+                    <v-card-item class="pt-0">
                       <v-card-title class="font-weight-bold">
                         <v-icon
                           :icon="advisor.icon"
@@ -111,7 +111,7 @@
                         />
                         {{ advisor.title }}
                       </v-card-title>
-                      <v-card-subtitle class="text-body-1 py-2">
+                      <v-card-subtitle class="text-body-2 py-2">
                         {{ advisor.description }}
                       </v-card-subtitle>
                     </v-card-item>
@@ -334,7 +334,7 @@ watch(() => props.reportContent,
 }
 
 .advisor-image-container {
-  height: 175px;
+  height: 165px;
   overflow: hidden;
 }
 
