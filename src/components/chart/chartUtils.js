@@ -88,12 +88,12 @@ export const updateChartInstance = ({
 
   try {
     const datasets = getFilteredData(chartData.datasets, isTop3)
-    
+
     chart.data = { labels: chartData.labels, datasets }
     if (options) {
       chart.options = createBaseOptions(options)
     }
-    
+
     chart.update()
   } catch (error) {
     onError('チャートの更新に失敗しました', error)

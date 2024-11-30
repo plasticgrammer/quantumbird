@@ -65,7 +65,7 @@
         >
           <v-chip
             v-if="statusCounts[status.value] > 0"
-            v-tooltip:end="statusMembers[status.value]?.join(', ') || ''"
+            v-tooltip:end="getTooltipText(statusMembers[status.value])"
             class="ma-1"
             :value="status.value"
             :color="status.color"
@@ -103,6 +103,11 @@ const handleWeekChange = (delta) => {
     : Math.max(0, props.weekIndex - 1)
   emit('update:weekIndex', newIndex)
 }
+
+const getTooltipText = (members) => {
+  if (!members) return ''
+  return members.map(member => member.name || member.displayName || '').filter(Boolean).join(', ')
+}
 </script>
 
 <style scoped>
@@ -122,7 +127,7 @@ const handleWeekChange = (delta) => {
 
 .calendar-card {
   overflow: visible !important;
-  max-width: v-bind(expanded ? '560px' : '100%');
+  max-width: v-bind(expanded ? '560px': '100%');
   margin: 0 auto;
 }
 

@@ -8,7 +8,7 @@
       <v-checkbox
         v-if="chartData.datasets?.length > 3"
         v-model="isTop3"
-        color="blue-grey-lighten-2"
+        color="blue-grey-lighten-3"
         density="compact"
         hide-details
       >
