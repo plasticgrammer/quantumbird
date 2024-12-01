@@ -39,7 +39,7 @@ module.exports = defineConfig({
   pages: {
     index: {
       entry: 'src/main.js',
-      title: 'Fluxweek'
+      title: 'fluxweek'
     }
   },
   publicPath: process.env.NODE_ENV === 'production' ? '/quantumbird' : '/',

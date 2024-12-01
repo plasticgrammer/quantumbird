@@ -15,6 +15,7 @@
           density="comfortable"
           variant="outlined"
           hide-details
+          prepend-inner-icon="mdi-account"
         ></v-select>
       </div>
       <div>

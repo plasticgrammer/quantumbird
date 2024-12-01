@@ -1,4 +1,5 @@
 import store from '@/store'
+import { defaultAdvisors } from '../services/bedrockService'
 
 export const plans = [
   {
@@ -6,13 +7,14 @@ export const plans = [
     priceId: 'price_free',
     name: 'フリープラン',
     price: 0,
-    features: ['基本機能が使用可', 'メンバー数最大5名', 'AIアドバイスが利用不可'],
+    features: ['基本機能が使用可', 'メンバー数最大3名', '基本アドバイザーのみ'],
     adminFeatures: {
-      maxMembers: 5,
+      maxMembers: 3,
       accountManagement: false
     },
     systemFeatures: {
-      weeklyReportAdvice: false
+      weeklyReportAdvice: false,
+      advisors: defaultAdvisors // デフォルトのアドバイザーのみにリセット
     }
   },
   {
@@ -20,7 +22,7 @@ export const plans = [
     priceId: 'price_1QJSigJlLYAT4bpznFUNs5eg',
     name: 'プロプラン',
     price: 1000,
-    features: ['基本機能が使用可', 'メンバー数無制限', 'AIアドバイスが利用可'],
+    features: ['基本機能が使用可', 'メンバー数無制限', '全てのアドバイザー'],
     adminFeatures: {
       maxMembers: -1,
       accountManagement: false
@@ -37,12 +39,7 @@ export const plans = [
     pricePerAccount: 500,
     getPrice: (accountCount) => 2000 + (accountCount * 500),
     priceDescription: ['+ ¥500/アカウント'],
-    features: [
-      '基本機能が使用可',
-      'アカウント管理機能',
-      'メンバー数無制限',
-      'AIアドバイスが利用可'
-    ],
+    features: ['基本機能が使用可', 'メンバー数無制限', '全てのアドバイザー', 'アカウント管理機能'],
     adminFeatures: {
       maxMembers: -1,
       accountManagement: true

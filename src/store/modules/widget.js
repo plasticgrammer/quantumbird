@@ -84,7 +84,7 @@ export default {
 
       // 順序の整合性チェック
       if (order.length === currentVisible.length &&
-          order.every(id => state.widgetVisibility[id])) {
+        order.every(id => state.widgetVisibility[id])) {
         state.widgetOrder = [...order, ...hidden]
       }
     },
