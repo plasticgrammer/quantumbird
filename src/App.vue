@@ -208,7 +208,7 @@ const navigationItems = computed(() => {
       route: { name: 'OrganizationManagement' }
     },
     { 
-      icon: 'mdi-mail', 
+      icon: 'mdi-calendar-clock', 
       title: '週次報告設定', 
       value: 'ReportSetting', 
       route: { name: 'ReportSetting' }

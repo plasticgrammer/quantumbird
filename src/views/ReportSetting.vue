@@ -3,7 +3,7 @@
     <v-row dense class="pb-4">
       <v-col>
         <h3>
-          <v-icon size="large" class="mr-1">mdi-mail</v-icon>
+          <v-icon size="large" class="mr-1">mdi-calendar-clock</v-icon>
           週次報告設定
         </h3>
       </v-col>
@@ -30,6 +30,7 @@
     </v-tabs>
 
     <v-window 
+      v-if="!loading"
       v-model="activeTab" 
       class="elevation-4"
       transition="fade-transition"
