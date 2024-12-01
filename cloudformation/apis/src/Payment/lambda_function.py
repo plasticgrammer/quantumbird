@@ -8,62 +8,11 @@ import logging
 import datetime
 from typing import Dict, Any
 from common.utils import create_response
+from payment_config import PaymentConfig
 
 # ロガーの設定
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-# 定数のグループ化
-class PaymentConfig:
-    # Stripe関連
-    API_KEY = os.environ['STRIPE_SECRET_KEY']
-    CURRENCY = 'jpy'
-    BILLING_INTERVAL = 'month'
-
-    # プラン関連
-    PRICE_ID_FREE = 'price_free'
-    PRICE_ID_PRO = 'price_1QJSigJlLYAT4bpznFUNs5eg'
-    PRICE_ID_BUSINESS = 'price_1QJSmjJlLYAT4bpzzPjAgcJj'
-    PRODUCT_ID_BUSINESS = 'prod_RBqT2Wa1VvXK56'
-    VALID_PRICE_IDS = [PRICE_ID_FREE, PRICE_ID_PRO, PRICE_ID_BUSINESS]
-
-    # 料金関連
-    BUSINESS_BASE_PRICE = 2000
-    BUSINESS_PER_ACCOUNT_PRICE = 500
-
-    # 時間関連
-    SECONDS_PER_DAY = 24 * 3600
-    DAYS_IN_MONTH = 30
-    PLAN_CHANGE_COOLDOWN_SECONDS = 24 * 3600
-    REACTIVATION_WINDOW_SECONDS = 48 * 3600
-
-    # planIdとpriceIdのマッピング
-    PRICE_TO_PLAN_MAP = {
-        PRICE_ID_FREE: 'free',
-        PRICE_ID_PRO: 'pro',
-        PRICE_ID_BUSINESS: 'business'
-    }
-
-    # 環境設定
-    STAGE_TO_ENV_MAP = {
-        'dev': 'development',
-        'prod': 'production'
-    }
-    ENVIRONMENT = STAGE_TO_ENV_MAP.get(os.environ.get('STAGE', 'dev'), 'development')
-
-    # 冪等性設定
-    IDEMPOTENCY_KEY_TTL = 24 * 3600  # 24時間
-    
-    # カードエラーメッセージ（国際化対応）
-    CARD_ERROR_MESSAGES = {
-        'card_declined': '決済が拒否されました。',
-        'expired_card': 'カードの有効期限が切れています。',
-        'incorrect_cvc': 'セキュリティコードが正しくありません。',
-        'processing_error': '決済処理中にエラーが発生しました。',
-        'incorrect_number': 'カード番号が正しくありません。',
-        'invalid_expiry_month': '有効期限の月が無効です。',
-        'invalid_expiry_year': '有効期限の年が無効です。'
-    }
 
 # Stripeの設定
 stripe.api_key = PaymentConfig.API_KEY
@@ -74,11 +23,11 @@ class PaymentError(Exception):
 
 class ResponseMessages:
     """レスポンスメッセージの定数"""
-    SUBSCRIPTION_CREATED = 'サブスクリプションが正常に作成されました'
-    FREE_PLAN_SELECTED = 'フリープランが選択されました'
-    PLAN_CHANGE_SCHEDULED = 'プラン変更が予約されました'
-    ACCOUNT_COUNT_UPDATED = 'アカウント数が正常に更新されました'
-    PAYMENT_METHOD_UPDATED = '支払い方法が正常に更新されました'
+    SUBSCRIPTION_CREATED = PaymentConfig.RESPONSE_MESSAGES['subscription_created']
+    FREE_PLAN_SELECTED = PaymentConfig.RESPONSE_MESSAGES['free_plan_selected']
+    PLAN_CHANGE_SCHEDULED = PaymentConfig.RESPONSE_MESSAGES['plan_changed']
+    ACCOUNT_COUNT_UPDATED = PaymentConfig.RESPONSE_MESSAGES['account_count_updated']
+    PAYMENT_METHOD_UPDATED = PaymentConfig.RESPONSE_MESSAGES['payment_method_updated']
 
 def log_error(error: Exception, additional_info: dict = None) -> None:
     """エラーログの記録"""
@@ -173,7 +122,7 @@ def create_subscription(body: Dict, client_ip: str) -> Dict:
 
         # プランIDの検証
         valid_price_ids = PaymentConfig.VALID_PRICE_IDS
-        if price_id not in valid_price_ids:
+        if (price_id not in valid_price_ids):
             raise ValueError('無効なプランIDです')
 
         # 顧客の取得または作成
@@ -534,7 +483,7 @@ def reactivate_subscription(body: Dict) -> Dict:
     return create_subscription(body)
 
 def get_payment_methods(body: Dict) -> Dict:
-    """支払い方��取得処理"""
+    """支払い方法取得処理"""
     try:
         email = body.get('email')
         if not email:
@@ -612,23 +561,30 @@ def convert_description_date(description: str, period_start: int) -> str:
     if not description:
         return description
 
-    # より後の日付の変換
+    # 数量表記の削除 ("1 × " を削除)
+    description = description.replace('1 × ', '')
+
+    # プランの料金表記を変換 ("at ¥" を "¥" に、"/ month" を "/ 月" に)
+    if '(at ' in description and ' / month' in description:
+        description = description.replace('(at ', '(').replace(' / month', ' / 月')
+        
+    # Tierの表記を削除
+    if 'Tier 1 at ' in description:
+        description = description.replace('Tier 1 at ', '')
+
+    # より後の日付の変換と調整
     if 'より後の' in description:
         parts = description.split('より後の')
         if len(parts) == 2:
-            date_str = format_date_for_description(period_start)
-            description = f'{date_str}より後の{parts[1]}'
-    
-    # プラン名と料金表記の変換
-    if ' × ' in description and '/ month)' in description:
-        # 1 × ビジネスプラン (at ¥4,500 / month) → ビジネスプラン (¥4,500 / 月)
-        parts = description.split(' × ')
-        if len(parts) == 2:
-            plan_part = parts[1]
-            if '(at ' in plan_part and ' / month)' in plan_part:
-                plan_name = plan_part.split(' (at ')[0].strip()
-                price = plan_part.split(' (at ')[1].replace(' / month)', ' / 月')
-                description = f'{plan_name} ({price})'
+            plan_part = parts[1].strip()
+            
+            # 「未使用時間」と「残り時間」の処理
+            if '未使用時間' in plan_part:
+                plan_name = plan_part.replace(' の未使用時間', '')
+                return f'{plan_name}の未使用分返金'
+            elif '残り時間' in plan_part:
+                plan_name = plan_part.replace(' の残り時間', '')
+                return f'{plan_name}の日割り請求'
     
     return description
 

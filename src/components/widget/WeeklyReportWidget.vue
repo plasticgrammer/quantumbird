@@ -21,12 +21,10 @@
         <v-btn
           color="black"
           variant="outlined"
-          :href="weeklyReportLink"
-          target="_blank"
-          rel="noopener noreferrer"
           :disabled="!selectedMember"
           x-small
           aria-label="選択したメンバーの週次報告ページを新しいタブで開く"
+          @click="navigateToReport"
         >
           週次報告（代理入力）
           <v-icon icon="mdi-open-in-new" end small aria-hidden="true" />
@@ -37,7 +35,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
+import { rootUrl } from '@/config/environment'
 import BaseWidget from './BaseWidget.vue'
 
 const props = defineProps({
@@ -57,8 +56,12 @@ const props = defineProps({
 
 const selectedMember = ref(null)
 
-const weeklyReportLink = computed(() => {
-  if (!selectedMember.value) return '#'
-  return `/reports/${props.organizationId}/${selectedMember.value}/${props.weekString}`
-})
+const navigateToReport = () => {
+  if (!selectedMember.value) return
+  
+  const baseUrl = `${rootUrl}/reports/${props.organizationId}/${selectedMember.value}`
+  const url = props.weekString ? `${baseUrl}/${props.weekString}` : baseUrl
+  
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
 </script>

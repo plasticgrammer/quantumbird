@@ -120,7 +120,7 @@
               :type="showNewPassword ? 'text' : 'password'"
               :rules="[
                 v => !!v || 'パスワードを確認してください',
-                v => v === passwordData.newPassword || '���スワードが一致しません'
+                v => v === passwordData.newPassword || 'パスワードが一致しません'
               ]"
               hide-details="auto"
               class="mb-4"
@@ -200,7 +200,7 @@
           アカウントの引き継ぎを行うと：
           <div class="mb-4">
             <ul class="ml-4">
-              <li>ユーザーア���ウント情報、組織情報は削除されます</li>
+              <li>ユーザーアカウント情報、組織情報は削除されます</li>
               <li>メンバー情報、週次報告履歴は保持されます</li>
               <li>削除後に組織ID「<span class="text-error">{{ organizationId }}</span>」でサインアップしたユーザーが、<br>組織の新しい管理者となります</li>
             </ul>
@@ -463,8 +463,7 @@ const exportData = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   email.value = user.value.email
-  // 他の設定フィールドの初期化
 })
 </script>

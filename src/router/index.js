@@ -9,7 +9,7 @@ import WeeklyReview from '../views/WeeklyReview.vue'
 import WeeklyReportSummary from '../views/WeeklyReportSummary.vue'
 import OrganizationManagement from '../views/OrganizationManagement.vue'
 import AccountManagement from '../views/AccountManagement.vue'
-import RequestSetting from '../views/RequestSetting.vue'
+import ReportSetting from '../views/ReportSetting.vue'
 
 const routes = [
   {
@@ -80,9 +80,9 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/admin/request-setting',
-    name: 'RequestSetting',
-    component: RequestSetting,
+    path: '/admin/report-setting',
+    name: 'ReportSetting',
+    component: ReportSetting,
     props: true,
     meta: { requiresAuth: true }
   },

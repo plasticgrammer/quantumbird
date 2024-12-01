@@ -2,6 +2,9 @@ import { apiClient } from './apiClient'
 
 const BASE_PATH = '/bedrock'
 
+// デフォルトのアドバイザー
+export const defaultAdvisors = ['manager', 'career', 'mental']
+
 // アドバイザーロールの定義
 export const advisorRoles = {
   manager: {

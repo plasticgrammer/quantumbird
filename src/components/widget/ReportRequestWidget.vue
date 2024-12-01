@@ -27,7 +27,7 @@
       <div>
         <v-btn
           color="black" variant="outlined"
-          :to="{ name: 'RequestSetting' }"
+          :to="{ name: 'ReportSetting' }"
           aria-label="報告依頼設定ページへ移動"
         >
           <v-icon class="mr-1" small aria-hidden="true">

@@ -209,9 +209,9 @@ const navigationItems = computed(() => {
     },
     { 
       icon: 'mdi-mail', 
-      title: '報告依頼設定', 
-      value: 'RequestSetting', 
-      route: { name: 'RequestSetting' }
+      title: '週次報告設定', 
+      value: 'ReportSetting', 
+      route: { name: 'ReportSetting' }
     },
   ]
 

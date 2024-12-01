@@ -12,7 +12,7 @@
     </v-row>
 
     <v-card 
-      class="organization-card px-md-6"
+      class="organization-card px-md-6 rounded-lg"
       outlined
     >
       <v-form
@@ -426,7 +426,6 @@ const { validateForm, handleSubmit } = formManagement
 
 .organization-card {
   background-color: white;
-  border-radius: 0.5rem;
   padding: 0.5em 1em 1em;
   position: relative;
 }

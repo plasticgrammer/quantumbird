@@ -43,7 +43,7 @@
           <v-btn
             color="black"
             variant="outlined"
-            :to="{ name: 'RequestSetting' }"
+            :to="{ name: 'ReportSetting' }"
             class="mt-3"
           >
             <v-icon class="mr-1" small>
