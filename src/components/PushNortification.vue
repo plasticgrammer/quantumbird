@@ -12,31 +12,13 @@
           @click="togglePushNotification"
         >
           <template #prepend>
-            <v-tooltip
-              location="bottom"
-              :open-on-hover="true"
-              :open-on-focus="true"
-              :close-delay="3000"
-              class="d-flex flex-row"
+            <v-icon
+              :color="iconColor"
+              class="mr-1"
+              size="large"
             >
-              <template #activator="{ props: tooltipProps }">
-                <v-icon
-                  v-bind="tooltipProps"
-                  :color="iconColor"
-                  class="mr-1"
-                  size="large"
-                >
-                  {{ iconName }}
-                </v-icon>
-              </template>
-              <div class="d-flex align-center">
-                <div class="mr-2">
-                  - serviceWorkerReady: {{ isServiceWorkerReady }}<br>
-                  - subscribed: {{ isSubscribed }}<br>
-                  - notificationStatus: {{ notificationStatus }}
-                </div>
-              </div>
-            </v-tooltip>
+              {{ iconName }}
+            </v-icon>
             {{ statusText }}
           </template>
         </v-switch>
@@ -51,6 +33,34 @@
           </v-btn>
         </div>
       </v-col>
+      
+      <v-col cols="11" class="mt-2">
+        <div class="text-body-2 text-grey pl-3">
+          <div class="d-flex align-center mb-1">
+            <v-icon size="small" class="mr-2" :color="isSubscribed ? 'success' : 'grey'">
+              {{ isSubscribed ? 'mdi-check-circle' : 'mdi-circle-outline' }}
+            </v-icon>
+            <span>通知設定: {{ isSubscribed ? '登録済み' : '未登録' }}</span>
+          </div>
+          <div class="d-flex align-center mb-1">
+            <v-icon size="small" class="mr-2" :color="isServiceWorkerReady ? 'success' : 'grey'">
+              {{ isServiceWorkerReady ? 'mdi-check-circle' : 'mdi-progress-clock' }}
+            </v-icon>
+            <span>システム準備状況: {{ isServiceWorkerReady ? '完了' : '準備中' }}</span>
+          </div>
+          <div class="d-flex align-center">
+            <v-icon size="small" class="mr-2" :color="notificationStatus === 'granted' ? 'success' : 'grey'">
+              {{ notificationStatus === 'granted' ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+            </v-icon>
+            <span>ブラウザの許可: {{ 
+              notificationStatus === 'granted' ? '許可済み' :
+              notificationStatus === 'denied' ? '拒否' :
+              '未設定'
+            }}</span>
+          </div>
+        </div>
+      </v-col>
+
       <v-col v-if="hasError" cols="11">
         <div class="v-input--error">
           <div class="v-messages">

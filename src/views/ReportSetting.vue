@@ -195,8 +195,11 @@
 
       <v-window-item value="notification">
         <v-card class="setting-card rounded-lg">
-          <v-card-title>ベータ版：報告通知設定</v-card-title>
+          <v-card-title>ベータ版：通知設定</v-card-title>
           <v-card-text>
+            <p class="mt-2 mb-4">
+              メンバーの週次報告時にブラウザによるプッシュ通知を受け取ることができます。
+            </p>
             <PushNortification></PushNortification>
           </v-card-text>
         </v-card>
