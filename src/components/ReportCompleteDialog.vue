@@ -88,7 +88,7 @@
  
               <v-window v-model="advisorState.selectedRole" show-arrows continuous>
                 <v-window-item
-                  v-for="(advisor, key) in advisorRoles"
+                  v-for="(advisor, key) in availableAdvisors"
                   :key="key"
                   :value="key"
                 >
@@ -189,7 +189,7 @@
 </template>
 
 <script setup>
-import { reactive, watch, onMounted, onUnmounted } from 'vue'
+import { reactive, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useResponsive } from '../composables/useResponsive'
 import { advisorRoles, getWeeklyReportAdvice } from '../services/bedrockService'
 import { getMember } from '../services/publicService'
@@ -208,6 +208,10 @@ const props = defineProps({
   isAdviceEnabled: {
     type: Boolean,
     default: false
+  },
+  enabledAdvisors: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -224,9 +228,25 @@ const advisorState = reactive({
   showAddTicetMessage: false
 })
 
+const availableAdvisors = computed(() => {
+  if (!props.isAdviceEnabled) {
+    return { manager: advisorRoles.manager }
+  }
+
+  // 組織で有効化されたアドバイザーのみを返す
+  if (props.enabledAdvisors?.length > 0) {
+    return Object.fromEntries(
+      Object.entries(advisorRoles).filter(([key]) => {
+        return props.enabledAdvisors.includes(key)
+      })
+    )
+  }
+  return { manager: advisorRoles.manager }
+})
+
 const resetState = () => {
   Object.assign(advisorState, {
-    selectedRole: 'manager',
+    selectedRole: Object.keys(availableAdvisors.value)[0] || 'manager',
     isButtonHovering: false,
     isLoading: false,
     isAdviceAvailable: false,
@@ -290,18 +310,18 @@ const handleGenerateAdvice = async () => {
   }
 }
 
-const advisorKeys = Object.keys(advisorRoles)
+const advisorKeys = computed(() => Object.keys(availableAdvisors.value))
 
 const handleKeydown = (event) => {
   if (!props.modelValue || advisorState.isAdviceAvailable) return
 
-  const currentIndex = advisorKeys.indexOf(advisorState.selectedRole)
+  const currentIndex = advisorKeys.value.indexOf(advisorState.selectedRole)
   if (event.key === 'ArrowLeft') {
-    const prevIndex = currentIndex <= 0 ? advisorKeys.length - 1 : currentIndex - 1
-    advisorState.selectedRole = advisorKeys[prevIndex]
+    const prevIndex = currentIndex <= 0 ? advisorKeys.value.length - 1 : currentIndex - 1
+    advisorState.selectedRole = advisorKeys.value[prevIndex]
   } else if (event.key === 'ArrowRight') {
-    const nextIndex = currentIndex >= advisorKeys.length - 1 ? 0 : currentIndex + 1
-    advisorState.selectedRole = advisorKeys[nextIndex]
+    const nextIndex = currentIndex >= advisorKeys.value.length - 1 ? 0 : currentIndex + 1
+    advisorState.selectedRole = advisorKeys.value[nextIndex]
   }
 }
 

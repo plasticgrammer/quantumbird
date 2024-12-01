@@ -9,15 +9,20 @@
       </v-col>
     </v-row>
 
-    <v-card class="rounded-lg" outlined>
+    <v-skeleton-loader
+      v-if="loading"
+      type="text, chip@2, ossein, text, paragraph, button"
+    />
+   
+    <v-card 
+      v-if="!loading"
+      class="rounded-lg"
+      outlined
+    >
       <v-card-title class="pb-4">報告依頼設定</v-card-title>
       <v-card-text class="px-6">
-        <v-skeleton-loader
-          v-if="loading"
-          type="text, chip@2, ossein, text, paragraph, button"
-        />
 
-        <v-form v-else ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
+        <v-form ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field

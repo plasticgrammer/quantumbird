@@ -123,12 +123,9 @@ def handle_put(event):
     if 'organizationId' in data:
         existing_org = get_organization(data['organizationId'])
         
-        # featuresが含まれている場合は、既存のfeaturesを完全に上書き
-        if 'features' in data:
-            if existing_org is None:
-                existing_org = {}
-            existing_org['features'] = data['features']
-        
+        if existing_org is None:
+            existing_org = {}
+            
         org_item = prepare_organization_item(data, existing_org)
         organizations_table.put_item(Item=org_item)
 
@@ -370,6 +367,13 @@ def prepare_organization_item(org_data, existing_org=None):
     if existing_org is None:
         existing_org = {}
     
+    # 既存のfeaturesを保持
+    features = existing_org.get('features', {}).copy()
+    
+    # 新しいfeaturesがある場合は更新
+    if 'features' in org_data:
+        features.update(org_data['features'])
+    
     updated_org = {
         'organizationId': org_data.get('organizationId', existing_org.get('organizationId')),
         'name': org_data.get('name', existing_org.get('name')),
@@ -379,10 +383,10 @@ def prepare_organization_item(org_data, existing_org=None):
         'requestTime': org_data.get('requestTime', existing_org.get('requestTime')),
         'requestDayOfWeek': org_data.get('requestDayOfWeek', existing_org.get('requestDayOfWeek')),
         'reportWeek': org_data.get('reportWeek', existing_org.get('reportWeek')),
-        'features': org_data.get('features', existing_org.get('features')),  # featuresを直接代入
+        'features': features,
         'adminSubscriptions': existing_org.get('adminSubscriptions', {})
     }
-
+    
     if 'adminSubscriptions' in org_data:
         updated_org['adminSubscriptions'].update(org_data['adminSubscriptions'])
 

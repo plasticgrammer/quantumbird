@@ -98,6 +98,7 @@
       v-model="isReportSubmitted"
       :report-content="lastReportContent"
       :is-advice-enabled="isAdviceEnabled"
+      :enabled-advisors="enabledAdvisors"
       @back="handleBackToReport"
       @close="handleClose"
     />
@@ -112,6 +113,7 @@ import ReportForm from '../components/ReportForm.vue'
 import { useCalendar } from '../composables/useCalendar'
 import { feedbackUrl, termsOfServiceUrl, privacyPolicyUrl } from '@/config/environment'
 import { getOrganization, getMember } from '../services/publicService'
+import { defaultAdvisors } from '../services/bedrockService'
 
 const MemberInfoDialog = defineAsyncComponent(() => import('../components/MemberInfoDialog.vue'))
 const StressCheckDialog = defineAsyncComponent(() => import('../components/StressCheckDialog.vue'))
@@ -146,6 +148,10 @@ const lastReportContent = ref(null)
 
 const isAdviceEnabled = computed(() => {
   return organization.value?.features?.weeklyReportAdvice ?? false
+})
+
+const enabledAdvisors = computed(() => {
+  return organization.value?.features?.advisors || defaultAdvisors
 })
 
 const openMemberInfoDialog = () => {
