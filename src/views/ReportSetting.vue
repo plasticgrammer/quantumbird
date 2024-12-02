@@ -24,244 +24,241 @@
       v-model="activeTab"
       class="mb-4"
     >
-      <v-tab value="mail">報告依頼設定</v-tab>
-      <v-tab value="notification">通知設定</v-tab>
-      <v-tab value="advisor">アドバイザー設定</v-tab>
+      <v-tab value="request" class="text-body-1">報告依頼設定</v-tab>
+      <v-tab value="notification" class="text-body-1">通知設定</v-tab>
+      <v-tab value="advisor" class="text-body-1">アドバイザー設定</v-tab>
     </v-tabs>
 
-    <v-window 
-      v-if="!loading"
-      v-model="activeTab" 
-      class="elevation-4"
-      transition="fade-transition"
-    >
-      <v-window-item value="mail">
-        <v-card class="setting-card rounded-lg" outlined>
-          <v-card-title class="pb-4">報告依頼設定</v-card-title>
-          <v-card-text class="px-6">
-            <v-form ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
-              <v-row>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="reportSettings.sender"
-                    label="送信元メールアドレス"
-                    outlined
-                    dense
-                    hide-details="auto"
-                    :rules="emailRules"
-                    :color="emailVerificationStatus === 'Success' ? 'success' : ''"
-                    :error="emailVerificationStatus === 'Failed'"
-                  >
-                    <template #append>
-                      <v-icon 
-                        v-tooltip:top="emailVerificationStatusText"
-                        :color="emailVerificationStatusColor"
-                      >
-                        {{ emailVerificationStatusIcon }}
-                      </v-icon>
-                    </template>
-                  </v-text-field>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <div class="d-flex align-center mt-2">
-                    <v-btn
-                      v-if="isValidEmail(reportSettings.sender) && emailVerificationStatus !== 'Success' && emailVerificationStatus !== 'Checking'"
-                      color="secondary"
-                      small
-                      prepend-icon="mdi-card-account-mail"
-                      :loading="verifyingEmail"
-                      @click="verifyEmail(reportSettings.sender)"
+    <v-card-text v-if="!loading" class="pa-0">
+      <v-tabs-window 
+        v-model="activeTab" 
+        class="elevation-4"
+      >
+        <v-tabs-window-item value="request">
+          <v-card class="setting-card rounded-lg" outlined>
+            <v-card-text class="px-6 pt-6">
+              <v-form ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="reportSettings.sender"
+                      label="送信元メールアドレス"
+                      outlined
+                      dense
+                      hide-details="auto"
+                      :rules="emailRules"
+                      :color="emailVerificationStatus === 'Success' ? 'success' : ''"
+                      :error="emailVerificationStatus === 'Failed'"
                     >
-                      メールアドレスを検証する
-                    </v-btn>
-                  </div>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="reportSettings.senderName"
-                    label="送信者名"
-                    outlined
-                    dense
-                    hide-details="auto"
-                    :rules="senderNameRules"
-                  >
-                  </v-text-field>
-                </v-col>
-              </v-row>
-
-              <v-card outlined class="mt-8">
-                <v-card-title>自動送信設定</v-card-title>
-                <v-card-text>
-                  <v-row>
-                    <v-col cols="12" md="2" class="pl-5 d-flex align-center">
-                      <span class="text-body-1">報告対象週</span>
-                    </v-col>
-                    <v-col cols="12" md="10" class="d-flex justify-start align-center">
-                      <span
-                        v-for="option in reportWeekOptions"
-                        :key="option.value"
-                        class="mr-4"
+                      <template #append>
+                        <v-icon 
+                          v-tooltip:top="emailVerificationStatusText"
+                          :color="emailVerificationStatusColor"
+                        >
+                          {{ emailVerificationStatusIcon }}
+                        </v-icon>
+                      </template>
+                    </v-text-field>
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <div class="d-flex align-center mt-2">
+                      <v-btn
+                        v-if="isValidEmail(reportSettings.sender) && emailVerificationStatus !== 'Success' && emailVerificationStatus !== 'Checking'"
+                        color="secondary"
+                        small
+                        prepend-icon="mdi-card-account-mail"
+                        :loading="verifyingEmail"
+                        @click="verifyEmail(reportSettings.sender)"
                       >
-                        <v-radio-group v-model="reportSettings.reportWeek" row dense hide-details>
-                          <v-radio :label="option.text" :value="option.value"></v-radio>
-                        </v-radio-group>
-                      </span>
-                    </v-col>
-                  </v-row>
+                        メールアドレスを検証する
+                      </v-btn>
+                    </div>
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="reportSettings.senderName"
+                      label="送信者名"
+                      outlined
+                      dense
+                      hide-details="auto"
+                      :rules="senderNameRules"
+                    >
+                    </v-text-field>
+                  </v-col>
+                </v-row>
 
-                  <v-row>
-                    <v-col cols="12" class="py-1">
-                      <div class="d-flex align-center justify-start">
-                        <div class="d-flex align-center">
-                          <v-icon
-                            :color="reportSettings.requestEnabled ? 'success' : 'grey'"
-                            class="mr-2"
-                            size="large"
-                          >
-                            {{ reportSettings.requestEnabled ? 'mdi-timer-outline' : 'mdi-timer-off-outline' }}
-                          </v-icon>
-                          <span class="text-subtitle-1">
-                            <span class="d-none d-sm-inline">報告依頼の自動送信は</span>現在
-                            <strong>{{ reportSettings.requestEnabled ? '有効' : '無効' }}</strong>
-                            です
-                          </span>
+                <v-card outlined class="mt-8">
+                  <v-card-title>自動送信設定</v-card-title>
+                  <v-card-text>
+                    <v-row>
+                      <v-col cols="12" md="2" class="pl-5 d-flex align-center">
+                        <span class="text-body-1">報告対象週</span>
+                      </v-col>
+                      <v-col cols="12" md="10" class="d-flex justify-start align-center">
+                        <span
+                          v-for="option in reportWeekOptions"
+                          :key="option.value"
+                          class="mr-4"
+                        >
+                          <v-radio-group v-model="reportSettings.reportWeek" row dense hide-details>
+                            <v-radio :label="option.text" :value="option.value"></v-radio>
+                          </v-radio-group>
+                        </span>
+                      </v-col>
+                    </v-row>
+
+                    <v-row>
+                      <v-col cols="12" class="py-1">
+                        <div class="d-flex align-center justify-start">
+                          <div class="d-flex align-center">
+                            <v-icon
+                              :color="reportSettings.requestEnabled ? 'success' : 'grey'"
+                              class="mr-2"
+                              size="large"
+                            >
+                              {{ reportSettings.requestEnabled ? 'mdi-timer-outline' : 'mdi-timer-off-outline' }}
+                            </v-icon>
+                            <span class="text-subtitle-1">
+                              <span class="d-none d-sm-inline">報告依頼の自動送信は</span>現在
+                              <strong>{{ reportSettings.requestEnabled ? '有効' : '無効' }}</strong>
+                              です
+                            </span>
+                          </div>
+                          <span class="mx-3"></span>
+                          <v-switch
+                            v-model="reportSettings.requestEnabled"
+                            color="primary"
+                            class="mr-3"
+                            density="compact"
+                            inset
+                            hide-details
+                          ></v-switch>
                         </div>
-                        <span class="mx-3"></span>
-                        <v-switch
-                          v-model="reportSettings.requestEnabled"
-                          color="primary"
-                          class="mr-3"
-                          density="compact"
-                          inset
-                          hide-details
-                        ></v-switch>
-                      </div>
-                    </v-col>
-                  </v-row>
+                      </v-col>
+                    </v-row>
 
-                  <v-row>
-                    <v-col cols="12" sm="4">
-                      <v-select
-                        v-model="reportSettings.requestDayOfWeek"
-                        :items="daysOfWeek"
-                        label="送信曜日"
-                        item-title="text"
-                        item-value="value"
-                        outlined
-                        dense
-                        hide-details="auto"
-                        :disabled="!reportSettings.requestEnabled"
-                      ></v-select>
-                    </v-col>
-                    <v-col cols="12" sm="4">
-                      <v-select
-                        v-model="reportSettings.requestTime"
-                        :items="hours"
-                        label="送信時間"
-                        item-title="text"
-                        item-value="value"
-                        outlined
-                        dense
-                        hide-details="auto"
-                        :disabled="!reportSettings.requestEnabled"
-                        :rules="[v => v !== null || '時間を選択してください']"
-                      >
-                        <template #prepend-inner>
-                          <v-icon>mdi-clock-outline</v-icon>
-                        </template>
-                      </v-select>
-                    </v-col>
-                  </v-row>
-                </v-card-text>
-              </v-card>
+                    <v-row>
+                      <v-col cols="12" sm="4">
+                        <v-select
+                          v-model="reportSettings.requestDayOfWeek"
+                          :items="daysOfWeek"
+                          label="送信曜日"
+                          item-title="text"
+                          item-value="value"
+                          outlined
+                          dense
+                          hide-details="auto"
+                          :disabled="!reportSettings.requestEnabled"
+                        ></v-select>
+                      </v-col>
+                      <v-col cols="12" sm="4">
+                        <v-select
+                          v-model="reportSettings.requestTime"
+                          :items="hours"
+                          label="送信時間"
+                          item-title="text"
+                          item-value="value"
+                          outlined
+                          dense
+                          hide-details="auto"
+                          :disabled="!reportSettings.requestEnabled"
+                          :rules="[v => v !== null || '時間を選択してください']"
+                        >
+                          <template #prepend-inner>
+                            <v-icon>mdi-clock-outline</v-icon>
+                          </template>
+                        </v-select>
+                      </v-col>
+                    </v-row>
+                  </v-card-text>
+                </v-card>
 
-              <v-row class="mt-2">
-                <v-col cols="12" class="d-flex justify-end">
-                  <v-btn
-                    color="primary"
-                    type="submit"
-                    :loading="loading"
-                    :disabled="!isFormValid || !isFormChanged"
+                <v-row class="mt-2">
+                  <v-col cols="12" class="d-flex justify-end">
+                    <v-btn
+                      color="primary"
+                      type="submit"
+                      :loading="loading"
+                      :disabled="!isFormValid || !isFormChanged"
+                    >
+                      <v-icon class="mr-1">mdi-check</v-icon>
+                      更新する
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </v-form>
+            </v-card-text>
+          </v-card>
+        </v-tabs-window-item>
+
+        <v-tabs-window-item value="notification">
+          <v-card class="setting-card rounded-lg">
+            <v-card-text class="px-6">
+              <p class="mt-2 mb-4">
+                メンバーの週次報告時にブラウザによるプッシュ通知を受け取ることができます。
+              </p>
+              <PushNortification></PushNortification>
+            </v-card-text>
+          </v-card>
+        </v-tabs-window-item>
+
+        <v-tabs-window-item value="advisor">
+          <v-card class="setting-card rounded-lg">
+            <v-card-text class="px-6">
+              <p class="mt-2 mb-4">
+                メンバーは選択したアドバイザーから週次報告に対するアドバイスを受け取ることができます。
+              </p>
+              <p 
+                v-if="!hasSelectedAdvisor"
+                class="text-caption mb-3 text-warning" 
+              >
+                <v-icon color="warning" size="small" class="mr-1">mdi-alert-circle</v-icon>
+                少なくとも1つのアドバイザーを選択してください
+              </p>
+              <v-row>
+                <v-col 
+                  v-for="(advisor, key) in availableAdvisors"
+                  :key="key"
+                  cols="12"
+                  sm="6"
+                  md="3"
+                >
+                  <v-card
+                    v-tooltip:bottom="advisor.description"
+                    variant="outlined"
+                    :class="['advisor-card', { 'advisor-selected': selectedAdvisors.includes(key) }]"
+                    @click="toggleAdvisor(key)"
                   >
-                    <v-icon class="mr-1">mdi-check</v-icon>
-                    更新する
-                  </v-btn>
+                    <v-img
+                      :src="advisor.image"
+                      height="120"
+                      fill
+                      class="advisor-image mx-6 mt-2"
+                    ></v-img>
+                    <v-card-item>
+                      <v-card-title class="text-subtitle-2 text-center">
+                        {{ advisor.title }}
+                      </v-card-title>
+                    </v-card-item>
+                  </v-card>
                 </v-col>
               </v-row>
-            </v-form>
-          </v-card-text>
-        </v-card>
-      </v-window-item>
-
-      <v-window-item value="notification">
-        <v-card class="setting-card rounded-lg">
-          <v-card-title>ベータ版：通知設定</v-card-title>
-          <v-card-text>
-            <p class="mt-2 mb-4">
-              メンバーの週次報告時にブラウザによるプッシュ通知を受け取ることができます。
-            </p>
-            <PushNortification></PushNortification>
-          </v-card-text>
-        </v-card>
-      </v-window-item>
-
-      <v-window-item value="advisor">
-        <v-card class="setting-card rounded-lg">
-          <v-card-title>アドバイザー設定</v-card-title>
-          <v-card-text class="px-6">
-            <p class="mt-2 mb-4">
-              メンバーは選択したアドバイザーから週次報告に対するアドバイスを受け取ることができます。
-            </p>
-            <p 
-              v-if="!hasSelectedAdvisor"
-              class="text-caption mb-3 text-warning" 
-            >
-              <v-icon color="warning" size="small" class="mr-1">mdi-alert-circle</v-icon>
-              少なくとも1つのアドバイザーを選択してください
-            </p>
-            <v-row>
-              <v-col 
-                v-for="(advisor, key) in availableAdvisors"
-                :key="key"
-                cols="12"
-                sm="6"
-                md="3"
-              >
-                <v-card
-                  v-tooltip:bottom="advisor.description"
-                  variant="outlined"
-                  :class="['advisor-card', { 'advisor-selected': selectedAdvisors.includes(key) }]"
-                  @click="toggleAdvisor(key)"
+              <div class="d-flex justify-end mt-4">
+                <v-btn
+                  color="primary"
+                  :loading="isSaving"
+                  :disabled="!hasSelectedAdvisor"
+                  @click="saveAdvisorSettings"
                 >
-                  <v-img
-                    :src="advisor.image"
-                    height="120"
-                    fill
-                    class="advisor-image mx-6 mt-2"
-                  ></v-img>
-                  <v-card-item>
-                    <v-card-title class="text-subtitle-2 text-center">
-                      {{ advisor.title }}
-                    </v-card-title>
-                  </v-card-item>
-                </v-card>
-              </v-col>
-            </v-row>
-            <div class="d-flex justify-end mt-4">
-              <v-btn
-                color="primary"
-                :loading="isSaving"
-                :disabled="!hasSelectedAdvisor"
-                @click="saveAdvisorSettings"
-              >
-                <v-icon class="mr-1">mdi-check</v-icon>
-                更新する
-              </v-btn>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-window-item>
-    </v-window>
+                  <v-icon class="mr-1">mdi-check</v-icon>
+                  更新する
+                </v-btn>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-tabs-window-item>
+      </v-tabs-window>
+    </v-card-text>
   </v-container>
 </template>
 
@@ -284,6 +281,7 @@ const isFormValid = ref(false)
 const showNotification = inject('showNotification')
 const showError = inject('showError')
 const currentPlan = computed(() => getCurrentPlan())
+const activeTab = ref('request')
 
 const useEmailVerification = () => {
   const status = ref('Pending')
@@ -499,8 +497,6 @@ onMounted(async () => {
     loading.value = false
   }
 })
-
-const activeTab = ref('mail')
 </script>
 
 <style scoped>
@@ -509,7 +505,7 @@ const activeTab = ref('mail')
 }
 
 .setting-card {
-  min-height: 530px;
+  min-height: 500px;
 }
 
 .v-radio-group {
