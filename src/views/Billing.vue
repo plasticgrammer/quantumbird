@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <v-row dense class="pb-4">
+    <v-row ref="headerRef" dense class="pb-4">
       <v-col>
         <h3>
           <v-icon size="large" class="mr-1">mdi-currency-usd</v-icon>
@@ -16,7 +16,7 @@
     />
 
     <!-- 現在のプラン情報 -->
-    <v-card>
+    <v-card ref="planCardRef">
       <v-card-title>現在のプラン</v-card-title>
       <v-card-text>
         <v-row align="center">
@@ -45,7 +45,7 @@
     <!-- 請求履歴 -->
     <v-card class="mt-4">
       <v-card-title>請求履歴</v-card-title>
-      <v-card-text>
+      <v-card-text :style="tableStyle">
         <v-table v-if="invoices.length > 0">
           <thead>
             <tr>
@@ -102,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useStore } from 'vuex'
 import { useStripe } from '../composables/useStripe'
 import { getInvoices } from '../services/paymentService'
@@ -128,6 +128,37 @@ const currentPlanPrice = computed(() => {
     return currentPlan.value.getPrice(currentSubscription.value.accountCount)
   }
   return currentPlan.value.price
+})
+
+// ref要素の追加
+const headerRef = ref(null)
+const planCardRef = ref(null)
+const tableStyle = ref({})
+
+// 高さ計算とスタイル設定
+const calculateTableHeight = () => {
+  nextTick(() => {
+    const headerHeight = headerRef.value?.$el.offsetHeight || 0
+    const planCardHeight = planCardRef.value?.$el.offsetHeight || 0
+    const padding = 80 // コンテナのパディングなどの余白
+
+    const maxHeight = `calc(100vh - ${headerHeight + planCardHeight + padding}px)`
+    tableStyle.value = {
+      maxHeight,
+      overflowY: 'auto'
+    }
+  })
+}
+
+// マウント時とウィンドウリサイズ時に高さを再計算
+onMounted(() => {
+  calculateTableHeight()
+  window.addEventListener('resize', calculateTableHeight)
+})
+
+// コンポーネント破棄時にイベントリスナーを削除
+onUnmounted(() => {
+  window.removeEventListener('resize', calculateTableHeight)
 })
 
 const fetchInvoices = async (customerId) => {

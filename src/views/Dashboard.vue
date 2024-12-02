@@ -47,6 +47,29 @@
                 ></v-switch>
               </template>
             </v-list-item>
+            <v-divider class="my-2"></v-divider>
+            <v-list-subheader>
+              並び替えするには
+              <v-icon
+                v-tooltip="{
+                  text: 'タイトル部分をドラッグして位置を変更できます。',
+                  location: 'top'
+                }"
+                class="ml-2"
+                icon="mdi-help-circle-outline"
+              ></v-icon>
+            </v-list-subheader>
+            <v-list-subheader>
+              サイズ変更するには
+              <v-icon
+                v-tooltip="{
+                  text: 'タイトル部分のダブルクリックで表示サイズを切り替えできます。',
+                  location: 'top'
+                }"
+                class="ml-2"
+                icon="mdi-help-circle-outline"
+              ></v-icon>
+            </v-list-subheader>
           </v-list>
         </v-menu>
         <v-btn
