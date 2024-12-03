@@ -110,17 +110,14 @@ const organizationId = store.getters['auth/organizationId']
 const adminId = store.getters['auth/cognitoUserSub']
 
 const iconName = computed(() => {
-  console.log('Computing iconName, isServiceWorkerReady:', isServiceWorkerReady.value)
   return isServiceWorkerReady.value ? (isSubscribed.value ? 'mdi-bell-outline' : 'mdi-bell-off-outline') : 'mdi-progress-clock'
 })
 
 const iconColor = computed(() => {
-  console.log('Computing iconColor, isServiceWorkerReady:', isServiceWorkerReady.value)
   return isServiceWorkerReady.value ? (isSubscribed.value ? 'success' : 'grey') : 'grey'
 })
 
 const statusText = computed(() => {
-  console.log('Computing statusText, isServiceWorkerReady:', isServiceWorkerReady.value)
   return isServiceWorkerReady.value ? (isSubscribed.value ? 'プッシュ通知: 有効' : 'プッシュ通知: 無効') : 'Service Worker初期化中'
 })
 

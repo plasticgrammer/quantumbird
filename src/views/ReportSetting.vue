@@ -227,6 +227,7 @@
                     v-tooltip:bottom="advisor.description"
                     variant="outlined"
                     :class="['advisor-card', { 'advisor-selected': selectedAdvisors.includes(key) }]"
+                    :elevation="selectedAdvisors.includes(key) ? 4 : 0"
                     @click="toggleAdvisor(key)"
                   >
                     <v-img
@@ -247,7 +248,7 @@
                 <v-btn
                   color="primary"
                   :loading="isSaving"
-                  :disabled="!hasSelectedAdvisor"
+                  :disabled="!hasSelectedAdvisor || !isAdvisorSettingsChanged"
                   @click="saveAdvisorSettings"
                 >
                   <v-icon class="mr-1">mdi-check</v-icon>
@@ -309,7 +310,8 @@ const useEmailVerification = () => {
       status.value = 'Checking'
       const result = await checkEmailVerification(email)
       status.value = result.status
-      if (result.status === 'Pending') {
+      // 直接の check 呼び出し時のみ通知を表示
+      if (result.status === 'Pending' && !verifying.value) {
         showNotification('メールアドレスの検証が保留中です。メールボックスを確認してください。', 'info')
       }
     } catch (error) {
@@ -327,7 +329,7 @@ const useEmailVerification = () => {
     try {
       await verifyEmailAddress(email)
       showNotification('検証メールを送信しました。メールを確認して検証を完了してください。', 'info')
-      await check(email)
+      await check(email) // check メソッドを呼び出すが、verifying フラグにより通知は表示されない
     } catch (error) {
       showError('メールアドレスの検証に失敗しました。', error)
     } finally {
@@ -427,7 +429,15 @@ const handleSubmit = async () => {
 
 // アドバイザー設定用の状態変数
 const selectedAdvisors = ref([])
+const originalAdvisors = ref([])
 const isSaving = ref(false)
+
+// アドバイザー設定が変更されたかどうかをチェック
+const isAdvisorSettingsChanged = computed(() => {
+  const currentAdvisors = [...selectedAdvisors.value].sort()
+  const originalAdvisorsList = [...originalAdvisors.value].sort()
+  return JSON.stringify(currentAdvisors) !== JSON.stringify(originalAdvisorsList)
+})
 
 // アドバイザーフィルタリング用の computed property を追加
 const availableAdvisors = computed(() => {
@@ -442,7 +452,7 @@ const availableAdvisors = computed(() => {
 // アドバイザー選択のバリデーション
 const hasSelectedAdvisor = computed(() => selectedAdvisors.value.length > 0)
 
-// アドバイザーの選択切り替え
+// アドバイザー設定の選択切り替え
 const toggleAdvisor = (advisorKey) => {
   const index = selectedAdvisors.value.indexOf(advisorKey)
   if (index === -1) {
@@ -490,6 +500,7 @@ onMounted(async () => {
       await checkEmailVerificationStatus(reportSettings.sender)
 
       selectedAdvisors.value = result.features?.advisors || defaultAdvisors
+      originalAdvisors.value = [...selectedAdvisors.value]
     }
   } catch (error) {
     showError('報告依頼設定の取得に失敗しました', error)
@@ -520,7 +531,7 @@ onMounted(async () => {
 .advisor-card {
   cursor: pointer;
   transition: all 0.3s ease;
-  border: 1px solid transparent;
+  border: 1px solid rgba(var(--v-border-color), 0.3);
   position: relative;
   border-radius: 12px;
 }

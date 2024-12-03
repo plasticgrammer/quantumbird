@@ -42,7 +42,7 @@
           <v-icon class="ml-1" size="small">mdi-chevron-right</v-icon>
         </v-btn>
 
-        <v-card class="mt-4 mb-2" elevation="0" color="indigo-lighten-5 border-md" outlined>
+        <v-card class="mt-4 mb-2" elevation="0" color="indigo-lighten-5 border-thin" outlined>
           <v-card-title>お支払い設定</v-card-title>
           <v-card-text class="px-6">
             <v-row align="center">

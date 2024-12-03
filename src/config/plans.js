@@ -7,13 +7,13 @@ export const plans = [
     priceId: 'price_free',
     name: 'フリープラン',
     price: 0,
-    features: ['基本機能が使用可', 'メンバー数最大3名', '基本アドバイザーのみ'],
+    features: ['一部機能の利用制限あり', 'メンバー数最大３名', '基本AIアドバイザーのみ'],
     adminFeatures: {
       maxMembers: 3,
       accountManagement: false
     },
     systemFeatures: {
-      weeklyReportAdvice: false,
+      weeklyReportAdvice: true,
       advisors: defaultAdvisors // デフォルトのアドバイザーのみにリセット
     }
   },
@@ -22,9 +22,9 @@ export const plans = [
     priceId: 'price_1QJSigJlLYAT4bpznFUNs5eg',
     name: 'プロプラン',
     price: 1000,
-    features: ['基本機能が使用可', 'メンバー数無制限', '全てのアドバイザー'],
+    features: ['基本機能が使用可', 'メンバー数最大１０名', '全てのAIアドバイザー'],
     adminFeatures: {
-      maxMembers: -1,
+      maxMembers: 10,
       accountManagement: false
     },
     systemFeatures: {
@@ -39,7 +39,7 @@ export const plans = [
     pricePerAccount: 500,
     getPrice: (accountCount) => 2000 + (accountCount * 500),
     priceDescription: ['+ ¥500/アカウント'],
-    features: ['基本機能が使用可', 'メンバー数無制限', '全てのアドバイザー', 'アカウント管理機能'],
+    features: ['基本機能が使用可', 'メンバー数無制限', '全てのAIアドバイザー', 'アカウント管理機能'],
     adminFeatures: {
       maxMembers: -1,
       accountManagement: true
