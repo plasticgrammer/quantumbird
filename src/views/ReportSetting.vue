@@ -191,13 +191,54 @@
           </v-card>
         </v-tabs-window-item>
 
-        <v-tabs-window-item value="notification">
+        <v-tabs-window-item value="notification" eager>
           <v-card class="setting-card rounded-lg">
             <v-card-text class="px-6">
-              <p class="mt-2 mb-4">
-                メンバーの週次報告時にブラウザによるプッシュ通知を受け取ることができます。
-              </p>
-              <PushNortification></PushNortification>
+              <template v-if="currentPlan.adminFeatures.notifications">
+                <p class="text-body-1 my-2">
+                  通知を有効にすると週次報告が送信されたときに通知を受け取ることができます。
+                </p>
+                <div>
+                  <v-switch
+                    v-model="isMailSubscribed"
+                    color="primary"
+                    hide-details
+                    inset
+                    @click="toggleMailNotification"
+                  >
+                    <template #prepend>
+                      <v-icon
+                        :color="isMailSubscribed ? 'success' : 'grey'"
+                        class="mr-1"
+                        size="large"
+                      >
+                        {{ isMailSubscribed ? 'mdi-email-outline' : 'mdi-email-off-outline' }}
+                      </v-icon>
+                      {{ isMailSubscribed ? 'メール通知: 有効' : 'メール通知: 無効' }}
+                    </template>
+                  </v-switch>
+                </div>
+
+                <PushNortification></PushNortification>
+              </template>
+              <template v-else>
+                <v-alert
+                  type="info"
+                  variant="tonal"
+                  class="mt-4 rounded-lg"
+                >
+                  <div class="d-flex align-center gap-4">
+                    <span>通知機能はプロプラン以上でご利用いただけます。</span>
+                    <v-spacer></v-spacer>
+                    <v-btn
+                      color="primary"
+                      @click="router.push({ name: 'Billing' })"
+                    >
+                      プランをアップグレード
+                    </v-btn>
+                  </div>
+                </v-alert>
+              </template>
             </v-card-text>
           </v-card>
         </v-tabs-window-item>
@@ -205,56 +246,76 @@
         <v-tabs-window-item value="advisor">
           <v-card class="setting-card rounded-lg">
             <v-card-text class="px-6">
-              <p class="mt-2 mb-4">
-                メンバーは選択したアドバイザーから週次報告に対するアドバイスを受け取ることができます。
-              </p>
-              <p 
-                v-if="!hasSelectedAdvisor"
-                class="text-caption mb-3 text-warning" 
-              >
-                <v-icon color="warning" size="small" class="mr-1">mdi-alert-circle</v-icon>
-                少なくとも1つのアドバイザーを選択してください
-              </p>
-              <v-row>
-                <v-col 
-                  v-for="(advisor, key) in availableAdvisors"
-                  :key="key"
-                  cols="12"
-                  sm="6"
-                  md="3"
+              <template v-if="currentPlan.adminFeatures.advisorSettings">
+                <p class="mt-2 mb-4">
+                  メンバーは選択したアドバイザーから週次報告に対するアドバイスを受け取ることができます。
+                </p>
+                <p 
+                  v-if="!hasSelectedAdvisor"
+                  class="text-caption mb-3 text-warning" 
                 >
-                  <v-card
-                    v-tooltip:bottom="advisor.description"
-                    variant="outlined"
-                    :class="['advisor-card', { 'advisor-selected': selectedAdvisors.includes(key) }]"
-                    :elevation="selectedAdvisors.includes(key) ? 4 : 0"
-                    @click="toggleAdvisor(key)"
+                  <v-icon color="warning" size="small" class="mr-1">mdi-alert-circle</v-icon>
+                  少なくとも1つのアドバイザーを選択してください
+                </p>
+                <v-row>
+                  <v-col 
+                    v-for="(advisor, key) in availableAdvisors"
+                    :key="key"
+                    cols="12"
+                    sm="6"
+                    md="3"
                   >
-                    <v-img
-                      :src="advisor.image"
-                      height="120"
-                      fill
-                      class="advisor-image mx-6 mt-2"
-                    ></v-img>
-                    <v-card-item>
-                      <v-card-title class="text-subtitle-2 text-center">
-                        {{ advisor.title }}
-                      </v-card-title>
-                    </v-card-item>
-                  </v-card>
-                </v-col>
-              </v-row>
-              <div class="d-flex justify-end mt-4">
-                <v-btn
-                  color="primary"
-                  :loading="isSaving"
-                  :disabled="!hasSelectedAdvisor || !isAdvisorSettingsChanged"
-                  @click="saveAdvisorSettings"
+                    <v-card
+                      v-tooltip:bottom="advisor.description"
+                      variant="outlined"
+                      :class="['advisor-card', { 'advisor-selected': selectedAdvisors.includes(key) }]"
+                      :elevation="selectedAdvisors.includes(key) ? 4 : 0"
+                      @click="toggleAdvisor(key)"
+                    >
+                      <v-img
+                        :src="advisor.image"
+                        height="120"
+                        fill
+                        class="advisor-image mx-6 mt-4"
+                      ></v-img>
+                      <v-card-item>
+                        <v-card-title class="text-subtitle-2 text-center">
+                          {{ advisor.title }}
+                        </v-card-title>
+                      </v-card-item>
+                    </v-card>
+                  </v-col>
+                </v-row>
+                <div class="d-flex justify-end mt-4">
+                  <v-btn
+                    color="primary"
+                    :loading="isSaving"
+                    :disabled="!hasSelectedAdvisor || !isAdvisorSettingsChanged"
+                    @click="saveAdvisorSettings"
+                  >
+                    <v-icon class="mr-1">mdi-check</v-icon>
+                    更新する
+                  </v-btn>
+                </div>
+              </template>
+              <template v-else>
+                <v-alert
+                  type="info"
+                  variant="tonal"
+                  class="mt-4 rounded-lg"
                 >
-                  <v-icon class="mr-1">mdi-check</v-icon>
-                  更新する
-                </v-btn>
-              </div>
+                  <div class="d-flex align-center gap-4">
+                    <span>アドバイザー設定はプロプラン以上でご利用いただけます。</span>
+                    <v-spacer></v-spacer>
+                    <v-btn
+                      color="primary"
+                      @click="router.push({ name: 'Billing' })"
+                    >
+                      プランをアップグレード
+                    </v-btn>
+                  </div>
+                </v-alert>
+              </template>
             </v-card-text>
           </v-card>
         </v-tabs-window-item>
@@ -265,6 +326,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted, inject } from 'vue'
+import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { getOrganization, updateOrganization, updateOrganizationFeatures } from '../services/organizationService'
 import { isValidEmail } from '../utils/string-utils'
@@ -273,6 +335,7 @@ import PushNortification from '../components/PushNortification.vue'
 import { advisorRoles, defaultAdvisors } from '../services/bedrockService'
 import { getCurrentPlan } from '../config/plans'
 
+const router = useRouter()
 const store = useStore()
 const organizationId = store.getters['auth/organizationId']
 const organization = ref(null)
@@ -427,6 +490,29 @@ const handleSubmit = async () => {
   }
 }
 
+const isMailSubscribed = ref(false)
+
+const toggleMailNotification = async () => {
+  if (!currentPlan.value.systemFeatures.notifications) {
+    showError('この機能はプロフェッショナルプラン以上でご利用いただけます。')
+    return
+  }
+  try {
+    const newValue = !isMailSubscribed.value
+    await updateOrganizationFeatures(organizationId, {
+      notifications: {
+        ...organization.value?.features?.notifications,
+        mailSubscribed: newValue
+      }
+    })
+    isMailSubscribed.value = newValue
+  } catch (error) {
+    showError('メール通知設定の更新に失敗しました', error)
+    // エラー時は元の値に戻す
+    isMailSubscribed.value = !isMailSubscribed.value
+  }
+}
+
 // アドバイザー設定用の状態変数
 const selectedAdvisors = ref([])
 const originalAdvisors = ref([])
@@ -454,6 +540,10 @@ const hasSelectedAdvisor = computed(() => selectedAdvisors.value.length > 0)
 
 // アドバイザー設定の選択切り替え
 const toggleAdvisor = (advisorKey) => {
+  if (!currentPlan.value.systemFeatures.weeklyReportAdvice) {
+    showError('この機能はプロフェッショナルプラン以上でご利用いただけます。')
+    return
+  }
   const index = selectedAdvisors.value.indexOf(advisorKey)
   if (index === -1) {
     selectedAdvisors.value.push(advisorKey)
@@ -501,6 +591,9 @@ onMounted(async () => {
 
       selectedAdvisors.value = result.features?.advisors || defaultAdvisors
       originalAdvisors.value = [...selectedAdvisors.value]
+
+      // メール通知設定の初期化を追加
+      isMailSubscribed.value = result.features?.notifications?.mailSubscribed ?? false
     }
   } catch (error) {
     showError('報告依頼設定の取得に失敗しました', error)
@@ -577,5 +670,15 @@ onMounted(async () => {
 
 .text-warning {
   color: rgb(var(--v-theme-warning));
+}
+
+.v-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.v-alert :deep(.v-alert__content) {
+  width: 100%;
 }
 </style>

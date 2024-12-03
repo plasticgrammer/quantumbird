@@ -10,6 +10,8 @@ export const plans = [
     features: ['一部機能の利用制限あり', 'メンバー数最大３名', '基本AIアドバイザーのみ'],
     adminFeatures: {
       maxMembers: 3,
+      notifications: false,
+      advisorSettings: false,
       accountManagement: false
     },
     systemFeatures: {
@@ -25,6 +27,8 @@ export const plans = [
     features: ['基本機能が使用可', 'メンバー数最大１０名', '全てのAIアドバイザー'],
     adminFeatures: {
       maxMembers: 10,
+      notifications: true,
+      advisorSettings: true,
       accountManagement: false
     },
     systemFeatures: {
@@ -42,6 +46,8 @@ export const plans = [
     features: ['基本機能が使用可', 'メンバー数無制限', '全てのAIアドバイザー', 'アカウント管理機能'],
     adminFeatures: {
       maxMembers: -1,
+      notifications: true,
+      advisorSettings: true,
       accountManagement: true
     },
     systemFeatures: {

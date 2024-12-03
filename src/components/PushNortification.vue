@@ -1,7 +1,7 @@
 <template>
   <v-container class="pa-0">
     <v-row align="center" justify="start" no-gutters>
-      <v-col cols="11">
+      <v-col cols="12">
         <v-switch
           v-if="notificationStatus === 'default' || notificationStatus === 'granted'"
           v-model="isSubscribed"
@@ -34,7 +34,7 @@
         </div>
       </v-col>
       
-      <v-col cols="11" class="mt-2">
+      <v-col cols="12" class="mt-2">
         <div class="text-body-2 text-grey pl-3">
           <div class="d-flex align-center mb-1">
             <v-icon size="small" class="mr-2" :color="isSubscribed ? 'success' : 'grey'">
