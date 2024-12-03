@@ -417,7 +417,7 @@ def update_members(organization_id, members):
 
     for member in members:
         existing_member = existing_members_dict.get(member.get('memberUuid'))
-        member_item = prepare_member_item(member, existing_member)
+        member_item = dynamo_items.prepare_member_item(member, existing_member)
         member_item['organizationId'] = organization_id
 
         is_new_member = existing_member is None

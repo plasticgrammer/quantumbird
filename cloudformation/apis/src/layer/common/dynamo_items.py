@@ -1,5 +1,5 @@
 import uuid
-import time
+from datetime import datetime
 from decimal import Decimal
 
 def float_to_decimal(obj):
@@ -12,7 +12,7 @@ def float_to_decimal(obj):
     return obj
 
 def prepare_weekly_report_item(report_data, existing_report=None, timezone=None):
-    now = datetime.now(timezone) if timezone else datetime.utcnow()
+    now = datetime.now() if timezone is None else datetime.now(timezone)
     current_time = now.isoformat()
 
     item = {
@@ -82,7 +82,10 @@ def prepare_organization_item(org_data, existing_org=None):
     return {k: v for k, v in updated_org.items() if v is not None}
 
 def prepare_task_item(user_id, task_data, existing_task=None, timezone=None):
-    now = datetime.now(timezone) if timezone else datetime.utcnow()
+    if existing_task is None:
+        existing_task = {}
+    
+    now = datetime.now() if timezone is None else datetime.now(timezone)
     current_time = now.isoformat()
     
     updated_task = {

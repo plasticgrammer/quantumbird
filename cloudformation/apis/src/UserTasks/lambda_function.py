@@ -57,7 +57,7 @@ def handle_get(event):
 def handle_post(event):
     user_id = event['requestContext']['authorizer']['claims']['sub']
     data = json.loads(event['body'])
-    item = dynamo_items.prepare_task_item(user_id, data, TIMEZONE)
+    item = dynamo_items.prepare_task_item(user_id, data, None, TIMEZONE)
     response = tasks_table.put_item(Item=item)
     return create_response(201, item)
 
@@ -69,7 +69,7 @@ def handle_put(event):
     existing_task = get_task(user_id, data['taskId'])
     if existing_task is None:
         return create_response(404, {'message': f"Task with id {data['taskId']} not found"})
-    item = dynamo_items.prepare_task_item(user_id, data, existing_task)
+    item = dynamo_items.prepare_task_item(user_id, data, existing_task, TIMEZONE)
     response = tasks_table.put_item(Item=item)
     return create_response(200, item)
 
