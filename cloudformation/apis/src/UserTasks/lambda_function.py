@@ -7,13 +7,14 @@ import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from common.utils import create_response
+import common.dynamo_items as dynamo_items
 
 print('Loading function')
 
+TIMEZONE = ZoneInfo(os.environ.get('TZ', 'UTC'))
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-TIMEZONE = ZoneInfo(os.environ.get('TZ', 'UTC'))
 
 # Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb')
@@ -56,7 +57,7 @@ def handle_get(event):
 def handle_post(event):
     user_id = event['requestContext']['authorizer']['claims']['sub']
     data = json.loads(event['body'])
-    item = prepare_task_item(user_id, data)
+    item = dynamo_items.prepare_task_item(user_id, data, TIMEZONE)
     response = tasks_table.put_item(Item=item)
     return create_response(201, item)
 
@@ -68,7 +69,7 @@ def handle_put(event):
     existing_task = get_task(user_id, data['taskId'])
     if existing_task is None:
         return create_response(404, {'message': f"Task with id {data['taskId']} not found"})
-    item = prepare_task_item(user_id, data, existing_task)
+    item = dynamo_items.prepare_task_item(user_id, data, existing_task)
     response = tasks_table.put_item(Item=item)
     return create_response(200, item)
 
@@ -79,23 +80,6 @@ def handle_delete(event):
         return create_response(400, {'message': 'taskId is required'})
     delete_task(user_id, params['taskId'])
     return create_response(200, {'message': 'Task deleted successfully'})
-
-def prepare_task_item(user_id, task_data, existing_task=None):
-    if existing_task is None:
-        existing_task = {}
-
-    now = datetime.now(TIMEZONE)
-    current_time = now.isoformat()
-    
-    updated_task = {
-        'userId': user_id,
-        'taskId': task_data.get('taskId', existing_task.get('taskId', str(uuid.uuid4()))),
-        'title': task_data.get('title', existing_task.get('title')),
-        'completed': task_data.get('completed', existing_task.get('completed', False)),
-        'createdAt': existing_task.get('createdAt', current_time),
-        'updatedAt': current_time
-    }
-    return {k: v for k, v in updated_task.items() if v is not None}
 
 def get_task(user_id, task_id):
     try:

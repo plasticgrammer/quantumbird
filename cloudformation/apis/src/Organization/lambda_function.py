@@ -5,6 +5,7 @@ import urllib.parse
 import os
 import uuid
 import common.publisher
+import common.dynamo_items as dynamo_items
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key
 from common.utils import create_response
@@ -108,11 +109,11 @@ def handle_get(event):
 def handle_post(event):
     data = json.loads(event['body'])
     if 'organizationId' in data:
-        item = prepare_organization_item(data)
+        item = dynamo_items.prepare_organization_item(data)
         response = organizations_table.put_item(Item=item)
         return create_response(201, {'message': 'Organization created successfully'})
     elif 'memberUuid' in data:
-        item = prepare_member_item(data)
+        item = dynamo_items.prepare_member_item(data)
         response = members_table.put_item(Item=item)
         return create_response(201, {'message': 'Member created successfully'})
     else:
@@ -126,7 +127,7 @@ def handle_put(event):
         if existing_org is None:
             existing_org = {}
             
-        org_item = prepare_organization_item(data, existing_org)
+        org_item = dynamo_items.prepare_organization_item(data, existing_org)
         organizations_table.put_item(Item=org_item)
 
         if 'members' in data:
@@ -135,7 +136,7 @@ def handle_put(event):
         return create_response(200, {'message': 'Organization and members updated successfully'})
     elif 'memberUuid' in data:
         existing_member = get_member(data['memberUuid'])
-        item = prepare_member_item(data, existing_member)
+        item = dynamo_items.prepare_member_item(data, existing_member)
         response = members_table.put_item(Item=item)
         return create_response(200, {'message': 'Member updated successfully'})
     else:
@@ -362,51 +363,6 @@ def delete_push_subscriptions(organization_id):
     except Exception as e:
         logger.error(f"Error deleting push subscriptions: {str(e)}", exc_info=True)
         raise
-
-def prepare_organization_item(org_data, existing_org=None):
-    if existing_org is None:
-        existing_org = {}
-    
-    # 既存のfeaturesを保持
-    features = existing_org.get('features', {}).copy()
-    
-    # 新しいfeaturesがある場合は更新
-    if 'features' in org_data:
-        features.update(org_data['features'])
-    
-    updated_org = {
-        'organizationId': org_data.get('organizationId', existing_org.get('organizationId')),
-        'name': org_data.get('name', existing_org.get('name')),
-        'sender': org_data.get('sender', existing_org.get('sender')),
-        'senderName': org_data.get('senderName', existing_org.get('senderName')),
-        'requestEnabled': org_data.get('requestEnabled', existing_org.get('requestEnabled')),
-        'requestTime': org_data.get('requestTime', existing_org.get('requestTime')),
-        'requestDayOfWeek': org_data.get('requestDayOfWeek', existing_org.get('requestDayOfWeek')),
-        'reportWeek': org_data.get('reportWeek', existing_org.get('reportWeek')),
-        'features': features,
-        'adminSubscriptions': existing_org.get('adminSubscriptions', {})
-    }
-    
-    if 'adminSubscriptions' in org_data:
-        updated_org['adminSubscriptions'].update(org_data['adminSubscriptions'])
-
-    return {k: v for k, v in updated_org.items() if v is not None}
-
-def prepare_member_item(member_data, existing_member=None):
-    if existing_member is None:
-        existing_member = {}
-
-    updated_member = {
-        'memberUuid': member_data.get('memberUuid', existing_member.get('memberUuid', str(uuid.uuid4()))),
-        'id': member_data.get('id', existing_member.get('id')),
-        'organizationId': member_data.get('organizationId', existing_member.get('organizationId')),
-        'name': member_data.get('name', existing_member.get('name')),
-        'email': member_data.get('email', existing_member.get('email')),
-        'extraInfo': member_data.get('extraInfo', existing_member.get('extraInfo', {})),
-        'projects': member_data.get('projects', existing_member.get('projects', [])),
-        'adviceTickets': member_data.get('adviceTickets', existing_member.get('adviceTickets', 0))
-    }
-    return {k: v for k, v in updated_member.items() if v is not None}
 
 def get_organization(organization_id):
     try:

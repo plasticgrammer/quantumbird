@@ -11,6 +11,7 @@ from dateutil.parser import parse
 from zoneinfo import ZoneInfo
 import common.publisher
 from common.utils import create_response
+import common.dynamo_items as dynamo_items
 
 print('Loading function')
 
@@ -29,15 +30,6 @@ weekly_reports_table_name = f'{stage}-WeeklyReports'
 organizations_table = dynamodb.Table(organizations_table_name)
 members_table = dynamodb.Table(members_table_name)
 weekly_reports_table = dynamodb.Table(weekly_reports_table_name)
-
-def float_to_decimal(obj):
-    if isinstance(obj, float):
-        return Decimal(str(obj))
-    elif isinstance(obj, dict):
-        return {k: float_to_decimal(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [float_to_decimal(v) for v in obj]
-    return obj
 
 def lambda_handler(event, context):
     #logger.info(f"Received event: {json.dumps(event)}")
@@ -85,7 +77,7 @@ def handle_get(event):
 
 def handle_post(event):
     report_data = json.loads(event['body'], parse_float=Decimal)
-    item = prepare_item(report_data)
+    item = dynamo_items.prepare_weekly_report_item(report_data, TIMEZONE)
     response = weekly_reports_table.put_item(Item=item)
     logger.info(f"DynamoDB response: {response}")
     return create_response(201, 'Weekly report created successfully')
@@ -116,7 +108,7 @@ def handle_put(event):
         if not existing_report:
             return create_response(404, 'Report not found')
 
-        updated_item = prepare_item(report_data, existing_report)
+        updated_item = dynamo_items.prepare_weekly_report_item(report_data, existing_report, TIMEZONE)
         response = weekly_reports_table.put_item(Item=updated_item)
         logger.info(f"DynamoDB response: {response}")
         return create_response(200, 'Weekly report updated successfully')
@@ -137,36 +129,6 @@ def handle_delete(event):
     )
     logger.info(f"DynamoDB response: {response}")
     return create_response(200, 'Weekly report deleted successfully')
-
-
-def prepare_item(report_data, existing_report=None):
-    current_time = int(time.time())
-
-    # Convert float values to Decimal
-    converted_data = float_to_decimal(report_data)
-
-    item = {
-        'memberUuid': converted_data.get('memberUuid'),
-        'weekString': converted_data.get('weekString'),
-        'organizationId': converted_data.get('organizationId'),
-        'projects': converted_data.get('projects'),
-        'overtimeHours': converted_data.get('overtimeHours'),
-        'issues': converted_data.get('issues'),
-        'improvements': converted_data.get('improvements'),
-        'rating': converted_data.get('rating', {}),
-        'stressHelp': report_data.get('stressHelp'),
-        'status': converted_data.get('status'),
-        'feedbacks': converted_data.get('feedbacks', []),
-        'approvedAt': converted_data.get('approvedAt'),
-        'createdAt': current_time
-    }
-    
-    if existing_report:
-        # 既存のレポートの内容を保持しつつ、新しいデータで上書き
-        existing_report.update(item)
-        return existing_report
-    
-    return item
 
 def get_reports_by_organization(organization_id, week_string):
     try:

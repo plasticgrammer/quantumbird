@@ -1,5 +1,3 @@
-
-
 import json
 import logging
 import boto3
@@ -8,6 +6,7 @@ import os
 import uuid
 from decimal import Decimal
 from common.utils import create_response
+import common.dynamo_items as dynamo_items
 
 print('Loading function')
 
@@ -78,7 +77,7 @@ def handle_get(event):
 def handle_post(event):
     data = json.loads(event['body'])
     if 'memberUuid' in data:
-        item = prepare_member_item(data)
+        item = dynamo_items.prepare_member_item(data)
         response = members_table.put_item(Item=item)
         logger.info(f"DynamoDB response: {response}")
         return create_response(201, {'message': 'Member created successfully'})
@@ -98,7 +97,7 @@ def handle_put(event):
             update_member_projects(member_uuid, data['projects'])
             return create_response(200, {'message': 'Member projects updated successfully'})
         else:
-            item = prepare_member_item(data)
+            item = dynamo_items.prepare_member_item(data)
             response = members_table.put_item(Item=item)
             logger.info(f"Member update response: {response}")
             return create_response(200, {'message': 'Member updated successfully'})
@@ -129,18 +128,6 @@ def handle_delete(event):
         return create_response(200, {'message': 'Member deleted successfully'})
     else:
         return create_response(400, {'message': 'Missing required parameters'})
-
-def prepare_member_item(member_data):
-    return {
-        'memberUuid': member_data.get('memberUuid', str(uuid.uuid4())),
-        'id': member_data.get('id'),
-        'organizationId': member_data['organizationId'],
-        'name': member_data.get('name'),
-        'email': member_data.get('email'),
-        'extraInfo': member_data.get('extraInfo', {}),
-        'projects': member_data.get('projects', []),
-        'adviceTickets': float_to_decimal(member_data.get('adviceTickets'))
-    }
 
 def get_member(member_uuid):
     try:

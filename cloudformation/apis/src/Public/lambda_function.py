@@ -8,6 +8,7 @@ import time
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 from common.utils import create_response
+import common.dynamo_items as dynamo_items
 
 print('Loading function')
 
@@ -102,7 +103,7 @@ def get_reports_by_organization(organization_id, week_string):
 
 def handle_post_report(event):
     report_data = json.loads(event['body'])
-    item = prepare_item(report_data)
+    item = dynamo_items.prepare_weekly_report_item(report_data)
     
     try:
         member_uuid = item['memberUuid']
@@ -159,7 +160,7 @@ def handle_put_report(event):
         if not existing_report:
             return create_response(404, 'Report not found')
 
-        updated_item = prepare_item(report_data, existing_report)
+        updated_item = dynamo_items.prepare_weekly_report_item(report_data, existing_report)
         response = weekly_reports_table.put_item(Item=updated_item)
         logger.info(f"DynamoDB response: {response}")
         
@@ -170,41 +171,6 @@ def handle_put_report(event):
     except Exception as e:
         logger.error(f"Error updating report: {str(e)}", exc_info=True)
         return create_response(500, f'Failed to update report: {str(e)}')
-
-def float_to_decimal(obj):
-    if isinstance(obj, float):
-        return Decimal(str(obj))
-    elif isinstance(obj, dict):
-        return {k: float_to_decimal(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [float_to_decimal(v) for v in obj]
-    return obj
-
-def prepare_item(report_data, existing_report=None):
-    current_time = int(time.time())
-
-    item = {
-        'memberUuid': report_data.get('memberUuid'),
-        'weekString': report_data.get('weekString'),
-        'organizationId': report_data.get('organizationId'),
-        'projects': report_data.get('projects'),
-        'overtimeHours': float_to_decimal(report_data.get('overtimeHours')),
-        'issues': report_data.get('issues'),
-        'improvements': report_data.get('improvements'),
-        'rating': report_data.get('rating', {}),
-        'stressHelp': report_data.get('stressHelp'),
-        'status': report_data.get('status'),
-        'feedbacks': report_data.get('feedbacks', []),
-        'approvedAt': report_data.get('approvedAt'),
-        'createdAt': current_time
-    }
-    
-    if existing_report:
-        # 既存のレポートの内容を保持しつつ、新しいデータで上書き
-        existing_report.update(item)
-        return existing_report
-    
-    return item
 
 def handle_get_member(event):
     params = event.get('queryStringParameters', {}) or {}
@@ -275,8 +241,9 @@ def handle_put_member(event):
             return create_response(200, {'message': 'Member projects updated successfully'})
         else:
             member = get_member(data['memberUuid'])
-            member.update(data)
-            item = prepare_member_item(member)
+            if not member:
+                return create_response(404, {'message': 'Member not found'})
+            item = dynamo_items.prepare_member_item(data, member)
             response = members_table.put_item(Item=item)
             logger.info(f"Member update response: {response}")
             return create_response(200, {'message': 'Member updated successfully'})
@@ -284,18 +251,6 @@ def handle_put_member(event):
         return handle_verify_email(data)
     else:
         return create_response(400, {'message': 'Invalid data structure'})
-
-def prepare_member_item(member_data):
-    return {
-        'memberUuid': member_data.get('memberUuid', str(uuid.uuid4())),
-        'id': member_data.get('id'),
-        'organizationId': member_data['organizationId'],
-        'name': member_data.get('name'),
-        'email': member_data.get('email'),
-        'extraInfo': member_data.get('extraInfo', {}),
-        'projects': member_data.get('projects', []),
-        'adviceTickets': float_to_decimal(member_data.get('adviceTickets'))
-    }
 
 def update_member_projects(member_uuid, projects):
     try:
@@ -333,18 +288,6 @@ def get_organization(organization_id):
         logger.error(f"Error getting organization: {str(e)}", exc_info=True)
         return None
 
-def prepare_organization_item(org_data):
-    return {
-        'organizationId': org_data.get('organizationId'),
-        'name': org_data.get('name'),
-        'sender': org_data.get('sender'),
-        'senderName': org_data.get('senderName'),
-        'requestEnabled': org_data.get('requestEnabled'),
-        'requestTime': org_data.get('requestTime'),
-        'requestDayOfWeek': org_data.get('requestDayOfWeek'),
-        'reportWeek': org_data.get('reportWeek')
-    }
-
 def handle_get_organization(event):
     params = event.get('queryStringParameters', {}) or {}
     if 'organizationId' in params:
@@ -356,7 +299,7 @@ def handle_get_organization(event):
 def handle_post_organization(event):
     data = json.loads(event['body'])
     if 'organizationId' in data:
-        item = prepare_organization_item(data)
+        item = dynamo_items.prepare_organization_item(data)
         response = organizations_table.put_item(Item=item)
         return create_response(201, {'message': 'Organization created successfully'})
     else:
