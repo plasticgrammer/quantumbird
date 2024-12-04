@@ -1,26 +1,24 @@
 <template>
-  <BaseWidget
-    :widget-id="widgetId"
-    :title="title"
-    icon="mdi-chart-line"
-  >
+  <BaseWidget :widget-id="widgetId" :title="title" icon="mdi-chart-line">
     <template #header-append>
       <v-checkbox
         v-if="chartData.datasets?.length > 3"
-        v-model="isTop3"
+        v-model="isRecentTop3"
+        v-tooltip:top="'直近のデータを重視して上位3件を表示'"
         color="blue-grey-lighten-3"
         density="compact"
         hide-details
       >
         <template #label>
-          <span class="text-body-2">上位3件のみ</span>
+          <span class="text-body-2">直近上位3件</span>
         </template>
       </v-checkbox>
     </template>
     <LineChart 
       :chart-data="chartData" 
       :options="chartOptions" 
-      :is-top3="isTop3"
+      :is-top3="isRecentTop3"
+      :average-options="averageOptions"
     />
   </BaseWidget>
 </template>
@@ -61,7 +59,7 @@ const props = defineProps({
   }
 })
 
-const isTop3 = ref(true)
+const isRecentTop3 = ref(true)
 
 const chartOptions = computed(() => ({
   yAxis: {
@@ -69,6 +67,11 @@ const chartOptions = computed(() => ({
     max: props.max,
     ...props.yAxisConfig
   }
+}))
+
+const averageOptions = computed(() => ({
+  useExponential: isRecentTop3.value,
+  alpha: 0.3
 }))
 </script>
 

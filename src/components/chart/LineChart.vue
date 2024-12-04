@@ -32,6 +32,10 @@ const props = defineProps({
   isTop3: {
     type: Boolean,
     default: true
+  },
+  averageOptions: {
+    type: Object,
+    default: () => ({})
   }
 })
 
@@ -53,6 +57,7 @@ function updateChart() {
     chartData: props.chartData,
     isTop3: props.isTop3,
     options: props.options,
+    averageOptions: props.averageOptions,
     onError: handleError
   })
   totalCount.value = props.chartData.datasets?.length || 0
@@ -65,6 +70,7 @@ onMounted(() => {
     chartData: props.chartData,
     options: chartOptions,
     isTop3: props.isTop3,
+    averageOptions: props.averageOptions,
     onError: handleError
   })
   totalCount.value = props.chartData.datasets?.length || 0
@@ -78,7 +84,12 @@ onUnmounted(() => {
 })
 
 watch(
-  [() => props.options, () => props.chartData, () => props.isTop3],
+  [
+    () => props.options, 
+    () => props.chartData, 
+    () => props.isTop3,
+    () => props.averageOptions
+  ],
   updateChart,
   { deep: true }
 )
