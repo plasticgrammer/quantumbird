@@ -43,6 +43,12 @@ const routes = [
     meta: { hideNavigation: true, hideAnimation: true }
   },
   {
+    path: '/signup',
+    name: 'SignUp',
+    component: SignIn,
+    meta: { hideNavigation: true, hideAnimation: true }
+  },
+  {
     path: '/admin',
     name: 'Overview',
     component: Overview,

@@ -166,7 +166,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import { termsOfServiceUrl, privacyPolicyUrl, termsOfServiceVersion, privacyPolicyVersion } from '../config/environment'
 import { 
@@ -181,9 +181,10 @@ import { getOrganization, submitOrganization } from '../services/publicService'
 
 const router = useRouter()
 const store = useStore()
+const route = useRoute()
 
 // State
-const currentView = ref('signIn')
+const currentView = ref(route.path === '/signup' ? 'signUp' : 'signIn')
 const signInEmail = ref('')
 const signInPassword = ref('')
 const signUpEmail = ref('')
