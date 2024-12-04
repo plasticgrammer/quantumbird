@@ -499,17 +499,14 @@ const handleSubmit = async () => {
 const isMailSubscribed = ref(false)
 
 const toggleMailNotification = async () => {
-  if (!currentPlan.value.systemFeatures.notifications) {
-    showError('この機能はプロフェッショナルプラン以上でご利用いただけます。')
+  if (!currentPlan.value.adminFeatures.notifications) {
+    showError('この機能はプロプラン以上でご利用いただけます。')
     return
   }
   try {
     const newValue = !isMailSubscribed.value
     await updateOrganizationFeatures(organizationId, {
-      notifications: {
-        ...organization.value?.features?.notifications,
-        mailSubscribed: newValue
-      }
+      mailSubscribed: newValue
     })
     isMailSubscribed.value = newValue
   } catch (error) {
@@ -547,7 +544,7 @@ const hasSelectedAdvisor = computed(() => selectedAdvisors.value.length > 0)
 // アドバイザー設定の選択切り替え
 const toggleAdvisor = (advisorKey) => {
   if (!currentPlan.value.systemFeatures.weeklyReportAdvice) {
-    showError('この機能はプロフェッショナルプラン以上でご利用いただけます。')
+    showError('この機能はプロプラン以上でご利用いただけます。')
     return
   }
   const index = selectedAdvisors.value.indexOf(advisorKey)
@@ -599,7 +596,7 @@ onMounted(async () => {
       originalAdvisors.value = [...selectedAdvisors.value]
 
       // メール通知設定の初期化を追加
-      isMailSubscribed.value = result.features?.notifications?.mailSubscribed ?? false
+      isMailSubscribed.value = result.features?.mailSubscribed ?? false
     }
   } catch (error) {
     showError('報告依頼設定の取得に失敗しました', error)

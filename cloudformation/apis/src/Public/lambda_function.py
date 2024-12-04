@@ -3,10 +3,8 @@ import logging
 import boto3
 from boto3.dynamodb.conditions import Key
 import os
-import uuid
-import time
-from decimal import Decimal
 from zoneinfo import ZoneInfo
+import common.publisher
 from common.utils import create_response
 import common.dynamo_items as dynamo_items
 
@@ -35,8 +33,13 @@ weekly_reports_table = dynamodb.Table(weekly_reports_table_name)
 ADVICE_TICKETS_MAX = 3
 ADVICE_TICKETS_INCREMENT = 3
 
+# Cognitoクライアントの初期化
+USER_POOL_REGION = os.environ.get('USER_POOL_REGION', 'ap-southeast-2')
+cognito = boto3.client('cognito-idp', region_name=USER_POOL_REGION)
+USER_POOL_ID = os.environ.get('USER_POOL_ID')
+
 def lambda_handler(event, context):
-    logger.info(f"Received event: {json.dumps(event)}")
+    #logger.info(f"Received event: {json.dumps(event)}")
     try:
         http_method = event['httpMethod']
         resource = event['resource']
@@ -305,11 +308,50 @@ def handle_post_organization(event):
     else:
         return create_response(400, {'message': 'Invalid data structure'})
 
+def get_admin_emails(organization_id):
+    """組織の管理者のメールアドレスを取得"""
+    try:
+        # Filterの構文: "attribute_name ^= \"value\""
+        filter_expression = f'custom:organizationId = "{organization_id}" and custom:role = "admin"'
+        logger.info(f"Cognito filter: {filter_expression}")
+        response = cognito.list_users(
+            UserPoolId=USER_POOL_ID,
+            # 検索対象の属性を指定
+            AttributesToGet=[
+                'email',
+                'custom:organizationId'
+            ]
+        )
+        logger.info(f"Cognito response: {response}")
+        
+        admin_emails = set()
+        for user in response.get('Users', []):
+            is_org_member = False
+            email = None
+            
+            for attr in user.get('Attributes', []):
+                if attr['Name'] == 'custom:organizationId' and attr['Value'] == organization_id:
+                    is_org_member = True
+                elif attr['Name'] == 'email':
+                    email = attr['Value']
+                
+                if is_org_member and email:
+                    admin_emails.add(email)
+                    break
+
+        logger.info(f"Found admin emails: {admin_emails}")
+        return list(admin_emails)
+    except Exception as e:
+        logger.error(f"Error getting admin emails: {str(e)}", exc_info=True)
+        return []
+
 def send_push_notification_to_admins(organization_id, notification_type, report_data):
     try:
         organization = organizations_table.get_item(Key={'organizationId': organization_id})
-        admin_subscriptions = organization['Item'].get('adminSubscriptions', {})
+        org_item = organization['Item']
+        admin_subscriptions = org_item.get('adminSubscriptions', {})
         
+        # プッシュ通知とメール通知の内容を準備
         notification = {
             'type': notification_type,
             'reportData': {
@@ -318,7 +360,37 @@ def send_push_notification_to_admins(organization_id, notification_type, report_
                 'status': report_data['status']
             }
         }
+
+        # メール通知用の内容を準備
+        member = get_member(report_data['memberUuid'])
+        if not member:
+            logger.error(f"Member not found: {report_data['memberUuid']}")
+            return
+
+        sendFrom = common.publisher.get_from_address(org_item)
+        subject = "【週次報告システム】新しい報告が提出されました"
+        bodyText = f"組織名：{org_item['name']}\n\n"
+        bodyText += f"{member.get('name', 'Unknown')}さん が{report_data['weekString']}の週次報告を提出しました。\n"
+        bodyText += "下記リンクより報告内容をご確認ください。\n"
         
+        # 管理者確認用のリンクを生成
+        admin_link = f"{BASE_URL}/admin/reports/{report_data['weekString']}"
+        bodyText += admin_link
+
+        # 管理者へのメール送信処理
+        if org_item.get('features', {}).get('mailSubscribed'):
+            # 管理者メールアドレスを取得
+            admin_emails = get_admin_emails(organization_id)
+            if admin_emails:
+                try:
+                    logger.info(f"Send mail from: {sendFrom}, to: {admin_emails}")
+                    common.publisher.send_mail(sendFrom, admin_emails, subject, bodyText)
+                except Exception as e:
+                    logger.error(f"Error sending admin notification email: {str(e)}", exc_info=True)
+            else:
+                logger.warning(f"No admin emails found for organization: {organization_id}")
+
+        # プッシュ通知の送信（既存のコード）
         for admin_id, endpoint_arn in admin_subscriptions.items():
             try:
                 sns_client.publish(

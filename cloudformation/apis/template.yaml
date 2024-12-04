@@ -112,10 +112,21 @@ Resources:
               Action:
                 - sns:Publish
               Resource: !Ref WebPushPlatformApplicationArn
+            - Effect: Allow
+              Action:
+                - ses:SendRawEmail
+                - ses:SendEmail
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - cognito-idp:ListUsers
+              Resource: !Sub "arn:aws:cognito-idp:${UserPoolRegion}:${AWS::AccountId}:userpool/${UserPoolId}"
       Description: "Handles public endpoints for any datas without requiring authentication"
       Environment:
         Variables:
           STAGE: !Ref Stage
+          USER_POOL_ID: !Ref UserPoolId
+          USER_POOL_REGION: !Ref UserPoolRegion
       Layers:
         - !Ref CommonLayer
       Events:

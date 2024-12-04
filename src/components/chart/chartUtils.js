@@ -41,7 +41,7 @@ export const createBaseOptions = (config = {}) => ({
 const getExponentialAverage = (data, alpha = 0.3) => {
   const validValues = data.filter(val => val !== null && val !== undefined && !isNaN(Number(val)))
   if (validValues.length === 0) return 0
-  
+
   let ema = Number(validValues[0])
   for (let i = 1; i < validValues.length; i++) {
     ema = alpha * Number(validValues[i]) + (1 - alpha) * ema
@@ -58,24 +58,19 @@ const getValidAverage = (data) => {
 export const getFilteredData = (datasets, isTop3, options = {}) => {
   if (!datasets?.length || !isTop3) return datasets || []
 
-  const { useExponential = false, alpha = 0.3 } = options
-
-  // デバッグ用のログ出力
-  console.log('Filtering with:', { useExponential, alpha })
+  const {
+    useExponential = false,
+    alpha = 0.35 // 最新データに指定値の重み、必要に応じて0.1-0.5の範囲で調整可能
+  } = options
 
   const sortedDatasets = [...datasets]
     .sort((a, b) => {
-      const aAvg = useExponential ? 
-        getExponentialAverage(a.data, alpha) : 
+      const aAvg = useExponential ?
+        getExponentialAverage(a.data, alpha) :
         getValidAverage(a.data)
-      const bAvg = useExponential ? 
-        getExponentialAverage(b.data, alpha) : 
+      const bAvg = useExponential ?
+        getExponentialAverage(b.data, alpha) :
         getValidAverage(b.data)
-
-      // デバッグ用のログ出力
-      console.log(`Average for ${a.label}: ${aAvg}`)
-      console.log(`Average for ${b.label}: ${bAvg}`)
-
       return bAvg - aAvg
     })
     .slice(0, 3)
