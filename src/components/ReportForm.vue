@@ -8,12 +8,12 @@
 
     <template v-else>
       <template v-if="isReportConfirmed">
-        <v-alert type="info" color="blue-grey" border="start" class="mt-2 mb-6">
+        <v-alert type="info" color="blue-grey" border="start" class="mt-2 mb-6 rounded-lg" variant="tonal">
           この報告は管理者が確認済みです。編集はできません。
         </v-alert>
       </template>
       <template v-else-if="weekString === getCurrentWeekString()">
-        <v-alert type="info" color="light-blue" border="start" class="mt-2 mb-6" closable>
+        <v-alert type="info" color="light-blue" border="start" class="mt-2 mb-6 rounded-lg" variant="tonal" closable>
           報告対象期間が終了していません。問題なければ報告を行ってください。
         </v-alert>
       </template>

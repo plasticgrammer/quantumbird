@@ -3,7 +3,7 @@
     <v-row dense class="pb-3">
       <v-col>
         <v-card 
-          class="mt-6 mx-auto pa-2 text-center"
+          class="mt-6 mx-auto pa-2 text-center rounded-lg"
           max-width="640"
         >
           <v-card-title class="text-h5">

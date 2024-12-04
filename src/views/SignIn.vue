@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <v-card max-width="500" class="mx-auto mt-6">
+    <v-card max-width="500" class="mx-auto mt-6 px-4 rounded-lg">
       <v-card-title class="mt-1 mb-4">
         <div class="text-center mb-5">
           <h1 class="logo-font">fluxweek</h1>

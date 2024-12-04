@@ -231,6 +231,7 @@
                     <span>通知機能はプロプラン以上でご利用いただけます。</span>
                     <v-spacer></v-spacer>
                     <v-btn
+                      v-if="!isMobile"
                       color="primary"
                       @click="router.push({ name: 'Billing' })"
                     >
@@ -308,6 +309,7 @@
                     <span>アドバイザー設定はプロプラン以上でご利用いただけます。</span>
                     <v-spacer></v-spacer>
                     <v-btn
+                      v-if="!isMobile"
                       color="primary"
                       @click="router.push({ name: 'Billing' })"
                     >
@@ -328,24 +330,28 @@
 import { ref, reactive, computed, watch, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { getOrganization, updateOrganization, updateOrganizationFeatures } from '../services/organizationService'
-import { isValidEmail } from '../utils/string-utils'
-import { checkEmailVerification, verifyEmailAddress } from '../services/sesService'
 import PushNortification from '../components/PushNortification.vue'
+import { getOrganization, updateOrganization, updateOrganizationFeatures } from '../services/organizationService'
+import { checkEmailVerification, verifyEmailAddress } from '../services/sesService'
 import { advisorRoles, defaultAdvisors } from '../services/bedrockService'
+import { isValidEmail } from '../utils/string-utils'
 import { getCurrentPlan } from '../config/plans'
+import { useResponsive } from '../composables/useResponsive'
 
 const router = useRouter()
 const store = useStore()
-const organizationId = store.getters['auth/organizationId']
-const organization = ref(null)
+const showNotification = inject('showNotification')
+const showError = inject('showError')
+
 const form = ref(null)
 const loading = ref(false)
 const isFormValid = ref(false)
-const showNotification = inject('showNotification')
-const showError = inject('showError')
-const currentPlan = computed(() => getCurrentPlan())
 const activeTab = ref('request')
+
+const currentPlan = computed(() => getCurrentPlan())
+const organization = ref(null)
+const organizationId = store.getters['auth/organizationId']
+const { isMobile } = useResponsive()
 
 const useEmailVerification = () => {
   const status = ref('Pending')
