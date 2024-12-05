@@ -80,9 +80,9 @@ def get_existing_subscription(organization_id, admin_id):
     try:
         response = organizations_table.get_item(
             Key={'organizationId': organization_id},
-            ProjectionExpression='adminSubscriptions'
+            ProjectionExpression='features.notifySubscriptions'
         )
-        admin_subscriptions = response.get('Item', {}).get('adminSubscriptions', {})
+        admin_subscriptions = response.get('Item', {}).get('features', {}).get('notifySubscriptions', {})
         return admin_subscriptions.get(admin_id)
     except Exception as e:
         logger.error(f"Error getting existing subscription: {str(e)}", exc_info=True)
@@ -340,10 +340,10 @@ def delete_push_subscriptions(organization_id):
     """組織のプッシュ通知登録を削除"""
     try:
         org = get_organization(organization_id)
-        if not org or 'adminSubscriptions' not in org:
+        if not org or 'features' not in org or 'notifySubscriptions' not in org['features']:
             return 0
 
-        admin_subscriptions = org.get('adminSubscriptions', {})
+        admin_subscriptions = org['features'].get('notifySubscriptions', {})
         deleted_count = 0
 
         for admin_id, endpoint_arn in admin_subscriptions.items():
@@ -578,11 +578,11 @@ def create_sns_endpoint(fcm_token, organization_id, admin_id):
 
 def update_organization_subscription(organization_id, admin_id, endpoint_arn):
     try:
-        # まず、adminSubscriptions 属性が存在するか確認
+        # まず、features.notifySubscriptions 属性が存在するか確認
         response = organizations_table.update_item(
             Key={'organizationId': organization_id},
-            UpdateExpression="SET adminSubscriptions.#adminId = :endpoint",
-            ConditionExpression="attribute_exists(adminSubscriptions)",
+            UpdateExpression="SET features.notifySubscriptions.#adminId = :endpoint",
+            ConditionExpression="attribute_exists(features.notifySubscriptions)",
             ExpressionAttributeNames={'#adminId': admin_id},
             ExpressionAttributeValues={':endpoint': endpoint_arn},
             ReturnValues="UPDATED_NEW"
@@ -591,20 +591,20 @@ def update_organization_subscription(organization_id, admin_id, endpoint_arn):
         return response
     except ClientError as e:
         if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
-            # adminSubscriptions 属性が存在しない場合、新しく作成
+            # features.notifySubscriptions 属性が存在しない場合、新しく作成
             try:
                 response = organizations_table.update_item(
                     Key={'organizationId': organization_id},
-                    UpdateExpression="SET adminSubscriptions = :subscriptions",
+                    UpdateExpression="SET features.notifySubscriptions = :subscriptions",
                     ExpressionAttributeValues={
                         ':subscriptions': {admin_id: endpoint_arn}
                     },
                     ReturnValues="UPDATED_NEW"
                 )
-                logger.info(f"Created new adminSubscriptions for organization {organization_id}, admin {admin_id}")
+                logger.info(f"Created new features.notifySubscriptions for organization {organization_id}, admin {admin_id}")
                 return response
             except ClientError as inner_e:
-                logger.error(f"Failed to create adminSubscriptions: {str(inner_e)}")
+                logger.error(f"Failed to create features.notifySubscriptions: {str(inner_e)}")
                 raise
         else:
             logger.error(f"Failed to update organization subscription: {str(e)}")
@@ -636,8 +636,8 @@ def remove_organization_subscription(organization_id, admin_id):
     try:
         response = organizations_table.update_item(
             Key={'organizationId': organization_id},
-            UpdateExpression="REMOVE adminSubscriptions.#adminId",
-            ConditionExpression="attribute_exists(adminSubscriptions) AND attribute_exists(adminSubscriptions.#adminId)",
+            UpdateExpression="REMOVE features.notifySubscriptions.#adminId",
+            ConditionExpression="attribute_exists(features.notifySubscriptions) AND attribute_exists(features.notifySubscriptions.#adminId)",
             ExpressionAttributeNames={'#adminId': admin_id},
             ReturnValues="UPDATED_OLD"
         )

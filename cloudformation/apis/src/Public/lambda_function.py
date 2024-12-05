@@ -311,33 +311,40 @@ def handle_post_organization(event):
 def get_admin_emails(organization_id):
     """組織の管理者のメールアドレスを取得"""
     try:
-        # Filterの構文: "attribute_name ^= \"value\""
-        filter_expression = f'custom:organizationId = "{organization_id}" and custom:role = "admin"'
-        logger.info(f"Cognito filter: {filter_expression}")
-        response = cognito.list_users(
-            UserPoolId=USER_POOL_ID,
-            # 検索対象の属性を指定
-            AttributesToGet=[
-                'email',
-                'custom:organizationId'
-            ]
-        )
-        logger.info(f"Cognito response: {response}")
-        
         admin_emails = set()
-        for user in response.get('Users', []):
-            is_org_member = False
-            email = None
+        pagination_token = None
+        
+        # カスタム属性ではフィルタリングできないため、全ユーザーを取得してフィルタリング
+        while True:
+            # ページネーショントークンの有無で引数を変える
+            kwargs = {
+                'UserPoolId': USER_POOL_ID,
+                'AttributesToGet': ['email', 'custom:organizationId']
+            }
+            if pagination_token:
+                kwargs['PaginationToken'] = pagination_token
             
-            for attr in user.get('Attributes', []):
-                if attr['Name'] == 'custom:organizationId' and attr['Value'] == organization_id:
-                    is_org_member = True
-                elif attr['Name'] == 'email':
-                    email = attr['Value']
+            response = cognito.list_users(**kwargs)
+            logger.info(f"Cognito response: {response}")
+            
+            for user in response.get('Users', []):
+                is_org_member = False
+                email = None
                 
-                if is_org_member and email:
-                    admin_emails.add(email)
-                    break
+                for attr in user.get('Attributes', []):
+                    if attr['Name'] == 'custom:organizationId' and attr['Value'] == organization_id:
+                        is_org_member = True
+                    elif attr['Name'] == 'email':
+                        email = attr['Value']
+                    
+                    if is_org_member and email:
+                        admin_emails.add(email)
+                        break
+            
+            # 次のページがあるかチェック
+            pagination_token = response.get('PaginationToken')
+            if not pagination_token:
+                break
 
         logger.info(f"Found admin emails: {admin_emails}")
         return list(admin_emails)
@@ -349,7 +356,8 @@ def send_push_notification_to_admins(organization_id, notification_type, report_
     try:
         organization = organizations_table.get_item(Key={'organizationId': organization_id})
         org_item = organization['Item']
-        admin_subscriptions = org_item.get('adminSubscriptions', {})
+        features = org_item.get('features', {})
+        admin_subscriptions = features.get('notifySubscriptions', {})
         
         # プッシュ通知とメール通知の内容を準備
         notification = {
@@ -378,7 +386,7 @@ def send_push_notification_to_admins(organization_id, notification_type, report_
         bodyText += admin_link
 
         # 管理者へのメール送信処理
-        if org_item.get('features', {}).get('mailSubscribed'):
+        if features.get('notifyByEmail'):
             # 管理者メールアドレスを取得
             admin_emails = get_admin_emails(organization_id)
             if admin_emails:
@@ -428,7 +436,7 @@ def remove_admin_subscription(organization_id, admin_id):
     try:
         organizations_table.update_item(
             Key={'organizationId': organization_id},
-            UpdateExpression="REMOVE adminSubscriptions.#adminId",
+            UpdateExpression="REMOVE notifySubscriptions.#adminId",
             ExpressionAttributeNames={'#adminId': admin_id}
         )
     except Exception as e:

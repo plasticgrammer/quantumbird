@@ -1,6 +1,11 @@
 import store from '@/store'
 import { defaultAdvisors } from '../services/bedrockService'
 
+/*
+ * プラン定義
+ * - 管理者機能の制御は adminFeatures にて設定
+ * - 組織情報として更新する必要があるものは organizationFeatures にて設定
+ */
 export const plans = [
   {
     planId: 'free',
@@ -14,8 +19,10 @@ export const plans = [
       advisorSettings: false,
       accountManagement: false
     },
-    systemFeatures: {
+    organizationFeatures: {
       weeklyReportAdvice: true,
+      notifyByEmail: false, // メール通知なしにリセット
+      notifySubscriptions: {}, // ブラウザ通知なしにリセット
       advisors: defaultAdvisors // デフォルトのアドバイザーのみにリセット
     }
   },
@@ -31,7 +38,7 @@ export const plans = [
       advisorSettings: true,
       accountManagement: false
     },
-    systemFeatures: {
+    organizationFeatures: {
       weeklyReportAdvice: true
     }
   },
@@ -50,7 +57,7 @@ export const plans = [
       advisorSettings: true,
       accountManagement: true
     },
-    systemFeatures: {
+    organizationFeatures: {
       weeklyReportAdvice: true
     }
   }

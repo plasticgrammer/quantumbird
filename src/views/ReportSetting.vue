@@ -200,7 +200,7 @@
                 </p>
                 <div>
                   <v-switch
-                    v-model="isMailSubscribed"
+                    v-model="isNotifyByEmail"
                     color="primary"
                     hide-details
                     inset
@@ -208,13 +208,13 @@
                   >
                     <template #prepend>
                       <v-icon
-                        :color="isMailSubscribed ? 'success' : 'grey'"
+                        :color="isNotifyByEmail ? 'success' : 'grey'"
                         class="mr-1"
                         size="large"
                       >
-                        {{ isMailSubscribed ? 'mdi-email-outline' : 'mdi-email-off-outline' }}
+                        {{ isNotifyByEmail ? 'mdi-email-outline' : 'mdi-email-off-outline' }}
                       </v-icon>
-                      {{ isMailSubscribed ? 'メール通知: 有効' : 'メール通知: 無効' }}
+                      {{ isNotifyByEmail ? 'メール通知: 有効' : 'メール通知: 無効' }}
                     </template>
                   </v-switch>
                 </div>
@@ -496,7 +496,7 @@ const handleSubmit = async () => {
   }
 }
 
-const isMailSubscribed = ref(false)
+const isNotifyByEmail = ref(false)
 
 const toggleMailNotification = async () => {
   if (!currentPlan.value.adminFeatures.notifications) {
@@ -504,15 +504,15 @@ const toggleMailNotification = async () => {
     return
   }
   try {
-    const newValue = !isMailSubscribed.value
+    const newValue = !isNotifyByEmail.value
     await updateOrganizationFeatures(organizationId, {
-      mailSubscribed: newValue
+      notifyByEmail: newValue
     })
-    isMailSubscribed.value = newValue
+    isNotifyByEmail.value = newValue
   } catch (error) {
     showError('メール通知設定の更新に失敗しました', error)
     // エラー時は元の値に戻す
-    isMailSubscribed.value = !isMailSubscribed.value
+    isNotifyByEmail.value = !isNotifyByEmail.value
   }
 }
 
@@ -530,7 +530,7 @@ const isAdvisorSettingsChanged = computed(() => {
 
 // アドバイザーフィルタリング用の computed property を追加
 const availableAdvisors = computed(() => {
-  if (currentPlan.value.systemFeatures.weeklyReportAdvice) {
+  if (currentPlan.value.organizationFeatures.weeklyReportAdvice) {
     return advisorRoles
   }
   return Object.fromEntries(
@@ -543,7 +543,7 @@ const hasSelectedAdvisor = computed(() => selectedAdvisors.value.length > 0)
 
 // アドバイザー設定の選択切り替え
 const toggleAdvisor = (advisorKey) => {
-  if (!currentPlan.value.systemFeatures.weeklyReportAdvice) {
+  if (!currentPlan.value.organizationFeatures.weeklyReportAdvice) {
     showError('この機能はプロプラン以上でご利用いただけます。')
     return
   }
@@ -596,7 +596,7 @@ onMounted(async () => {
       originalAdvisors.value = [...selectedAdvisors.value]
 
       // メール通知設定の初期化を追加
-      isMailSubscribed.value = result.features?.mailSubscribed ?? false
+      isNotifyByEmail.value = result.features?.notifyByEmail ?? false
     }
   } catch (error) {
     showError('報告依頼設定の取得に失敗しました', error)

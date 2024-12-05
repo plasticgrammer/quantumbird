@@ -59,9 +59,16 @@ def prepare_organization_item(org_data, existing_org=None):
     # 既存のfeaturesを保持
     features = existing_org.get('features', {}).copy()
     
-    # 新しいfeaturesがある場合は更新
     if 'features' in org_data:
-        features.update(org_data['features'])
+        new_features = org_data['features']
+        
+        # notifySubscriptionsの特別処理
+        if 'notifySubscriptions' in new_features:
+            existing_subscriptions = features.get('notifySubscriptions', {})
+            existing_subscriptions.update(new_features['notifySubscriptions'])
+            new_features['notifySubscriptions'] = existing_subscriptions
+        
+        features.update(new_features)
     
     updated_org = {
         'organizationId': org_data.get('organizationId', existing_org.get('organizationId')),
@@ -72,12 +79,8 @@ def prepare_organization_item(org_data, existing_org=None):
         'requestTime': org_data.get('requestTime', existing_org.get('requestTime')),
         'requestDayOfWeek': org_data.get('requestDayOfWeek', existing_org.get('requestDayOfWeek')),
         'reportWeek': org_data.get('reportWeek', existing_org.get('reportWeek')),
-        'features': features,
-        'adminSubscriptions': existing_org.get('adminSubscriptions', {})
+        'features': features
     }
-    
-    if 'adminSubscriptions' in org_data:
-        updated_org['adminSubscriptions'].update(org_data['adminSubscriptions'])
 
     return {k: v for k, v in updated_org.items() if v is not None}
 

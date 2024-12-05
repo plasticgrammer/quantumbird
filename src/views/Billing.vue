@@ -215,7 +215,7 @@ const handlePaymentSuccess = async () => {
     if (!currentPlan) {
       throw new Error('Invalid plan')
     }
-    await updateOrganizationFeatures(organizationId, currentPlan.systemFeatures)
+    await updateOrganizationFeatures(organizationId, currentPlan.organizationFeatures)
     
     if (currentSubscription.value?.stripeCustomerId) {
       await fetchInvoices(currentSubscription.value.stripeCustomerId)
