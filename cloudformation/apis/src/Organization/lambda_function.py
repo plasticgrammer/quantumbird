@@ -526,30 +526,73 @@ def handle_push_subscription(event):
 
         logger.info(f"Handling push subscription for organization {organization_id}, admin {admin_id}")
 
-        # 既存のトークンを取得
+        # 既存のトークンを確認と必要に応じて削除
         existing_endpoint_arn = get_existing_subscription(organization_id, admin_id)
         if existing_endpoint_arn:
-            existing_token = get_token_from_endpoint(existing_endpoint_arn)
-            if existing_token == fcm_token:
-                logger.info(f"Token for admin {admin_id} in organization {organization_id} is already up to date")
-                return create_response(200, {'message': 'Token is already up to date', 'endpointArn': existing_endpoint_arn})
+            try:
+                existing_token = get_token_from_endpoint(existing_endpoint_arn)
+                if existing_token == fcm_token:
+                    # 既存のトークンが同じ場合は有効性を確認
+                    if check_endpoint_validity(existing_endpoint_arn):
+                        logger.info(f"Token for admin {admin_id} is already up to date and valid")
+                        return create_response(200, {
+                            'message': 'Token is already up to date',
+                            'endpointArn': existing_endpoint_arn
+                        })
+                # 既存のエンドポイントを削除
+                delete_sns_endpoint(existing_endpoint_arn)
+            except Exception as e:
+                logger.warning(f"Error handling existing endpoint: {str(e)}")
+                # エラーが発生しても続行（新しいエンドポイントを作成）
 
-        endpoint_arn = create_sns_endpoint(fcm_token, organization_id, admin_id)
-        logger.info(f"Created SNS endpoint: {endpoint_arn}")
+        # トランザクション的な処理
+        try:
+            # 新しいSNSエンドポイントを作成
+            endpoint_arn = create_sns_endpoint(fcm_token, organization_id, admin_id)
+            logger.info(f"Created SNS endpoint: {endpoint_arn}")
 
-        update_result = update_organization_subscription(organization_id, admin_id, endpoint_arn)
-        logger.info(f"Update result: {update_result}")
+            # DynamoDBを更新
+            update_result = update_organization_subscription(organization_id, admin_id, endpoint_arn)
+            logger.info(f"Update result: {update_result}")
 
-        return create_response(200, {'message': 'Subscription saved successfully', 'endpointArn': endpoint_arn})
-    except ValueError as e:
-        logger.error(f"Invalid request data: {str(e)}")
-        return create_response(400, {'message': f"Invalid request data: {str(e)}"})
-    except ClientError as e:
-        logger.error(f"AWS service error: {str(e)}")
-        return create_response(500, {'message': f"AWS service error: {str(e)}"})
+            return create_response(200, {
+                'message': 'Subscription saved successfully',
+                'endpointArn': endpoint_arn
+            })
+        except Exception as e:
+            # エラーが発生した場合、作成したエンドポイントを削除
+            if 'endpoint_arn' in locals():
+                try:
+                    delete_sns_endpoint(endpoint_arn)
+                except Exception as cleanup_error:
+                    logger.error(f"Failed to cleanup endpoint after error: {cleanup_error}")
+            raise
+
     except Exception as e:
         logger.error(f"Unexpected error in handle_push_subscription: {str(e)}", exc_info=True)
         return create_response(500, {'message': f"Internal server error: {str(e)}"})
+
+def check_endpoint_validity(endpoint_arn):
+    """SNSエンドポイントの有効性を確認"""
+    try:
+        response = sns_client.get_endpoint_attributes(
+            EndpointArn=endpoint_arn
+        )
+        return response['Attributes']['Enabled'] == 'true'
+    except ClientError as e:
+        logger.error(f"Failed to check endpoint validity: {str(e)}")
+        return False
+
+def delete_sns_endpoint(endpoint_arn):
+    """SNSエンドポイントを削除"""
+    try:
+        sns_client.delete_endpoint(
+            EndpointArn=endpoint_arn
+        )
+        logger.info(f"Successfully deleted SNS endpoint: {endpoint_arn}")
+    except ClientError as e:
+        logger.error(f"Failed to delete SNS endpoint: {str(e)}")
+        raise
 
 def get_token_from_endpoint(endpoint_arn):
     try:
