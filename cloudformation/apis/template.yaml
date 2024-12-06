@@ -410,6 +410,7 @@ Resources:
     Properties:
       FunctionName: !Sub "${Stage}-send-request"
       CodeUri: ./src/SendRequest
+      Timeout: 60
       Policies:
         - AmazonDynamoDBFullAccess
         - Statement:

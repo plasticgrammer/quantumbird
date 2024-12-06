@@ -66,11 +66,22 @@
                         v-if="isValidEmail(reportSettings.sender) && emailVerificationStatus !== 'Success' && emailVerificationStatus !== 'Checking'"
                         color="secondary"
                         small
+                        class="mr-2"
                         prepend-icon="mdi-card-account-mail"
                         :loading="verifyingEmail"
                         @click="verifyEmail(reportSettings.sender)"
                       >
                         メールアドレスを検証する
+                      </v-btn>
+                      <v-btn
+                        v-if="isValidEmail(reportSettings.sender) && emailVerificationStatus === 'Pending'"
+                        color="info"
+                        small
+                        variant="outlined"
+                        prepend-icon="mdi-refresh"
+                        @click="checkEmailVerificationStatus(reportSettings.sender)"
+                      >
+                        検証状態を確認
                       </v-btn>
                     </div>
                   </v-col>

@@ -352,6 +352,10 @@ def get_admin_emails(organization_id):
         logger.error(f"Error getting admin emails: {str(e)}", exc_info=True)
         return []
 
+def join_url_paths(*parts):
+    """Join URL parts ensuring proper forward slashes"""
+    return '/'.join(str(p).strip('/') for p in parts)
+
 def send_push_notification_to_admins(organization_id, notification_type, report_data):
     try:
         organization = organizations_table.get_item(Key={'organizationId': organization_id})
@@ -378,11 +382,11 @@ def send_push_notification_to_admins(organization_id, notification_type, report_
         sendFrom = common.publisher.get_from_address(org_item)
         subject = "【週次報告システム】新しい報告が提出されました"
         bodyText = f"組織名：{org_item['name']}\n\n"
-        bodyText += f"{member.get('name', 'Unknown')}さん が{report_data['weekString']}の週次報告を提出しました。\n"
+        bodyText += f"{member.get('name', 'Unknown')}さん が {report_data['weekString']} の週次報告を提出しました。\n"
         bodyText += "下記リンクより報告内容をご確認ください。\n"
         
         # 管理者確認用のリンクを生成
-        admin_link = f"{BASE_URL}/admin/reports/{report_data['weekString']}"
+        admin_link = join_url_paths(BASE_URL, 'admin/reports', report_data['weekString'])
         bodyText += admin_link
 
         # 管理者へのメール送信処理
