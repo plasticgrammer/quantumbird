@@ -54,6 +54,7 @@ jobs:
           VUE_APP_COGNITO_DOMAIN: ${{ secrets.APP_COGNITO_DOMAIN }}
           VUE_APP_API_ENDPOINT: ${{ secrets.VUE_APP_API_ENDPOINT }}
           VUE_APP_FIREBASE_API_KEY: ${{ secrets.VUE_APP_FIREBASE_API_KEY }}
+          VUE_APP_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VUE_APP_STRIPE_PUBLISHABLE_KEY }}
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
