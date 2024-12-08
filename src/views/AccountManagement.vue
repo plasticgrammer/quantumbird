@@ -53,7 +53,7 @@
                 :disabled="loading"
                 @click="handleResendInvitation(item)"
               >
-                <v-icon>mdi-email-send</v-icon>
+                <v-icon>mdi-email</v-icon>
               </v-btn>
               <v-btn
                 icon
@@ -134,6 +134,7 @@ import { ref, inject, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { isValidEmail, validateOrganizationId } from '../utils/string-utils'
 import { createAccount, getAccounts, deleteAccount, resendInvitation } from '../services/accountService'
+import { deleteOrganizationCompletely } from '../services/organizationService'
 
 const store = useStore()
 const form = ref(null)
@@ -231,15 +232,19 @@ const handleDeleteAccount = async (accountItem) => {
   
   const confirmed = await showConfirmDialog(
     '確認',
-    `${organizationName}のアカウントを削除しますか？\nこの操作は取り消せません。`
+    `${organizationName}のアカウントと組織情報を削除しますか？\nこの操作は取り消せません。`
   )
   if (!confirmed) return
 
   loading.value = true
   try {
-    // organizationIdをJSONとして送信
+    
+    // Cognitoユーザーを削除
     await deleteAccount(accountItem.organizationId)
-    showNotification('アカウントを削除しました')
+    // 組織情報とすべての関連データを削除
+    await deleteOrganizationCompletely(accountItem.organizationId)
+
+    showNotification('アカウントと組織情報を削除しました')
     await loadAccounts()
   } catch (error) {
     showError('アカウントの削除に失敗しました', error)

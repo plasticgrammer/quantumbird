@@ -55,16 +55,75 @@ def enrich_user_with_organization(user):
             user['organizationName'] = org.get('name') or org.get('organizationName')
     return user
 
+def resend_invitation(user_pool_id, organization_id, email, cognito_client):
+    """招待メールを再送信する"""
+    try:
+        response = cognito_client.admin_create_user(
+            UserPoolId=user_pool_id,
+            Username=email,  # メールアドレスをUsernameとして使用
+            MessageAction='RESEND'
+        )
+        return response['User']
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'UserNotFoundException':
+            raise ApplicationException(404, 'ユーザーが見つかりません')
+        raise ApplicationException(500, f"招待メールの再送信に失敗しました: {str(e)}")
+
 def lambda_handler(event, context):
     try:
+        path = event.get('path', '')
         http_method = event['httpMethod']
-        # Cognitoの認証情報から組織IDを取得
-        requester_claims = event.get('requestContext', {}).get('authorizer', {}).get('claims', {})
-        requester_organization_id = requester_claims.get('custom:organizationId')
+        
+        # 招待メール再送信用のエンドポイント
+        if path.endswith('/resend-invitation'):
+            if http_method != 'POST':  # POSTメソッドのみ許可
+                return create_response(405, {'message': 'Method not allowed'})
+                
+            body = json.loads(event.get('body', '{}'))
+            email = body.get('email')
+            if not email:
+                raise ApplicationException(400, 'email is required')
 
-        if not requester_organization_id:
-            raise ApplicationException(401, '組織IDが取得できません')
+            # メールアドレスからユーザーを検索（修正）
+            try:
+                response = cognito.list_users(
+                    UserPoolId=USER_POOL_ID,
+                    Filter=f'email = "{email}"'
+                )
+                target_users = response.get('Users', [])
+            except Exception as e:
+                raise ApplicationException(500, f"ユーザー検索に失敗しました: {str(e)}")
+            
+            if not target_users:
+                raise ApplicationException(404, 'ユーザーが見つかりません')
+            
+            target_user = target_users[0]  # 最初のユーザーを使用
+            
+            # ユーザー属性から必要な情報を取得
+            user_email = email  # 入力されたメールアドレスを使用
+            organization_id = None
+            for attr in target_user.get('Attributes', []):
+                if attr['Name'] == 'custom:organizationId':
+                    organization_id = attr['Value']
+                    break
+            
+            if not organization_id:
+                raise ApplicationException(500, 'ユーザーの組織IDが見つかりません')
+            
+            result = resend_invitation(
+                user_pool_id=USER_POOL_ID,
+                organization_id=organization_id,
+                email=user_email,  # メールアドレスを追加
+                cognito_client=cognito
+            )
 
+            return create_response(200, {
+                'message': '招待メールを再送信しました',
+                'email': email,
+                'organizationId': organization_id
+            })
+
+        # 既存のエンドポイント処理
         if http_method == 'POST':
             body = json.loads(event['body'])
             # 親組織IDが自分の組織IDと一致することを確認

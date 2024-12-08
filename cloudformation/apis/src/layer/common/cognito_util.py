@@ -31,8 +31,7 @@ def admin_create_user(user_pool_id, email, organization_id, organization_name, p
         response = cognito_client.admin_create_user(
             UserPoolId=user_pool_id,
             Username=email,
-            UserAttributes=user_attributes,
-            MessageAction='SUPPRESS'
+            UserAttributes=user_attributes
         )
         return {
             'username': response['User']['Username'],

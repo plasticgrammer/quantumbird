@@ -30,5 +30,6 @@ export const getAccounts = async (params) => {
 }
 
 export const resendInvitation = async (email) => {
-  return apiClient.post(`${BASE_PATH}/resend-invitation`, { email })
+  const response = await apiClient.post(`${BASE_PATH}/resend-invitation`, { email })
+  return response.data
 }

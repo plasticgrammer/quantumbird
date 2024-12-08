@@ -583,6 +583,11 @@ Resources:
                 - cognito-idp:AdminGetUser
                 - cognito-idp:AdminInitiateAuth
               Resource: !Sub "arn:aws:cognito-idp:${UserPoolRegion}:${AWS::AccountId}:userpool/${UserPoolId}"
+            - Effect: Allow
+              Action:
+                - ses:SendRawEmail
+                - ses:SendEmail
+              Resource: "*"
       Description: "Manages account operations"
       Environment:
         Variables:
@@ -598,6 +603,14 @@ Resources:
             RestApiId: !Ref ApiGatewayApi
             Path: /account
             Method: ANY
+            Auth:
+              Authorizer: CognitoAuthorizer
+        ResendInvitationApi: # 追加
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /account/resend-invitation
+            Method: POST
             Auth:
               Authorizer: CognitoAuthorizer
 
