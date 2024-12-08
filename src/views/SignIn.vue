@@ -118,7 +118,7 @@
         </v-form>
 
         <!-- 確認コードフォーム -->
-        <v-form v-else @submit.prevent="confirmSignUpUser">
+        <v-form v-else-if="currentView === 'confirm'" @submit.prevent="confirmSignUpUser">
           <v-text-field
             v-model="confirmEmail"
             label="メールアドレス"
@@ -149,6 +149,39 @@
           </v-btn>
         </v-form>
 
+        <!-- パスワード変更フォーム -->
+        <v-form v-else-if="currentView === 'changePassword'" @submit.prevent="handleChangePassword">
+          <v-text-field
+            v-model="newPassword"
+            label="新しいパスワード"
+            type="password"
+            required
+            :rules="[
+              v => !!v || 'パスワードは必須です',
+              v => v.length >= 8 || 'パスワードは8文字以上である必要があります'
+            ]"
+          />
+          <v-text-field
+            v-model="confirmNewPassword"
+            label="新しいパスワード（確認）"
+            type="password"
+            required
+            :rules="[
+              v => !!v || 'パスワードの確認は必須です',
+              v => v === newPassword || 'パスワードが一致しません'
+            ]"
+          />
+          <v-btn
+            color="primary"
+            type="submit"
+            block
+            class="mt-4"
+            :loading="loading"
+          >
+            パスワードを変更
+          </v-btn>
+        </v-form>
+
         <v-card-actions>
           <v-spacer />
           <v-btn
@@ -173,9 +206,8 @@ import {
   signIn, 
   signUp, 
   confirmSignUp, 
-  resendSignUpCode, 
-  signOut, 
-  getCurrentUser,
+  resendSignUpCode,
+  confirmSignIn
 } from '@aws-amplify/auth'
 import { getOrganization, submitOrganization } from '../services/publicService'
 import { validateOrganizationId } from '../utils/string-utils'
@@ -194,6 +226,8 @@ const organizationId = ref('')
 const organizationName = ref('')
 const confirmEmail = ref('')
 const confirmCode = ref('')
+const newPassword = ref('')
+const confirmNewPassword = ref('')
 const loading = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
@@ -206,7 +240,8 @@ const title = computed(() => {
   const titles = {
     signIn: 'サインイン',
     signUp: 'サインアップ',
-    confirm: '確認コードの入力'
+    confirm: '確認コードの入力',
+    changePassword: 'パスワード変更'
   }
   return titles[currentView.value] || ''
 })
@@ -215,7 +250,8 @@ const toggleButtonText = computed(() => {
   const texts = {
     signIn: 'アカウントを作成',
     signUp: 'サインインに戻る',
-    confirm: 'サインインに戻る'
+    confirm: 'サインインに戻る',
+    changePassword: 'サインインに戻る'
   }
   return texts[currentView.value] || ''
 })
@@ -233,15 +269,37 @@ const handleSignIn = async () => {
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    const currentUser = await getCurrentUser().catch(() => null)
-    if (currentUser) {
-      await signOut()
-      console.info('既存のセッションからサインアウトしました。')
+    const signInResult = await signIn({ 
+      username: signInEmail.value, 
+      password: signInPassword.value 
+    })
+    
+    console.log('SignIn result:', signInResult) // デバッグログ
+
+    // 仮パスワードでのサインインの場合
+    if (signInResult.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+      currentView.value = 'changePassword'
+      // セッション情報を保持
+      sessionStorage.setItem('requiresNewPassword', 'true')
+      sessionStorage.setItem('tempUsername', signInEmail.value)
+      return
     }
-    await signIn({ username: signInEmail.value, password: signInPassword.value })
-    await store.dispatch('auth/fetchUser')
-    router.push('/admin')
+
+    // 通常のサインイン成功の場合
+    try {
+      await store.dispatch('auth/fetchUser')
+      await router.push('/admin')
+    } catch (fetchError) {
+      console.error('User fetch error:', fetchError)
+      if (fetchError.message?.includes('NEW_PASSWORD_REQUIRED')) {
+        currentView.value = 'changePassword'
+        return
+      }
+      throw fetchError
+    }
+
   } catch (error) {
+    console.error('SignIn error:', error)
     handleAuthError(error)
   } finally {
     loading.value = false
@@ -335,17 +393,84 @@ const resendConfirmationCode = async () => {
   }
 }
 
+const handleChangePassword = async () => {
+  if (newPassword.value !== confirmNewPassword.value) {
+    errorMessage.value = 'パスワードが一致しません'
+    return
+  }
+
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    if (sessionStorage.getItem('requiresNewPassword') === 'true') {
+      // 仮パスワードによるサインインの場合の処理
+      const username = sessionStorage.getItem('tempUsername')
+      await confirmSignIn({
+        challengeResponse: newPassword.value,
+        options: {
+          userAttributes: {
+            name: username // Add name attribute
+          }
+        }
+      })
+      await store.dispatch('auth/fetchUser')
+      await router.push('/admin')
+    } else {
+      // 通常のパスワード変更の処理
+      await store.dispatch('auth/updatePassword', {
+        oldPassword: signInPassword.value,
+        newPassword: newPassword.value
+      })
+    }
+
+    sessionStorage.removeItem('requiresNewPassword')
+    sessionStorage.removeItem('tempUsername')
+    successMessage.value = 'パスワードが正常に変更されました'
+    currentView.value = 'signIn'
+    newPassword.value = ''
+    confirmNewPassword.value = ''
+    signInPassword.value = ''
+  } catch (error) {
+    console.error('Password change error:', error)
+    errorMessage.value = error.message || 'パスワードの変更に失敗しました'
+  } finally {
+    loading.value = false
+  }
+}
+
 const handleAuthError = (error) => {
+  console.log('Auth error type:', error.name) // デバッグログ
+  console.log('Auth error message:', error.message) // デバッグログ
+
   const errorMessages = {
     UserAlreadyAuthenticatedException: '既にサインインしています。一度サインアウトしてから再試行してください。',
-    UserNotConfirmedException: 'ユーザーアカウントが確認されていません。確認コードを入力してください。',
+    UserNotConfirmedException: 'ユーザーアカウントが確認されていません。���認コードを入力してください。',
     NotAuthorizedException: 'メールアドレスまたはパスワードが正しくありません。',
-    UserNotFoundException: 'このメールアドレスに対応するアカウントが見つかりません。'
+    UserNotFoundException: 'このメールアドレスに対応するアカウントが見つかりません。',
+    NewPasswordRequiredException: '初回ログインのため、パスワードの変更が必要です。',
+    PasswordResetRequiredException: 'パスワードのリセットが必要です。'
   }
-  errorMessage.value = errorMessages[error.name] || `サインインに失敗しました: ${error.message}`
+
+  // 確認コード入力が必要な場合
   if (error.name === 'UserNotConfirmedException') {
+    confirmEmail.value = signInEmail.value
     currentView.value = 'confirm'
+    errorMessage.value = errorMessages[error.name]
+    return
   }
+
+  // パスワード変更が必要な場合の処理を修正
+  if (error.name === 'NewPasswordRequiredException' || 
+      error.message?.includes('NEW_PASSWORD_REQUIRED')) {
+    currentView.value = 'changePassword'
+    return
+  }
+
+  // エラーメッセージの設定
+  errorMessage.value = errorMessages[error.name] || 
+    error.message || 
+    'サインインに失敗しました。入力内容を確認してください。'
 }
 
 const toggleView = () => {

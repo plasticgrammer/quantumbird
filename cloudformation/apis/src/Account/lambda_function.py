@@ -74,6 +74,12 @@ def lambda_handler(event, context):
         path = event.get('path', '')
         http_method = event['httpMethod']
         
+        # Cognitoの認証情報から組織IDを取得
+        requester_claims = event.get('requestContext', {}).get('authorizer', {}).get('claims', {})
+        requester_organization_id = requester_claims.get('custom:organizationId')
+        if not requester_organization_id:
+            raise ApplicationException(401, '組織IDが必要です')
+
         # 招待メール再送信用のエンドポイント
         if path.endswith('/resend-invitation'):
             if http_method != 'POST':  # POSTメソッドのみ許可

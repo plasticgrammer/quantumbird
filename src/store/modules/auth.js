@@ -10,7 +10,10 @@ const AUTH_CONSTANTS = {
     GENERIC: 'エラーが発生しました',
     DELETE_ACCOUNT: 'アカウントの削除中にエラーが発生しました',
     NO_TOKEN: '認証情報が見つかりません。再度ログインしてください',
-    SUBSCRIPTION_UPDATE: 'サブスクリプション情報の更新権限がありません。管理者に連絡してください'
+    SUBSCRIPTION_UPDATE: 'サブスクリプション情報の更新権限がありません。管理者に連絡してください',
+    TEMP_PASSWORD: '初回ログインのため、パスワードの変更が必要です',
+    PASSWORD_RESET: 'パスワードのリセットが必要です',
+    PASSWORD_CHANGE_REQUIRED: '仮パスワードでのログインのため、パスワードの変更が必要です'
   }
 }
 
@@ -23,15 +26,19 @@ const createErrorHandler = (prefix) => (error) => {
 }
 
 const mapErrorMessage = (error) => {
-  if (error.name === 'NotAuthorizedException') {
-    return error.message.includes('unauthorized attribute')
-      ? AUTH_CONSTANTS.ERROR_MESSAGES.SUBSCRIPTION_UPDATE
-      : AUTH_CONSTANTS.ERROR_MESSAGES.AUTH
+  const errorMap = {
+    NotAuthorizedException: (msg) =>
+      msg.includes('unauthorized attribute')
+        ? AUTH_CONSTANTS.ERROR_MESSAGES.SUBSCRIPTION_UPDATE
+        : AUTH_CONSTANTS.ERROR_MESSAGES.AUTH,
+    LimitExceededException: () => AUTH_CONSTANTS.ERROR_MESSAGES.RATE_LIMIT,
+    UserNotConfirmedException: () => 'メールアドレスの確認が完了していません。',
+    UserNotFoundException: () => 'このメールアドレスに対応するアカウントが見つかりません。',
+    InvalidParameterException: () => '入力内容が正しくありません。',
+    default: (msg) => msg || AUTH_CONSTANTS.ERROR_MESSAGES.GENERIC
   }
-  if (error.name === 'LimitExceededException') {
-    return AUTH_CONSTANTS.ERROR_MESSAGES.RATE_LIMIT
-  }
-  return error.message || AUTH_CONSTANTS.ERROR_MESSAGES.GENERIC
+
+  return (errorMap[error.name] || errorMap.default)(error.message)
 }
 
 export default {
@@ -106,12 +113,21 @@ export default {
   actions: {
     async fetchUser({ commit, state, dispatch }) {
       try {
+        // キャッシュチェック
         if (state.user && Date.now() - state.lastUserFetch < AUTH_CONSTANTS.CACHE_DURATION) {
-          await dispatch('validateToken')
-          return state.user
+          const isValid = await dispatch('validateToken').catch(() => false)
+          if (isValid) return state.user
         }
 
         const attributes = await fetchUserAttributes()
+        const session = await fetchAuthSession()
+
+        // セッション状態の確認
+        if (session.challengeName === 'NEW_PASSWORD_REQUIRED') {
+          throw new Error(AUTH_CONSTANTS.ERROR_MESSAGES.PASSWORD_CHANGE_REQUIRED)
+        }
+
+        // ユーザー情報の設定
         const userInfo = {
           organizationId: attributes['custom:organizationId'],
           username: attributes.name,
@@ -124,32 +140,27 @@ export default {
         commit('setUser', userInfo)
         commit('setCognitoUserSub', attributes.sub)
 
-        // Stripe顧客IDが存在する場合、サブスクリプション情報を取得
+        // サブスクリプション情報の取得
         if (attributes['custom:stripeCustomerId']) {
-          const { data } = await dispatch('fetchSubscriptionInfo', attributes['custom:stripeCustomerId'])
-          commit('setSubscription', {
-            ...data,
-            stripeCustomerId: attributes['custom:stripeCustomerId'] // 顧客IDを維持
-          })
-        } else {
-          commit('setSubscription', {
-            planId: 'free',
-            accountCount: 0,
-            subscriptionId: null,
-            stripeCustomerId: null
-          })
+          try {
+            const { data } = await dispatch('fetchSubscriptionInfo', attributes['custom:stripeCustomerId'])
+            commit('setSubscription', {
+              ...data,
+              stripeCustomerId: attributes['custom:stripeCustomerId']
+            })
+          } catch (error) {
+            console.error('Subscription fetch error:', error)
+          }
         }
 
         return userInfo
+
       } catch (error) {
-        createErrorHandler('fetching user')(error)
-        commit('setUser', null)
-        commit('setCognitoUserSub', null)
+        commit('clearAuthState')
         throw error
       }
     },
 
-    // Stripeからサブスクリプション情報を取得
     async fetchSubscriptionInfo({ commit }, customerId) {
       try {
         const response = await getSubscriptionInfo(customerId)
@@ -165,6 +176,7 @@ export default {
       try {
         const { tokens } = await fetchAuthSession({ forceRefresh })
         if (!tokens?.idToken) {
+          commit('clearAuthState')
           throw new Error(AUTH_CONSTANTS.ERROR_MESSAGES.NO_TOKEN)
         }
 
@@ -172,41 +184,59 @@ export default {
         commit('setToken', token)
         return token
       } catch (error) {
-        createErrorHandler('fetching auth token')(error)
-
-        // トークンのリフレッシュを試行
-        try {
-          const { tokens } = await fetchAuthSession({ forceRefresh: true })
-          if (!tokens?.idToken) {
-            throw new Error(AUTH_CONSTANTS.ERROR_MESSAGES.NO_TOKEN)
-          }
-
-          const token = tokens.idToken.toString()
-          commit('setToken', token)
-          return token
-        } catch (refreshError) {
-          createErrorHandler('refreshing auth token')(refreshError)
-          await dispatch('handleAuthFailure')
-          throw refreshError
+        // 特殊なエラー状態の判定を最初に行う
+        if (error.name === 'NewPasswordRequiredException' ||
+          error.name === 'PasswordResetRequiredException') {
+          // 特殊なエラーの場合は状態をクリアせずにそのまま伝播
+          throw error
         }
+
+        console.error('Error fetching auth token:', error)
+        commit('clearAuthState')
+
+        // リフレッシュを試みる前に特殊なエラーでないことを確認
+        if (!error.message?.includes('needs to be authenticated')) {
+          try {
+            const { tokens } = await fetchAuthSession({ forceRefresh: true })
+            if (tokens?.idToken) {
+              const token = tokens.idToken.toString()
+              commit('setToken', token)
+              return token
+            }
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError)
+          }
+        }
+
+        await dispatch('handleAuthFailure', { error })
+        throw error
       }
     },
 
-    async validateToken({ dispatch }) {
+    async validateToken({ dispatch, state }) {
       try {
-        // トークンの有効性を確認
+        if (!state.token) {
+          return await dispatch('fetchAuthToken', { forceRefresh: true })
+        }
         await fetchAuthSession()
+        return state.token
       } catch (error) {
-        createErrorHandler('validating token')(error)
-
-        // トークンが無効な場合、再取得を試行
-        await dispatch('fetchAuthToken', { forceRefresh: true })
+        console.error('Token validation failed:', error)
+        return await dispatch('fetchAuthToken', { forceRefresh: true })
       }
     },
 
-    async handleAuthFailure({ dispatch }) {
-      console.log('Authentication failure, signing out...')
+    async handleAuthFailure({ dispatch }, { error } = {}) {
+      // 特殊なエラーの場合は、そのまま上位に伝播
+      if (error?.name === 'NewPasswordRequiredException') {
+        return Promise.reject(error)
+      }
+      if (error?.name === 'PasswordResetRequiredException') {
+        return Promise.reject(error)
+      }
+
       await dispatch('signOut')
+      throw new Error(AUTH_CONSTANTS.ERROR_MESSAGES.AUTH)
     },
 
     async signOut({ commit }) {
@@ -278,14 +308,12 @@ export default {
 
     async updateSubscriptionAttributes({ commit, dispatch }, { stripeCustomerId }) {
       try {
-        // CognitoのstripeCustomerIdを更新
         await updateUserAttributes({
           userAttributes: {
             'custom:stripeCustomerId': stripeCustomerId || ''
           }
         })
 
-        // Stripeから最新のサブスクリプション情報を取得
         if (stripeCustomerId) {
           const { data } = await dispatch('fetchSubscriptionInfo', stripeCustomerId)
           commit('setSubscription', {
@@ -293,7 +321,6 @@ export default {
             stripeCustomerId
           })
         } else {
-          // stripeCustomerIdがない場合はフリープラン状態にリセット
           commit('setSubscription', {
             planId: 'free',
             accountCount: 0,
@@ -307,7 +334,29 @@ export default {
         createErrorHandler('updating subscription info')(error)
         throw new Error(mapErrorMessage(error))
       }
-    }
+    },
+
+    async completeNewPassword({ dispatch, state }, { newPassword }) {
+      try {
+        const { confirmSignIn } = await import('@aws-amplify/auth')
+        await confirmSignIn({
+          challengeResponse: newPassword,
+          options: {
+            userAttributes: {
+              name: state.user?.email || '' // Use email as name if no username is available
+            }
+          }
+        })
+
+        // パスワード変更後に自動的にサインインを完了
+        await dispatch('fetchUser')
+        return { success: true }
+      } catch (error) {
+        createErrorHandler('completing new password')(error)
+        throw new Error(mapErrorMessage(error))
+      }
+    },
+
   },
 
   getters: {
