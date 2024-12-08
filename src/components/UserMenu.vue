@@ -26,7 +26,17 @@
     >
       <v-list class="pa-0 brightness120" :bg-color="bgColor">
         <v-list-item>
-          <v-list-item-title class="text-body-2 py-2 opacity-60">{{ user.email }}</v-list-item-title>
+          <v-list-item-title class="text-body-2 py-2 opacity-80">
+            <div>{{ user.email }}</div>
+            <v-btn
+              prepend-icon="mdi-card-account-details-outline"
+              class="px-2"
+              variant="plain"
+              @click="router.push({ name: 'Billing' })"
+            >
+              {{ currentPlan.name }}
+            </v-btn>
+          </v-list-item-title>
         </v-list-item>
         <v-divider></v-divider>
         <v-list-item
@@ -34,13 +44,6 @@
           title="アカウント設定"
           link
           @click="navigateToAccounttSetting"
-        >
-        </v-list-item>
-        <v-list-item
-          prepend-icon="mdi-currency-usd"
-          title="支払い設定"
-          link
-          @click="router.push({ name: 'Billing' })"
         >
         </v-list-item>
         <v-list-item
@@ -103,6 +106,7 @@ import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { feedbackUrl, termsOfServiceUrl, privacyPolicyUrl, specifiedCommercialTransactionsUrl } from '@/config/environment'
+import { getCurrentPlan } from '../config/plans'
 
 defineProps({
   modelValue: {
@@ -127,6 +131,8 @@ const user = computed(() => ({
   username: store.getters['auth/name'],
   email: store.getters['auth/email']
 }))
+
+const currentPlan = computed(() => getCurrentPlan())
 
 const handleMouseEnter = () => {
   emit('update:modelValue', true)

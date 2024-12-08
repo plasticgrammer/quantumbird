@@ -75,13 +75,13 @@
           </v-col>
           <v-col cols="12" sm="4">
             <v-text-field
-              v-model="account.organizationId"
+              v-model="organizationId"
               label="組織ID"
               outlined
               dense
-              :rules="[v => !!v || '組織IDは必須です']"
+              :rules="[validateOrganizationId]"
               required
-              @input="validateForm"
+              @input="clearErrorMessage"
             />
           </v-col>
           <v-col cols="12" sm="4">
@@ -131,17 +131,18 @@
 
 <script setup>
 import { ref, inject, onMounted } from 'vue'
-import { isValidEmail } from '../utils/string-utils'
+import { useStore } from 'vuex'
+import { isValidEmail, validateOrganizationId } from '../utils/string-utils'
 import { createAccount, getAccounts, deleteAccount, resendInvitation } from '../services/accountService'
 
+const store = useStore()
 const form = ref(null)
 const showConfirmDialog = inject('showConfirmDialog')
 const showNotification = inject('showNotification')
 const showError = inject('showError')
 
-// Replace reactive state with individual refs
+const organizationId = ref('')
 const account = ref({
-  organizationId: '',
   organizationName: '',
   email: ''
 })
@@ -180,10 +181,17 @@ const validateForm = async () => {
   isFormValid.value = validation.valid
 }
 
+const clearErrorMessage = () => {
+  // Clear any error messages if needed
+  validateForm()
+}
+
+const currentOrganizationId = store.getters['auth/organizationId']
+
 const loadAccounts = async () => {
   loading.value = true
   try {
-    accounts.value = await getAccounts()
+    accounts.value = await getAccounts({ parentOrganizationId: currentOrganizationId })
   } catch (error) {
     showError('アカウント情報の取得に失敗しました', error)
   } finally {
@@ -196,11 +204,21 @@ const handleSubmit = async () => {
 
   loading.value = true
   try {
-    await createAccount(account.value)
+    await createAccount({
+      organizationId: organizationId.value,
+      ...account.value,
+      parentOrganizationId: currentOrganizationId
+    })
     showNotification('アカウントを作成しました')
     await loadAccounts()
-    account.value = { organizationId: '', organizationName: '', email: '' }
+    // フォームをリセット
+    organizationId.value = ''
+    account.value = { organizationName: '', email: '' }
     isFormValid.value = false
+    // フォームの検証状態をリセット
+    if (form.value) {
+      form.value.reset()
+    }
   } catch (error) {
     showError('アカウントの作成に失敗しました', error)
   } finally {
@@ -209,14 +227,17 @@ const handleSubmit = async () => {
 }
 
 const handleDeleteAccount = async (accountItem) => {
+  const organizationName = accountItem.organizationName || accountItem.organizationId || '未設定'
+  
   const confirmed = await showConfirmDialog(
     '確認',
-    `${accountItem.organizationName}のアカウントを削除しますか？\nこの操作は取り消せません。`
+    `${organizationName}のアカウントを削除しますか？\nこの操作は取り消せません。`
   )
   if (!confirmed) return
 
   loading.value = true
   try {
+    // organizationIdをJSONとして送信
     await deleteAccount(accountItem.organizationId)
     showNotification('アカウントを削除しました')
     await loadAccounts()

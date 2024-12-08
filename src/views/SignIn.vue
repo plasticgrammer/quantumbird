@@ -72,7 +72,7 @@
             v-model="organizationId"
             label="組織ID"
             required
-            :rules="[v => !!v || '組織IDは必須です', validateOrganizationId]"
+            :rules="[validateOrganizationId]"
             @input="clearErrorMessage"
           />
           <v-text-field
@@ -178,6 +178,7 @@ import {
   getCurrentUser,
 } from '@aws-amplify/auth'
 import { getOrganization, submitOrganization } from '../services/publicService'
+import { validateOrganizationId } from '../utils/string-utils'
 
 const router = useRouter()
 const store = useStore()
@@ -222,11 +223,6 @@ const toggleButtonText = computed(() => {
 const isAgreedToAll = computed(() => agreeToTerms.value && agreeToPrivacy.value)
 
 // Methods
-const validateOrganizationId = (value) => {
-  if (!value) return '組織IDは必須です'
-  const alphanumericRegex = /^[a-zA-Z0-9_-]+$/
-  return alphanumericRegex.test(value) || '組織IDは英数字のみで入力してください'
-}
 
 const clearErrorMessage = () => {
   errorMessage.value = ''

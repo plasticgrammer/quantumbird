@@ -1,4 +1,3 @@
-
 import { apiClient } from './apiClient'
 
 const BASE_PATH = '/account'
@@ -26,8 +25,8 @@ export const getAccount = async (organizationId) => {
   }
 }
 
-export const getAccounts = async () => {
-  return apiClient.get(BASE_PATH)
+export const getAccounts = async (params) => {
+  return apiClient.get(BASE_PATH, params)
 }
 
 export const resendInvitation = async (email) => {

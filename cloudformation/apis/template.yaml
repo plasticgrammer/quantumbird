@@ -573,6 +573,7 @@ Resources:
       FunctionName: !Sub "${Stage}-account"
       CodeUri: ./src/Account
       Policies:
+        - AmazonDynamoDBFullAccess # DynamoDBのアクセス権限を追加
         - Statement:
             - Effect: Allow
               Action:

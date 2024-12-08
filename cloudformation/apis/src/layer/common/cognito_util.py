@@ -2,32 +2,36 @@ import boto3
 from botocore.exceptions import ClientError
 from .exception import ApplicationException
 
-def admin_create_user(user_pool_id, email, organization_id, organization_name, cognito_client=None):
+def admin_create_user(user_pool_id, email, organization_id, organization_name, parent_organization_id=None, cognito_client=None):
     if cognito_client is None:
         cognito_client = boto3.client('cognito-idp')
         
     try:
+        user_attributes = [
+            {
+                'Name': 'email',
+                'Value': email
+            },
+            {
+                'Name': 'custom:organizationId',
+                'Value': organization_id
+            },
+            {
+                'Name': 'email_verified',
+                'Value': 'true'
+            }
+        ]
+
+        if parent_organization_id:
+            user_attributes.append({
+                'Name': 'custom:parentOrganizationId',
+                'Value': parent_organization_id
+            })
+
         response = cognito_client.admin_create_user(
             UserPoolId=user_pool_id,
             Username=email,
-            UserAttributes=[
-                {
-                    'Name': 'email',
-                    'Value': email
-                },
-                {
-                    'Name': 'custom:organization_id',
-                    'Value': organization_id
-                },
-                {
-                    'Name': 'custom:organization_name',
-                    'Value': organization_name
-                },
-                {
-                    'Name': 'email_verified',
-                    'Value': 'true'
-                }
-            ],
+            UserAttributes=user_attributes,
             MessageAction='SUPPRESS'
         )
         return {
@@ -58,7 +62,7 @@ def admin_delete_user(user_pool_id, organization_id, cognito_client=None):
     except ClientError as e:
         raise ApplicationException(500, str(e))
 
-def list_users(user_pool_id, cognito_client=None):
+def list_users(user_pool_id, cognito_client=None, parent_organization_id=None):
     if cognito_client is None:
         cognito_client = boto3.client('cognito-idp')
         
@@ -69,12 +73,33 @@ def list_users(user_pool_id, cognito_client=None):
         users = []
         for user in response['Users']:
             user_attrs = {attr['Name']: attr['Value'] for attr in user['Attributes']}
+            
+            # カスタム属性の取得
+            parent_org_id = user_attrs.get('custom:parentOrganizationId')
+            org_id = user_attrs.get('custom:organizationId')
+            
+            # 親組織IDが指定されている場合のフィルタリング
+            if parent_organization_id:
+                if not parent_org_id or parent_org_id != parent_organization_id:
+                    continue
+
+            # 組織名はDynamoDBから取得
+            org_name = None
+            if org_id:
+                try:
+                    org = get_organization(org_id)
+                    if org:
+                        org_name = org.get('name')
+                except:
+                    pass
+
             users.append({
                 'username': user['Username'],
                 'status': user['UserStatus'],
-                'organizationId': user_attrs.get('custom:organization_id', ''),
-                'organizationName': user_attrs.get('custom:organization_name', ''),
+                'organizationId': org_id,
+                'organizationName': org_name,
                 'email': user_attrs.get('email', ''),
+                'parentOrganizationId': parent_org_id,
                 'created': user['UserCreateDate'].isoformat()
             })
         return users
