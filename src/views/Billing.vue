@@ -3,7 +3,7 @@
     <v-row ref="headerRef" dense class="pb-4">
       <v-col>
         <h3>
-          <v-icon size="large" class="mr-1">mdi-currency-usd</v-icon>
+          <v-icon size="large" class="mr-1">mdi-wallet-outline</v-icon>
           支払い設定
         </h3>
       </v-col>

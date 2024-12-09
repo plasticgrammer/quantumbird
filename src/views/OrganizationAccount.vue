@@ -6,13 +6,13 @@
           <v-icon size="large" class="mr-1">
             mdi-account-cog
           </v-icon>
-          アカウント管理
+          組織アカウント管理
         </h3>
       </v-col>
     </v-row>
 
     <v-card 
-      class="account-card px-md-6"
+      class="account-card pt-4 px-md-6"
       outlined
     >
       <v-form
@@ -21,6 +21,12 @@
         @submit.prevent="handleSubmit"
       >
         <!-- アカウントリスト -->
+        <div class="d-flex justify-space-between align-center mb-2">
+          <div class="text-subtitle-1">
+            登録アカウント数: {{ accounts.length }} / {{ maxAccountCount }}
+          </div>
+        </div>
+
         <v-card elevation="0" class="pa-1">
           <v-skeleton-loader
             v-if="loading"
@@ -67,11 +73,12 @@
           </v-data-table>
         </v-card>
 
+        <v-divider class="mb-4" />
+
         <!-- 新規アカウント作成フォーム -->
         <v-row v-if="isNew" class="mt-6 px-3">
           <v-col cols="12">
-            <v-divider class="mb-4" />
-            <h4 class="mb-4">新規アカウント作成</h4>
+            <h4>新規アカウント作成</h4>
           </v-col>
           <v-col cols="12" sm="4">
             <v-text-field
@@ -130,7 +137,7 @@
 </template>
 
 <script setup>
-import { ref, inject, onMounted } from 'vue'
+import { ref, inject, onMounted, computed } from 'vue'
 import { useStore } from 'vuex'
 import { isValidEmail, validateOrganizationId } from '../utils/string-utils'
 import { createAccount, getAccounts, deleteAccount, resendInvitation } from '../services/accountService'
@@ -183,7 +190,6 @@ const validateForm = async () => {
 }
 
 const clearErrorMessage = () => {
-  // Clear any error messages if needed
   validateForm()
 }
 
@@ -203,6 +209,15 @@ const loadAccounts = async () => {
 const handleSubmit = async () => {
   if (!isFormValid.value) return
 
+  // サブスクリプション上限チェック
+  const subscription = store.getters['auth/currentSubscription']
+  if (accounts.value.length >= subscription.accountCount) {
+    showError(
+      `現在のプランでは${subscription.accountCount}アカウントまでしか作成できません。プランをアップグレードしてください。`
+    )
+    return
+  }
+
   loading.value = true
   try {
     await createAccount({
@@ -211,6 +226,7 @@ const handleSubmit = async () => {
       parentOrganizationId: currentOrganizationId
     })
     showNotification('アカウントを作成しました')
+
     await loadAccounts()
     // フォームをリセット
     organizationId.value = ''
@@ -264,6 +280,10 @@ const handleResendInvitation = async (accountItem) => {
     loading.value = false
   }
 }
+
+const maxAccountCount = computed(() => {
+  return store.getters['auth/currentSubscription'].accountCount
+})
 
 onMounted(loadAccounts)
 </script>

@@ -2,7 +2,7 @@
   <v-dialog v-model="isOpen" max-width="900px">
     <v-card rounded="lg">
       <v-card-title class="pb-2">
-        <v-icon class="mr-2">mdi-card-account-details-outline</v-icon>
+        <v-icon class="mr-2">mdi-wallet-membership</v-icon>
         プラン変更
         <v-btn
           icon="mdi-close"
@@ -98,6 +98,15 @@
             </v-col>
           </v-row>
           
+          <v-alert
+            v-if="validationMessage"
+            type="error"
+            class="mt-4 white-space-pre-line"
+            variant="tonal"
+          >
+            {{ validationMessage }}
+          </v-alert>
+          
           <v-row justify="center" class="mt-5 mb-1">
             <v-col cols="12" sm="8" md="6">
               <v-btn
@@ -105,7 +114,7 @@
                 color="primary"
                 block
                 :loading="initializingPayment"
-                :disabled="initializingPayment || !isValidPlanChange"
+                :disabled="initializingPayment || !isValidPlanChange || memberCountExceedsLimit"
                 @click="handlePlanSelection"
               >
                 {{ initializingPayment ? '読み込み中...' : '次へ' }}
@@ -281,7 +290,7 @@
               block
               size="large"
               :loading="isLoading"
-              :disabled="isLoading || !formState.selectedPlan"
+              :disabled="isLoading || !formState.selectedPlan || memberCountExceedsLimit"
               @click.prevent="handleSubmit"
             >
               {{ isLoading ? '処理中...' : formState.selectedPlan === 'free' ? 'プランを解約する' : 'プランを変更する' }}
@@ -360,6 +369,7 @@ import {
 import PaymentMethodForm from '../components/PaymentMethodForm.vue'
 import { specifiedCommercialTransactionsUrl } from '../config/environment'
 import { getCurrentPlan, getCurrentSubscription } from '@/config/plans'
+import { getOrganization } from '../services/organizationService'
 
 // 新しく追加するpropsとemits
 const props = defineProps({
@@ -414,6 +424,7 @@ const currentStep = ref('plan-selection')
 const abortController = new AbortController()
 const initializingPayment = ref(false)
 const dialogMessage = ref('')
+const organization = ref(null)
 
 // Computed Properties
 const currentPlan = computed(() => {
@@ -554,6 +565,9 @@ const validateForm = () => {
   })
 
   const errors = []
+  if (memberCountExceedsLimit.value) {
+    errors.push(validationMessage.value)
+  }
   if (formState.selectedPlan === 'business' && (!formState.accountCount || formState.accountCount < 1)) {
     errors.push('アカウント数は1以上を指定してください')
   }
@@ -726,6 +740,34 @@ const isValidPlanChange = computed(() => {
   return true
 })
 
+const currentMemberCount = computed(() => {
+  return organization.value?.members?.length || 0
+})
+
+const memberCountExceedsLimit = computed(() => {
+  if (!formState.selectedPlan) return false
+  
+  const selectedPlan = plans.find(p => p.planId === formState.selectedPlan)
+  const maxMembers = selectedPlan?.adminFeatures?.maxMembers
+  
+  // maxMembersが-1の場合は無制限なのでfalseを返す
+  if (!maxMembers || maxMembers === -1) return false
+  
+  return currentMemberCount.value > maxMembers
+})
+
+const validationMessage = computed(() => {
+  if (memberCountExceedsLimit.value) {
+    const selectedPlan = plans.find(p => p.planId === formState.selectedPlan)
+    const maxMembers = selectedPlan.adminFeatures.maxMembers
+    const message = maxMembers === -1 
+      ? '無制限' 
+      : `${maxMembers}名`
+    return `現在のメンバー数(${currentMemberCount.value}名)が選択したプランの上限(${message})を超えています。\nメンバーを削除してから再度お試しください。`
+  }
+  return ''
+})
+
 // Lifecycle Hooks
 onMounted(async () => {
   try {
@@ -733,6 +775,15 @@ onMounted(async () => {
     const { stripe, error } = await initializeStripe()
     if (error || !stripe) {
       throw new Error(error || 'Stripe initialization failed')
+    }
+
+    // 組織情報の取得を追加
+    const organizationId = store.getters['auth/organizationId']
+    if (organizationId) {
+      const result = await getOrganization(organizationId)
+      if (result && Object.keys(result).length > 0) {
+        organization.value = result
+      }
     }
 
     const user = store.state.auth.user
@@ -788,5 +839,9 @@ onUnmounted(() => {
 
 .v-list-item--density-compact.v-list-item--one-line {
   min-height: auto;
+}
+
+.white-space-pre-line {
+  white-space: pre-line;
 }
 </style>

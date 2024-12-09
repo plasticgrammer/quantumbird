@@ -29,7 +29,7 @@
           <v-list-item-title class="text-body-2 py-2 opacity-80">
             <div>{{ user.email }}</div>
             <v-btn
-              prepend-icon="mdi-card-account-details-outline"
+              prepend-icon="mdi-wallet-membership"
               class="px-2"
               variant="plain"
               @click="router.push({ name: 'Billing' })"

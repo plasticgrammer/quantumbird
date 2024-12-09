@@ -202,25 +202,25 @@ const navigationItems = computed(() => {
       route: { name: 'WeeklyReviewSelector' }
     },
     { 
-      icon: 'mdi-domain', 
-      title: '組織情報管理', 
-      value: 'Organization', 
-      route: { name: 'OrganizationManagement' }
-    },
-    { 
       icon: 'mdi-calendar-clock', 
       title: '週次報告設定', 
       value: 'ReportSetting', 
       route: { name: 'ReportSetting' }
+    },
+    { 
+      icon: 'mdi-domain', 
+      title: '組織情報管理', 
+      value: 'Organization', 
+      route: { name: 'OrganizationManagement' }
     },
   ]
 
   if (currentPlan.value.adminFeatures.accountManagement) {
     items.push({
       icon: 'mdi-account-cog',
-      title: 'アカウント管理',
-      value: 'AccountManagement',
-      route: { name: 'AccountManagement' }
+      title: '組織アカウント管理',
+      value: 'OrganizationAccount',
+      route: { name: 'OrganizationAccount' }
     })
   }
 
