@@ -130,6 +130,7 @@ export default {
         // ユーザー情報の設定
         const userInfo = {
           organizationId: attributes['custom:organizationId'],
+          parentOrganizationId: attributes['custom:parentOrganizationId'],
           username: attributes.name,
           email: attributes.email,
           tosVersion: attributes['custom:tos_version'],
@@ -361,6 +362,7 @@ export default {
 
   getters: {
     organizationId: state => state.user?.organizationId,
+    parentOrganizationId: state => state.user?.parentOrganizationId,
     name: state => state.user?.username,
     email: state => state.user?.email,
     isAuthenticated: state => !!state.user,

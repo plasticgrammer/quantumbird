@@ -144,7 +144,10 @@ def lambda_handler(event, context):
             org_data = {
                 'organizationId': body['organizationId'],
                 'name': body['organizationName'],
-                'parentOrganizationId': body['parentOrganizationId']
+                'parentOrganizationId': body['parentOrganizationId'],
+                'sender': body['email'],
+                'senderName': body['organizationName'],
+                'features': { 'weeklyReportAdvice': True, 'advisors': ['manager', 'career', 'mental'] }
             }
             create_organization(org_data)
                 

@@ -36,17 +36,16 @@
           
           <v-data-table
             v-else
+            :loading="loading"
             :headers="headers"
             :items="accounts"
-            :loading="loading"
             hide-default-footer
             :items-per-page="-1"
-            class="account-table"
+            class="account-table text-body-2"
           >
             <template #[`item.status`]="{ item }">
               <v-chip
                 :color="getStatusColor(item.status)"
-                size="small"
               >
                 {{ getStatusLabel(item.status) }}
               </v-chip>
@@ -149,6 +148,7 @@ const showConfirmDialog = inject('showConfirmDialog')
 const showNotification = inject('showNotification')
 const showError = inject('showError')
 
+const currentOrganizationId = store.getters['auth/organizationId']
 const organizationId = ref('')
 const account = ref({
   organizationName: '',
@@ -193,8 +193,6 @@ const clearErrorMessage = () => {
   validateForm()
 }
 
-const currentOrganizationId = store.getters['auth/organizationId']
-
 const loadAccounts = async () => {
   loading.value = true
   try {
@@ -212,9 +210,7 @@ const handleSubmit = async () => {
   // サブスクリプション上限チェック
   const subscription = store.getters['auth/currentSubscription']
   if (accounts.value.length >= subscription.accountCount) {
-    showError(
-      `現在のプランでは${subscription.accountCount}アカウントまでしか作成できません。プランをアップグレードしてください。`
-    )
+    showError(`現在のプランでは${subscription.accountCount}アカウントまでしか作成できません。プランをアップグレードしてください。`)
     return
   }
 
@@ -254,7 +250,6 @@ const handleDeleteAccount = async (accountItem) => {
 
   loading.value = true
   try {
-    
     // Cognitoユーザーを削除
     await deleteAccount(accountItem.organizationId)
     // 組織情報とすべての関連データを削除
