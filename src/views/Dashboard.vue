@@ -48,24 +48,26 @@
               </template>
             </v-list-item>
             <v-divider class="my-2"></v-divider>
-            <v-list-subheader>
+            <v-list-subheader
+              v-tooltip="{
+                text: 'タイトル部分をドラッグして位置を変更できます。',
+                location: 'top'
+              }"
+            >
               並び替えするには
               <v-icon
-                v-tooltip="{
-                  text: 'タイトル部分をドラッグして位置を変更できます。',
-                  location: 'top'
-                }"
                 class="ml-2"
                 icon="mdi-help-circle-outline"
               ></v-icon>
             </v-list-subheader>
-            <v-list-subheader>
+            <v-list-subheader
+              v-tooltip="{
+                text: 'タイトル部分のダブルクリックで表示サイズを切り替えできます。',
+                location: 'top'
+              }"
+            >
               サイズ変更するには
               <v-icon
-                v-tooltip="{
-                  text: 'タイトル部分のダブルクリックで表示サイズを切り替えできます。',
-                  location: 'top'
-                }"
                 class="ml-2"
                 icon="mdi-help-circle-outline"
               ></v-icon>
@@ -98,6 +100,9 @@
           :animation="200"
           ghost-class="widget-ghost"
           :disabled="isLoading"
+          :delay="isMobile ? 300 : 0"
+          :touch-action="'pan-y'"
+          :force-fallback="isMobile"
         >
           <template #item="{ element }">
             <div 
@@ -449,6 +454,7 @@ const handleVisibilityChange = (id) => {
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   padding: 6px;
+  touch-action: pan-y pinch-zoom;
 }
 
 .widget-item {
@@ -471,6 +477,9 @@ const handleVisibilityChange = (id) => {
 /* 常に並び換え可能な状態を示すスタイル */
 :deep(.widget-title) {
   cursor: move;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .widget-item:hover :deep(.v-card) {
