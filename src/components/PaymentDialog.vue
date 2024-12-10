@@ -672,6 +672,16 @@ const handleSubmit = async () => {
       return
     }
 
+    // プラン変更時のガード追加
+    if (
+      formState.selectedPlan === currentPlan.value?.planId && 
+      formState.selectedPlan !== 'business' && 
+      !isPaymentMethodUpdateMode.value
+    ) {
+      showError('同じプランへの変更はできません')
+      return
+    }
+
     const selectedPlan = plans.find(p => p.planId === formState.selectedPlan)
     if (!selectedPlan) {
       showError('無効なプランが選択されました')
@@ -775,12 +785,10 @@ const handleSubmit = async () => {
 }
 
 const isValidPlanChange = computed(() => {
-  // 選択されたプランと現在のプランが同じ場合
-  if (formState.selectedPlan === currentPlan.value?.planId) {
-    // ビジネスプランの場合のみ許可
-    return formState.selectedPlan === 'business'
+  // フリープランからフリープランへの変更は不可
+  if (formState.selectedPlan === 'free' && currentPlan.value?.planId === 'free') {
+    return false
   }
-  // 異なるプランの場合は許可
   return true
 })
 

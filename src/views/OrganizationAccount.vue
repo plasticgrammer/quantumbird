@@ -51,23 +51,25 @@
               </v-chip>
             </template>
             <template #[`item.actions`]="{ item }">
-              <v-btn
-                v-if="item.status === 'FORCE_CHANGE_PASSWORD'"
-                icon
-                small
-                :disabled="loading"
-                @click="handleResendInvitation(item)"
-              >
-                <v-icon>mdi-email</v-icon>
-              </v-btn>
-              <v-btn
-                icon
-                small
-                :disabled="loading"
-                @click="handleDeleteAccount(item)"
-              >
-                <v-icon>mdi-delete</v-icon>
-              </v-btn>
+              <div class="d-flex justify-end">
+                <v-btn
+                  v-if="item.status === 'FORCE_CHANGE_PASSWORD'"
+                  icon
+                  small
+                  :disabled="loading"
+                  @click="handleResendInvitation(item)"
+                >
+                  <v-icon>mdi-email</v-icon>
+                </v-btn>
+                <v-btn
+                  icon
+                  small
+                  :disabled="loading"
+                  @click="handleDeleteAccount(item)"
+                >
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+              </div>
             </template>
           </v-data-table>
         </v-card>
@@ -163,8 +165,8 @@ const headers = [
   { title: '組織ID', key: 'organizationId', align: 'start' },
   { title: '組織名', key: 'organizationName' },
   { title: 'メールアドレス', key: 'email' },
-  { title: 'ステータス', key: 'status' },
-  { title: '操作', key: 'actions', sortable: false }
+  { title: 'ステータス', key: 'status', width: '150px' },
+  { title: '操作', key: 'actions', align: 'center', sortable: false, width: '130px' }
 ]
 
 const getStatusColor = (status) => {
