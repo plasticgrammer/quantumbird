@@ -26,8 +26,13 @@ export const getPaymentMethods = async (email) => {
   return response
 }
 
-export const updatePaymentMethod = async (updateData) => {
-  const response = await apiClient.post(`${BASE_PATH}/update-payment-method`, updateData)
+export const updatePaymentMethod = async ({ token, customerId }) => {
+  console.log('Updating payment method:', { token: token?.slice(-4), customerId })
+  const response = await apiClient.post(`${BASE_PATH}/update-payment-method`, {
+    token,
+    customerId
+  })
+  console.log('Payment method update response:', response)
   return response
 }
 

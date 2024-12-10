@@ -232,10 +232,12 @@
                 <!-- 支払い方法更新フォーム -->
                 <template v-else-if="isPaymentMethodUpdateMode">
                   <PaymentMethodForm
+                    ref="updateFormRef"
+                    :key="'payment-update-' + Date.now()"
                     element-id="payment-update"
                     :loading="isUpdatingPayment"
                     :show-submit-button="true"
-                    @submit="handlePaymentMethodOnlyUpdate"
+                    @submit="handleUpdateSubmit($event)"
                     @error="errorMessage = $event"
                   >
                     <template #submit-button>
@@ -394,6 +396,7 @@ const closeDialog = () => {
 const store = useStore()
 const { initializeStripe, cleanup, plans } = useStripe()
 const paymentFormRef = ref(null)
+const showNotification = inject('showNotification')
 const showError = inject('showError')
 
 // States
@@ -497,30 +500,47 @@ const handleSuccess = async () => {
 }
 
 const fetchPaymentMethods = async () => {
-  const user = store.state.auth.user
-  if (!user) return
-
   try {
-    console.log('Fetching payment methods...')
-    const response = await getPaymentMethods(user.email, { 
-      signal: abortController.signal 
-    })
-    console.log('Payment methods response:', response)
-    const methods = response?.data?.paymentMethods || []
-    if (methods.length > 0) {
-      currentPaymentMethod.value = {
-        last4: methods[0].last4,
-        expMonth: methods[0].expMonth,
-        expYear: methods[0].expYear
-      }
-      console.log('Current payment method set:', currentPaymentMethod.value)
-    } else {
-      currentPaymentMethod.value = null
+    if (!currentPlan.value?.stripeCustomerId) {
+      console.log('No customer ID available')
+      return
     }
+
+    const user = store.state.auth.user
+    if (!user) return
+
+    console.log('Fetching payment methods...')
+    const response = await getPaymentMethods(user.email)
+
+    // レスポンスの検証
+    if (!response?.data?.paymentMethods?.length) {
+      console.log('No payment methods found')
+      currentPaymentMethod.value = null
+      return
+    }
+
+    const [latestMethod] = response.data.paymentMethods
+    
+    // 現在の値と新しい値を比較
+    const isChanged = !currentPaymentMethod.value || 
+                     currentPaymentMethod.value.last4 !== latestMethod.last4 ||
+                     currentPaymentMethod.value.expMonth !== latestMethod.expMonth ||
+                     currentPaymentMethod.value.expYear !== latestMethod.expYear
+
+    if (isChanged) {
+      currentPaymentMethod.value = {
+        last4: latestMethod.last4,
+        expMonth: latestMethod.expMonth,
+        expYear: latestMethod.expYear
+      }
+      console.log('Payment method updated:', currentPaymentMethod.value)
+    }
+
   } catch (error) {
-    console.error('Error fetching payment methods:', error)
-    if (!error.name === 'AbortError') {
-      showError('支払い方法の取得に失敗しました')
+    if (error.name !== 'AbortError') {
+      console.error('Error fetching payment methods:', error)
+      currentPaymentMethod.value = null
+      throw error
     }
   }
 }
@@ -544,13 +564,37 @@ const handlePaymentMethodOnlyUpdate = async ({ token }) => {
     isUpdatingPayment.value = true
     errorMessage.value = ''
 
-    await updatePaymentMethod({ token: token.id })
-    await fetchPaymentMethods()
-    
+    if (!currentPlan.value?.stripeCustomerId) {
+      throw new Error('顧客情報が見つかりません')
+    }
+
+    if (!token?.id) {
+      throw new Error('カード情報が不正です')
+    }
+
+    const response = await updatePaymentMethod({
+      token: token.id,
+      customerId: currentPlan.value.stripeCustomerId
+    })
+
+    if (!response?.paymentMethod) {
+      throw new Error('カード情報の更新に失敗しました')
+    }
+
+    // 更新後のカード情報を即時反映
+    currentPaymentMethod.value = {
+      last4: response.paymentMethod.last4,
+      expMonth: response.paymentMethod.expMonth,
+      expYear: response.paymentMethod.expYear
+    }
+
+    // 支払い方法更新モードを終了
     isPaymentMethodUpdateMode.value = false
-    showSuccessDialog.value = true
+    showNotification('支払い方法を更新しました', 'success')
+
   } catch (err) {
-    showError('支払い方法の更新に失敗しました')
+    console.error('Payment method update error:', err)
+    showError(err.message || '支払い方法の更新に失敗しました')
   } finally {
     isUpdatingPayment.value = false
   }
@@ -767,6 +811,12 @@ const validationMessage = computed(() => {
   }
   return ''
 })
+
+const handleUpdateSubmit = async ({ token }) => {
+  if (token) {
+    await handlePaymentMethodOnlyUpdate({ token })
+  }
+}
 
 // Lifecycle Hooks
 onMounted(async () => {

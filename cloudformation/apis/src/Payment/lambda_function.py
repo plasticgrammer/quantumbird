@@ -86,7 +86,7 @@ def create_subscription_response(subscription: Any, price_id: str, account_count
     
     customer_id = getattr(subscription, 'customer', None)
     
-    print(f"Debug - create_subscription_response: price_id={price_id}, plan_id={plan_id}")  # デバッグログ追加
+    #print(f"Debug - create_subscription_response: price_id={price_id}, plan_id={plan_id}")  # デバッグログ追加
     
     return {
         'message': message or ResponseMessages.SUBSCRIPTION_CREATED,
@@ -264,7 +264,7 @@ def handle_paid_plan_change(subscription: stripe.Subscription, new_price_id: str
             )
             
             # インボイスプレビューをログ出力
-            print(f"Debug - Preview invoice: {json.dumps(preview_invoice, indent=2)}")
+            #print(f"Debug - Preview invoice: {json.dumps(preview_invoice, indent=2)}")
             
             # サブスクリプションアイテムの更新（プロレーションあり）
             stripe.SubscriptionItem.modify(
@@ -298,7 +298,7 @@ def handle_paid_plan_change(subscription: stripe.Subscription, new_price_id: str
                     subscription_proration_date=proration_date
                 )
                 
-                print(f"Debug - Preview invoice for plan change: {json.dumps(preview_invoice, indent=2)}")
+                #print(f"Debug - Preview invoice for plan change: {json.dumps(preview_invoice, indent=2)}")
                 
                 stripe.SubscriptionItem.modify(
                     subscription_item.id,
@@ -323,7 +323,7 @@ def handle_paid_plan_change(subscription: stripe.Subscription, new_price_id: str
                     subscription_proration_date=proration_date
                 )
                 
-                print(f"Debug - Preview invoice for plan change: {json.dumps(preview_invoice, indent=2)}")
+                #print(f"Debug - Preview invoice for plan change: {json.dumps(preview_invoice, indent=2)}")
                 
                 stripe.SubscriptionItem.modify(
                     subscription_item.id,
@@ -432,9 +432,9 @@ def handle_free_plan_change(subscription: stripe.Subscription, body: Dict) -> Di
             invoice_now=True  # 即時請求
         )
         
-        print(f"Debug - Subscription canceled with proration: used_days={used_days}, total_days={total_days}")
-        print(f"Debug - Upcoming invoice: {json.dumps(upcoming_invoice, indent=2)}")
-        print(f"Debug - Cancel details: {json.dumps(canceled_subscription, indent=2)}")
+        #print(f"Debug - Subscription canceled with proration: used_days={used_days}, total_days={total_days}")
+        #print(f"Debug - Upcoming invoice: {json.dumps(upcoming_invoice, indent=2)}")
+        #print(f"Debug - Cancel details: {json.dumps(canceled_subscription, indent=2)}")
         
         return {
             'message': f'プランを解約し、フリープランに変更しました（利用日数: {used_days}日）',
@@ -609,7 +609,7 @@ def get_invoices(body: Dict) -> Dict:
                 customer=customer_id,
                 expand=['lines.data']
             )
-            print(f"Debug - Upcoming invoice: {json.dumps(upcoming, indent=2)}")
+            #print(f"Debug - Upcoming invoice: {json.dumps(upcoming, indent=2)}")
             
             # 保留中のインボイスアイテムを処理
             for line in upcoming.lines.data:
@@ -631,7 +631,7 @@ def get_invoices(body: Dict) -> Dict:
 
         # 既存のインボイス処理
         for invoice in invoices.data:
-            print(f"Debug - Processing invoice: {invoice.id}")
+            #print(f"Debug - Processing invoice: {invoice.id}")
             
             # 通常の請求とプロレーション処理
             for line in invoice.lines.data:
@@ -664,7 +664,7 @@ def get_invoices(body: Dict) -> Dict:
         # 日付でソート（新しい順）
         formatted_transactions.sort(key=lambda x: x['date'], reverse=True)
         
-        print(f"Debug - Final transactions: {json.dumps(formatted_transactions, indent=2)}")
+        #print(f"Debug - Final transactions: {json.dumps(formatted_transactions, indent=2)}")
 
         return {'data': {'invoices': formatted_transactions}}
         

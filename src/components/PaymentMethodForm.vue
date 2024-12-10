@@ -1,5 +1,5 @@
 <template>
-  <v-form ref="formRef">
+  <v-form ref="formRef" @submit.prevent="handleSubmit">
     <v-text-field
       v-model="formData.cardName"
       label="カード名義"
@@ -23,35 +23,34 @@
       </div>
     </div>
 
-    <slot v-if="showSubmitButton" name="submit-button">
-      <v-btn
-        type="submit"
-        color="primary"
-        class="mt-6"
-        block
-        size="large"
-        :loading="loading"
-        :disabled="loading"
-        @click.prevent="handleSubmit"
-      >
-        {{ loading ? '処理中...' : submitButtonText }}
-      </v-btn>
-    </slot>
+    <!-- スロット処理の改善 -->
+    <div v-if="showSubmitButton">
+      <slot name="submit-button">
+        <v-btn
+          type="submit"
+          color="primary"
+          class="mt-6"
+          block
+          size="large"
+          :loading="loading"
+          :disabled="loading"
+          @click.prevent="handleSubmit"
+        >
+          支払い方法を更新
+        </v-btn>
+      </slot>
+    </div>
   </v-form>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { useStripe } from '../composables/useStripe'
 
 const props = defineProps({
   elementId: {
     type: String,
     required: true
-  },
-  submitButtonText: {
-    type: String,
-    default: '支払い方法を更新'
   },
   loading: {
     type: Boolean,
@@ -117,11 +116,13 @@ const handleSubmit = async () => {
 
 onMounted(async () => {
   try {
+    await nextTick()
     const { stripe, elements } = await initializeStripe()
     if (!stripe || !elements) {
       throw new Error('Stripe initialization failed')
     }
 
+    // カード要素の初期化を確実に行う
     const card = await createCardElement(props.elementId)
     if (!card) {
       throw new Error('Card element creation failed')
@@ -130,16 +131,25 @@ onMounted(async () => {
     card.on('change', (event) => {
       if (event.error) {
         error.value = event.error.message
+        emit('error', error.value)
       } else {
         error.value = ''
       }
     })
+
+    // フォームのリセット
+    if (formRef.value) {
+      formRef.value.reset()
+    }
+
   } catch (err) {
     error.value = err.message || 'カード要素の初期化に失敗しました'
+    emit('error', error.value)
   }
 })
 
 onUnmounted(() => {
+  console.log('Cleaning up card element:', props.elementId)
   destroyCardElement(props.elementId)
 })
 </script>
