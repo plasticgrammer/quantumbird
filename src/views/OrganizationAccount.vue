@@ -65,6 +65,14 @@
                   icon
                   small
                   :disabled="loading"
+                  @click="handleEditAccount(item)"
+                >
+                  <v-icon>mdi-pencil</v-icon>
+                </v-btn>
+                <v-btn
+                  icon
+                  small
+                  :disabled="loading"
                   @click="handleDeleteAccount(item)"
                 >
                   <v-icon>mdi-delete</v-icon>
@@ -76,10 +84,10 @@
 
         <v-divider class="mb-4" />
 
-        <!-- 新規アカウント作成フォーム -->
-        <v-row v-if="isNew" class="mt-6 px-3">
+        <!-- アカウント編集/作成フォーム -->
+        <v-row v-if="isNew || editingAccount" class="mt-6 px-3">
           <v-col cols="12">
-            <h4>新規アカウント作成</h4>
+            <h4>{{ isNew ? '新規アカウント作成' : 'アカウント編集' }}</h4>
           </v-col>
           <v-col cols="12" sm="4">
             <v-text-field
@@ -89,6 +97,7 @@
               dense
               :rules="[validateOrganizationId]"
               required
+              :disabled="!isNew"
               @input="clearErrorMessage"
             />
           </v-col>
@@ -121,14 +130,23 @@
 
         <v-row class="mt-2">
           <v-col cols="12" class="d-flex justify-end">
+            <v-btn
+              v-if="editingAccount"
+              class="mr-2"
+              @click="cancelEdit"
+            >
+              キャンセル
+            </v-btn>
             <v-btn 
               color="primary" 
               type="submit" 
               :loading="loading"
               :disabled="!isFormValid"
             >
-              <v-icon class="mr-1">mdi-account-plus</v-icon>
-              アカウントを作成
+              <v-icon class="mr-1">
+                {{ isNew ? 'mdi-account-plus' : 'mdi-content-save' }}
+              </v-icon>
+              {{ isNew ? 'アカウントを作成' : '変更を保存' }}
             </v-btn>
           </v-col>
         </v-row>
@@ -141,7 +159,7 @@
 import { ref, inject, onMounted, computed } from 'vue'
 import { useStore } from 'vuex'
 import { isValidEmail, validateOrganizationId } from '../utils/string-utils'
-import { createAccount, getAccounts, deleteAccount, resendInvitation } from '../services/accountService'
+import { createAccount, getAccounts, deleteAccount, resendInvitation, updateAccount } from '../services/accountService'
 import { deleteOrganizationCompletely } from '../services/organizationService'
 
 const store = useStore()
@@ -160,6 +178,7 @@ const accounts = ref([])
 const loading = ref(false)
 const isNew = ref(true)
 const isFormValid = ref(false)
+const editingAccount = ref(null)
 
 const headers = [
   { title: '組織ID', key: 'organizationId', align: 'start' },
@@ -209,35 +228,53 @@ const loadAccounts = async () => {
 const handleSubmit = async () => {
   if (!isFormValid.value) return
 
-  // サブスクリプション上限チェック
-  const subscription = store.getters['auth/currentSubscription']
-  if (accounts.value.length >= subscription.accountCount) {
-    showError(`現在のプランでは${subscription.accountCount}アカウントまでしか作成できません。プランをアップグレードしてください。`)
-    return
-  }
-
-  loading.value = true
-  try {
-    await createAccount({
-      organizationId: organizationId.value,
-      ...account.value,
-      parentOrganizationId: currentOrganizationId
-    })
-    showNotification('アカウントを作成しました')
-
-    await loadAccounts()
-    // フォームをリセット
-    organizationId.value = ''
-    account.value = { organizationName: '', email: '' }
-    isFormValid.value = false
-    // フォームの検証状態をリセット
-    if (form.value) {
-      form.value.reset()
+  if (isNew.value) {
+    // サブスクリプション上限チェック
+    const subscription = store.getters['auth/currentSubscription']
+    if (accounts.value.length >= subscription.accountCount) {
+      showError(`現在のプランでは${subscription.accountCount}アカウントまでしか作成できません。プランをアップグレードしてください。`)
+      return
     }
-  } catch (error) {
-    showError('アカウントの作成に失敗しました', error)
-  } finally {
-    loading.value = false
+
+    loading.value = true
+    try {
+      await createAccount({
+        organizationId: organizationId.value,
+        ...account.value,
+        parentOrganizationId: currentOrganizationId
+      })
+      showNotification('アカウントを作成しました')
+
+      await loadAccounts()
+      // フォームをリセット
+      organizationId.value = ''
+      account.value = { organizationName: '', email: '' }
+      isFormValid.value = false
+      // フォームの検証状態をリセット
+      if (form.value) {
+        form.value.reset()
+      }
+    } catch (error) {
+      showError('アカウントの作成に失敗しました', error)
+    } finally {
+      loading.value = false
+    }
+  } else {
+    // 編集処理
+    loading.value = true
+    try {
+      await updateAccount({
+        organizationId: organizationId.value,
+        ...account.value
+      })
+      showNotification('アカウント情報を更新しました')
+      await loadAccounts()
+      cancelEdit()
+    } catch (error) {
+      showError('アカウントの更新に失敗しました', error)
+    } finally {
+      loading.value = false
+    }
   }
 }
 
@@ -275,6 +312,26 @@ const handleResendInvitation = async (accountItem) => {
     showError('招待メールの再送信に失敗しました', error)
   } finally {
     loading.value = false
+  }
+}
+
+const handleEditAccount = (item) => {
+  editingAccount.value = item
+  organizationId.value = item.organizationId
+  account.value = {
+    organizationName: item.organizationName,
+    email: item.email
+  }
+  isNew.value = false
+}
+
+const cancelEdit = () => {
+  editingAccount.value = null
+  organizationId.value = ''
+  account.value = { organizationName: '', email: '' }
+  isNew.value = true
+  if (form.value) {
+    form.value.reset()
   }
 }
 

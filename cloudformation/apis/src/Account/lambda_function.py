@@ -69,6 +69,50 @@ def resend_invitation(user_pool_id, organization_id, email, cognito_client):
             raise ApplicationException(404, 'ユーザーが見つかりません')
         raise ApplicationException(500, f"招待メールの再送信に失敗しました: {str(e)}")
 
+def update_organization(organization_id, organization_name):
+    """組織名を更新する"""
+    try:
+        organizations_table.update_item(
+            Key={'organizationId': organization_id},
+            UpdateExpression='SET #name = :name, organizationName = :name',
+            ExpressionAttributeNames={'#name': 'name'},
+            ExpressionAttributeValues={':name': organization_name}
+        )
+    except Exception as e:
+        raise ApplicationException(500, f"組織情報の更新に失敗しました: {str(e)}")
+
+def update_user_attributes(user_pool_id, organization_id, email, cognito_client):
+    """Cognitoユーザーの属性を更新する"""
+    try:
+        # まずユーザーを検索
+        try:
+            # organizationIdで直接ユーザーを取得（Usernameとして使用）
+            user = cognito_client.admin_get_user(
+                UserPoolId=user_pool_id,
+                Username=organization_id
+            )
+            if not user:
+                raise ApplicationException(404, f'ユーザーが見つかりません: {organization_id}')
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'UserNotFoundException':
+                raise ApplicationException(404, f'ユーザーが見つかりません: {organization_id}')
+            raise ApplicationException(500, f"ユーザー検索に失敗しました: {str(e)}")
+
+        # ユーザー属性を更新
+        user_attributes = [
+            {'Name': 'email', 'Value': email}
+        ]
+        
+        cognito_client.admin_update_user_attributes(
+            UserPoolId=user_pool_id,
+            Username=organization_id,  # 組織IDをユーザー名として使用
+            UserAttributes=user_attributes
+        )
+    except ApplicationException as e:
+        raise e
+    except ClientError as e:
+        raise ApplicationException(500, f"ユーザー情報の更新に失敗しました: {str(e)}")
+
 def lambda_handler(event, context):
     try:
         path = event.get('path', '')
@@ -145,7 +189,7 @@ def lambda_handler(event, context):
                 'organizationId': body['organizationId'],
                 'name': body['organizationName'],
                 'parentOrganizationId': body['parentOrganizationId'],
-                'sender': body['email'],
+                'sender': 'notify@fluxweek.com',
                 'senderName': body['organizationName'],
                 'features': { 'weeklyReportAdvice': True, 'advisors': ['manager', 'career', 'mental'] }
             }
@@ -167,6 +211,38 @@ def lambda_handler(event, context):
                 result['organization'] = organization
 
             return create_response(200, result)
+            
+        elif http_method == 'PUT':
+            body = json.loads(event['body'])
+            organization_id = body.get('organizationId')
+            if not organization_id:
+                raise ApplicationException(400, 'organizationId is required')
+
+            # 更新対象が自分の子アカウントであることを確認
+            target_user = admin_get_user(USER_POOL_ID, organization_id, cognito)
+            if target_user.get('parentOrganizationId') != requester_organization_id:
+                raise ApplicationException(403, '権限がありません')
+
+            try:
+                # 組織情報を更新
+                update_organization(organization_id, body['organizationName'])
+                
+                # Cognitoユーザー情報を更新
+                update_user_attributes(
+                    user_pool_id=USER_POOL_ID,
+                    organization_id=organization_id,
+                    email=body['email'],
+                    cognito_client=cognito
+                )
+
+                return create_response(200, {
+                    'message': 'アカウント情報を更新しました',
+                    'organizationId': organization_id
+                })
+            except ApplicationException as e:
+                raise e
+            except Exception as e:
+                raise ApplicationException(500, f"アカウント情報の更新に失敗しました: {str(e)}")
             
         elif http_method == 'GET':
             params = event.get('queryStringParameters', {}) or {}

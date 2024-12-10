@@ -365,7 +365,7 @@ const confirmSignUpUser = async () => {
     const organization = { 
       organizationId: organizationId.value, 
       name: organizationName.value, 
-      sender: confirmEmail.value,
+      sender: 'notify@fluxweek.com',
       senderName: organizationName.value 
     }
     await submitOrganization(organization)

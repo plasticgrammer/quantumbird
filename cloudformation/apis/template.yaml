@@ -582,6 +582,7 @@ Resources:
                 - cognito-idp:AdminDeleteUser
                 - cognito-idp:AdminGetUser
                 - cognito-idp:AdminInitiateAuth
+                - cognito-idp:AdminUpdateUserAttributes
               Resource: !Sub "arn:aws:cognito-idp:${UserPoolRegion}:${AWS::AccountId}:userpool/${UserPoolId}"
             - Effect: Allow
               Action:
