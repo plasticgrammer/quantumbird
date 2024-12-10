@@ -11,17 +11,8 @@ function getRedirectUrl() {
 }
 
 function getRootUrl() {
-  const { protocol, host, pathname } = window.location
-  const pathSegments = pathname.split('/').filter(segment => segment !== '')
-
-  // GitHub Pages の場合、最初のセグメントがリポジトリ名
-  const repoName = pathSegments[0]
-
-  // 開発環境の場合は window.location.origin をそのまま使用
-  // 本番環境（GitHub Pages）の場合は、リポジトリ名を含めたパスを使用
-  return isProd
-    ? `${protocol}//${host}/${repoName}`
-    : `${protocol}//${host}`
+  const { protocol, host } = window.location
+  return `${protocol}//${host}`
 }
 
 export const redirectUrl = getRedirectUrl()

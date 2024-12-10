@@ -13,12 +13,7 @@ Globals:
       Variables:
         STAGE: !Ref Stage
         TZ: Asia/Tokyo
-        BASE_URL:
-          !If [
-            IsProd,
-            "https://plasticgrammer.github.io/quantumbird/",
-            "http://localhost:3000",
-          ]
+        BASE_URL: !If [IsProd, "https://fluxweek.com/", "http://localhost:3000"]
   Api:
     Auth:
       ApiKeyRequired: false
