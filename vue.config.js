@@ -42,7 +42,7 @@ module.exports = defineConfig({
       title: 'fluxweek'
     }
   },
-  publicPath: process.env.NODE_ENV === 'production' ? '/quantumbird' : '/',
+  publicPath: process.env.NODE_ENV === 'production' ? '/' : '/',
   devServer: {
     port: 3000,
   },

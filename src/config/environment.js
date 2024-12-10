@@ -17,7 +17,7 @@ function getRootUrl() {
 
 export const redirectUrl = getRedirectUrl()
 export const rootUrl = getRootUrl()
-export const contextPath = isProd ? '/quantumbird/' : '/'
+export const contextPath = '/'
 export const feedbackUrl = 'https://forms.gle/suRGEcRXE33xvFu19'
 export const termsOfServiceUrl = `${rootUrl}/legal/terms-of-service.html`
 export const termsOfServiceVersion = '1.02'
