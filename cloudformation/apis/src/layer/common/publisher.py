@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 
-ses = boto3.client('ses', region_name='ap-southeast-2')  # SESを使用するリージョンを指定
+ses = boto3.client('ses', region_name='ap-northeast-1')
 
 def send_mail(sendFrom, to, subject, body):
     CHARSET = "utf-8"
@@ -79,3 +79,60 @@ def start_custom_verification(email_address, template_name):
     except ClientError as e:
         print(f"Error sending verification email: {e}")
         return False
+
+def get_identity_verification_status(identity):
+    """メールアドレスまたはドメインの検証状態を取得"""
+    try:
+        response = ses.get_identity_verification_attributes(
+            Identities=[identity]
+        )
+        verification_attrs = response['VerificationAttributes'].get(identity, {})
+        return verification_attrs.get('VerificationStatus', 'NotVerified')
+    except ClientError as e:
+        print(f'Error checking verification status: {str(e)}')
+        return 'Error'
+
+def verify_email_identity(email):
+    """メールアドレスの検証を開始"""
+    try:
+        ses.verify_email_identity(EmailAddress=email)
+        return True
+    except ClientError as e:
+        print(f'Error initiating email verification: {str(e)}')
+        raise
+
+def check_identity_verification(email):
+    """メールアドレスとドメインの両方の検証状態を確認"""
+    try:
+        # メールアドレスの検証状態を確認
+        email_status = get_identity_verification_status(email)
+        if email_status == 'Success':
+            return {
+                'email': email,
+                'status': 'Success',
+                'verifiedBy': 'email'
+            }
+        
+        # ドメインの検証状態を確認
+        domain = email.split('@')[1]
+        domain_status = get_identity_verification_status(domain)
+        if domain_status == 'Success':
+            return {
+                'email': email,
+                'status': 'Success',
+                'verifiedBy': 'domain'
+            }
+        
+        return {
+            'email': email,
+            'status': email_status,
+            'verifiedBy': 'none'
+        }
+    
+    except Exception as e:
+        print(f'Error checking verification: {str(e)}')
+        return {
+            'email': email,
+            'status': 'Error',
+            'message': str(e)
+        }
