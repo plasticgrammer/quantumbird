@@ -11,23 +11,13 @@ export const updateMember = async (member) => {
 }
 
 export const getMemberProjects = async (memberUuid) => {
-  try {
-    const result = await apiClient.get(`${BASE_PATH}/project`, { memberUuid })
-    return result || []
-  } catch (error) {
-    console.error('Error fetching member projects:', error)
-    throw error
-  }
+  const result = await apiClient.get(`${BASE_PATH}/project`, { memberUuid })
+  return result || []
 }
 
 export const updateMemberProjects = async (memberUuid, projects) => {
-  try {
-    await apiClient.put(BASE_PATH, { memberUuid, projects })
-    return true
-  } catch (error) {
-    console.error('Error updating member projects:', error)
-    throw error
-  }
+  await apiClient.put(BASE_PATH, { memberUuid, projects })
+  return true
 }
 
 export const listMembers = async (organizationId) => {
