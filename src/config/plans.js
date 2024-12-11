@@ -1,6 +1,10 @@
 import store from '@/store'
 import { defaultAdvisors } from '../services/bedrockService'
 
+// 環境変数からpriceIdを取得（未設定の場合は開発環境用のIDを使用）
+const STRIPE_PRO_PRICE_ID = process.env.VUE_APP_STRIPE_PRO_PRICE_ID || 'price_1QJSigJlLYAT4bpznFUNs5eg'
+const STRIPE_BUSINESS_PRICE_ID = process.env.VUE_APP_STRIPE_BUSINESS_PRICE_ID || 'price_1QJSmjJlLYAT4bpzzPjAgcJj'
+
 /*
  * プラン定義
  * - 管理者機能の制御は adminFeatures にて設定
@@ -28,7 +32,7 @@ export const plans = [
   },
   {
     planId: 'pro',
-    priceId: 'price_1QJSigJlLYAT4bpznFUNs5eg',
+    priceId: STRIPE_PRO_PRICE_ID,
     name: 'プロプラン',
     price: 1000,
     features: ['基本機能が使用可', 'メンバー数最大１０名', '全てのAIアドバイザー'],
@@ -44,7 +48,7 @@ export const plans = [
   },
   {
     planId: 'business',
-    priceId: 'price_1QJSmjJlLYAT4bpzzPjAgcJj',
+    priceId: STRIPE_BUSINESS_PRICE_ID,
     name: 'ビジネスプラン',
     price: 2000,
     pricePerAccount: 500,

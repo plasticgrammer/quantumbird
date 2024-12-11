@@ -7,11 +7,32 @@ class PaymentConfig:
     BILLING_INTERVAL = 'month'
     API_VERSION = '2023-10-16'
 
+    # 環境設定
+    STAGE_TO_ENV_MAP = {
+        'dev': 'development',
+        'prod': 'production'
+    }
+    ENVIRONMENT = STAGE_TO_ENV_MAP.get(os.environ.get('STAGE', 'dev'), 'development')
+
+    # 環境別のStripe ID設定
+    STRIPE_IDS = {
+        'development': {
+            'pro_price': 'price_1QJSigJlLYAT4bpznFUNs5eg',
+            'business_price': 'price_1QJSmjJlLYAT4bpzzPjAgcJj',
+            'business_product': 'prod_RBqT2Wa1VvXK56'
+        },
+        'production': {
+            'pro_price': 'price_1QUmzCJlLYAT4bpzvRYS5Aap',
+            'business_price': 'price_1QUn2BJlLYAT4bpz5fglOFwG',
+            'business_product': 'prod_RNY8yjbNfu8MgM'
+        }
+    }
+
     # プラン関連
     PRICE_ID_FREE = 'price_free'
-    PRICE_ID_PRO = 'price_1QJSigJlLYAT4bpznFUNs5eg'
-    PRICE_ID_BUSINESS = 'price_1QJSmjJlLYAT4bpzzPjAgcJj'
-    PRODUCT_ID_BUSINESS = 'prod_RBqT2Wa1VvXK56'
+    PRICE_ID_PRO = STRIPE_IDS[ENVIRONMENT]['pro_price']
+    PRICE_ID_BUSINESS = STRIPE_IDS[ENVIRONMENT]['business_price']
+    PRODUCT_ID_BUSINESS = STRIPE_IDS[ENVIRONMENT]['business_product']
     VALID_PRICE_IDS = [PRICE_ID_FREE, PRICE_ID_PRO, PRICE_ID_BUSINESS]
 
     # プラン設定
@@ -32,13 +53,6 @@ class PaymentConfig:
     PLAN_CHANGE_COOLDOWN_SECONDS = 24 * 3600
     REACTIVATION_WINDOW_SECONDS = 48 * 3600
     IDEMPOTENCY_KEY_TTL = 24 * 3600
-
-    # 環境設定
-    STAGE_TO_ENV_MAP = {
-        'dev': 'development',
-        'prod': 'production'
-    }
-    ENVIRONMENT = STAGE_TO_ENV_MAP.get(os.environ.get('STAGE', 'dev'), 'development')
 
     # カードエラーメッセージ
     CARD_ERROR_MESSAGES = {
