@@ -74,15 +74,11 @@ module.exports = defineConfig({
             from: path.resolve(__dirname, 'public'),
             to: path.resolve(__dirname, 'dist'),
             globOptions: {
-              ignore: ['**/index.html'], // index.htmlは別途処理されるため除外
-            },
-            filter: (resourcePath) => {
-              return path.extname(resourcePath).toLowerCase() === '.html'
-            },
-          },
-          {
-            from: path.resolve(__dirname, 'public/firebase-messaging-sw.js'),
-            to: path.resolve(__dirname, 'dist/firebase-messaging-sw.js')
+              ignore: [
+                '**/index.html',      // index.htmlは別途処理されるため除外
+                '**/.*',              // 隠しファイルを除外
+              ]
+            }
           }
         ]
       })

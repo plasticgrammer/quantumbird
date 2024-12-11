@@ -19,11 +19,15 @@ export const redirectUrl = getRedirectUrl()
 export const rootUrl = getRootUrl()
 export const contextPath = '/'
 export const feedbackUrl = 'https://forms.gle/suRGEcRXE33xvFu19'
-export const termsOfServiceUrl = `${rootUrl}/legal/terms-of-service.html`
+
+// 静的ファイルのベースURLを環境に応じて設定
+const staticBaseUrl = isProd ? process.env.VUE_APP_STATIC_URL || '' : rootUrl
+
+export const termsOfServiceUrl = `${staticBaseUrl}/legal/terms-of-service.html`
 export const termsOfServiceVersion = '1.02'
-export const privacyPolicyUrl = `${rootUrl}/legal/privacy-policy.html`
+export const privacyPolicyUrl = `${staticBaseUrl}/legal/privacy-policy.html`
 export const privacyPolicyVersion = '1.02'
-export const specifiedCommercialTransactionsUrl = `${rootUrl}/legal/specified-commercial-transactions.html`
+export const specifiedCommercialTransactionsUrl = `${staticBaseUrl}/legal/specified-commercial-transactions.html`
 
 const config = {
   isProd,
