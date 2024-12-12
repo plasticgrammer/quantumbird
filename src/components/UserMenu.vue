@@ -1,10 +1,8 @@
 <template>
   <div 
     class="user-menu-wrapper"
-    @mouseenter="handleMouseEnter"
-    @mouseleave="handleMouseLeave"
   >
-    <v-list nav>
+    <v-list nav role="menu">
       <v-list-item
         :title="user.email"
         :subtitle="user.organizationId"
@@ -22,15 +20,16 @@
       v-model="showDropdown"
       activator="parent"
       location="top"
+      @focus="showDropdown = true"
       @update:model-value="handleDropdownChange"
     >
-      <v-list class="pa-0 brightness120" :bg-color="bgColor">
+      <v-list nav role="menu" class="brightness120" :bg-color="bgColor">
         <v-list-item>
           <v-list-item-title class="text-body-2 py-2 opacity-80">
             <div>{{ user.email }}</div>
             <v-btn
               prepend-icon="mdi-wallet-membership"
-              class="px-2"
+              :class="{ 'px-2': !mobile }"
               variant="plain"
               @click="router.push({ name: 'Billing' })"
             >
@@ -38,7 +37,9 @@
             </v-btn>
           </v-list-item-title>
         </v-list-item>
+
         <v-divider></v-divider>
+
         <v-list-item
           prepend-icon="mdi-cog-outline"
           title="アカウント設定"
@@ -46,50 +47,47 @@
           @click="navigateToAccounttSetting"
         >
         </v-list-item>
-        <v-list-item
-          prepend-icon="mdi-help-circle-outline"
-          title="ヘルプとサポート"
-        >
-          <template #append>
-            <v-icon icon="mdi-chevron-right"></v-icon>
-          </template>
-          <v-menu
-            v-model="showLearnMoreSubmenu"
-            activator="parent"
-            location="right"
-            open-on-hover
-            :close-delay="300"
-            :open-delay="100"
+
+        <template v-if="mobile">
+          <v-list-item
+            v-for="item in helpMenuItems"
+            :key="item.title"
+            v-bind="item"
+            link
+            @click="item.onClick"
           >
-            <v-list class="pa-0 brightness120" :bg-color="bgColor">
-              <v-list-item
-                prepend-icon="mdi-comment-quote-outline"
-                title="フィードバック"
-                link
-                @click="openFeedbackForm"
-              >
-              </v-list-item>
-              <v-list-item
-                prepend-icon="mdi-file-document-outline"
-                title="利用規約"
-                @click="openTermsOfService"
-              >
-              </v-list-item>
-              <v-list-item
-                prepend-icon="mdi-shield-account-outline"
-                title="プライバシーポリシー"
-                @click="openPrivacyPolicy"
-              >
-              </v-list-item>
-              <v-list-item
-                prepend-icon="mdi-shopping-outline"
-                title="特定商取引法に基づく表記"
-                @click="openSpecifiedCommercialTransactions"
-              >
-              </v-list-item>
-            </v-list>
-          </v-menu>
-        </v-list-item>
+          </v-list-item>
+        </template>
+        <template v-else>
+          <v-list-item
+            prepend-icon="mdi-help-circle-outline"
+            title="ヘルプとサポート"
+          >
+            <template #append>
+              <v-icon icon="mdi-chevron-right"></v-icon>
+            </template>
+            <v-menu
+              v-model="showLearnMoreSubmenu"
+              activator="parent"
+              location="right"
+              open-on-hover
+              :close-delay="300"
+              :open-delay="100"
+            >
+              <v-list class="pa-0 brightness120" :bg-color="bgColor">
+                <v-list-item
+                  v-for="item in helpMenuItems"
+                  :key="item.title"
+                  v-bind="item"
+                  link
+                  @click="item.onClick"
+                >
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </v-list-item>
+        </template>
+
         <v-list-item
           prepend-icon="mdi-logout-variant"
           title="サインアウト"
@@ -109,17 +107,17 @@ import { feedbackUrl, termsOfServiceUrl, privacyPolicyUrl, specifiedCommercialTr
 import { getCurrentPlan } from '../config/plans'
 
 defineProps({
-  modelValue: {
-    type: Boolean,
-    default: false
-  },
   bgColor: {
     type: String,
-    default: '#365D91'
+    default: 'menu'
+  },
+  mobile: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['sign-out', 'close'])
 
 const store = useStore()
 const router = useRouter()
@@ -133,23 +131,6 @@ const user = computed(() => ({
 }))
 
 const currentPlan = computed(() => getCurrentPlan())
-
-const handleMouseEnter = () => {
-  emit('update:modelValue', true)
-}
-
-const handleMouseLeave = () => {
-  if (!showDropdown.value) {
-    emit('update:modelValue', false)
-  }
-}
-
-const handleDropdownChange = (value) => {
-  showDropdown.value = value
-  if (!value) {
-    emit('update:modelValue', false)
-  }
-}
 
 const navigateToAccounttSetting = () => {
   router.push({ name: 'AccountSetting' })
@@ -171,25 +152,52 @@ const openSpecifiedCommercialTransactions = () => {
   window.open(specifiedCommercialTransactionsUrl, '_blank', 'noopener,noreferrer')
 }
 
-const handleSignOut = async () => {
-  try {
-    await store.dispatch('auth/signOut')
-    router.push({ name: 'SignIn' })
-  } catch (error) {
-    console.error('サインアウトに失敗しました', error)
+const helpMenuItems = computed(() => ([
+  {
+    prependIcon: 'mdi-comment-quote-outline',
+    title: 'フィードバック',
+    onClick: openFeedbackForm
+  },
+  {
+    prependIcon: 'mdi-file-document-outline',
+    title: '利用規約',
+    onClick: openTermsOfService
+  },
+  {
+    prependIcon: 'mdi-shield-account-outline',
+    title: 'プライバシーポリシー',
+    onClick: openPrivacyPolicy
+  },
+  {
+    prependIcon: 'mdi-shopping-outline',
+    title: '特定商取引法に基づく表記',
+    onClick: openSpecifiedCommercialTransactions
+  }
+]))
+
+const handleSignOut = () => {
+  emit('sign-out')
+}
+
+const handleDropdownChange = (value) => {
+  showDropdown.value = value
+  if (!value) {
+    emit('close')
   }
 }
 </script>
 
-<style>
-.v-list-item-title {
-  font-size: 0.925rem;
-  font-weight: 400;
-}
-</style>
-
 <style scoped>
 .user-menu-wrapper {
   width: 100%;
+}
+
+:deep(.v-list-item-title) {
+  font-size: 0.925rem !important;
+  font-weight: 400;
+}
+
+:deep(.v-list-item .text-body-2) {
+  font-size: 0.925rem !important;
 }
 </style>

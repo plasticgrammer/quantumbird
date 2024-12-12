@@ -118,7 +118,10 @@
         <!-- User menu -->
         <template #append>
           <v-divider />
-          <UserMenu v-model="showUserMenu" bg-color="menu" />
+          <UserMenu 
+            @sign-out="handleSignOut"
+            @close="showUserMenu = false"
+          />
         </template>
       </v-navigation-drawer>
 
@@ -143,7 +146,22 @@
             {{ item.icon }}
           </v-icon>
         </v-btn>
+        <v-btn
+          value="user-menu"
+          aria-label="ユーザーメニュー"
+          class="pb-3"
+          @click="showMobileUserMenu = true"
+        >
+          <v-icon size="x-large" aria-hidden="true">
+            mdi-account-circle
+          </v-icon>
+        </v-btn>
       </v-bottom-navigation>
+      
+      <DialogUserMenu 
+        v-model="showMobileUserMenu"
+        @sign-out="handleSignOut"
+      />
     </template>
 
     <!-- Main content area -->
@@ -179,6 +197,7 @@ import { getCurrentPlan } from './config/plans'
 const ConfirmationDialog = defineAsyncComponent(() => import('./components/ConfirmationDialog.vue'))
 const LoadingOverlay = defineAsyncComponent(() => import('./components/LoadingOverlay.vue'))
 const PolicyAcceptanceDialog = defineAsyncComponent(() => import('./components/PolicyAcceptanceDialog.vue'))
+const DialogUserMenu = defineAsyncComponent(() => import('./components/DialogUserMenu.vue'))
 
 const router = useRouter()
 const store = useStore()
@@ -239,6 +258,7 @@ const needsTosAcceptance = ref(false)
 const needsPrivacyPolicyAcceptance = ref(false)
 const isPolicyCheckPending = ref(true)
 const isAuthenticated = computed(() => store.getters['auth/isAuthenticated'])
+const showMobileUserMenu = ref(false)
 
 router.beforeEach((to, from, next) => {
   showAnimation.value = !to.meta.hideAnimation
@@ -374,6 +394,15 @@ const handlePolicyDisacceptance = async () => {
   try {
     await store.dispatch('auth/signOut')
     showPolicyDialog.value = false
+    router.push({ name: 'SignIn' })
+  } catch (error) {
+    console.error('サインアウトに失敗しました', error)
+  }
+}
+
+const handleSignOut = async () => {
+  try {
+    await store.dispatch('auth/signOut')
     router.push({ name: 'SignIn' })
   } catch (error) {
     console.error('サインアウトに失敗しました', error)
