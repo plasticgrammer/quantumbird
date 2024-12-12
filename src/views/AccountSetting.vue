@@ -13,7 +13,7 @@
       <v-card-title>アカウント情報</v-card-title>
       <v-card-text>
         <v-row>
-          <v-col cols="6">
+          <v-col cols="12" md="6">
             <v-text-field
               v-model="email"
               label="メールアドレス"
@@ -22,7 +22,7 @@
               class="mb-4"
             ></v-text-field>
           </v-col>
-          <v-col cols="3">
+          <v-col cols="12" md="3">
             <v-text-field
               v-model="organizationId"
               label="組織ID"
@@ -47,13 +47,13 @@
           v-if="isParentAccount"
           class="mt-4 mb-2" 
           elevation="0" 
-          color="indigo-lighten-5 border-thin" 
+          color="blue-lighten-5 border-thin" 
           outlined
         >
           <v-card-title>お支払い設定</v-card-title>
           <v-card-text class="px-6">
             <v-row align="center">
-              <v-col>
+              <v-col cols="12" md="9">
                 <div class="d-flex align-center">
                   <p class="mb-0 mr-4">現在のプラン：{{ currentPlanName }}</p>
                   <v-chip
@@ -69,7 +69,7 @@
                   プランの変更、支払い履歴の確認、請求書のダウンロードは支払い設定ページで行えます。
                 </p>
               </v-col>
-              <v-col cols="auto">
+              <v-col cols="12" md="auto">
                 <v-btn color="primary" @click="router.push({ name: 'Billing' })">
                   <v-icon class="mr-2">mdi-currency-usd</v-icon>
                   支払い設定
@@ -80,6 +80,7 @@
         </v-card>
 
         <v-alert
+          v-else
           type="info"
           variant="tonal"
           color="blue-grey"
