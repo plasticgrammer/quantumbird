@@ -108,13 +108,13 @@ def send_request_mail(organization, week_string):
 
     sendFrom = common.publisher.get_from_address(organization)
     subject = "【週次報告システム】週次報告をお願いします"
-    bodyText = f"組織名：{organization['name']}\n\n"
-    bodyText += "お疲れさまです。\n下記リンクより週次報告をお願いします。\n"
 
     for member in members_without_report:
         sendTo = [member.get("email")]
+        bodyText = f"組織名：{organization['name']}\n"
+        bodyText += f"{member.get("name", "-")}さん\n\n"
+        bodyText += "システムからの報告依頼です。\n下記リンクより週次報告をお願いします。\n"
         link = generate_report_link(organization_id, member["memberUuid"], week_string)
-
         logger.info(f"Send mail from: {sendFrom}, to: {sendTo}")
         
         common.publisher.send_mail(sendFrom, sendTo, subject, bodyText + link)
@@ -126,7 +126,7 @@ def get_members_without_report(organization_id, week_string, members):
     # レポートを提出したメンバーのUUIDセットを作成
     reported_member_uuids = set(report['memberUuid'] for report in reports)
     
-    # レポートを提出していないメンバーをフィルタリング
+    # レポートを提出し���いないメンバーをフィルタリング
     members_without_report = [
         member for member in members 
         if member['memberUuid'] not in reported_member_uuids

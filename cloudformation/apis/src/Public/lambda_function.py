@@ -382,7 +382,7 @@ def send_push_notification_to_admins(organization_id, notification_type, report_
         sendFrom = common.publisher.get_from_address(org_item)
         subject = "【週次報告システム】新しい報告が提出されました"
         bodyText = f"組織名：{org_item['name']}\n\n"
-        bodyText += f"{member.get('name', 'Unknown')}さん が {report_data['weekString']} の週次報告を提出しました。\n"
+        bodyText += f"{member.get('name', '-')}さん が {report_data['weekString']} の週次報告を提出しました。\n\n"
         bodyText += "下記リンクより報告内容をご確認ください。\n"
         
         # 管理者確認用のリンクを生成

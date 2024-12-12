@@ -359,25 +359,24 @@ def send_feedback_mail(organization, member, week_string, feedback):
     try:
         sendFrom = common.publisher.get_from_address(organization)
         subject = "【週次報告システム】管理者からのフィードバックがあります"
-        bodyText = f"組織名：{organization['name']}\n\n"
+        bodyText = f"組織名：{organization['name']}\n"
+        bodyText += f"{member.get('name', '-')}さん\n\n"
 
         feedback_content = feedback.get('content')
         feedback_created_at = feedback.get('createdAt')
 
-        # UTCからJSTに変換
         utc_dt = parse(feedback_created_at)
         jst_dt = utc_dt.astimezone(TIMEZONE)
-        # 日本語の日付形式で文字列化
         formatted_date = jst_dt.strftime("%Y年%m月%d日 %H:%M")
 
         bodyText += f"管理者からのフィードバックがありました。（{formatted_date}）\n"
         bodyText += "------------------------------------------\n"
         bodyText += f"{feedback_content}\n"
-        bodyText += "------------------------------------------\n"
+        bodyText += "------------------------------------------\n\n"
 
         link = generate_report_link(organization['organizationId'], member["memberUuid"], week_string)
         link += '?feedback=true'
-        bodyText += f"詳細はこちら: {link}"
+        bodyText += f"下記リンクより内容確認および返信が可能です。\n{link}"
         
         member_email = member.get('email')
         if (member_email):
