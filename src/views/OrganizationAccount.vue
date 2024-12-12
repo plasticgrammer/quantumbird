@@ -43,6 +43,35 @@
             :items-per-page="-1"
             class="account-table text-body-2"
           >
+            <template #[`item.organizationName`]="{ item }">
+              <v-text-field
+                v-model="item.organizationName"
+                dense
+                hide-details="auto"
+                :readonly="editingAccount?.organizationId !== item.organizationId"
+                outlined
+                @input="validateForm"
+              />
+            </template>
+            <template #[`item.email`]="{ item }">
+              <v-text-field
+                v-model="item.email"
+                dense
+                hide-details="auto"
+                :readonly="editingAccount?.organizationId !== item.organizationId"
+                outlined
+                @input="validateForm"
+              />
+            </template>
+            <template #[`item.organizationId`]="{ item }">
+              <v-text-field
+                :value="item.organizationId"
+                dense
+                hide-details="auto"
+                readonly
+                outlined
+              />
+            </template>
             <template #[`item.status`]="{ item }">
               <v-chip
                 :color="getStatusColor(item.status)"
@@ -62,6 +91,16 @@
                   <v-icon>mdi-email</v-icon>
                 </v-btn>
                 <v-btn
+                  v-if="editingAccount?.organizationId === item.organizationId"
+                  icon
+                  small
+                  :disabled="loading"
+                  @click="handleSaveEdit(item)"
+                >
+                  <v-icon color="success">mdi-check</v-icon>
+                </v-btn>
+                <v-btn
+                  v-else
                   icon
                   small
                   :disabled="loading"
@@ -317,12 +356,24 @@ const handleResendInvitation = async (accountItem) => {
 
 const handleEditAccount = (item) => {
   editingAccount.value = item
-  organizationId.value = item.organizationId
-  account.value = {
-    organizationName: item.organizationName,
-    email: item.email
+}
+
+const handleSaveEdit = async (item) => {
+  loading.value = true
+  try {
+    await updateAccount({
+      organizationId: item.organizationId,
+      organizationName: item.organizationName,
+      email: item.email
+    })
+    showNotification('アカウント情報を更新しました')
+    await loadAccounts()
+    editingAccount.value = null
+  } catch (error) {
+    showError('アカウントの更新に失敗しました', error)
+  } finally {
+    loading.value = false
   }
-  isNew.value = false
 }
 
 const cancelEdit = () => {
@@ -345,6 +396,7 @@ onMounted(loadAccounts)
 <style scoped>
 .account-management-container {
   max-width: 960px;
+  font-size: 0.875rem;
 }
 
 .account-card {
@@ -355,5 +407,14 @@ onMounted(loadAccounts)
 
 .account-table {
   width: 100%;
+}
+
+:deep(.v-text-field input) {
+  font-size: 0.875rem !important;
+  padding: 4px 8px !important;
+}
+
+:deep(.v-data-table-header) {
+  font-size: 0.875rem !important;
 }
 </style>
