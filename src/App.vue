@@ -5,7 +5,7 @@
         <div class="wave"></div>
         <div class="wave"></div>
         <v-img
-          v-if="!isMobile"
+          v-if="!isMobile && showMascot"
           src="@/assets/images/rakko.webp"
           width="340"
           class="on-wave mx-auto"
@@ -251,6 +251,7 @@ const drawer = ref(true)
 const isRailMode = ref(true)
 const isHovered = ref(false)
 const showAnimation = ref(true)
+const showMascot = ref(true)
 const showNavigation = ref(true)
 const showPolicyDialog = ref(false)
 const showUserMenu = ref(false)
@@ -262,6 +263,7 @@ const showMobileUserMenu = ref(false)
 
 router.beforeEach((to, from, next) => {
   showAnimation.value = !to.meta.hideAnimation
+  showMascot.value = !to.meta.hideMascot
   showNavigation.value = !to.meta.hideNavigation
   next()
 })

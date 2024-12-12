@@ -40,13 +40,13 @@ const routes = [
     path: '/signin',
     name: 'SignIn',
     component: SignIn,
-    meta: { hideNavigation: true, hideAnimation: true }
+    meta: { hideNavigation: true, hideMascot: true }
   },
   {
     path: '/signup',
     name: 'SignUp',
     component: SignIn,
-    meta: { hideNavigation: true, hideAnimation: true }
+    meta: { hideNavigation: true, hideMascot: true }
   },
   {
     path: '/admin',
