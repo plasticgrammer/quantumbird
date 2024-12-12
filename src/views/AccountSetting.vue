@@ -42,7 +42,14 @@
           <v-icon class="ml-1" size="small">mdi-chevron-right</v-icon>
         </v-btn>
 
-        <v-card class="mt-4 mb-2" elevation="0" color="indigo-lighten-5 border-thin" outlined>
+        <!-- プラン情報表示 -->
+        <v-card 
+          v-if="isParentAccount"
+          class="mt-4 mb-2" 
+          elevation="0" 
+          color="indigo-lighten-5 border-thin" 
+          outlined
+        >
           <v-card-title>お支払い設定</v-card-title>
           <v-card-text class="px-6">
             <v-row align="center">
@@ -71,6 +78,18 @@
             </v-row>
           </v-card-text>
         </v-card>
+
+        <v-alert
+          type="info"
+          variant="tonal"
+          color="blue-grey"
+          class="mt-4 rounded-lg"
+        >
+          <div>
+            このアカウントは親組織のサブアカウントとして管理されています。<br>
+            アカウントの変更および削除は親アカウントで行ってください。
+          </div>
+        </v-alert>
       </v-card-text>
     </v-card>
 
@@ -159,7 +178,10 @@
     </v-dialog>
 
     <!-- 削除確認ダイアログ -->
-    <v-card class="mt-4">
+    <v-card 
+      v-if="isParentAccount"
+      class="mt-4"
+    >
       <v-card-title class="text-error">危険ゾーン</v-card-title>
       <v-card-text class="px-6">
         <div class="d-flex flex-column gap-4">
@@ -315,6 +337,9 @@ const isTrialPeriod = computed(() => {
   const subscription = store.getters['auth/currentSubscription']
   return subscription?.trialEnd && new Date(subscription.trialEnd) > new Date()
 })
+
+// isChildAccountを削除し、isParentAccountを使用
+const isParentAccount = computed(() => store.getters['auth/isParentAccount'])
 
 // パスワードのバリデーションルール
 const passwordRules = [

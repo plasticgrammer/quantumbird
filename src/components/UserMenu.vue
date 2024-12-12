@@ -31,7 +31,7 @@
               prepend-icon="mdi-wallet-membership"
               :class="{ 'px-2': !mobile }"
               variant="plain"
-              @click="router.push({ name: 'Billing' })"
+              @click="handleBillingClick"
             >
               {{ currentPlan.name }}
             </v-btn>
@@ -100,7 +100,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { feedbackUrl, termsOfServiceUrl, privacyPolicyUrl, specifiedCommercialTransactionsUrl } from '@/config/environment'
@@ -117,6 +117,7 @@ defineProps({
   }
 })
 
+const showNotification = inject('showNotification')
 const emit = defineEmits(['sign-out', 'close'])
 
 const store = useStore()
@@ -131,6 +132,7 @@ const user = computed(() => ({
 }))
 
 const currentPlan = computed(() => getCurrentPlan())
+const isParentAccount = computed(() => store.getters['auth/isParentAccount'])
 
 const navigateToAccounttSetting = () => {
   router.push({ name: 'AccountSetting' })
@@ -183,6 +185,14 @@ const handleDropdownChange = (value) => {
   showDropdown.value = value
   if (!value) {
     emit('close')
+  }
+}
+
+const handleBillingClick = () => {
+  if (isParentAccount.value) {
+    router.push({ name: 'Billing' })
+  } else {
+    showNotification('支払い設定は親アカウントでのみ変更可能です。', 'warning')
   }
 }
 </script>

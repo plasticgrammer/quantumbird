@@ -370,6 +370,7 @@ export default {
     cognitoUserSub: state => state.cognitoUserSub,
     tosVersion: state => state.user?.tosVersion,
     privacyPolicyVersion: state => state.user?.privacyPolicyVersion,
-    currentSubscription: state => state.subscription || { planId: 'free', accountCount: 0 }
+    currentSubscription: state => state.subscription || { planId: 'free', accountCount: 0 },
+    isParentAccount: state => !state.user?.parentOrganizationId,
   }
 }

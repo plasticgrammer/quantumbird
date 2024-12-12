@@ -70,6 +70,12 @@ export const plans = [
 export const getCurrentSubscription = () => store.getters['auth/currentSubscription']
 
 export const getCurrentPlan = () => {
+  // 親組織IDがある場合は子アカウントなのでビジネスプランとして扱う
+  const parentOrganizationId = store.getters['auth/parentOrganizationId']
+  if (parentOrganizationId) {
+    return plans.find(p => p.planId === 'business')
+  }
+
   const subscription = getCurrentSubscription()
   const planId = subscription?.planId || 'free'
   return plans.find(p => p.planId === planId) || plans[0]
