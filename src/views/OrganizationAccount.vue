@@ -124,9 +124,9 @@
         <v-divider class="mb-4" />
 
         <!-- アカウント編集/作成フォーム -->
-        <v-row v-if="(isNew || editingAccount) && !editingAccount" class="mt-6 px-3">
+        <v-row class="mt-6 px-3">
           <v-col cols="12">
-            <h4>{{ isNew ? '新規アカウント作成' : 'アカウント編集' }}</h4>
+            <h4>新規アカウント作成</h4>
           </v-col>
           <v-col cols="12" sm="4">
             <v-text-field
@@ -136,7 +136,6 @@
               dense
               :rules="[validateOrganizationId]"
               required
-              :disabled="!isNew"
               @input="clearErrorMessage"
             />
           </v-col>
@@ -356,37 +355,26 @@ const handleResendInvitation = async (accountItem) => {
 
 const handleEditAccount = (item) => {
   editingAccount.value = { ...item }
-  organizationId.value = item.organizationId
-  account.value = {
-    organizationName: item.organizationName,
-    email: item.email
-  }
 }
 
 const handleSaveEdit = async (item) => {
-  loading.value = true
   try {
     await updateAccount({
       organizationId: item.organizationId,
       organizationName: item.organizationName,
       email: item.email,
-      oldEmail: editingAccount.value.email // Use old email from editingAccount
+      oldEmail: editingAccount.value.email
     })
     showNotification('アカウント情報を更新しました')
-    await loadAccounts()
+    //await loadAccounts()
     editingAccount.value = null
   } catch (error) {
     showError('アカウントの更新に失敗しました', error)
-  } finally {
-    loading.value = false
   }
 }
 
 const cancelEdit = () => {
   editingAccount.value = null
-  organizationId.value = ''
-  account.value = { organizationName: '', email: '' }
-  isNew.value = true
 }
 
 const maxAccountCount = computed(() => {

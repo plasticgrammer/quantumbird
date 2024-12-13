@@ -84,14 +84,16 @@ def update_organization(organization_id, organization_name):
 def update_user_attributes(user_pool_id, organization_id, old_email, new_email, cognito_client):
     """Cognitoユーザーの属性を更新する"""
     try:
-        # まずユーザーを検索
+        # まず古いメールアドレスでユーザーを検索
         try:
-            user = cognito_client.admin_get_user(
+            user = cognito_client.list_users(
                 UserPoolId=user_pool_id,
-                Username=old_email  # 変更前のメールアドレスを使用
+                Filter=f'email = "{old_email}"'
             )
-            if not user:
+            users = user.get('Users', [])
+            if not users:
                 raise ApplicationException(404, f'ユーザーが見つかりません: {old_email}')
+            target_user = users[0]
         except ClientError as e:
             if e.response['Error']['Code'] == 'UserNotFoundException':
                 raise ApplicationException(404, f'ユーザーが見つかりません: {old_email}')
@@ -101,13 +103,25 @@ def update_user_attributes(user_pool_id, organization_id, old_email, new_email, 
         if old_email != new_email:
             user_attributes = [
                 {'Name': 'email', 'Value': new_email},
-                {'Name': 'name', 'Value': new_email}  # 新しいメールアドレスをname属性にも設定
+                {'Name': 'email_verified', 'Value': 'true'}
             ]
+            
+            # ユーザー属性を更新
             cognito_client.admin_update_user_attributes(
                 UserPoolId=user_pool_id,
-                Username=old_email,  # 変更前のメールアドレスを使用
+                Username=target_user['Username'],  # 実際のユーザー名を使用
                 UserAttributes=user_attributes
             )
+            
+            # ユーザー名も新しいメールアドレスに更新
+            cognito_client.admin_update_user_attributes(
+                UserPoolId=user_pool_id,
+                Username=target_user['Username'],
+                UserAttributes=[
+                    {'Name': 'preferred_username', 'Value': new_email}
+                ]
+            )
+
     except ApplicationException as e:
         raise e
     except ClientError as e:
