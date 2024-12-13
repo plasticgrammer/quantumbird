@@ -60,7 +60,7 @@ def resend_invitation(user_pool_id, organization_id, email, cognito_client):
     try:
         response = cognito_client.admin_create_user(
             UserPoolId=user_pool_id,
-            Username=email,  # メールアドレスをUsernameとして使用
+            Username=email,
             MessageAction='RESEND'
         )
         return response['User']
@@ -81,33 +81,33 @@ def update_organization(organization_id, organization_name):
     except Exception as e:
         raise ApplicationException(500, f"組織情報の更新に失敗しました: {str(e)}")
 
-def update_user_attributes(user_pool_id, organization_id, email, cognito_client):
+def update_user_attributes(user_pool_id, organization_id, old_email, new_email, cognito_client):
     """Cognitoユーザーの属性を更新する"""
     try:
         # まずユーザーを検索
         try:
-            # organizationIdで直接ユーザーを取得（Usernameとして使用）
             user = cognito_client.admin_get_user(
                 UserPoolId=user_pool_id,
-                Username=organization_id
+                Username=old_email  # 変更前のメールアドレスを使用
             )
             if not user:
-                raise ApplicationException(404, f'ユーザーが見つかりません: {organization_id}')
+                raise ApplicationException(404, f'ユーザーが見つかりません: {old_email}')
         except ClientError as e:
             if e.response['Error']['Code'] == 'UserNotFoundException':
-                raise ApplicationException(404, f'ユーザーが見つかりません: {organization_id}')
+                raise ApplicationException(404, f'ユーザーが見つかりません: {old_email}')
             raise ApplicationException(500, f"ユーザー検索に失敗しました: {str(e)}")
 
-        # ユーザー属性を更新
-        user_attributes = [
-            {'Name': 'email', 'Value': email}
-        ]
-        
-        cognito_client.admin_update_user_attributes(
-            UserPoolId=user_pool_id,
-            Username=organization_id,  # 組織IDをユーザー名として使用
-            UserAttributes=user_attributes
-        )
+        # メールアドレスが変更されている場合のみ更新
+        if old_email != new_email:
+            user_attributes = [
+                {'Name': 'email', 'Value': new_email},
+                {'Name': 'name', 'Value': new_email}  # 新しいメールアドレスをname属性にも設定
+            ]
+            cognito_client.admin_update_user_attributes(
+                UserPoolId=user_pool_id,
+                Username=old_email,  # 変更前のメールアドレスを使用
+                UserAttributes=user_attributes
+            )
     except ApplicationException as e:
         raise e
     except ClientError as e:
@@ -219,7 +219,9 @@ def lambda_handler(event, context):
                 raise ApplicationException(400, 'organizationId is required')
 
             # 更新対象が自分の子アカウントであることを確認
-            target_user = admin_get_user(USER_POOL_ID, organization_id, cognito)
+            target_user = admin_get_user(USER_POOL_ID, body['oldEmail'], cognito)
+            if not target_user:
+                raise ApplicationException(404, 'ユーザーが見つかりません')
             if target_user.get('parentOrganizationId') != requester_organization_id:
                 raise ApplicationException(403, '権限がありません')
 
@@ -231,7 +233,8 @@ def lambda_handler(event, context):
                 update_user_attributes(
                     user_pool_id=USER_POOL_ID,
                     organization_id=organization_id,
-                    email=body['email'],
+                    old_email=body['oldEmail'],  # 変更前のメールアドレス
+                    new_email=body['email'],  # 新しいメールアドレス
                     cognito_client=cognito
                 )
 
@@ -280,6 +283,8 @@ def lambda_handler(event, context):
                 
             # 削除対象が自分の子アカウントであることを確認
             target_user = admin_get_user(USER_POOL_ID, organization_id, cognito)
+            if not target_user:
+                raise ApplicationException(404, 'ユーザーが見つかりません')
             if target_user.get('parentOrganizationId') != requester_organization_id:
                 raise ApplicationException(403, '権限がありません')
                 

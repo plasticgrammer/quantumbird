@@ -124,7 +124,7 @@
         <v-divider class="mb-4" />
 
         <!-- アカウント編集/作成フォーム -->
-        <v-row v-if="isNew || editingAccount" class="mt-6 px-3">
+        <v-row v-if="(isNew || editingAccount) && !editingAccount" class="mt-6 px-3">
           <v-col cols="12">
             <h4>{{ isNew ? '新規アカウント作成' : 'アカウント編集' }}</h4>
           </v-col>
@@ -355,7 +355,12 @@ const handleResendInvitation = async (accountItem) => {
 }
 
 const handleEditAccount = (item) => {
-  editingAccount.value = item
+  editingAccount.value = { ...item }
+  organizationId.value = item.organizationId
+  account.value = {
+    organizationName: item.organizationName,
+    email: item.email
+  }
 }
 
 const handleSaveEdit = async (item) => {
@@ -364,7 +369,8 @@ const handleSaveEdit = async (item) => {
     await updateAccount({
       organizationId: item.organizationId,
       organizationName: item.organizationName,
-      email: item.email
+      email: item.email,
+      oldEmail: editingAccount.value.email // Use old email from editingAccount
     })
     showNotification('アカウント情報を更新しました')
     await loadAccounts()
@@ -381,9 +387,6 @@ const cancelEdit = () => {
   organizationId.value = ''
   account.value = { organizationName: '', email: '' }
   isNew.value = true
-  if (form.value) {
-    form.value.reset()
-  }
 }
 
 const maxAccountCount = computed(() => {
@@ -409,12 +412,12 @@ onMounted(loadAccounts)
   width: 100%;
 }
 
-:deep(.v-text-field input) {
+.account-table :deep(.v-text-field input) {
   font-size: 0.875rem !important;
   padding: 4px 8px !important;
 }
 
-:deep(.v-data-table-header) {
+.account-table :deep(.v-data-table-header) {
   font-size: 0.875rem !important;
 }
 </style>

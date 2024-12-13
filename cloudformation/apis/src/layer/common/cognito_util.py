@@ -105,15 +105,27 @@ def list_users(user_pool_id, cognito_client=None, parent_organization_id=None):
     except ClientError as e:
         raise ApplicationException(500, str(e))
 
-def admin_get_user(user_pool_id, organization_id, cognito_client=None):
+def admin_get_user(user_pool_id, email, cognito_client=None):
     if cognito_client is None:
         cognito_client = boto3.client('cognito-idp')
         
     try:
-        users = list_users(user_pool_id, cognito_client)
-        for user in users:
-            if user['organizationId'] == organization_id:
-                return user
-        return None
+        response = cognito_client.list_users(
+            UserPoolId=user_pool_id,
+            Filter=f'email = "{email}"'
+        )
+        users = response.get('Users', [])
+        if not users:
+            return None
+        user = users[0]
+        user_attrs = {attr['Name']: attr['Value'] for attr in user['Attributes']}
+        return {
+            'username': user['Username'],
+            'status': user['UserStatus'],
+            'organizationId': user_attrs.get('custom:organizationId'),
+            'parentOrganizationId': user_attrs.get('custom:parentOrganizationId'),
+            'email': user_attrs.get('email', ''),
+            'created': user['UserCreateDate'].isoformat()
+        }
     except ClientError as e:
         raise ApplicationException(500, str(e))
