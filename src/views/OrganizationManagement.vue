@@ -115,15 +115,22 @@
             </template>
             <template #[`item.actions`]="{ item }">
               <div class="d-flex justify-end">
-                <v-btn v-if="editingMember?.id === item.id" icon small @click="handleUpdateMember(item)">
-                  <v-icon color="teal">mdi-check</v-icon>
-                </v-btn>
-                <v-btn v-else icon small @click="setEditingMember(item)">
-                  <v-icon>mdi-pencil</v-icon>
-                </v-btn>
-                <v-btn icon small @click="handleDeleteMember(item.id)">
-                  <v-icon>mdi-delete</v-icon>
-                </v-btn>
+                <template v-if="editingMember?.id === item.id">
+                  <v-btn icon small @click="cancelEdit">
+                    <v-icon>mdi-close</v-icon>
+                  </v-btn>
+                  <v-btn icon small @click="handleUpdateMember(item)">
+                    <v-icon color="teal">mdi-check</v-icon>
+                  </v-btn>
+                </template>
+                <template v-else>
+                  <v-btn icon small @click="setEditingMember(item)">
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+                  <v-btn icon small @click="handleDeleteMember(item.id)">
+                    <v-icon>mdi-delete</v-icon>
+                  </v-btn>
+                </template>
               </div>
             </template>
           </v-data-table>
@@ -227,10 +234,11 @@ const state = reactive({
     name: '',
     email: ''
   },
-  originalOrganization: null
+  originalOrganization: null,
+  originalMember: null, // 追加
 })
 
-const { organization, newMember, editingMember, loading, isNew, isFormValid, isFormChanged, validationErrors, editValidationErrors } = toRefs(state)
+const { organization, newMember, editingMember, loading, isNew, isFormValid, isFormChanged, validationErrors, editValidationErrors, originalMember } = toRefs(state)
 
 // テーブルのヘッダー定義を追加
 const headers = [
@@ -306,6 +314,7 @@ const isMaxMembersReached = computed(() => {
 const memberManagement = {
   setEditingMember(member) {
     editingMember.value = member ? { ...member } : null
+    originalMember.value = member ? { ...member } : null
     editValidationErrors.value = { name: '', email: '' }
   },
 
@@ -335,6 +344,7 @@ const memberManagement = {
         organization.value.members[index] = { ...member }
       }
       editingMember.value = null
+      originalMember.value = null
       editValidationErrors.value = { name: '', email: '' }
       formManagement.handleFormChange()
     }
@@ -346,6 +356,17 @@ const memberManagement = {
       organization.value.members = organization.value.members.filter((member) => member.id !== memberId)
       formManagement.handleFormChange()
     }
+  },
+
+  cancelEdit() {
+    if (originalMember.value && editingMember.value) {
+      const index = organization.value.members.findIndex(m => m.id === editingMember.value.id)
+      if (index !== -1) {
+        organization.value.members[index] = { ...originalMember.value }
+      }
+    }
+    editingMember.value = null
+    originalMember.value = null
   }
 }
 
@@ -418,7 +439,7 @@ watch(
 )
 
 // Expose necessary functions and reactive references
-const { setEditingMember, handleAddMember, handleUpdateMember, handleDeleteMember } = memberManagement
+const { setEditingMember, handleAddMember, handleUpdateMember, handleDeleteMember, cancelEdit } = memberManagement
 const { validateForm, handleSubmit } = formManagement
 </script>
 
@@ -452,7 +473,7 @@ const { validateForm, handleSubmit } = formManagement
   padding: 4px 8px !important;
 }
 
-.member-table :deep(.v-data-table-header) {
-  font-size: 0.925rem !important;
+.member-table :deep(.v-data-table-header__content) {
+  padding-left: 8px !important;
 }
 </style>

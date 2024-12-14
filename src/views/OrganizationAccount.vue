@@ -91,32 +91,42 @@
                 >
                   <v-icon>mdi-email</v-icon>
                 </v-btn>
-                <v-btn
-                  v-if="editingAccount?.organizationId === item.organizationId"
-                  icon
-                  small
-                  :disabled="loading"
-                  @click="handleSaveEdit(item)"
-                >
-                  <v-icon color="success">mdi-check</v-icon>
-                </v-btn>
-                <v-btn
-                  v-else
-                  icon
-                  small
-                  :disabled="loading"
-                  @click="handleEditAccount(item)"
-                >
-                  <v-icon>mdi-pencil</v-icon>
-                </v-btn>
-                <v-btn
-                  icon
-                  small
-                  :disabled="loading"
-                  @click="handleDeleteAccount(item)"
-                >
-                  <v-icon>mdi-delete</v-icon>
-                </v-btn>
+                <template v-if="editingAccount?.organizationId === item.organizationId">
+                  <v-btn
+                    icon
+                    small
+                    :disabled="loading"
+                    @click="cancelEdit"
+                  >
+                    <v-icon>mdi-close</v-icon>
+                  </v-btn>
+                  <v-btn
+                    icon
+                    small
+                    :disabled="loading"
+                    @click="handleSaveEdit(item)"
+                  >
+                    <v-icon color="success">mdi-check</v-icon>
+                  </v-btn>
+                </template>
+                <template v-else>
+                  <v-btn
+                    icon
+                    small
+                    :disabled="loading"
+                    @click="handleEditAccount(item)"
+                  >
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+                  <v-btn
+                    icon
+                    small
+                    :disabled="loading"
+                    @click="handleDeleteAccount(item)"
+                  >
+                    <v-icon>mdi-delete</v-icon>
+                  </v-btn>
+                </template>
               </div>
             </template>
           </v-data-table>
@@ -164,13 +174,6 @@
 
         <v-row class="mt-2">
           <v-col cols="12" class="d-flex justify-end">
-            <v-btn
-              v-if="editingAccount"
-              class="mr-2"
-              @click="cancelEdit"
-            >
-              キャンセル
-            </v-btn>
             <v-btn 
               color="primary" 
               type="submit" 
@@ -213,9 +216,10 @@ const loading = ref(false)
 const isNew = ref(true)
 const isFormValid = ref(false)
 const editingAccount = ref(null)
+const originalAccount = ref(null)
 
 const headers = [
-  { title: '組織ID', key: 'organizationId', align: 'start', width: '130px' },
+  { title: '組織ID', key: 'organizationId', width: '130px' },
   { title: '組織名', key: 'organizationName' },
   { title: 'メールアドレス', key: 'email' },
   { title: '操作', key: 'actions', align: 'center', sortable: false, width: '130px' }
@@ -240,7 +244,7 @@ const getStatusColor = (status) => {
 const getStatusLabel = (status) => {
   switch (status) {
   case 'CONFIRMED': return '有効'
-  case 'FORCE_CHANGE_PASSWORD': return '初期設���待ち'
+  case 'FORCE_CHANGE_PASSWORD': return '初期設定待ち'
   default: return '無効'
   }
 }
@@ -358,6 +362,7 @@ const handleResendInvitation = async (accountItem) => {
 
 const handleEditAccount = (item) => {
   editingAccount.value = { ...item }
+  originalAccount.value = { ...item }
 }
 
 const handleSaveEdit = async (item) => {
@@ -381,13 +386,21 @@ const handleSaveEdit = async (item) => {
     })
     showNotification('アカウント情報を更新しました')
     editingAccount.value = null
+    originalAccount.value = null
   } catch (error) {
     showError('アカウントの更新に失敗しました', error)
   }
 }
 
 const cancelEdit = () => {
+  if (originalAccount.value && editingAccount.value) {
+    const index = accounts.value.findIndex(a => a.organizationId === editingAccount.value.organizationId)
+    if (index !== -1) {
+      accounts.value[index] = { ...originalAccount.value }
+    }
+  }
   editingAccount.value = null
+  originalAccount.value = null
 }
 
 const maxAccountCount = computed(() => {
@@ -418,7 +431,7 @@ onMounted(loadAccounts)
   padding: 4px 8px !important;
 }
 
-.account-table :deep(.v-data-table-header) {
-  font-size: 0.925rem !important;
+.account-table :deep(.v-data-table-header__content) {
+  padding-left: 8px !important;
 }
 </style>
