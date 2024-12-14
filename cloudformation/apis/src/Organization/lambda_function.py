@@ -94,14 +94,7 @@ def handle_get(event):
         org = get_organization(params['organizationId'])
         if org is None:
             return create_response(404, {'message': f"Organization with id {params['organizationId']} not found"})
-        members = list_members(params['organizationId'])
-        org['members'] = sorted(members, key=lambda x: x.get('id', ''))
         return create_response(200, org)
-    elif 'memberUuid' in params:
-        member = get_member(params['memberUuid'])
-        if member is None:
-            return create_response(404, {'message': f"Member with uuid {params['memberUuid']} not found"})
-        return create_response(200, member)
     else:
         orgs = list_organizations()
         return create_response(200, orgs)
@@ -112,10 +105,6 @@ def handle_post(event):
         item = dynamo_items.prepare_organization_item(data)
         response = organizations_table.put_item(Item=item)
         return create_response(201, {'message': 'Organization created successfully'})
-    elif 'memberUuid' in data:
-        item = dynamo_items.prepare_member_item(data)
-        response = members_table.put_item(Item=item)
-        return create_response(201, {'message': 'Member created successfully'})
     else:
         return create_response(400, {'message': 'Invalid data structure'})
 
@@ -129,16 +118,7 @@ def handle_put(event):
             
         org_item = dynamo_items.prepare_organization_item(data, existing_org)
         organizations_table.put_item(Item=org_item)
-
-        if 'members' in data:
-            update_members(data['organizationId'], data['members'])
-
-        return create_response(200, {'message': 'Organization and members updated successfully'})
-    elif 'memberUuid' in data:
-        existing_member = get_member(data['memberUuid'])
-        item = dynamo_items.prepare_member_item(data, existing_member)
-        response = members_table.put_item(Item=item)
-        return create_response(200, {'message': 'Member updated successfully'})
+        return create_response(200, {'message': 'Organization updated successfully'})
     else:
         return create_response(400, {'message': 'Invalid data structure'})
 
@@ -376,18 +356,6 @@ def get_organization(organization_id):
         logger.error(f"Error getting organization: {str(e)}", exc_info=True)
         return None
 
-def get_member(member_uuid):
-    try:
-        response = members_table.get_item(
-            Key={
-                'memberUuid': member_uuid
-            }
-        )
-        return response.get('Item')
-    except Exception as e:
-        logger.error(f"Error getting member: {str(e)}", exc_info=True)
-        return None
-
 def list_organizations():
     try:
         response = organizations_table.scan()
@@ -409,71 +377,6 @@ def list_members(organization_id):
         logger.error(f"Error listing members: {str(e)}", exc_info=True)
         raise e
 
-def update_members(organization_id, members):
-    org = get_organization(organization_id)
-
-    existing_members = list_members(organization_id)
-    existing_members_dict = {m['memberUuid']: m for m in existing_members if 'memberUuid' in m}
-
-    for member in members:
-        existing_member = existing_members_dict.get(member.get('memberUuid'))
-        member_item = dynamo_items.prepare_member_item(member, existing_member)
-        member_item['organizationId'] = organization_id
-
-        is_new_member = existing_member is None
-        email_changed = existing_member and existing_member.get('email') != member_item.get('email')
-
-        if is_new_member:
-            member_item['emailConfirmed'] = False
-            try:
-                if not member_item.get('email'):
-                    logger.warning(f"No email address for new member: {member_item.get('id', 'Unknown ID')}")
-                    continue
-                send_registor_mail(org, member_item)
-                logger.info(f"Sent registration email to new member {member_item.get('id')}")
-            except Exception as e:
-                logger.error(f"Failed to send registration email to new member {member_item.get('id')}: {str(e)}")
-        elif email_changed:
-            member_item['emailConfirmed'] = False
-            try:
-                if not member_item.get('email'):
-                    logger.warning(f"No email address for member: {member_item.get('id', 'Unknown ID')}")
-                    continue
-                send_registor_mail(org, member_item)
-                logger.info(f"Sent update email to member {member_item.get('id')} due to email change")
-            except Exception as e:
-                logger.error(f"Failed to send update email to member {member_item.get('id')}: {str(e)}")
-        else:
-            # メールアドレスが変更されていない場合、emailConfirmedの状態を保持
-            member_item['emailConfirmed'] = existing_member.get('emailConfirmed', False)
-
-        members_table.put_item(Item=member_item)
-
-    # 削除されたメンバーの処理
-    current_member_uuids = {m.get('memberUuid') for m in members if 'memberUuid' in m}
-    for member_uuid in existing_members_dict:
-        if member_uuid not in current_member_uuids:
-            delete_member(member_uuid)
-
-def send_registor_mail(organization, member):
-    sendFrom = common.publisher.get_from_address(organization)
-    subject = "【週次報告システム】メンバー登録設定完了のご連絡"
-    bodyText = "週次報告システムの送信先に登録されました。\n"
-    bodyText += f"組織名：{organization['name']}\n\n"
-    bodyText += "※本メールは、登録した際に配信される自動配信メールです。\n"
-
-    base_url = urllib.parse.urljoin(BASE_URL, "member/mail")
-    path_params = [urllib.parse.quote(member['memberUuid'])]    
-    # URLの構築
-    url = f"{base_url}/{'/'.join(path_params)}"    
-    bodyText += "\n到達確認のため下記リンクをクリックしてください。\n"
-    bodyText += url
-
-    if member.get('email'):
-        common.publisher.send_mail(sendFrom, [member['email']], subject, bodyText)
-    else:
-        logger.warning(f"No email address found for member: {member.get('id', 'Unknown ID')}")
-
 def delete_organization_and_members(organization_id):
     try:
         organizations_table.delete_item(
@@ -493,29 +396,6 @@ def delete_organization_and_members(organization_id):
     except Exception as e:
         logger.error(f"Error deleting organization and members: {str(e)}", exc_info=True)
         raise e
-
-def delete_member(member_uuid):
-    try:
-        members_table.delete_item(
-            Key={
-                'memberUuid': member_uuid
-            }
-        )
-    except Exception as e:
-        logger.error(f"Error deleting member: {str(e)}", exc_info=True)
-        raise e
-
-def delete_member_by_id(organization_id, member_id):
-    response = members_table.query(
-        IndexName='OrganizationIndex',
-        KeyConditionExpression=Key('organizationId').eq(organization_id),
-        FilterExpression=Key('id').eq(member_id)
-    )
-
-    items = response.get('Items', [])
-    if items:
-        member_uuid = items[0]['memberUuid']
-        members_table.delete_item(Key={'memberUuid': member_uuid})
 
 def handle_push_subscription(event):
     try:

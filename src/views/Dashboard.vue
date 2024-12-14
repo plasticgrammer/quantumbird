@@ -135,6 +135,7 @@ import OrganizationWidget from '../components/widget/OrganizationWidget.vue'
 import ReportRequestWidget from '../components/widget/ReportRequestWidget.vue'
 import WeeklyReportWidget from '../components/widget/WeeklyReportWidget.vue'
 import { useResponsive } from '../composables/useResponsive'
+import { listOrganizationMembers } from '../services/memberService'
 
 const components = {
   CalendarWidget: markRaw(CalendarWidget),
@@ -178,6 +179,7 @@ const calendarWeeks = createWeeks(6)
 const weekIndex = ref(null)
 
 const organization = ref(null)
+const members = ref([])
 const isLoading = ref(true)
 const error = ref(null)
 const isOvertimeDataReady = ref(false)
@@ -190,7 +192,6 @@ const stressData = ref({ labels: [], datasets: [] })
 const disabilityData = ref({ labels: [], datasets: [] })
 const achievementData = ref({ labels: [], datasets: [] })
 
-const members = computed(() => organization.value?.members || [])
 const weekString = computed(() => 
   weekIndex.value !== null ? getStringFromWeek(calendarWeeks[weekIndex.value]) : null
 )
@@ -306,12 +307,14 @@ const fetchInitial = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const [orgInfo, reportStatus] = await Promise.all([
+    const [orgInfo, memberList, reportStatus] = await Promise.all([
       getOrganization(organizationId),
+      listOrganizationMembers(organizationId),
       getReportStatus(organizationId, weekString.value)
     ])
     
     organization.value = orgInfo
+    members.value = memberList
     reportStatus.value = {
       ...reportStatus,
       reportedCount: reportStatus.pending.count + reportStatus.inFeedback.count + reportStatus.confirmed.count

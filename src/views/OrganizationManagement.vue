@@ -15,11 +15,7 @@
       class="organization-card px-md-6 rounded-lg"
       outlined
     >
-      <v-form
-        ref="form"
-        v-model="isFormValid"
-        @submit.prevent="handleSubmit"
-      >
+      <v-form ref="form">
         <v-row class="mt-2 px-3">
           <v-col cols="12" sm="3">
             <v-text-field
@@ -32,17 +28,26 @@
               hide-details
             />
           </v-col>
-          <v-col cols="12" sm="9">
+          <v-col cols="12" sm="9" class="d-flex align-center">
             <v-text-field
               v-model="organization.name"
               label="組織名"
               outlined
               dense
-              class="organization-name-input"
+              class="organization-name-input flex-grow-1"
               :rules="[v => !!v || '組織名は必須です']"
               required
-              @input="validateForm"
             />
+            <div class="ml-2 mb-4" style="width: 50px">
+              <v-btn 
+                v-if="isOrgNameChanged"
+                icon 
+                small 
+                @click="handleUpdateOrganization"
+              >
+                <v-icon color="teal">mdi-check</v-icon>
+              </v-btn>
+            </div>
           </v-col>
         </v-row>
 
@@ -72,6 +77,14 @@
             :items-per-page="-1"
             class="member-table text-body-2 elevation-4"
           >
+            <template #no-data>
+              <div class="d-flex flex-column align-center py-6">
+                <v-icon size="48" color="grey-lighten-1" class="mb-2">
+                  mdi-account-group-outline
+                </v-icon>
+                <div class="text-grey">メンバーが登録されていません</div>
+              </div>
+            </template>
             <template #[`item.icon`]>
               <v-icon size="x-large">mdi-account-box-outline</v-icon>
             </template>
@@ -136,7 +149,7 @@
           </v-data-table>
         </v-card>
 
-        <v-row class="mt-4 mx-0 mx-md-3 align-center">
+        <v-row class="mt-4 mx-0 align-center">
           <v-col cols="12" sm="2" class="px-1">
             <v-text-field
               v-model="newMember.id"
@@ -173,25 +186,12 @@
           </v-col>
           <v-col cols="12" sm="2" class="px-1">
             <v-btn
-              color="secondary"
+              color="primary"
               :disabled="isMaxMembersReached"
               @click="handleAddMember"
             >
-              メンバーを追加
-            </v-btn>
-          </v-col>
-        </v-row>
-
-        <v-row class="mt-2">
-          <v-col cols="12" class="d-flex justify-end">
-            <v-btn 
-              color="primary" 
-              type="submit" 
-              :loading="loading"
-              :disabled="!isFormValid || !!editingMember || !isFormChanged"
-            >
-              <v-icon class="mr-1">mdi-check</v-icon>
-              更新する
+              <v-icon class="mr-1">mdi-account-plus</v-icon>
+              メンバー登録
             </v-btn>
           </v-col>
         </v-row>
@@ -201,9 +201,10 @@
 </template>
 
 <script setup>
-import { reactive, toRefs, ref, onMounted, inject, computed, watch } from 'vue'
+import { reactive, toRefs, ref, onMounted, inject, computed } from 'vue'
 import { useStore } from 'vuex'
-import { submitOrganization, updateOrganization, getOrganization } from '../services/organizationService'
+import { updateOrganization, getOrganization } from '../services/organizationService'
+import { createMember, updateMember, deleteMember, listOrganizationMembers } from '../services/memberService'
 import { isValidEmail } from '../utils/string-utils'
 import { getCurrentPlan } from '../config/plans'
 
@@ -223,8 +224,6 @@ const state = reactive({
   editingMember: null,
   loading: false,
   isNew: true,
-  isFormValid: false,
-  isFormChanged: false,
   validationErrors: {
     id: '',
     name: '',
@@ -234,11 +233,11 @@ const state = reactive({
     name: '',
     email: ''
   },
-  originalOrganization: null,
-  originalMember: null, // 追加
-})
+  originalMember: null,
+  originalOrgName: '',
+}) 
 
-const { organization, newMember, editingMember, loading, isNew, isFormValid, isFormChanged, validationErrors, editValidationErrors, originalMember } = toRefs(state)
+const { organization, newMember, editingMember, loading, isNew, validationErrors, editValidationErrors, originalMember, originalOrgName } = toRefs(state)
 
 // テーブルのヘッダー定義を追加
 const headers = [
@@ -295,11 +294,6 @@ const useOrganizationValidation = (organization, newMember, validationErrors) =>
 
 const { validateMember, validateNewMember } = useOrganizationValidation(organization, newMember, validationErrors)
 
-// Computed property for organization validity
-const isOrganizationValid = computed(() => {
-  return organization.value.name.trim() !== ''
-})
-
 const getAdminFeatures = computed(() => {
   const currentPlan = getCurrentPlan()
   return currentPlan.adminFeatures
@@ -326,35 +320,59 @@ const memberManagement = {
     }
     
     if (validateNewMember()) {
-      organization.value.members.push({
+      const newMemberData = {
         id: newMember.value.id,
         name: newMember.value.name,
-        email: newMember.value.email
-      })
-      newMember.value = { id: '', name: '', email: '' }
-      validationErrors.value = { id: '', name: '', email: '' }
-      formManagement.handleFormChange()
+        email: newMember.value.email,
+        organizationId: organization.value.organizationId
+      }
+      
+      try {
+        await createMember(newMemberData)
+        organization.value.members.push(newMemberData)
+        newMember.value = { id: '', name: '', email: '' }
+        validationErrors.value = { id: '', name: '', email: '' }
+        showNotification('メンバーを追加しました')
+      } catch (error) {
+        showError('メンバーの追加に失敗しました', error)
+      }
     }
   },
 
-  handleUpdateMember(member) {
+  async handleUpdateMember(member) {
     if (validateMember(member, editValidationErrors.value)) {
-      const index = organization.value.members.findIndex(m => m.id === member.id)
-      if (index !== -1) {
-        organization.value.members[index] = { ...member }
+      try {
+        await updateMember({
+          ...member,
+          organizationId: organization.value.organizationId
+        })
+        const index = organization.value.members.findIndex(m => m.id === member.id)
+        if (index !== -1) {
+          organization.value.members[index] = { ...member }
+        }
+        editingMember.value = null
+        originalMember.value = null
+        editValidationErrors.value = { name: '', email: '' }
+        showNotification('メンバー情報を更新しました')
+      } catch (error) {
+        showError('メンバー情報の更新に失敗しました', error)
       }
-      editingMember.value = null
-      originalMember.value = null
-      editValidationErrors.value = { name: '', email: '' }
-      formManagement.handleFormChange()
     }
   },
 
   async handleDeleteMember(memberId) {
-    const confirmed = await showConfirmDialog('確認', '本当にこのメンバーを削除しますか？\n（更新するまでは確定されません）')
+    const confirmed = await showConfirmDialog('確認', 'このメンバーを削除しますか？')
     if (confirmed) {
-      organization.value.members = organization.value.members.filter((member) => member.id !== memberId)
-      formManagement.handleFormChange()
+      const member = organization.value.members.find(m => m.id === memberId)
+      if (!member) return
+
+      try {
+        await deleteMember(member.memberUuid)
+        organization.value.members = organization.value.members.filter(m => m.id !== memberId)
+        showNotification('メンバーを削除しました')
+      } catch (error) {
+        showError('メンバーの削除に失敗しました', error)
+      }
     }
   },
 
@@ -370,39 +388,24 @@ const memberManagement = {
   }
 }
 
-// formManagementのhandleSubmitを修正
-const formManagement = {
-  handleFormChange() {
-    isFormChanged.value = true
-  },
+// 組織名編集関連の関数
+const isOrgNameChanged = computed(() => {
+  return organization.value.name !== originalOrgName.value
+})
 
-  async validateForm() {
-    if (!form.value) {
-      isFormValid.value = false
-      return
-    }
-    const validation = await form.value.validate()
-    isFormValid.value = validation.valid
-  },
-
-  async handleSubmit() {
-    if (!isOrganizationValid.value || !isFormChanged.value) {
-      return
-    }
-
-    try {
-      if (isNew.value) {
-        await submitOrganization(organization.value)
-        showNotification('組織情報を登録しました')
-      } else {
-        await updateOrganization(organization.value)
-        showNotification('組織情報を更新しました')
-      }
-      state.originalOrganization = JSON.parse(JSON.stringify(organization.value))
-      isFormChanged.value = false
-    } catch (error) {
-      showError('組織の保存に失敗しました', error)
-    }
+const handleUpdateOrganization = async () => {
+  if (!organization.value.name.trim()) return
+  
+  try {
+    await updateOrganization({
+      organizationId: organization.value.organizationId,
+      name: organization.value.name
+    })
+    originalOrgName.value = organization.value.name
+    showNotification('組織名を更新しました')
+  } catch (error) {
+    showError('組織名の更新に失敗しました', error)
+    organization.value.name = originalOrgName.value
   }
 }
 
@@ -411,15 +414,21 @@ onMounted(async () => {
   if (organizationId) {
     loading.value = true
     try {
-      const result = await getOrganization(organizationId)
-      if (result && Object.keys(result).length > 0) {
-        organization.value = result
-        state.originalOrganization = JSON.parse(JSON.stringify(result))
+      const [orgResult, membersResult] = await Promise.all([
+        getOrganization(organizationId),
+        listOrganizationMembers(organizationId)
+      ])
+      
+      if (orgResult && Object.keys(orgResult).length > 0) {
+        organization.value = {
+          ...orgResult,
+          members: membersResult || []
+        }
+        originalOrgName.value = orgResult.name
         isNew.value = false
       } else {
         isNew.value = true
       }
-      await formManagement.validateForm()
     } catch (error) {
       showError('組織情報の取得に失敗しました', error)
     } finally {
@@ -428,19 +437,8 @@ onMounted(async () => {
   }
 })
 
-watch(
-  () => JSON.stringify(organization.value),
-  (newVal) => {
-    if (state.originalOrganization) {
-      isFormChanged.value = newVal !== JSON.stringify(state.originalOrganization)
-    }
-  },
-  { deep: true }
-)
-
 // Expose necessary functions and reactive references
 const { setEditingMember, handleAddMember, handleUpdateMember, handleDeleteMember, cancelEdit } = memberManagement
-const { validateForm, handleSubmit } = formManagement
 </script>
 
 <style scoped>

@@ -27,3 +27,15 @@ export const listMembers = async (organizationId) => {
 export const verifyEmail = async (memberUuid) => {
   return apiClient.put(`${BASE_PATH}/mail`, { verifyEmail: true, memberUuid })
 }
+
+export const createMember = async (member) => {
+  return apiClient.post(BASE_PATH, member)
+}
+
+export const deleteMember = async (memberUuid) => {
+  return apiClient.delete(BASE_PATH, { memberUuid })
+}
+
+export const listOrganizationMembers = async (organizationId) => {
+  return apiClient.get(BASE_PATH, { organizationId })
+}

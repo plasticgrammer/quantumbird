@@ -180,10 +180,8 @@
               :loading="loading"
               :disabled="!isFormValid"
             >
-              <v-icon class="mr-1">
-                {{ isNew ? 'mdi-account-plus' : 'mdi-content-save' }}
-              </v-icon>
-              {{ isNew ? 'アカウントを作成' : '変更を保存' }}
+              <v-icon class="mr-1">mdi-account-plus</v-icon>
+              アカウント作成
             </v-btn>
           </v-col>
         </v-row>
@@ -213,7 +211,6 @@ const account = ref({
 })
 const accounts = ref([])
 const loading = ref(false)
-const isNew = ref(true)
 const isFormValid = ref(false)
 const editingAccount = ref(null)
 const originalAccount = ref(null)
@@ -273,53 +270,35 @@ const loadAccounts = async () => {
 const handleSubmit = async () => {
   if (!isFormValid.value) return
 
-  if (isNew.value) {
-    // サブスクリプション上限チェック
-    const subscription = store.getters['auth/currentSubscription']
-    if (accounts.value.length >= subscription.accountCount) {
-      showError(`現在のプランでは${subscription.accountCount}アカウントまでしか作成できません。プランをアップグレードしてください。`)
-      return
-    }
+  // サブスクリプション上限チェック
+  const subscription = store.getters['auth/currentSubscription']
+  if (accounts.value.length >= subscription.accountCount) {
+    showError(`現在のプランでは${subscription.accountCount}アカウントまでしか作成できません。プランをアップグレードしてください。`)
+    return
+  }
 
-    loading.value = true
-    try {
-      await createAccount({
-        organizationId: organizationId.value,
-        ...account.value,
-        parentOrganizationId: currentOrganizationId
-      })
-      showNotification('アカウントを作成しました')
+  loading.value = true
+  try {
+    await createAccount({
+      organizationId: organizationId.value,
+      ...account.value,
+      parentOrganizationId: currentOrganizationId
+    })
+    showNotification('アカウントを作成しました')
 
-      await loadAccounts()
-      // フォームをリセット
-      organizationId.value = ''
-      account.value = { organizationName: '', email: '' }
-      isFormValid.value = false
-      // フォームの検証状態をリセット
-      if (form.value) {
-        form.value.reset()
-      }
-    } catch (error) {
-      showError('アカウントの作成に失敗しました', error)
-    } finally {
-      loading.value = false
+    await loadAccounts()
+    // フォームをリセット
+    organizationId.value = ''
+    account.value = { organizationName: '', email: '' }
+    isFormValid.value = false
+    // フォームの検証状態をリセット
+    if (form.value) {
+      form.value.reset()
     }
-  } else {
-    // 編集処理
-    loading.value = true
-    try {
-      await updateAccount({
-        organizationId: organizationId.value,
-        ...account.value
-      })
-      showNotification('アカウント情報を更新しました')
-      await loadAccounts()
-      cancelEdit()
-    } catch (error) {
-      showError('アカウントの更新に失敗しました', error)
-    } finally {
-      loading.value = false
-    }
+  } catch (error) {
+    showError('アカウントの作成に失敗しました', error)
+  } finally {
+    loading.value = false
   }
 }
 

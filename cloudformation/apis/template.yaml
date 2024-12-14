@@ -214,13 +214,10 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
-                - ses:SendRawEmail
-                - ses:SendEmail
-              Resource: "*"
-            - Effect: Allow
-              Action:
-                - sns:GetPlatformApplicationAttributes
                 - sns:CreatePlatformEndpoint
+                - sns:DeleteEndpoint
+                - sns:GetEndpointAttributes
+                - sns:GetPlatformApplicationAttributes
               Resource: !Ref WebPushPlatformApplicationArn
       Description: "Manages organization-related operations"
       Environment:
@@ -254,10 +251,18 @@ Resources:
       CodeUri: ./src/Member
       Policies:
         - AmazonDynamoDBFullAccess
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendRawEmail
+                - ses:SendEmail
+              Resource: "*"
       Description: "Manages member operations"
       Environment:
         Variables:
           STAGE: !Ref Stage
+          BASE_URL:
+            !If [IsProd, "https://fluxweek.com/", "http://localhost:3000"]
       Layers:
         - !Ref CommonLayer
       Events:

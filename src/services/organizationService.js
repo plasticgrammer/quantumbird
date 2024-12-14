@@ -3,11 +3,15 @@ import { apiClient } from './apiClient'
 const BASE_PATH = '/organization'
 
 export const submitOrganization = async (organization) => {
-  return apiClient.post(BASE_PATH, organization)
+  const orgData = { ...organization }
+  delete orgData.members
+  return apiClient.post(BASE_PATH, orgData)
 }
 
 export const updateOrganization = async (organization) => {
-  return apiClient.put(BASE_PATH, organization)
+  const orgData = { ...organization }
+  delete orgData.members
+  return apiClient.put(BASE_PATH, orgData)
 }
 
 export const updateOrganizationFeatures = async (organization_id, features) => {

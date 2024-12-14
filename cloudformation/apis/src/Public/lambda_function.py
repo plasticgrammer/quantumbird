@@ -257,6 +257,14 @@ def handle_put_member(event):
 
 def update_member_projects(member_uuid, projects):
     try:
+        # 既存のメンバー情報を取得
+        member = get_member(member_uuid)
+        if not member:
+            raise Exception('Member not found')
+
+        # プロジェクトリストを重複なしで更新
+        projects = list(dict.fromkeys(projects))  # 順序を保持しながら重複を削除
+
         response = members_table.update_item(
             Key={'memberUuid': member_uuid},
             UpdateExpression="SET projects = :p",
@@ -393,7 +401,7 @@ def send_push_notification_to_admins(organization_id, notification_type, report_
         if features.get('notifyByEmail'):
             # 管理者メールアドレスを取得
             admin_emails = get_admin_emails(organization_id)
-            if admin_emails:
+            if (admin_emails):
                 try:
                     logger.info(f"Send mail from: {sendFrom}, to: {admin_emails}")
                     common.publisher.send_mail(sendFrom, admin_emails, subject, bodyText)

@@ -7,6 +7,8 @@ import uuid
 from decimal import Decimal
 from common.utils import create_response
 import common.dynamo_items as dynamo_items
+import common.publisher
+import urllib.parse
 
 print('Loading function')
 
@@ -15,8 +17,23 @@ logger.setLevel(logging.INFO)
 
 dynamodb = boto3.resource('dynamodb')
 stage = os.environ.get('STAGE', 'dev')
+base_url = os.environ.get('BASE_URL', 'http://localhost:3000/')
 members_table_name = f'{stage}-Members'
 members_table = dynamodb.Table(members_table_name)
+organizations_table_name = f'{stage}-Organizations'
+organizations_table = dynamodb.Table(organizations_table_name)
+
+def get_organization(organization_id):
+    try:
+        response = organizations_table.get_item(
+            Key={
+                'organizationId': organization_id
+            }
+        )
+        return response.get('Item')
+    except Exception as e:
+        logger.error(f"Error getting organization: {str(e)}", exc_info=True)
+        return None
 
 def float_to_decimal(obj):
     if isinstance(obj, float):
@@ -76,33 +93,84 @@ def handle_get(event):
 
 def handle_post(event):
     data = json.loads(event['body'])
-    if 'memberUuid' in data:
+    if 'memberUuid' not in data:
+        data['memberUuid'] = str(uuid.uuid4())
+    
+    try:
+        organization = get_organization(data['organizationId'])
+        if not organization:
+            return create_response(404, {'message': 'Organization not found'})
+            
         item = dynamo_items.prepare_member_item(data)
-        response = members_table.put_item(Item=item)
-        logger.info(f"DynamoDB response: {response}")
+        item['emailConfirmed'] = False
+        
+        members_table.put_item(Item=item)
+        
+        # 確認メールの送信
+        send_confirmation_email(organization, item)
+        
         return create_response(201, {'message': 'Member created successfully'})
-    else:
-        return create_response(400, {'message': 'Invalid data structure'})
+    except Exception as e:
+        logger.error(f"Error creating member: {str(e)}", exc_info=True)
+        return create_response(500, {'message': str(e)})
+
+def send_confirmation_email(organization, member):
+    """メンバーに確認メールを送信する"""
+    try:
+        if not member.get('email'):
+            logger.warning(f"No email address for member: {member.get('id', 'Unknown ID')}")
+            return
+
+        sendFrom = common.publisher.get_from_address(organization)
+        subject = "【週次報告システム】メンバー登録設定完了のご連絡"
+        bodyText = "週次報告システムの送信先に登録されました。\n"
+        bodyText += f"組織名：{organization['name']}\n\n"
+        bodyText += "※本メールは、登録した際に配信される自動配信メールです。\n"
+
+        url = urllib.parse.urljoin(base_url, f"member/mail/{urllib.parse.quote(member['memberUuid'])}")
+        bodyText += "\n到達確認のため下記リンクをクリックしてください。\n"
+        bodyText += url
+
+        common.publisher.send_mail(sendFrom, [member['email']], subject, bodyText)
+        logger.info(f"Sent confirmation email to {member['email']}")
+    except Exception as e:
+        logger.error(f"Failed to send confirmation email: {str(e)}")
+        raise
 
 def handle_put(event):
     data = json.loads(event['body'])
-    if 'memberUuid' in data:
+    if 'memberUuid' not in data:
+        return create_response(400, {'message': 'memberUuid is required'})
+
+    try:
         member_uuid = data['memberUuid']
-        member = get_member(member_uuid)
+        existing_member = get_member(member_uuid)
         
-        if member is None:
+        if existing_member is None:
             return create_response(404, {'message': f'Member with UUID {member_uuid} not found'})
 
-        if 'projects' in data:
-            update_member_projects(member_uuid, data['projects'])
-            return create_response(200, {'message': 'Member projects updated successfully'})
-        else:
-            item = dynamo_items.prepare_member_item(data)
-            response = members_table.put_item(Item=item)
-            logger.info(f"Member update response: {response}")
-            return create_response(200, {'message': 'Member updated successfully'})
-    else:
-        return create_response(400, {'message': 'Invalid data structure'})
+        # メールアドレスが変更されたかチェック
+        email_changed = (data.get('email') and 
+                        data['email'] != existing_member.get('email'))
+
+        # メールアドレスが変更された場合は未確認状態に
+        if email_changed:
+            data['emailConfirmed'] = False
+
+        # メンバー情報を更新
+        item = dynamo_items.prepare_member_item(data, existing_member)
+        members_table.put_item(Item=item)
+
+        # メールアドレスが変更された場合は確認メールを再送信
+        if email_changed:
+            organization = get_organization(item['organizationId'])
+            if organization:
+                send_confirmation_email(organization, item)
+
+        return create_response(200, {'message': 'Member updated successfully'})
+    except Exception as e:
+        logger.error(f"Error updating member: {str(e)}", exc_info=True)
+        return create_response(500, {'message': str(e)})
 
 def handle_put_email_confirmed(event):
     data = json.loads(event['body'])
