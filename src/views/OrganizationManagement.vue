@@ -64,75 +64,69 @@
             type="table-tbody"
           />
           
-          <v-card 
-            v-for="member in organization.members" 
-            :key="member.id"
-            variant="flat"
-            class="rounded-0"
+          <v-data-table
+            v-else
+            :headers="headers"
+            :items="organization.members"
+            hide-default-footer
+            :items-per-page="-1"
+            class="member-table text-body-2 elevation-4"
           >
-            <v-card-text class="member-row px-3 py-1">
-              <v-row>
-                <v-col cols="12" sm="2" class="px-2">
-                  <v-text-field
-                    v-model="member.id"
-                    label="ID"
-                    dense
-                    hide-details="auto"
-                    readonly
-                    class="member-id-input"
-                  >
-                    <template #prepend>
-                      <v-icon size="x-large">
-                        mdi-account-box-outline
-                      </v-icon>
-                    </template>
-                  </v-text-field>
-                </v-col>
-                <v-col cols="12" sm="3" class="px-2">
-                  <v-text-field
-                    v-model="member.name"
-                    label="名前"
-                    outlined
-                    dense
-                    hide-details="auto"
-                    :readonly="editingMember?.id !== member.id"
-                    :error-messages="editingMember?.id === member.id ? editValidationErrors.name : ''"
-                  />
-                </v-col>
-                <v-col cols="12" sm="5" class="px-2">
-                  <v-text-field
-                    v-model="member.email"
-                    label="メールアドレス"
-                    outlined
-                    dense
-                    hide-details="auto"
-                    :readonly="editingMember?.id !== member.id"
-                    :error-messages="editingMember?.id === member.id ? editValidationErrors.email : ''"
-                  >
-                    <template #append>
-                      <v-icon v-if="member.emailConfirmed" v-tooltip:top="'メール確認済み'" color="success">
-                        mdi-check-circle
-                      </v-icon>
-                      <v-icon v-else v-tooltip:top="'メール確認中'">
-                        mdi-email-search-outline
-                      </v-icon>
-                    </template>
-                  </v-text-field>
-                </v-col>
-                <v-col cols="12" sm="2" class="d-flex justify-end">
-                  <v-btn v-if="editingMember?.id === member.id" icon small @click="handleUpdateMember(member)">
-                    <v-icon color="teal">mdi-check</v-icon>
-                  </v-btn>
-                  <v-btn v-else icon small @click="setEditingMember(member)">
-                    <v-icon>mdi-pencil</v-icon>
-                  </v-btn>
-                  <v-btn icon small @click="handleDeleteMember(member.id)">
-                    <v-icon>mdi-delete</v-icon>
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-card-text>
-          </v-card>
+            <template #[`item.icon`]>
+              <v-icon size="x-large">mdi-account-box-outline</v-icon>
+            </template>
+            <template #[`item.id`]="{ item }">
+              <v-text-field
+                :value="item.id"
+                dense
+                hide-details
+                readonly
+              >
+              </v-text-field>
+            </template>
+            <template #[`item.name`]="{ item }">
+              <v-text-field
+                v-model="item.name"
+                outlined
+                dense
+                hide-details
+                :readonly="editingMember?.id !== item.id"
+                :error-messages="editingMember?.id === item.id ? editValidationErrors.name : ''"
+              />
+            </template>
+            <template #[`item.email`]="{ item }">
+              <v-text-field
+                v-model="item.email"
+                outlined
+                dense
+                hide-details
+                :readonly="editingMember?.id !== item.id"
+                :error-messages="editingMember?.id === item.id ? editValidationErrors.email : ''"
+              >
+                <template #append>
+                  <v-icon v-if="item.emailConfirmed" v-tooltip:top="'メール確認済み'" color="success">
+                    mdi-check-circle
+                  </v-icon>
+                  <v-icon v-else v-tooltip:top="'メール確認中'" color="grey">
+                    mdi-email-search-outline
+                  </v-icon>
+                </template>
+              </v-text-field>
+            </template>
+            <template #[`item.actions`]="{ item }">
+              <div class="d-flex justify-end">
+                <v-btn v-if="editingMember?.id === item.id" icon small @click="handleUpdateMember(item)">
+                  <v-icon color="teal">mdi-check</v-icon>
+                </v-btn>
+                <v-btn v-else icon small @click="setEditingMember(item)">
+                  <v-icon>mdi-pencil</v-icon>
+                </v-btn>
+                <v-btn icon small @click="handleDeleteMember(item.id)">
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+              </div>
+            </template>
+          </v-data-table>
         </v-card>
 
         <v-row class="mt-4 mx-0 mx-md-3 align-center">
@@ -237,6 +231,15 @@ const state = reactive({
 })
 
 const { organization, newMember, editingMember, loading, isNew, isFormValid, isFormChanged, validationErrors, editValidationErrors } = toRefs(state)
+
+// テーブルのヘッダー定義を追加
+const headers = [
+  { title: '', key: 'icon', align: 'start', sortable: false, width: '30px' },
+  { title: 'ID', key: 'id', align: 'start', width: '100px' },
+  { title: '名前', key: 'name' },
+  { title: 'メールアドレス', key: 'email' },
+  { title: '操作', key: 'actions', align: 'center', sortable: false, width: '130px' }
+]
 
 // Inline definition of useOrganizationValidation
 const useOrganizationValidation = (organization, newMember, validationErrors) => {
@@ -438,5 +441,18 @@ const { validateForm, handleSubmit } = formManagement
   .v-row .v-col-12:has(button) {
     padding: 16px !important;
   }
+}
+
+.member-table {
+  width: 100%;
+}
+
+.member-table :deep(.v-text-field input) {
+  font-size: 0.925rem !important;
+  padding: 4px 8px !important;
+}
+
+.member-table :deep(.v-data-table-header) {
+  font-size: 0.925rem !important;
 }
 </style>

@@ -21,9 +21,9 @@
         @submit.prevent="handleSubmit"
       >
         <!-- アカウントリスト -->
-        <div class="d-flex justify-space-between align-center mb-2">
+        <div class="d-flex justify-end mb-4">
           <div class="text-subtitle-1">
-            登録アカウント数: {{ accounts.length }} / {{ maxAccountCount }}
+            登録アカウント数: <span class="ml-1 font-weight-bold">{{ accounts.length }} / {{ maxAccountCount }}</span>
           </div>
         </div>
 
@@ -41,43 +41,44 @@
             :items="accounts"
             hide-default-footer
             :items-per-page="-1"
-            class="account-table text-body-2"
+            class="account-table text-body-2 elevation-4"
           >
+            <template #[`item.organizationId`]="{ item }">
+              <v-text-field
+                :value="item.organizationId"
+                dense
+                hide-details
+                readonly
+              />
+            </template>
             <template #[`item.organizationName`]="{ item }">
               <v-text-field
                 v-model="item.organizationName"
-                dense
-                hide-details="auto"
-                :readonly="editingAccount?.organizationId !== item.organizationId"
                 outlined
-                @input="validateForm"
+                dense
+                hide-details
+                :readonly="editingAccount?.organizationId !== item.organizationId"
+                required
               />
             </template>
             <template #[`item.email`]="{ item }">
               <v-text-field
                 v-model="item.email"
+                outlined
                 dense
-                hide-details="auto"
+                hide-details
                 :readonly="editingAccount?.organizationId !== item.organizationId"
-                outlined
-                @input="validateForm"
-              />
-            </template>
-            <template #[`item.organizationId`]="{ item }">
-              <v-text-field
-                :value="item.organizationId"
-                dense
-                hide-details="auto"
-                readonly
-                outlined
-              />
-            </template>
-            <template #[`item.status`]="{ item }">
-              <v-chip
-                :color="getStatusColor(item.status)"
+                required
               >
-                {{ getStatusLabel(item.status) }}
-              </v-chip>
+                <template #append>
+                  <v-icon
+                    v-tooltip:top="getStatusLabel(item.status)"
+                    :color="getStatusColor(item.status)"
+                  >
+                    {{ getStatusIcon(item.status) }}
+                  </v-icon>
+                </template>
+              </v-text-field>
             </template>
             <template #[`item.actions`]="{ item }">
               <div class="d-flex justify-end">
@@ -121,14 +122,9 @@
           </v-data-table>
         </v-card>
 
-        <v-divider class="mb-4" />
-
         <!-- アカウント編集/作成フォーム -->
-        <v-row class="mt-6 px-3">
-          <v-col cols="12">
-            <h4>新規アカウント作成</h4>
-          </v-col>
-          <v-col cols="12" sm="4">
+        <v-row class="mt-4 px-3">
+          <v-col cols="12" sm="2">
             <v-text-field
               v-model="organizationId"
               label="組織ID"
@@ -139,7 +135,7 @@
               @input="clearErrorMessage"
             />
           </v-col>
-          <v-col cols="12" sm="4">
+          <v-col cols="12" sm="5">
             <v-text-field
               v-model="account.organizationName"
               label="組織名"
@@ -150,7 +146,7 @@
               @input="validateForm"
             />
           </v-col>
-          <v-col cols="12" sm="4">
+          <v-col cols="12" sm="5">
             <v-text-field
               v-model="account.email"
               label="メールアドレス"
@@ -219,17 +215,24 @@ const isFormValid = ref(false)
 const editingAccount = ref(null)
 
 const headers = [
-  { title: '組織ID', key: 'organizationId', align: 'start' },
+  { title: '組織ID', key: 'organizationId', align: 'start', width: '130px' },
   { title: '組織名', key: 'organizationName' },
   { title: 'メールアドレス', key: 'email' },
-  { title: 'ステータス', key: 'status', width: '150px' },
   { title: '操作', key: 'actions', align: 'center', sortable: false, width: '130px' }
 ]
+
+const getStatusIcon = (status) => {
+  switch (status) {
+  case 'CONFIRMED': return 'mdi-check-circle'
+  case 'FORCE_CHANGE_PASSWORD': return 'mdi-email-search-outline'
+  default: return 'mdi-alert-circle'
+  }
+}
 
 const getStatusColor = (status) => {
   switch (status) {
   case 'CONFIRMED': return 'success'
-  case 'FORCE_CHANGE_PASSWORD': return 'warning'
+  case 'FORCE_CHANGE_PASSWORD': return 'grey'
   default: return 'error'
   }
 }
@@ -237,7 +240,7 @@ const getStatusColor = (status) => {
 const getStatusLabel = (status) => {
   switch (status) {
   case 'CONFIRMED': return '有効'
-  case 'FORCE_CHANGE_PASSWORD': return '初期設定待ち'
+  case 'FORCE_CHANGE_PASSWORD': return '初期設���待ち'
   default: return '無効'
   }
 }
@@ -359,6 +362,17 @@ const handleEditAccount = (item) => {
 
 const handleSaveEdit = async (item) => {
   try {
+    // メールアドレスのバリデーション
+    if (!isValidEmail(item.email)) {
+      showError('有効なメールアドレスを入力してください')
+      return
+    }
+    // 組織名の必須チェック
+    if (!item.organizationName) {
+      showError('組織名は必須です')
+      return
+    }
+
     await updateAccount({
       organizationId: item.organizationId,
       organizationName: item.organizationName,
@@ -366,7 +380,6 @@ const handleSaveEdit = async (item) => {
       oldEmail: editingAccount.value.email
     })
     showNotification('アカウント情報を更新しました')
-    //await loadAccounts()
     editingAccount.value = null
   } catch (error) {
     showError('アカウントの更新に失敗しました', error)
@@ -401,11 +414,11 @@ onMounted(loadAccounts)
 }
 
 .account-table :deep(.v-text-field input) {
-  font-size: 0.875rem !important;
+  font-size: 0.925rem !important;
   padding: 4px 8px !important;
 }
 
 .account-table :deep(.v-data-table-header) {
-  font-size: 0.875rem !important;
+  font-size: 0.925rem !important;
 }
 </style>
