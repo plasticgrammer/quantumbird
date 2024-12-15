@@ -22,6 +22,8 @@ members_table_name = f'{stage}-Members'
 members_table = dynamodb.Table(members_table_name)
 organizations_table_name = f'{stage}-Organizations'
 organizations_table = dynamodb.Table(organizations_table_name)
+weekly_reports_table_name = f'{stage}-WeeklyReports'
+weekly_reports_table = dynamodb.Table(weekly_reports_table_name)
 
 def get_organization(organization_id):
     try:
@@ -255,6 +257,10 @@ def update_member_projects(member_uuid, projects):
 
 def delete_member(member_uuid):
     try:
+        # メンバーの週次レポートを全て削除
+        delete_member_reports(member_uuid)
+        
+        # メンバー情報を削除
         members_table.delete_item(
             Key={
                 'memberUuid': member_uuid
@@ -262,4 +268,40 @@ def delete_member(member_uuid):
         )
     except Exception as e:
         logger.error(f"Error deleting member: {str(e)}", exc_info=True)
+        raise e
+
+def delete_member_reports(member_uuid):
+    """メンバーの全週次レポートを削除する"""
+    try:
+        # メンバーの全レポートを取得
+        reports = []
+        last_evaluated_key = None
+        
+        while True:
+            if last_evaluated_key:
+                response = weekly_reports_table.query(
+                    KeyConditionExpression=Key('memberUuid').eq(member_uuid),
+                    ExclusiveStartKey=last_evaluated_key
+                )
+            else:
+                response = weekly_reports_table.query(
+                    KeyConditionExpression=Key('memberUuid').eq(member_uuid)
+                )
+            
+            # 見つかったレポートを削除
+            for item in response.get('Items', []):
+                weekly_reports_table.delete_item(
+                    Key={
+                        'memberUuid': member_uuid,
+                        'weekString': item['weekString']
+                    }
+                )
+            
+            last_evaluated_key = response.get('LastEvaluatedKey')
+            if not last_evaluated_key:
+                break
+                
+        logger.info(f"Deleted all reports for member: {member_uuid}")
+    except Exception as e:
+        logger.error(f"Error deleting member reports: {str(e)}", exc_info=True)
         raise e
