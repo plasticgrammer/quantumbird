@@ -1,5 +1,5 @@
 <template>
-  <v-container class="account-management-container">
+  <v-container v-if="hasAccess" class="account-management-container">
     <v-row dense class="pb-4">
       <v-col>
         <h3>
@@ -39,10 +39,18 @@
             :loading="loading"
             :headers="headers"
             :items="accounts"
-            hide-default-footer
             :items-per-page="-1"
+            hide-default-footer
             class="account-table text-body-2 elevation-4"
           >
+            <template #no-data>
+              <div class="d-flex flex-column align-center py-6">
+                <v-icon size="48" color="grey-lighten-1" class="mb-2">
+                  mdi-account-group-outline
+                </v-icon>
+                <div class="text-grey">アカウントが登録されていません</div>
+              </div>
+            </template>
             <template #[`item.organizationId`]="{ item }">
               <v-text-field
                 :value="item.organizationId"
@@ -84,6 +92,7 @@
               <div class="d-flex justify-end">
                 <v-btn
                   v-if="item.status === 'FORCE_CHANGE_PASSWORD'"
+                  v-tooltip:top="'招待メールを再送信'"
                   icon
                   small
                   :disabled="loading"
@@ -93,6 +102,7 @@
                 </v-btn>
                 <template v-if="editingAccount?.organizationId === item.organizationId">
                   <v-btn
+                    v-tooltip:top="'キャンセル'"
                     icon
                     small
                     :disabled="loading"
@@ -101,6 +111,7 @@
                     <v-icon>mdi-close</v-icon>
                   </v-btn>
                   <v-btn
+                    v-tooltip:top="'保存'"
                     icon
                     small
                     :disabled="loading"
@@ -111,6 +122,7 @@
                 </template>
                 <template v-else>
                   <v-btn
+                    v-tooltip:top="'編集'"
                     icon
                     small
                     :disabled="loading"
@@ -119,6 +131,7 @@
                     <v-icon>mdi-pencil</v-icon>
                   </v-btn>
                   <v-btn
+                    v-tooltip:top="'削除'"
                     icon
                     small
                     :disabled="loading"
@@ -133,7 +146,7 @@
         </v-card>
 
         <!-- アカウント編集/作成フォーム -->
-        <v-row class="mt-4 px-3">
+        <v-row class="mt-4">
           <v-col cols="12" sm="2">
             <v-text-field
               v-model="organizationId"
@@ -193,6 +206,7 @@
 <script setup>
 import { ref, inject, onMounted, computed } from 'vue'
 import { useStore } from 'vuex'
+import { getCurrentPlan } from '../config/plans'
 import { isValidEmail, validateOrganizationId } from '../utils/string-utils'
 import { createAccount, getAccounts, deleteAccount, resendInvitation, updateAccount } from '../services/accountService'
 import { deleteOrganizationCompletely } from '../services/organizationService'
@@ -225,7 +239,7 @@ const headers = [
 const getStatusIcon = (status) => {
   switch (status) {
   case 'CONFIRMED': return 'mdi-check-circle'
-  case 'FORCE_CHANGE_PASSWORD': return 'mdi-email-search-outline'
+  case 'FORCE_CHANGE_PASSWORD': return 'mdi-account-clock-outline'
   default: return 'mdi-alert-circle'
   }
 }
@@ -386,7 +400,21 @@ const maxAccountCount = computed(() => {
   return store.getters['auth/currentSubscription'].accountCount
 })
 
-onMounted(loadAccounts)
+// アクセス権限チェック
+const hasAccess = computed(() => {
+  const isParentAccount = store.getters['auth/isParentAccount']
+  const hasAccountManagement = getCurrentPlan().adminFeatures.accountManagement
+  return isParentAccount && hasAccountManagement
+})
+
+// コンポーネントマウント時の処理
+onMounted(async () => {
+  if (!hasAccess.value) {
+    showError('この機能は親組織アカウントのみが利用できます')
+    return
+  }
+  await loadAccounts()
+})
 </script>
 
 <style scoped>

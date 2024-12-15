@@ -24,7 +24,7 @@
         v-if="!isLoading"
         class="text-body-1 px-0"
       >
-        <p v-if="organization.members.length == 0">
+        <p v-if="members.length === 0">
           最初に組織情報の登録が必要です。<br>
           <v-btn
             color="black"
@@ -104,6 +104,7 @@ import { useCalendar } from '../composables/useCalendar'
 import { useResponsive } from '../composables/useResponsive'
 import { getOrganization } from '../services/organizationService'
 import { getReportStatus } from '../services/reportService'
+import { listOrganizationMembers } from '../services/memberService'
 import StarBackground from '../components/StarBackground.vue'
 
 const store = useStore()
@@ -113,14 +114,19 @@ const { isMobile } = useResponsive()
 
 const isLoading = ref(true)
 const error = ref(null)
-const organization = ref('')
+const organization = ref({})
+const members = ref([])
 const reportStatus = ref('')
 const weekString = ref('')
 
 const fetchOrganizationInfo = async () => {
   try {
-    const org = await getOrganization(organizationId)
+    const [org, memberList] = await Promise.all([
+      getOrganization(organizationId),
+      listOrganizationMembers(organizationId)
+    ])
     organization.value = org
+    members.value = memberList
   } catch (err) {
     console.error('Failed to fetch organization info:', err)
     error.value = '組織情報の取得に失敗しました'

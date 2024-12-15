@@ -234,7 +234,7 @@ const navigationItems = computed(() => {
     },
   ]
 
-  if (currentPlan.value.adminFeatures.accountManagement) {
+  if (currentPlan.value.adminFeatures.accountManagement && store.getters['auth/isParentAccount']) {
     items.push({
       icon: 'mdi-account-cog',
       title: '組織アカウント管理',

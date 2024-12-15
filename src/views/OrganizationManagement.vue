@@ -129,18 +129,38 @@
             <template #[`item.actions`]="{ item }">
               <div class="d-flex justify-end">
                 <template v-if="editingMember?.id === item.id">
-                  <v-btn icon small @click="cancelEdit">
+                  <v-btn 
+                    v-tooltip:top="'キャンセル'"
+                    icon 
+                    small 
+                    @click="cancelEdit"
+                  >
                     <v-icon>mdi-close</v-icon>
                   </v-btn>
-                  <v-btn icon small @click="handleUpdateMember(item)">
+                  <v-btn 
+                    v-tooltip:top="'保存'"
+                    icon 
+                    small 
+                    @click="handleUpdateMember(item)"
+                  >
                     <v-icon color="teal">mdi-check</v-icon>
                   </v-btn>
                 </template>
                 <template v-else>
-                  <v-btn icon small @click="setEditingMember(item)">
+                  <v-btn 
+                    v-tooltip:top="'編集'"
+                    icon 
+                    small 
+                    @click="setEditingMember(item)"
+                  >
                     <v-icon>mdi-pencil</v-icon>
                   </v-btn>
-                  <v-btn icon small @click="handleDeleteMember(item.id)">
+                  <v-btn 
+                    v-tooltip:top="'削除'"
+                    icon 
+                    small 
+                    @click="handleDeleteMember(item.id)"
+                  >
                     <v-icon>mdi-delete</v-icon>
                   </v-btn>
                 </template>
@@ -187,7 +207,7 @@
           <v-col cols="12" sm="2" class="px-1">
             <v-btn
               color="primary"
-              :disabled="isMaxMembersReached"
+              :disabled="isSubmitDisabled"
               @click="handleAddMember"
             >
               <v-icon class="mr-1">mdi-account-plus</v-icon>
@@ -304,6 +324,13 @@ const isMaxMembersReached = computed(() => {
   return maxMembers !== -1 && organization.value.members.length >= maxMembers
 })
 
+const isSubmitDisabled = computed(() => {
+  return !newMember.value.id.trim() || 
+         !newMember.value.name.trim() || 
+         !newMember.value.email.trim() ||
+         isMaxMembersReached.value
+})
+
 // Group related functions
 const memberManagement = {
   setEditingMember(member) {
@@ -402,7 +429,7 @@ const handleUpdateOrganization = async () => {
       name: organization.value.name
     })
     originalOrgName.value = organization.value.name
-    showNotification('組織名を更新しました')
+    showNotification('組織名を更新��ました')
   } catch (error) {
     showError('組織名の更新に失敗しました', error)
     organization.value.name = originalOrgName.value
