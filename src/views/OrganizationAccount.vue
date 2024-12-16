@@ -41,7 +41,7 @@
             :items="accounts"
             :items-per-page="-1"
             hide-default-footer
-            class="account-table text-body-2 elevation-4"
+            class="account-table text-body-2 elevation-4 mobile-responsive-table"
           >
             <template #no-data>
               <div class="d-flex flex-column align-center py-6">
@@ -440,5 +440,47 @@ onMounted(async () => {
 
 .account-table :deep(.v-data-table-header__content) {
   padding-left: 8px !important;
+}
+
+@media (max-width: 600px) {
+  .v-row .v-col-12 {
+    padding: 4px !important;
+  }
+
+  .v-row .v-col-12:has(button) {
+    padding: 16px !important;
+  }
+  
+  .mobile-responsive-table :deep(.v-data-table__wrapper) {
+    overflow-x: hidden;
+  }
+
+  .mobile-responsive-table :deep(tr) {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  }
+
+  .mobile-responsive-table :deep(td) {
+    padding: 4px 8px !important;
+    border-bottom: none !important;
+    height: auto !important;
+    display: flex;
+    align-items: center;
+  }
+
+  .mobile-responsive-table :deep(thead) {
+    display: none;
+  }
+
+  .mobile-responsive-table :deep(.v-text-field) {
+    width: 100%;
+    max-width: none;
+  }
+
+  .mobile-responsive-table :deep(.v-text-field__slot input) {
+    min-width: 0;
+  }
 }
 </style>
