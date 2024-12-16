@@ -50,7 +50,7 @@
           color="blue-lighten-5 border-thin" 
           outlined
         >
-          <v-card-title>お支払い設定</v-card-title>
+          <v-card-title>支払い設定</v-card-title>
           <v-card-text class="px-6">
             <v-row align="center">
               <v-col cols="12" md="9">
@@ -71,7 +71,7 @@
               </v-col>
               <v-col cols="12" md="auto">
                 <v-btn color="primary" @click="router.push({ name: 'Billing' })">
-                  <v-icon class="mr-2">mdi-currency-usd</v-icon>
+                  <v-icon class="mr-2">mdi-wallet-outline</v-icon>
                   支払い設定
                 </v-btn>
               </v-col>

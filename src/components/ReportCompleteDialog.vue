@@ -325,8 +325,16 @@ const handleKeydown = (event) => {
   }
 }
 
+const preloadAdvisorImages = () => {
+  Object.values(availableAdvisors.value).forEach(advisor => {
+    const img = new Image()
+    img.src = advisor.image
+  })
+}
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
+  preloadAdvisorImages()
 })
 
 onUnmounted(() => {
@@ -369,6 +377,17 @@ watch(() => props.reportContent,
 
 .advisor-image :deep(.v-img__img) {
   object-fit: cover !important;
+  opacity: 0;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .text-advice {
