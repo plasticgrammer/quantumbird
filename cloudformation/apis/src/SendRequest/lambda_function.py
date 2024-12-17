@@ -126,7 +126,7 @@ def get_members_without_report(organization_id, week_string, members):
     # レポートを提出したメンバーのUUIDセットを作成
     reported_member_uuids = set(report['memberUuid'] for report in reports)
     
-    # レポートを提出し���いないメンバーをフィルタリング
+    # レポートを提出していないメンバーをフィルタリング
     members_without_report = [
         member for member in members 
         if member['memberUuid'] not in reported_member_uuids

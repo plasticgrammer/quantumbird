@@ -445,7 +445,7 @@ const handleAuthError = (error) => {
 
   const errorMessages = {
     UserAlreadyAuthenticatedException: '既にサインインしています。一度サインアウトしてから再試行してください。',
-    UserNotConfirmedException: 'ユーザーアカウントが確認されていません。���認コードを入力してください。',
+    UserNotConfirmedException: 'ユーザーアカウントが確認されていません。確認コードを入力してください。',
     NotAuthorizedException: 'メールアドレスまたはパスワードが正しくありません。',
     UserNotFoundException: 'このメールアドレスに対応するアカウントが見つかりません。',
     NewPasswordRequiredException: '初回ログインのため、パスワードの変更が必要です。',
