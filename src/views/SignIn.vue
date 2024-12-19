@@ -26,6 +26,16 @@
           @click:close="errorMessage = ''"
         >
           {{ errorMessage }}
+          <div v-if="isAlreadyAuthenticated">
+            <v-btn
+              color="white"
+              variant="tonal"
+              class="mt-2"
+              @click="handleSignOut"
+            >
+              ログアウトする
+            </v-btn>
+          </div>
         </v-alert>
 
         <!-- サインインフォーム -->
@@ -207,7 +217,8 @@ import {
   signUp, 
   confirmSignUp, 
   resendSignUpCode,
-  confirmSignIn
+  confirmSignIn,
+  signOut
 } from '@aws-amplify/auth'
 import { getOrganization, submitOrganization } from '../services/publicService'
 import { validateOrganizationId } from '../utils/string-utils'
@@ -234,6 +245,7 @@ const errorMessage = ref('')
 const signUpForm = ref(null)
 const agreeToTerms = ref(false)
 const agreeToPrivacy = ref(false)
+const isAlreadyAuthenticated = ref(false)
 
 // Computed properties
 const title = computed(() => {
@@ -439,6 +451,21 @@ const handleChangePassword = async () => {
   }
 }
 
+const handleSignOut = async () => {
+  loading.value = true
+  try {
+    await signOut()
+    errorMessage.value = ''
+    isAlreadyAuthenticated.value = false
+    successMessage.value = 'ログアウトしました。再度サインインしてください。'
+  } catch (error) {
+    console.error('Signout error:', error)
+    errorMessage.value = 'ログアウトに失敗しました。'
+  } finally {
+    loading.value = false
+  }
+}
+
 const handleAuthError = (error) => {
   console.log('Auth error type:', error.name) // デバッグログ
   console.log('Auth error message:', error.message) // デバッグログ
@@ -465,6 +492,10 @@ const handleAuthError = (error) => {
       error.message?.includes('NEW_PASSWORD_REQUIRED')) {
     currentView.value = 'changePassword'
     return
+  }
+
+  if (error.name === 'UserAlreadyAuthenticatedException') {
+    isAlreadyAuthenticated.value = true
   }
 
   // エラーメッセージの設定

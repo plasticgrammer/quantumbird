@@ -132,6 +132,12 @@ const routes = [
     meta: { hideNavigation: true, hideAnimation: true }
   },
   {
+    path: '/about',
+    name: 'About',
+    component: () => import('../views/About.vue'),
+    meta: { hideNavigation: true, hideMascot: true, fullWidth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../views/NotFound.vue'),

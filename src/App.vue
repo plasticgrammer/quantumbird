@@ -166,9 +166,10 @@
 
     <!-- Main content area -->
     <v-main :class="{ 'noshift': isRailModeActive }" :style="appStyle" role="main">
-      <div class="content-wrapper">
+      <div v-if="!isFullWidthPage" class="content-wrapper">
         <router-view />
       </div>
+      <router-view v-else />
     </v-main>
 
     <!-- Confirmation dialog -->
@@ -436,6 +437,11 @@ onMounted(() => {
 watch(isRailMode, (newValue) => {
   // RailModeの状態が変更されたときにローカルストレージに保存
   localStorage.setItem('railMode', JSON.stringify(newValue))
+})
+
+// メタデータに基づいてレイアウトを制御
+const isFullWidthPage = computed(() => {
+  return router.currentRoute.value.meta.fullWidth || false
 })
 </script>
 

@@ -23,6 +23,6 @@ frontend:
         - key: 'Cache-Control'
           value: 'no-cache'
   redirects:
-    - source: '</^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|ttf|map|json|html|webmanifest)$)([^.]+$)/>'
+    - source: '</^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json|html|webmanifest)$)([^.]+$)/>'
       target: '/index.html'
       status: '200'
