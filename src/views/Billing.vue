@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <!-- 子アカウントの場合のエラー表示 -->
+    <!-- 子アカウントでのメッセージ表示 -->
     <template v-if="!isParentAccount">
       <v-row dense class="pb-4">
         <v-col>
@@ -38,7 +38,7 @@
         <v-card-title>現在のプラン</v-card-title>
         <v-card-text>
           <v-row align="center">
-            <v-col>
+            <v-col class="me-auto">
               <div class="text-h6 font-weight-bold">{{ currentPlanName }}</div>
               <p class="text-body-1 mt-2 px-4">
                 <span v-if="currentPlanPrice === 0">無料</span>
@@ -51,7 +51,7 @@
                 ※ {{ formatDate(currentSubscription.currentPeriodEnd) }}まで現在のプランが有効です
               </p>
             </v-col>
-            <v-col cols="auto">
+            <v-col>
               <v-btn color="primary" @click="handleShowPlanSelector">
                 プランを変更
               </v-btn>

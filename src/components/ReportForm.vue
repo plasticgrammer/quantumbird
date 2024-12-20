@@ -623,6 +623,7 @@ const copyFromPreviousWeek = () => {
         workItems: project.workItems.map(item => ({ ...item }))
       })) || [],
     }
+    showNotification('前週の報告内容をコピーしました。')
   }
 }
 
