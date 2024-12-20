@@ -50,7 +50,7 @@
             <v-sheet class="text-left pa-4 pt-1 mx-3 rounded-lg advisor-container">
               <v-img
                 :src="advisorRoles[advisorState.selectedRole].image"
-                max-width="160"
+                max-width="120"
                 class="mx-auto mt-0 mb-3"
                 :aspect-ratio="1"
               ></v-img>
@@ -102,19 +102,17 @@
                       >
                       </v-img>
                     </div>
-                    <v-card-item class="pt-0">
-                      <v-card-title class="font-weight-bold">
-                        <v-icon
-                          :icon="advisor.icon"
-                          :color="advisor.color"
-                          class="mt-n1 me-2"
-                        />
-                        {{ advisor.title }}
-                      </v-card-title>
-                      <v-card-title class="text-body-2 py-2">
+                    <v-card-title class="font-weight-bold">
+                      <v-icon
+                        :icon="advisor.icon"
+                        :color="advisor.color"
+                        class="mt-n1 me-2"
+                      />
+                      {{ advisor.title }}
+                      <div class="text-body-2 py-2">
                         {{ advisor.description }}
-                      </v-card-title>
-                    </v-card-item>
+                      </div>
+                    </v-card-title>
                   </v-card>
                 </v-window-item>
               </v-window>
