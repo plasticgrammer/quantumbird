@@ -1,7 +1,7 @@
 <template>
   <v-dialog 
     :model-value="modelValue"
-    :max-width="isAdviceEnabled ? 600 : 480"
+    :max-width="isAdviceEnabled ? (advisorState.isAdviceAvailable ? 780 : 600) : 480"
     persistent
     @update:model-value="handleDialogUpdate"
   >
@@ -111,9 +111,9 @@
                         />
                         {{ advisor.title }}
                       </v-card-title>
-                      <v-card-subtitle class="text-body-2 py-2">
+                      <v-card-title class="text-body-2 py-2">
                         {{ advisor.description }}
-                      </v-card-subtitle>
+                      </v-card-title>
                     </v-card-item>
                   </v-card>
                 </v-window-item>
@@ -122,11 +122,12 @@
               <div class="d-flex justify-center mb-2">
                 <v-btn
                   v-if="advisorState.remainingTickets > 0"
-                  class="px-8"
+                  class="px-8 border-thin"
+                  style="--v-border-color: auto"
                   min-width="50%"
                   height="60px"
-                  variant="outlined"
-                  color="grey-darken-2"
+                  variant="tonal"
+                  color="indigo"
                   :disabled="advisorState.remainingTickets === 0"
                   @mouseenter="handleButtonHover(true)"
                   @mouseleave="handleButtonHover(false)"
@@ -145,7 +146,7 @@
                         <v-icon icon="mdi-comment-text-outline" size="large" class="me-2" />
                         <span>このアドバイザーに相談する</span>
                       </div>
-                      <div class="text-caption text-grey-darken-1 pt-1">
+                      <div class="text-caption pt-1">
                         （<v-icon size="small" class="mx-1">mdi-ticket</v-icon>チケットを1枚消費します）
                       </div>
                     </div>
@@ -372,7 +373,7 @@ watch(() => props.reportContent,
 }
 
 .scale-up {
-  transform: scale(1.25);
+  transform: scale(1.15);
 }
 
 .advisor-image :deep(.v-img__img) {
