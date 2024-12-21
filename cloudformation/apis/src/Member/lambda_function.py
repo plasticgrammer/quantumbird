@@ -249,7 +249,6 @@ def update_member_projects(member_uuid, projects):
             ExpressionAttributeValues={':p': projects},
             ReturnValues="UPDATED_NEW"
         )
-        logger.info(f"Update member projects response: {response}")
         return response
     except Exception as e:
         logger.error(f"Error updating member projects: {str(e)}", exc_info=True)

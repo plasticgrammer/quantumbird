@@ -111,8 +111,15 @@ def check_plan_change_cooldown(subscription: stripe.Subscription) -> None:
 def create_subscription(body: Dict, client_ip: str) -> Dict:
     """サブスクリプション作成処理"""
     try:
+        request_id = None
+        if 'requestContext' in body:
+            request_id = body['requestContext'].get('requestId', 'unknown')
+        
+        logger.info(f"Starting subscription creation - RequestId: {request_id}, Email: {body['email']}, PriceId: {body['priceId']}")
+        
         # 冪等性キーの取得
         idempotency_key = body.get('idempotencyKey', str(uuid.uuid4()))
+        logger.info(f"Using idempotency key: {idempotency_key}")
         
         email = body['email']
         token = body.get('token')
@@ -140,6 +147,7 @@ def create_subscription(body: Dict, client_ip: str) -> Dict:
 
         # フリープランの場合の処理を修正
         if price_id == PaymentConfig.PRICE_ID_FREE:
+            logger.info(f"Free plan selected - RequestId: {request_id}")
             return create_subscription_response(None, PaymentConfig.PRICE_ID_FREE, 0)
         
         try:
@@ -178,19 +186,19 @@ def create_subscription(body: Dict, client_ip: str) -> Dict:
                     **stripe_params
                 )
             
-            logger.info(f"Subscription created successfully: {subscription.id}")
+            logger.info(f"Subscription created successfully - RequestId: {request_id}, SubscriptionId: {subscription.id}, CustomerId: {customer.id}, PriceId: {price_id}")
             return create_subscription_response(subscription, price_id, account_count)
             
         except stripe.error.CardError as e:
             error_msg = get_card_error_message(e)
-            log_error(e, {'customer_id': customer.id, 'price_id': price_id})
+            log_error(e, {'request_id': request_id, 'customer_id': customer.id, 'price_id': price_id})
             raise PaymentError(error_msg)
         except stripe.error.StripeError as e:
             log_error(e, {'customer_id': customer.id, 'price_id': price_id})
             raise
             
     except Exception as e:
-        log_error(e, {'body': body})
+        log_error(e, {'request_id': request_id, 'body': body})
         raise
 
 def update_subscription(body: Dict) -> Dict:
@@ -231,9 +239,15 @@ def update_subscription(body: Dict) -> Dict:
 
 def handle_paid_plan_change(subscription: stripe.Subscription, new_price_id: str, new_account_count: int) -> Dict:
     """有料プラン間の変更処理"""
+    request_id = str(uuid.uuid4())
+    logger.info(f"Starting plan change - RequestId: {request_id}, SubscriptionId: {subscription.id}, NewPriceId: {new_price_id}, NewAccountCount: {new_account_count}")
+    
     try:
         subscription_item = subscription['items']['data'][0]
         current_product = subscription_item.price.product
+        
+        # プラン変更の詳細をログ出力
+        logger.info(f"Plan change details - RequestId: {request_id}, CurrentProduct: {current_product}, CurrentPriceId: {subscription_item.price.id}, NewPriceId: {new_price_id}")
         
         # 同じビジネスプラン内でのアカウント数変更の場合
         if (new_price_id == PaymentConfig.PRICE_ID_BUSINESS and 
@@ -342,6 +356,7 @@ def handle_paid_plan_change(subscription: stripe.Subscription, new_price_id: str
             cancel_at_period_end=False
         )
         
+        logger.info(f"Plan change completed - RequestId: {request_id}, SubscriptionId: {subscription.id}, NewPriceId: {new_price_id}")
         return create_subscription_response(
             updated_subscription,
             new_price_id,
@@ -349,7 +364,7 @@ def handle_paid_plan_change(subscription: stripe.Subscription, new_price_id: str
         )
         
     except stripe.error.StripeError as e:
-        print(f"Error in handle_paid_plan_change: {str(e)}")
+        logger.error(f"Plan change failed - RequestId: {request_id}, Error: {str(e)}")
         raise PaymentError(f'プラン変更に失敗しました: {str(e)}')
 
 def change_subscription_plan(body: Dict) -> Dict:
@@ -546,9 +561,16 @@ def update_payment_method(body: Dict) -> Dict:
                 'expYear': payment_method.card.exp_year
             }
         }
-    except Exception as e:
+    except stripe.error.CardError as e:
+        # カード関連のエラーは具体的なメッセージを返す
         return {
-            'error': str(e)
+            'error': get_card_error_message(e)
+        }
+    except Exception as e:
+        # その他のエラーは一般的なメッセージを返す
+        log_error(e)
+        return {
+            'error': '支払い方法の更新に失敗しました'
         }
 
 def format_date_for_description(timestamp):
@@ -648,7 +670,7 @@ def get_invoices(body: Dict) -> Dict:
                 })
 
             # 返金処理
-            if invoice.charge:
+            if (invoice.charge):
                 refunds = stripe.Refund.list(charge=invoice.charge)
                 for refund in refunds.data:
                     formatted_transactions.append({
@@ -719,12 +741,16 @@ def get_subscription_info(customer_id: str) -> Dict:
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """メインハンドラー関数"""
     request_id = context.aws_request_id
-    logger.info(f"Processing request: {request_id}")
+    path = event.get('path', '')
+    method = event.get('httpMethod', '')
+    
+    logger.info(f"Request received - RequestId: {request_id}, Path: {path}, Method: {method}")
     
     try:
-        path = event.get('path', '')
-        method = event.get('httpMethod', '')
         body = json.loads(event.get('body', '{}'))
+        # リクエストボディの機密情報をマスクしてログ出力
+        safe_body = {k: v if k not in ['token', 'email'] else '***' for k, v in body.items()}
+        logger.info(f"Request body - RequestId: {request_id}, Body: {json.dumps(safe_body)}")
         
         # クライアントIPアドレスの取得
         client_ip = event.get('requestContext', {}).get('identity', {}).get('sourceIp', 'auto')
@@ -743,15 +769,19 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             return create_response(404, {'error': '指定されたエンドポイントは存在しません'})
 
         result = handlers[path](body)
+        logger.info(f"Request completed successfully - RequestId: {request_id}, Path: {path}")
         return create_response(200, result)
 
     except PaymentError as e:
+        logger.error(f"Payment error occurred - RequestId: {request_id}, Path: {path}, Error: {str(e)}")
         log_error(e, {'request_id': request_id, 'path': event.get('path')})
         return create_response(400, {'error': str(e)})
     except stripe.error.StripeError as e:
+        logger.error(f"Stripe error occurred - RequestId: {request_id}, Path: {path}, Error: {str(e)}")
         log_error(e, {'request_id': request_id, 'path': event.get('path')})
         return create_response(400, {'error': str(e)})
     except Exception as e:
+        logger.error(f"Unexpected error occurred - RequestId: {request_id}, Path: {path}, Error: {str(e)}")
         log_error(e, {
             'request_id': request_id,
             'path': event.get('path'),

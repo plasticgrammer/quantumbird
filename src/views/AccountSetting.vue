@@ -52,8 +52,8 @@
         >
           <v-card-title>支払い設定</v-card-title>
           <v-card-text class="px-6">
-            <v-row align="center">
-              <v-col cols="12" md="9">
+            <v-row>
+              <v-col cols="12" md="9" class="me-auto">
                 <div class="d-flex align-center">
                   <p class="mb-0 mr-4">現在のプラン：{{ currentPlanName }}</p>
                   <v-chip

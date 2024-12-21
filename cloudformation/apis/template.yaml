@@ -219,11 +219,17 @@ Resources:
                 - sns:GetEndpointAttributes
                 - sns:GetPlatformApplicationAttributes
               Resource: !Ref WebPushPlatformApplicationArn
+            - Effect: Allow
+              Action:
+                - cognito-idp:ListUsers
+              Resource: !Sub "arn:aws:cognito-idp:${UserPoolRegion}:${AWS::AccountId}:userpool/${UserPoolId}"
       Description: "Manages organization-related operations"
       Environment:
         Variables:
           STAGE: !Ref Stage
           WEB_PUSH_PLATFORM_ARN: !Ref WebPushPlatformApplicationArn
+          USER_POOL_ID: !Ref UserPoolId
+          USER_POOL_REGION: !Ref UserPoolRegion
       Layers:
         - !Ref CommonLayer
       Events:

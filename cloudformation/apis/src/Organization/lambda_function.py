@@ -6,6 +6,7 @@ import os
 import uuid
 import common.publisher
 import common.dynamo_items as dynamo_items
+import common.cognito_util as cognito_util
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key
 from common.utils import create_response
@@ -146,13 +147,9 @@ def handle_delete(event):
 def delete_organization(organization_id):
     """組織のデータを削除する"""
     try:
-        logger.info(f"Starting deletion for organization: {organization_id}")
-
         # 1. プッシュ通知登録の削除
         delete_push_subscriptions(organization_id)
-        logger.info(f"Deleted push subscriptions for organization: {organization_id}")
-
-        # 2. 組織データの削除
+        # 2. 組織データ���削除
         organizations_table.delete_item(
             Key={
                 'organizationId': organization_id
@@ -167,31 +164,21 @@ def delete_organization(organization_id):
 def delete_organization_completely(organization_id):
     """組織に関連する全てのデータを完全に削除する"""
     try:
-        logger.info(f"Starting complete deletion for organization: {organization_id}")
-
         # 1. プッシュ通知登録の削除
         delete_push_subscriptions(organization_id)
-        logger.info(f"Deleted push subscriptions for organization: {organization_id}")
-
         # 2. 週次報告データの削除
         delete_weekly_reports(organization_id)
-        logger.info(f"Deleted weekly reports for organization: {organization_id}")
-
         # 3. ユーザータスクの削除
         delete_user_tasks(organization_id)
-        logger.info(f"Deleted user tasks for organization: {organization_id}")
-
         # 4. メンバーデータの削除
         delete_members_by_organization(organization_id)
-        logger.info(f"Deleted members for organization: {organization_id}")
-
         # 5. 組織データの削除
         organizations_table.delete_item(
             Key={
                 'organizationId': organization_id
             }
         )
-        logger.info(f"Deleted organization data for: {organization_id}")
+        logger.info(f"Deleted organization data completely for: {organization_id}")
 
     except Exception as e:
         logger.error(f"Error in complete deletion process: {str(e)}", exc_info=True)
@@ -247,32 +234,29 @@ def delete_weekly_reports(organization_id):
 def delete_user_tasks(organization_id):
     """組織に関連するユーザータスクの削除"""
     try:
-        logger.info(f"Starting deletion of user tasks for organization: {organization_id}")
-        
-        # まず組織のメンバー一覧を取得
-        members = list_members(organization_id)
+        user_pool_id = os.environ['USER_POOL_ID']
+        admin_subs = cognito_util.get_organization_admin_subs(user_pool_id, organization_id)
+
+        if not admin_subs:
+            logger.warning(f"No admin users found for organization: {organization_id}")
+            return 0
+
         total_deleted = 0
-
-        for member in members:
-            member_uuid = member['memberUuid']
+        for user_id in admin_subs:
             last_evaluated_key = None
-
             while True:
-                # クエリパラメータの準備
                 query_params = {
-                    'KeyConditionExpression': Key('userId').eq(member_uuid)
+                    'KeyConditionExpression': Key('userId').eq(user_id)
                 }
                 if last_evaluated_key:
                     query_params['ExclusiveStartKey'] = last_evaluated_key
 
-                # タスクの取得
                 response = user_tasks_table.query(**query_params)
                 items = response.get('Items', [])
 
                 if not items:
                     break
 
-                # バッチ削除の実行
                 with user_tasks_table.batch_writer() as batch:
                     for item in items:
                         batch.delete_item(
@@ -283,7 +267,6 @@ def delete_user_tasks(organization_id):
                         )
                         total_deleted += 1
 
-                # 次のページがあるか確認
                 last_evaluated_key = response.get('LastEvaluatedKey')
                 if not last_evaluated_key:
                     break
@@ -430,10 +413,8 @@ def handle_push_subscription(event):
             # 新しいSNSエンドポイントを作成
             endpoint_arn = create_sns_endpoint(fcm_token, organization_id, admin_id)
             logger.info(f"Created SNS endpoint: {endpoint_arn}")
-
             # DynamoDBを更新
             update_result = update_organization_subscription(organization_id, admin_id, endpoint_arn)
-            logger.info(f"Update result: {update_result}")
 
             return create_response(200, {
                 'message': 'Subscription saved successfully',

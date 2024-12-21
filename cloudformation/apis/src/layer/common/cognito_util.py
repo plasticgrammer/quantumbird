@@ -129,3 +129,97 @@ def admin_get_user(user_pool_id, email, cognito_client=None):
         }
     except ClientError as e:
         raise ApplicationException(500, str(e))
+
+def get_admin_emails(user_pool_id, organization_id, cognito_client=None):
+    """
+    組織の管理者のメールアドレスを取得
+    
+    Args:
+        user_pool_id (str): Cognito User Pool ID
+        organization_id (str): 組織ID
+        cognito_client: boto3 cognito clientのインスタンス（オプション）
+    
+    Returns:
+        list: 管理者のメールアドレスのリスト
+    """
+    if cognito_client is None:
+        cognito_client = boto3.client('cognito-idp')
+        
+    try:
+        admin_emails = set()
+        pagination_token = None
+        
+        while True:
+            kwargs = {
+                'UserPoolId': user_pool_id,
+                'AttributesToGet': ['email', 'custom:organizationId']
+            }
+            if pagination_token:
+                kwargs['PaginationToken'] = pagination_token
+            
+            response = cognito_client.list_users(**kwargs)
+            
+            for user in response.get('Users', []):
+                is_org_member = False
+                email = None
+                
+                for attr in user.get('Attributes', []):
+                    if attr['Name'] == 'custom:organizationId' and attr['Value'] == organization_id:
+                        is_org_member = True
+                    elif attr['Name'] == 'email':
+                        email = attr['Value']
+                    
+                    if is_org_member and email:
+                        admin_emails.add(email)
+                        break
+            
+            pagination_token = response.get('PaginationToken')
+            if not pagination_token:
+                break
+
+        return list(admin_emails)
+    except Exception as e:
+        raise ApplicationException(500, f"Error getting admin emails: {str(e)}")
+
+def get_organization_admin_subs(user_pool_id, organization_id, cognito_client=None):
+    """
+    組織の管理者のsub属性を取得
+    
+    Args:
+        user_pool_id (str): Cognito User Pool ID
+        organization_id (str): 組織ID
+        cognito_client: boto3 cognito clientのインスタンス（オプション）
+    
+    Returns:
+        list: 管理者のsubのリスト
+    """
+    if cognito_client is None:
+        cognito_client = boto3.client('cognito-idp')
+        
+    try:
+        admin_subs = set()
+        pagination_token = None
+        
+        while True:
+            kwargs = {
+                'UserPoolId': user_pool_id,
+                'Filter': f'custom:organizationId = "{organization_id}"'
+            }
+            if pagination_token:
+                kwargs['PaginationToken'] = pagination_token
+            
+            response = cognito_client.list_users(**kwargs)
+            
+            for user in response.get('Users', []):
+                sub = next((attr['Value'] for attr in user.get('Attributes', [])
+                          if attr['Name'] == 'sub'), None)
+                if sub:
+                    admin_subs.add(sub)
+            
+            pagination_token = response.get('PaginationToken')
+            if not pagination_token:
+                break
+
+        return list(admin_subs)
+    except Exception as e:
+        raise ApplicationException(500, f"Error getting admin subs: {str(e)}")

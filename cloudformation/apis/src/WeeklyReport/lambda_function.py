@@ -79,7 +79,6 @@ def handle_post(event):
     report_data = json.loads(event['body'], parse_float=Decimal)
     item = dynamo_items.prepare_weekly_report_item(report_data, TIMEZONE)
     response = weekly_reports_table.put_item(Item=item)
-    logger.info(f"DynamoDB response: {response}")
     return create_response(201, 'Weekly report created successfully')
 
 def get_report(member_uuid, week_string):
@@ -110,7 +109,6 @@ def handle_put(event):
 
         updated_item = dynamo_items.prepare_weekly_report_item(report_data, existing_report, TIMEZONE)
         response = weekly_reports_table.put_item(Item=updated_item)
-        logger.info(f"DynamoDB response: {response}")
         return create_response(200, 'Weekly report updated successfully')
     except Exception as e:
         logger.error(f"Error updating report: {str(e)}", exc_info=True)
@@ -127,7 +125,6 @@ def handle_delete(event):
             'weekString': params['weekString']
         }
     )
-    logger.info(f"DynamoDB response: {response}")
     return create_response(200, 'Weekly report deleted successfully')
 
 def get_reports_by_organization(organization_id, week_string):
@@ -286,7 +283,6 @@ def handle_get_stats_data(event):
             # Continue to next week instead of breaking the loop
 
     member_info = get_member_names(list(member_uuids))
-    logger.info(f"Retrieved info for {len(member_info)} members")
 
     # データセットの作成とソート
     stats_data['datasets'] = [
@@ -302,7 +298,6 @@ def handle_get_stats_data(event):
     # idでソート
     stats_data['datasets'].sort(key=lambda x: x.get('id', 0))
 
-    logger.info(f"Final stats_data: {json.dumps(stats_data, default=str)}")
     return create_response(200, stats_data)
 
 def get_previous_week_string():
@@ -334,7 +329,6 @@ def handle_submit_feedback(event):
         }
 
         response = weekly_reports_table.put_item(Item=updated_item)
-        logger.info(f"DynamoDB response: {response}")
 
         member = get_member(member_uuid)
         if member:
