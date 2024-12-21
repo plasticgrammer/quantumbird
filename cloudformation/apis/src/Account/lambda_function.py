@@ -1,6 +1,7 @@
 import json
 import os
 import boto3
+import logging
 from botocore.exceptions import ClientError
 from common.utils import create_response
 from common.exception import ApplicationException
@@ -14,6 +15,10 @@ cognito = boto3.client('cognito-idp', region_name=USER_POOL_REGION)
 dynamodb = boto3.resource('dynamodb')
 organizations_table_name = f'{os.environ.get("STAGE", "dev")}-Organizations'
 organizations_table = dynamodb.Table(organizations_table_name)
+
+# ロガーの設定
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 def get_organization(organization_id):
     try:
@@ -84,46 +89,40 @@ def update_organization(organization_id, organization_name):
 def update_user_attributes(user_pool_id, organization_id, old_email, new_email, cognito_client):
     """Cognitoユーザーの属性を更新する"""
     try:
-        # まず古いメールアドレスでユーザーを検索
-        try:
-            user = cognito_client.list_users(
-                UserPoolId=user_pool_id,
-                Filter=f'email = "{old_email}"'
-            )
-            users = user.get('Users', [])
-            if not users:
-                raise ApplicationException(404, f'ユーザーが見つかりません: {old_email}')
-            target_user = users[0]
-        except ClientError as e:
-            if e.response['Error']['Code'] == 'UserNotFoundException':
-                raise ApplicationException(404, f'ユーザーが見つかりません: {old_email}')
-            raise ApplicationException(500, f"ユーザー検索に失敗しました: {str(e)}")
+        # メールアドレスでユーザーを検索
+        response = cognito_client.list_users(
+            UserPoolId=user_pool_id,
+            Filter=f'email = "{old_email}"'
+        )
+        users = response.get('Users', [])
+        if not users:
+            raise ApplicationException(404, 'ユーザーが見つかりません')
 
+        user = users[0]
+        username = user['Username']
+        
         # メールアドレスが変更されている場合のみ更新
         if old_email != new_email:
+            # メールアドレス属性を更新
             user_attributes = [
                 {'Name': 'email', 'Value': new_email},
                 {'Name': 'email_verified', 'Value': 'true'}
             ]
             
-            # ユーザー属性を更新
             cognito_client.admin_update_user_attributes(
                 UserPoolId=user_pool_id,
-                Username=target_user['Username'],  # 実際のユーザー名を使用
+                Username=username,
                 UserAttributes=user_attributes
             )
             
-            # ユーザー名も新しいメールアドレスに更新
-            cognito_client.admin_update_user_attributes(
+            # 招待メールを送信
+            cognito_client.admin_create_user(
                 UserPoolId=user_pool_id,
-                Username=target_user['Username'],
-                UserAttributes=[
-                    {'Name': 'preferred_username', 'Value': new_email}
-                ]
+                Username=new_email,
+                MessageAction='RESEND',
+                UserAttributes=user_attributes
             )
 
-    except ApplicationException as e:
-        raise e
     except ClientError as e:
         raise ApplicationException(500, f"ユーザー情報の更新に失敗しました: {str(e)}")
 
@@ -131,6 +130,10 @@ def lambda_handler(event, context):
     try:
         path = event.get('path', '')
         http_method = event['httpMethod']
+        
+        # リクエスト情報をログ出力
+        #logger.info(f"Request: {http_method} {path}")
+        #logger.info(f"Event: {json.dumps(event)}")
         
         # Cognitoの認証情報から組織IDを取得
         requester_claims = event.get('requestContext', {}).get('authorizer', {}).get('claims', {})
@@ -148,7 +151,7 @@ def lambda_handler(event, context):
             if not email:
                 raise ApplicationException(400, 'email is required')
 
-            # メールアドレスからユーザーを検索（修正）
+            # メールアドレスからユーザーを検索
             try:
                 response = cognito.list_users(
                     UserPoolId=USER_POOL_ID,
@@ -229,32 +232,39 @@ def lambda_handler(event, context):
         elif http_method == 'PUT':
             body = json.loads(event['body'])
             organization_id = body.get('organizationId')
-            if not organization_id:
-                raise ApplicationException(400, 'organizationId is required')
+            old_email = body.get('oldEmail')
+            new_email = body.get('email')
+            organization_name = body.get('organizationName')
 
-            # 更新対象が自分の子アカウントであることを確認
-            target_user = admin_get_user(USER_POOL_ID, body['oldEmail'], cognito)
+            if not organization_id or not old_email or not new_email:
+                raise ApplicationException(400, 'organizationId, oldEmail, email は必須です')
+            
+            # ユーザーの存在確認と権限チェック
+            target_user = admin_get_user(USER_POOL_ID, old_email, cognito)
             if not target_user:
                 raise ApplicationException(404, 'ユーザーが見つかりません')
+            
             if target_user.get('parentOrganizationId') != requester_organization_id:
                 raise ApplicationException(403, '権限がありません')
 
             try:
-                # 組織情報を更新
-                update_organization(organization_id, body['organizationName'])
-                
-                # Cognitoユーザー情報を更新
+                # 組織名の更新
+                if organization_name:
+                    update_organization(organization_id, organization_name)
+
+                # ユーザー属性の更新とメール送信
                 update_user_attributes(
                     user_pool_id=USER_POOL_ID,
                     organization_id=organization_id,
-                    old_email=body['oldEmail'],  # 変更前のメールアドレス
-                    new_email=body['email'],  # 新しいメールアドレス
+                    old_email=old_email,
+                    new_email=new_email,
                     cognito_client=cognito
                 )
 
                 return create_response(200, {
-                    'message': 'アカウント情報を更新しました',
-                    'organizationId': organization_id
+                    'message': 'アカウント情報を更新し、招待メールを送信しました',
+                    'organizationId': organization_id,
+                    'email': new_email
                 })
             except ApplicationException as e:
                 raise e
@@ -292,30 +302,47 @@ def lambda_handler(event, context):
         elif http_method == 'DELETE':
             params = event.get('queryStringParameters', {}) or {}
             organization_id = params.get('organizationId')
-            if not organization_id:
-                raise ApplicationException(400, 'organizationId is required')
+            email = params.get('email')
+            
+            if not organization_id or not email:
+                raise ApplicationException(400, 'organizationId and email are required')
                 
+            logger.info(f"Deleting account for organization: {organization_id}, email: {email}")
+            
             # 削除対象が自分の子アカウントであることを確認
-            target_user = admin_get_user(USER_POOL_ID, organization_id, cognito)
+            target_user = admin_get_user(USER_POOL_ID, email, cognito)
             if not target_user:
-                raise ApplicationException(404, 'ユーザーが見つかりません')
-            if target_user.get('parentOrganizationId') != requester_organization_id:
-                raise ApplicationException(403, '権限がありません')
+                logger.info(f"User not found for email: {email}")
+                # 削除済みとして扱う
+                return create_response(200, {'message': f"User not found for email: {email}"})
                 
-            # 削除処理を実行
-            admin_delete_user(
-                user_pool_id=USER_POOL_ID,
-                organization_id=organization_id,
-                cognito_client=cognito
-            )
-            
-            # 正しいレスポンス形式を返す
-            return create_response(200, {'message': 'アカウントを削除しました', 'organizationId': organization_id})
-            
+            elif target_user.get('parentOrganizationId') != requester_organization_id:
+                logger.error(f"Permission denied. Requester: {requester_organization_id}, Target parent: {target_user.get('parentOrganizationId')}")
+                raise ApplicationException(403, '権限がありません')
+
+            else: 
+                # 削除処理を実行
+                try:
+                    result = admin_delete_user(
+                        user_pool_id=USER_POOL_ID,
+                        email=email,
+                        cognito_client=cognito
+                    )
+                    logger.info(f"Successfully deleted account: {organization_id}, email: {email}")
+                    return create_response(200, result)
+                except ApplicationException as e:
+                    logger.error(f"Failed to delete account: {str(e)}")
+                    raise
+                except Exception as e:
+                    logger.error(f"Unexpected error while deleting account: {str(e)}")
+                    raise ApplicationException(500, f"アカウントの削除に失敗しました: {str(e)}")
+        
         else:
             return create_response(405, {'message': 'Method not allowed'})
             
     except ApplicationException as e:
+        logger.error(f"Application error: {str(e)}")
         return create_response(e.status_code, {'message': str(e)})
     except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
         return create_response(500, {'message': str(e)})

@@ -2,6 +2,53 @@ import boto3
 from botocore.exceptions import ClientError
 from .exception import ApplicationException
 
+def _get_cognito_client(cognito_client=None):
+    return cognito_client if cognito_client else boto3.client('cognito-idp')
+
+def _get_all_users(user_pool_id, cognito_client, attributes_to_get=None):
+    """ページネーションを使用してすべてのユーザーを取得する共通関数"""
+    users = []
+    pagination_token = None
+    
+    while True:
+        kwargs = {'UserPoolId': user_pool_id}
+        if pagination_token:
+            kwargs['PaginationToken'] = pagination_token
+        if attributes_to_get:
+            kwargs['AttributesToGet'] = attributes_to_get
+            
+        response = cognito_client.list_users(**kwargs)
+        users.extend(response.get('Users', []))
+        
+        pagination_token = response.get('PaginationToken')
+        if not pagination_token:
+            break
+            
+    return users
+
+def _get_user_attributes(user):
+    """ユーザー属性をディクショナリとして取得する共通関数"""
+    return {attr['Name']: attr['Value'] for attr in user.get('Attributes', [])}
+
+def _filter_users_by_organization(users, organization_id, parent_organization_id=None):
+    """組織IDでユーザーをフィルタリングする共通関数"""
+    filtered_users = []
+    
+    for user in users:
+        user_attrs = _get_user_attributes(user)
+        org_id = user_attrs.get('custom:organizationId')
+        parent_org_id = user_attrs.get('custom:parentOrganizationId')
+        
+        if organization_id and org_id != organization_id:
+            continue
+            
+        if parent_organization_id and parent_org_id != parent_organization_id:
+            continue
+            
+        filtered_users.append((user, user_attrs))
+    
+    return filtered_users
+
 def admin_create_user(user_pool_id, email, organization_id, organization_name, parent_organization_id=None, cognito_client=None):
     if cognito_client is None:
         cognito_client = boto3.client('cognito-idp')
@@ -43,46 +90,45 @@ def admin_create_user(user_pool_id, email, organization_id, organization_name, p
             raise ApplicationException(409, 'ユーザーは既に存在します')
         raise ApplicationException(500, str(e))
 
-def admin_delete_user(user_pool_id, organization_id, cognito_client=None):
+def admin_delete_user(user_pool_id, email, cognito_client=None):
     if cognito_client is None:
         cognito_client = boto3.client('cognito-idp')
         
     try:
-        # 組織IDからユーザーを検索
-        user = admin_get_user(user_pool_id, organization_id, cognito_client)
-        if not user:
-            raise ApplicationException(404, 'ユーザーが見つかりません')
+        # メールアドレスからユーザーを検索
+        response = cognito_client.list_users(
+            UserPoolId=user_pool_id,
+            Filter=f'email = "{email}"'
+        )
+        users = response.get('Users', [])
+        if not users:
+            raise ApplicationException(404, f'ユーザーが見つかりません: {email}')
             
+        user = users[0]
         cognito_client.admin_delete_user(
             UserPoolId=user_pool_id,
-            Username=user['username']
+            Username=user['Username']
         )
-        return {'message': 'ユーザーを削除しました'}
+        return {
+            'message': 'ユーザーを削除しました',
+            'email': email,
+            'username': user['Username']
+        }
     except ClientError as e:
-        raise ApplicationException(500, str(e))
+        if e.response['Error']['Code'] == 'UserNotFoundException':
+            raise ApplicationException(404, f'ユーザーが見つかりません: {email}')
+        raise ApplicationException(500, f"ユーザーの削除に失敗しました: {str(e)}")
 
 def list_users(user_pool_id, cognito_client=None, parent_organization_id=None):
-    if cognito_client is None:
-        cognito_client = boto3.client('cognito-idp')
-        
+    cognito_client = _get_cognito_client(cognito_client)
+    
     try:
-        response = cognito_client.list_users(
-            UserPoolId=user_pool_id
-        )
-        users = []
-        for user in response['Users']:
-            user_attrs = {attr['Name']: attr['Value'] for attr in user['Attributes']}
-            
-            # カスタム属性の取得
-            parent_org_id = user_attrs.get('custom:parentOrganizationId')
+        users = _get_all_users(user_pool_id, cognito_client)
+        filtered_users = _filter_users_by_organization(users, None, parent_organization_id)
+        
+        result = []
+        for user, user_attrs in filtered_users:
             org_id = user_attrs.get('custom:organizationId')
-            
-            # 親組織IDが指定されている場合のフィルタリング
-            if parent_organization_id:
-                if not parent_org_id or parent_org_id != parent_organization_id:
-                    continue
-
-            # 組織名はDynamoDBから取得
             org_name = None
             if org_id:
                 try:
@@ -92,16 +138,16 @@ def list_users(user_pool_id, cognito_client=None, parent_organization_id=None):
                 except:
                     pass
 
-            users.append({
+            result.append({
                 'username': user['Username'],
                 'status': user['UserStatus'],
                 'organizationId': org_id,
                 'organizationName': org_name,
                 'email': user_attrs.get('email', ''),
-                'parentOrganizationId': parent_org_id,
+                'parentOrganizationId': user_attrs.get('custom:parentOrganizationId'),
                 'created': user['UserCreateDate'].isoformat()
             })
-        return users
+        return result
     except ClientError as e:
         raise ApplicationException(500, str(e))
 
@@ -110,6 +156,7 @@ def admin_get_user(user_pool_id, email, cognito_client=None):
         cognito_client = boto3.client('cognito-idp')
         
     try:
+        # メールアドレスを使用してユーザーを検索
         response = cognito_client.list_users(
             UserPoolId=user_pool_id,
             Filter=f'email = "{email}"'
@@ -117,8 +164,10 @@ def admin_get_user(user_pool_id, email, cognito_client=None):
         users = response.get('Users', [])
         if not users:
             return None
+
         user = users[0]
         user_attrs = {attr['Name']: attr['Value'] for attr in user['Attributes']}
+        
         return {
             'username': user['Username'],
             'status': user['UserStatus'],
@@ -128,6 +177,8 @@ def admin_get_user(user_pool_id, email, cognito_client=None):
             'created': user['UserCreateDate'].isoformat()
         }
     except ClientError as e:
+        if e.response['Error']['Code'] == 'UserNotFoundException':
+            return None
         raise ApplicationException(500, str(e))
 
 def get_admin_emails(user_pool_id, organization_id, cognito_client=None):
@@ -142,42 +193,12 @@ def get_admin_emails(user_pool_id, organization_id, cognito_client=None):
     Returns:
         list: 管理者のメールアドレスのリスト
     """
-    if cognito_client is None:
-        cognito_client = boto3.client('cognito-idp')
-        
+    cognito_client = _get_cognito_client(cognito_client)
+    
     try:
-        admin_emails = set()
-        pagination_token = None
-        
-        while True:
-            kwargs = {
-                'UserPoolId': user_pool_id,
-                'AttributesToGet': ['email', 'custom:organizationId']
-            }
-            if pagination_token:
-                kwargs['PaginationToken'] = pagination_token
-            
-            response = cognito_client.list_users(**kwargs)
-            
-            for user in response.get('Users', []):
-                is_org_member = False
-                email = None
-                
-                for attr in user.get('Attributes', []):
-                    if attr['Name'] == 'custom:organizationId' and attr['Value'] == organization_id:
-                        is_org_member = True
-                    elif attr['Name'] == 'email':
-                        email = attr['Value']
-                    
-                    if is_org_member and email:
-                        admin_emails.add(email)
-                        break
-            
-            pagination_token = response.get('PaginationToken')
-            if not pagination_token:
-                break
-
-        return list(admin_emails)
+        users = _get_all_users(user_pool_id, cognito_client, ['email', 'custom:organizationId'])
+        filtered_users = _filter_users_by_organization(users, organization_id)
+        return list({user_attrs.get('email') for _, user_attrs in filtered_users if user_attrs.get('email')})
     except Exception as e:
         raise ApplicationException(500, f"Error getting admin emails: {str(e)}")
 
@@ -193,33 +214,11 @@ def get_organization_admin_subs(user_pool_id, organization_id, cognito_client=No
     Returns:
         list: 管理者のsubのリスト
     """
-    if cognito_client is None:
-        cognito_client = boto3.client('cognito-idp')
-        
+    cognito_client = _get_cognito_client(cognito_client)
+    
     try:
-        admin_subs = set()
-        pagination_token = None
-        
-        while True:
-            kwargs = {
-                'UserPoolId': user_pool_id,
-                'Filter': f'custom:organizationId = "{organization_id}"'
-            }
-            if pagination_token:
-                kwargs['PaginationToken'] = pagination_token
-            
-            response = cognito_client.list_users(**kwargs)
-            
-            for user in response.get('Users', []):
-                sub = next((attr['Value'] for attr in user.get('Attributes', [])
-                          if attr['Name'] == 'sub'), None)
-                if sub:
-                    admin_subs.add(sub)
-            
-            pagination_token = response.get('PaginationToken')
-            if not pagination_token:
-                break
-
-        return list(admin_subs)
+        users = _get_all_users(user_pool_id, cognito_client)
+        filtered_users = _filter_users_by_organization(users, organization_id)
+        return list({user_attrs.get('sub') for _, user_attrs in filtered_users if user_attrs.get('sub')})
     except Exception as e:
         raise ApplicationException(500, f"Error getting admin subs: {str(e)}")

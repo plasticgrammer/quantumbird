@@ -88,7 +88,7 @@
         >
           <div>
             このアカウントは親組織のサブアカウントとして管理されています。<br>
-            アカウントの変更および削除は親アカウントで行ってください。
+            アカウントの変更および削除は親アカウントで行ってくださ��。
           </div>
         </v-alert>
       </v-card-text>
@@ -414,10 +414,8 @@ const deleteAccount = async () => {
 
   isDeleting.value = true
   try {
-    // Cognitoユーザの削除を後にしないとトークンが無効となる
     await changeToFreePlan()
     await deleteOrganization(organizationId)
-    
     await store.dispatch('auth/deleteUserAccount')
 
     store.dispatch('showNotification', {
@@ -426,8 +424,13 @@ const deleteAccount = async () => {
     })
     router.push({ name: 'SignIn' })
   } catch (error) {
+    let errorMessage = 'アカウントの削除に失敗しました'
+    // エラーレスポンスからメッセージを取得
+    if (error.response?.data?.message) {
+      errorMessage += `\n${error.response.data.message}`
+    }
     store.dispatch('showNotification', {
-      message: 'アカウントの削除に失敗しました',
+      message: errorMessage,
       type: 'error'
     })
   } finally {
@@ -443,7 +446,6 @@ const deleteAccountCompletely = async () => {
 
   isDeleting.value = true
   try {
-    // Cognitoユーザの削除を後にしないとトークンが無効となる
     await changeToFreePlan()
     await deleteOrganizationCompletely(organizationId)
 
@@ -455,8 +457,13 @@ const deleteAccountCompletely = async () => {
     })
     router.push({ name: 'SignIn' })
   } catch (error) {
+    let errorMessage = 'アカウントの完全削除に失敗しました'
+    // エラーレスポンスからメッセージを取得
+    if (error.response?.data?.message) {
+      errorMessage += `\n${error.response.data.message}`
+    }
     store.dispatch('showNotification', {
-      message: 'アカウントの完全削除に失敗しました',
+      message: errorMessage,
       type: 'error'
     })
   } finally {

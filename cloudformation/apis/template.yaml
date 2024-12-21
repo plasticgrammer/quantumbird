@@ -218,11 +218,16 @@ Resources:
                 - sns:DeleteEndpoint
                 - sns:GetEndpointAttributes
                 - sns:GetPlatformApplicationAttributes
-              Resource: !Ref WebPushPlatformApplicationArn
+                - cognito-idp:ListUsers
+                - cognito-idp:AdminGetUser
+              Resource:
+                - !Ref WebPushPlatformApplicationArn
+                - !Sub "arn:aws:cognito-idp:${UserPoolRegion}:${AWS::AccountId}:userpool/${UserPoolId}"
             - Effect: Allow
               Action:
-                - cognito-idp:ListUsers
-              Resource: !Sub "arn:aws:cognito-idp:${UserPoolRegion}:${AWS::AccountId}:userpool/${UserPoolId}"
+                - ses:SendRawEmail
+                - ses:SendEmail
+              Resource: "*"
       Description: "Manages organization-related operations"
       Environment:
         Variables:

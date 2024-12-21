@@ -1,10 +1,7 @@
 import json
 import logging
 import boto3
-import urllib.parse
 import os
-import uuid
-import common.publisher
 import common.dynamo_items as dynamo_items
 import common.cognito_util as cognito_util
 from botocore.exceptions import ClientError
@@ -149,7 +146,7 @@ def delete_organization(organization_id):
     try:
         # 1. プッシュ通知登録の削除
         delete_push_subscriptions(organization_id)
-        # 2. 組織データ���削除
+        # 2. 組織データの削除
         organizations_table.delete_item(
             Key={
                 'organizationId': organization_id
@@ -235,7 +232,11 @@ def delete_user_tasks(organization_id):
     """組織に関連するユーザータスクの削除"""
     try:
         user_pool_id = os.environ['USER_POOL_ID']
-        admin_subs = cognito_util.get_organization_admin_subs(user_pool_id, organization_id)
+        user_pool_region = os.environ['USER_POOL_REGION']
+        
+        # Cognitoクライアントを正しいリージョンで初期化
+        cognito_client = boto3.client('cognito-idp', region_name=user_pool_region)
+        admin_subs = cognito_util.get_organization_admin_subs(user_pool_id, organization_id, cognito_client)
 
         if not admin_subs:
             logger.warning(f"No admin users found for organization: {organization_id}")

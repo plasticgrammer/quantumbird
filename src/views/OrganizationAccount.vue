@@ -328,7 +328,7 @@ const handleDeleteAccount = async (accountItem) => {
   loading.value = true
   try {
     // Cognitoユーザーを削除
-    await deleteAccount(accountItem.organizationId)
+    await deleteAccount(accountItem.organizationId, accountItem.email)
     // 組織情報とすべての関連データを削除
     await deleteOrganizationCompletely(accountItem.organizationId)
 
@@ -342,14 +342,11 @@ const handleDeleteAccount = async (accountItem) => {
 }
 
 const handleResendInvitation = async (accountItem) => {
-  loading.value = true
   try {
     await resendInvitation(accountItem.email)
     showNotification('招待メールを再送信しました')
   } catch (error) {
     showError('招待メールの再送信に失敗しました', error)
-  } finally {
-    loading.value = false
   }
 }
 
@@ -450,7 +447,7 @@ onMounted(async () => {
   .v-row .v-col-12:has(button) {
     padding: 16px !important;
   }
-  
+
   .mobile-responsive-table :deep(.v-data-table__wrapper) {
     overflow-x: hidden;
   }
