@@ -55,7 +55,7 @@
           :disabled="isSubmitting"
           @click="handledDisaccept"
         >
-          ログアウト
+          サインアウト
         </v-btn>
         <v-spacer></v-spacer>
         <v-btn

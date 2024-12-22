@@ -281,6 +281,11 @@ const loadAccounts = async () => {
   }
 }
 
+// エラーメッセージを抽出する関数を追加
+const getErrorMessage = (error) => {
+  return error?.response?.data?.message || error?.message || ''
+}
+
 const handleSubmit = async () => {
   if (!isFormValid.value) return
 
@@ -300,7 +305,6 @@ const handleSubmit = async () => {
     })
     showNotification('アカウントを作成しました')
 
-    await loadAccounts()
     // フォームをリセット
     organizationId.value = ''
     account.value = { organizationName: '', email: '' }
@@ -309,8 +313,13 @@ const handleSubmit = async () => {
     if (form.value) {
       form.value.reset()
     }
+    
+    await loadAccounts()
+
   } catch (error) {
-    showError('アカウントの作成に失敗しました', error)
+    const errorDetail = getErrorMessage(error)
+    const message = `アカウントの作成に失敗しました${errorDetail ? `（${errorDetail}）` : ''}`
+    showError(message, error)
   } finally {
     loading.value = false
   }
@@ -378,7 +387,9 @@ const handleSaveEdit = async (item) => {
     editingAccount.value = null
     originalAccount.value = null
   } catch (error) {
-    showError('アカウントの更新に失敗しました', error)
+    const errorDetail = getErrorMessage(error)
+    const message = `アカウントの更新に失敗しました${errorDetail ? `（${errorDetail}）` : ''}`
+    showError(message, error)
   }
 }
 

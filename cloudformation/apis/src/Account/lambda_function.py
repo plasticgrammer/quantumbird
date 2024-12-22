@@ -200,17 +200,6 @@ def lambda_handler(event, context):
             # 組織IDの重複チェック
             if check_organization_exists(body['organizationId']):
                 raise ApplicationException(409, '指定された組織IDは既に使用されています')
-
-            # 組織を作成
-            org_data = {
-                'organizationId': body['organizationId'],
-                'name': body['organizationName'],
-                'parentOrganizationId': body['parentOrganizationId'],
-                'sender': 'notify@fluxweek.com',
-                'senderName': body['organizationName'],
-                'features': { 'weeklyReportAdvice': True, 'advisors': ['manager', 'career', 'mental'] }
-            }
-            create_organization(org_data)
                 
             # Cognitoユーザーを作成
             result = admin_create_user(
@@ -221,6 +210,16 @@ def lambda_handler(event, context):
                 parent_organization_id=body['parentOrganizationId'],
                 cognito_client=cognito
             )
+            # 組織を作成
+            org_data = {
+                'organizationId': body['organizationId'],
+                'name': body['organizationName'],
+                'parentOrganizationId': body['parentOrganizationId'],
+                'sender': 'notify@fluxweek.com',
+                'senderName': body['organizationName'],
+                'features': { 'weeklyReportAdvice': True, 'advisors': ['manager', 'career', 'mental'] }
+            }
+            create_organization(org_data)
 
             # 作成した組織情報を取得して結果に含める
             organization = get_organization(body['organizationId'])
