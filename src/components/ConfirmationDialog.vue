@@ -21,7 +21,7 @@
           キャンセル
         </v-btn>
         <v-btn
-          color="primary"
+          :color="currentColor"
           @click="confirm"
         >
           実行
@@ -37,11 +37,13 @@ import { ref } from 'vue'
 const isOpen = ref(false)
 const currentTitle = ref('')
 const currentMessage = ref('')
+const currentColor = ref('primary')
 let resolvePromise = null
 
-const open = (title = '確認', message) => {
+const open = (title = '確認', message, color = 'primary') => {
   currentTitle.value = title
   currentMessage.value = message
+  currentColor.value = color
   isOpen.value = true
   return new Promise((resolve) => {
     resolvePromise = resolve

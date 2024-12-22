@@ -329,8 +329,9 @@ const handleDeleteAccount = async (accountItem) => {
   const organizationName = accountItem.organizationName || accountItem.organizationId || '未設定'
   
   const confirmed = await showConfirmDialog(
-    '確認',
-    `${organizationName}のアカウントと組織情報を削除しますか？\nこの操作は取り消せません。`
+    '削除確認',
+    `${organizationName}のアカウントと組織情報を削除しますか？\nこの操作は取り消せません。`,
+    'error'
   )
   if (!confirmed) return
 
