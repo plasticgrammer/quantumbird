@@ -427,16 +427,14 @@ const childAccountCount = ref(0)
 
 // Computed Properties
 const currentPlan = computed(() => {
-  const subscription = getCurrentSubscription()
-  if (!subscription) return null
-  
   const plan = getCurrentPlan()
+  const subscription = getCurrentSubscription()
+  if (!subscription) return plan
   
   return {
     ...plan,
     subscriptionId: subscription.subscriptionId || null,
     currentAccountCount: subscription.accountCount || 0,
-    planId: subscription.planId,
     stripeCustomerId: subscription.stripeCustomerId
   }
 })
@@ -880,7 +878,8 @@ onMounted(async () => {
     const user = store.state.auth.user
     if (user) {
       formState.email = user.email
-      formState.selectedPlan = store.getters['auth/currentSubscription'].planId
+      // currentSubscriptionが未設定の場合はfreeプランを設定
+      formState.selectedPlan = store.getters['auth/currentSubscription']?.planId || 'free'
     } else {
       formState.selectedPlan = 'free'
     }
