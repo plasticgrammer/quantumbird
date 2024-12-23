@@ -243,7 +243,7 @@ def lambda_handler(event, context):
             if not target_user:
                 raise ApplicationException(404, 'ユーザーが見つかりません')
             
-            if target_user.get('parentOrganizationId') != requester_organization_id:
+            if target_user.get('parentOrganizationId') != requester_organization_id and target_user.get('organizationId') != requester_organization_id:
                 raise ApplicationException(403, '権限がありません')
 
             try:

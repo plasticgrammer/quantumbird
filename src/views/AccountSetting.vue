@@ -88,7 +88,7 @@
         >
           <div>
             このアカウントは親組織のサブアカウントとして管理されています。<br>
-            アカウントの変更および削除は親アカウントで行ってください。
+            アカウントの変更および削除は親アカウントで行ってくださ��。
           </div>
         </v-alert>
       </v-card-text>
@@ -102,7 +102,6 @@
           <v-icon class="mr-2">mdi-download</v-icon>
           データをエクスポート
         </v-btn>
-        <p v-if="exportStatus" class="mt-2">{{ exportStatus }}</p>
       </v-card-text>
     </v-card>
 
@@ -318,12 +317,13 @@ const passwordData = ref({
   confirmPassword: ''
 })
 const isExporting = ref(false)
-const exportStatus = ref('')
 const showDeleteDialog = ref(false)
 const showDeleteAllDialog = ref(false)
 const isDeleting = ref(false)
 const deleteConfirmText = ref('')
 
+const showNotification = inject('showNotification')
+const showError = inject('showError')
 const showConfirmDialog = inject('showConfirmDialog')
 
 // 現在のプラン名を取得する computed プロパティ
@@ -363,10 +363,7 @@ const changePassword = async () => {
       newPassword: passwordData.value.newPassword
     })
 
-    store.dispatch('showNotification', {
-      message: 'パスワードが正常に変更されました',
-      type: 'success'
-    })
+    showNotification('パスワードが正常に変更されました')
 
     resetPasswordForm()
     showPasswordDialog.value = false
@@ -375,10 +372,7 @@ const changePassword = async () => {
     if (error.message === 'Incorrect username or password.') {
       errorMessage = '現在のパスワードが正しくありません'
     }
-    store.dispatch('showNotification', {
-      message: errorMessage,
-      type: 'error'
-    })
+    showError(errorMessage)
   } finally {
     isChangingPassword.value = false
   }
@@ -418,21 +412,14 @@ const deleteAccount = async () => {
     await deleteOrganization(organizationId)
     await store.dispatch('auth/deleteUserAccount')
 
-    store.dispatch('showNotification', {
-      message: 'アカウントが削除されました',
-      type: 'success'
-    })
+    showNotification('アカウントが削除されました')
     router.push({ name: 'SignIn' })
   } catch (error) {
     let errorMessage = 'アカウントの削除に失敗しました'
-    // エラーレスポンスからメッセージを取得
     if (error.response?.data?.message) {
       errorMessage += `\n${error.response.data.message}`
     }
-    store.dispatch('showNotification', {
-      message: errorMessage,
-      type: 'error'
-    })
+    showError(errorMessage)
   } finally {
     isDeleting.value = false
     showDeleteDialog.value = false
@@ -451,21 +438,14 @@ const deleteAccountCompletely = async () => {
 
     await store.dispatch('auth/deleteUserAccount')
 
-    store.dispatch('showNotification', {
-      message: 'アカウントとすべてのデータが削除されました',
-      type: 'success'
-    })
+    showNotification('アカウントとすべてのデータが削除されました')
     router.push({ name: 'SignIn' })
   } catch (error) {
     let errorMessage = 'アカウントの完全削除に失敗しました'
-    // エラーレスポンスからメッセージを取得
     if (error.response?.data?.message) {
       errorMessage += `\n${error.response.data.message}`
     }
-    store.dispatch('showNotification', {
-      message: errorMessage,
-      type: 'error'
-    })
+    showError(errorMessage)
   } finally {
     isDeleting.value = false
     showDeleteAllDialog.value = false
@@ -475,7 +455,6 @@ const deleteAccountCompletely = async () => {
 
 const exportData = async () => {
   isExporting.value = true
-  exportStatus.value = 'エクスポート処理中...'
   try {
     const result = await exportReports(organizationId)
     const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' })
@@ -487,10 +466,10 @@ const exportData = async () => {
     document.body.appendChild(a)
     a.click()
     window.URL.revokeObjectURL(url)
-    exportStatus.value = 'エクスポートが完了しました'
+    showNotification('エクスポートが完了しました')
   } catch (error) {
     console.error('Data export failed:', error)
-    exportStatus.value = 'エクスポートに失敗しました'
+    showError('エクスポートに失敗しました')
   } finally {
     isExporting.value = false
   }
