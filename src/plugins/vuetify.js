@@ -13,7 +13,7 @@ export default createVuetify({
           primary: '#039BE5',
           secondary: '#00ACC1',
           error: '#D32F2F',
-          menu: '#6980B5' //5872AD,4E688E,2A4161
+          menu: '#6980B5' //607AB0,5872AD,4E688E,2A4161
         },
       },
     },

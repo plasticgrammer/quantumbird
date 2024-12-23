@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="isOpen" max-width="900px">
+  <v-dialog v-model="isOpen" max-width="960px">
     <v-card rounded="lg">
       <v-card-title class="pb-2">
         <v-icon class="mr-2">mdi-wallet-membership</v-icon>
@@ -20,9 +20,8 @@
               v-for="plan in plans"
               :key="plan.planId"
               cols="12"
-              sm="6"
               md="4"
-              class="pa-4"
+              class="pa-3"
             >
               <v-card
                 :color="getCardColor(plan)"
@@ -81,6 +80,7 @@
                       v-for="(feature, index) in plan.features"
                       :key="index"
                       :class="formState.selectedPlan === plan.planId ? 'text-white' : ''"
+                      class="pr-0"
                     >
                       <template #prepend>
                         <v-icon

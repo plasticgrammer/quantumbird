@@ -39,7 +39,7 @@ module.exports = defineConfig({
   pages: {
     index: {
       entry: 'src/main.js',
-      title: 'fluxweek'
+      title: 'fluxweek - 週次報告システム'
     }
   },
   publicPath: process.env.NODE_ENV === 'production' ? '/' : '/',

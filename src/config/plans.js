@@ -16,7 +16,7 @@ export const plans = [
     priceId: 'price_free',
     name: 'フリープラン',
     price: 0,
-    features: ['一部機能の利用制限あり', 'メンバー数最大３名', '基本AIアドバイザーのみ'],
+    features: ['利用制限あり（報告通知など）', 'メンバー数最大３名', '基本AIアドバイザーのみ'],
     adminFeatures: {
       maxMembers: 3,
       notifications: false,
