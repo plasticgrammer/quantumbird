@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 import common.publisher
 from common.utils import create_response
 import common.dynamo_items as dynamo_items
+from common.cognito_util import get_admin_emails
 
 print('Loading function')
 
@@ -165,7 +166,6 @@ def handle_put_report(event):
 
         updated_item = dynamo_items.prepare_weekly_report_item(report_data, existing_report)
         response = weekly_reports_table.put_item(Item=updated_item)
-        logger.info(f"DynamoDB response: {response}")
         
         # 組織の管理者に通知を送信
         send_push_notification_to_admins(updated_item['organizationId'], 'updated_report', updated_item)
@@ -248,7 +248,6 @@ def handle_put_member(event):
                 return create_response(404, {'message': 'Member not found'})
             item = dynamo_items.prepare_member_item(data, member)
             response = members_table.put_item(Item=item)
-            logger.info(f"Member update response: {response}")
             return create_response(200, {'message': 'Member updated successfully'})
     elif 'verifyEmail' in data:
         return handle_verify_email(data)
@@ -271,7 +270,6 @@ def update_member_projects(member_uuid, projects):
             ExpressionAttributeValues={':p': projects},
             ReturnValues="UPDATED_NEW"
         )
-        logger.info(f"Update member projects response: {response}")
         return response
     except Exception as e:
         logger.error(f"Error updating member projects: {str(e)}", exc_info=True)
@@ -282,7 +280,6 @@ def handle_verify_email(data):
         member = get_member(data['memberUuid'])
         member['mailConfirmed'] = True
         response = members_table.put_item(Item=member)
-        logger.info(f"Member update response: {response}")
         return create_response(200, {'message': 'Member email verified successfully'})
     else:
         return create_response(400, {'message': 'Invalid data structure'})
@@ -315,50 +312,6 @@ def handle_post_organization(event):
         return create_response(201, {'message': 'Organization created successfully'})
     else:
         return create_response(400, {'message': 'Invalid data structure'})
-
-def get_admin_emails(organization_id):
-    """組織の管理者のメールアドレスを取得"""
-    try:
-        admin_emails = set()
-        pagination_token = None
-        
-        # カスタム属性ではフィルタリングできないため、全ユーザーを取得してフィルタリング
-        while True:
-            # ページネーショントークンの有無で引数を変える
-            kwargs = {
-                'UserPoolId': USER_POOL_ID,
-                'AttributesToGet': ['email', 'custom:organizationId']
-            }
-            if pagination_token:
-                kwargs['PaginationToken'] = pagination_token
-            
-            response = cognito.list_users(**kwargs)
-            logger.info(f"Cognito response: {response}")
-            
-            for user in response.get('Users', []):
-                is_org_member = False
-                email = None
-                
-                for attr in user.get('Attributes', []):
-                    if attr['Name'] == 'custom:organizationId' and attr['Value'] == organization_id:
-                        is_org_member = True
-                    elif attr['Name'] == 'email':
-                        email = attr['Value']
-                    
-                    if is_org_member and email:
-                        admin_emails.add(email)
-                        break
-            
-            # 次のページがあるかチェック
-            pagination_token = response.get('PaginationToken')
-            if not pagination_token:
-                break
-
-        logger.info(f"Found admin emails: {admin_emails}")
-        return list(admin_emails)
-    except Exception as e:
-        logger.error(f"Error getting admin emails: {str(e)}", exc_info=True)
-        return []
 
 def join_url_paths(*parts):
     """Join URL parts ensuring proper forward slashes"""
@@ -399,8 +352,8 @@ def send_push_notification_to_admins(organization_id, notification_type, report_
 
         # 管理者へのメール送信処理
         if features.get('notifyByEmail'):
-            # 管理者メールアドレスを取得
-            admin_emails = get_admin_emails(organization_id)
+            # get_admin_emailsをcognito_utilから使用
+            admin_emails = get_admin_emails(USER_POOL_ID, organization_id, cognito)
             if (admin_emails):
                 try:
                     logger.info(f"Send mail from: {sendFrom}, to: {admin_emails}")

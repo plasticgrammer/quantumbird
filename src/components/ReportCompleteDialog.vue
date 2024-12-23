@@ -25,7 +25,7 @@
             <v-icon
               v-for="i in 3"
               :key="i"
-              :color="i <= advisorState.remainingTickets ? 'primary' : 'grey-lighten-1'"
+              :color="i <= advisorState.remainingTickets ? 'indigo' : 'grey-lighten-1'"
               class="ticket-icon"
               size="small" 
             >
@@ -33,7 +33,7 @@
             </v-icon>
           </template>
           <template v-else>
-            <v-icon class="ticket-icon" size="small" color="primary">mdi-ticket</v-icon>
+            <v-icon class="ticket-icon" size="small" color="indigo">mdi-ticket</v-icon>
             <span class="text-caption ml-1">{{ advisorState.remainingTickets }}</span>
           </template>
           <v-tooltip activator="parent" location="bottom">

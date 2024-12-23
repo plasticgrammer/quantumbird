@@ -14,11 +14,8 @@ export const updateOrganization = async (organization) => {
   return apiClient.put(BASE_PATH, orgData)
 }
 
-export const updateOrganizationFeatures = async (organization_id, features) => {
-  return apiClient.put(BASE_PATH, {
-    organizationId: organization_id,
-    features: features
-  })
+export const updateOrganizationFeatures = async (organizationId, features) => {
+  return apiClient.put(BASE_PATH, { organizationId, features })
 }
 
 export const deleteOrganization = async (organizationId) => {

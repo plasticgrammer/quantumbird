@@ -252,6 +252,9 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         member = response.get('Item')
         if not member:
             raise Exception('Member not found')
+        
+        advisor_role = report_content.get('advisorRole', 'default')  # デフォルト値を設定
+        logger.info(f"Execute advice: organization={member.get('organizationId')}, member={member.get('id')}, advisor={advisor_role}")
                     
         # チケットのチェックと消費
         is_available, remaining_tickets = check_and_update_advice_tickets(member, member_uuid)

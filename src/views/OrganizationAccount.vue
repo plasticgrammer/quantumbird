@@ -281,6 +281,11 @@ const loadAccounts = async () => {
   }
 }
 
+// エラーメッセージを抽出する関数を追加
+const getErrorMessage = (error) => {
+  return error?.response?.data?.message || error?.message || ''
+}
+
 const handleSubmit = async () => {
   if (!isFormValid.value) return
 
@@ -300,7 +305,6 @@ const handleSubmit = async () => {
     })
     showNotification('アカウントを作成しました')
 
-    await loadAccounts()
     // フォームをリセット
     organizationId.value = ''
     account.value = { organizationName: '', email: '' }
@@ -309,8 +313,13 @@ const handleSubmit = async () => {
     if (form.value) {
       form.value.reset()
     }
+    
+    await loadAccounts()
+
   } catch (error) {
-    showError('アカウントの作成に失敗しました', error)
+    const errorDetail = getErrorMessage(error)
+    const message = `アカウントの作成に失敗しました${errorDetail ? `（${errorDetail}）` : ''}`
+    showError(message, error)
   } finally {
     loading.value = false
   }
@@ -320,15 +329,16 @@ const handleDeleteAccount = async (accountItem) => {
   const organizationName = accountItem.organizationName || accountItem.organizationId || '未設定'
   
   const confirmed = await showConfirmDialog(
-    '確認',
-    `${organizationName}のアカウントと組織情報を削除しますか？\nこの操作は取り消せません。`
+    '削除確認',
+    `${organizationName}のアカウントと組織情報を削除しますか？\nこの操作は取り消せません。`,
+    'error'
   )
   if (!confirmed) return
 
   loading.value = true
   try {
     // Cognitoユーザーを削除
-    await deleteAccount(accountItem.organizationId)
+    await deleteAccount(accountItem.organizationId, accountItem.email)
     // 組織情報とすべての関連データを削除
     await deleteOrganizationCompletely(accountItem.organizationId)
 
@@ -342,14 +352,11 @@ const handleDeleteAccount = async (accountItem) => {
 }
 
 const handleResendInvitation = async (accountItem) => {
-  loading.value = true
   try {
     await resendInvitation(accountItem.email)
     showNotification('招待メールを再送信しました')
   } catch (error) {
     showError('招待メールの再送信に失敗しました', error)
-  } finally {
-    loading.value = false
   }
 }
 
@@ -381,7 +388,9 @@ const handleSaveEdit = async (item) => {
     editingAccount.value = null
     originalAccount.value = null
   } catch (error) {
-    showError('アカウントの更新に失敗しました', error)
+    const errorDetail = getErrorMessage(error)
+    const message = `アカウントの更新に失敗しました${errorDetail ? `（${errorDetail}）` : ''}`
+    showError(message, error)
   }
 }
 
@@ -450,7 +459,7 @@ onMounted(async () => {
   .v-row .v-col-12:has(button) {
     padding: 16px !important;
   }
-  
+
   .mobile-responsive-table :deep(.v-data-table__wrapper) {
     overflow-x: hidden;
   }

@@ -388,7 +388,11 @@ const memberManagement = {
   },
 
   async handleDeleteMember(memberId) {
-    const confirmed = await showConfirmDialog('確認', 'このメンバーを削除しますか？')
+    const confirmed = await showConfirmDialog(
+      '削除確認', 
+      'このメンバーを削除しますか？\nこの操作は取り消せません。',
+      'error'
+    )
     if (confirmed) {
       const member = organization.value.members.find(m => m.id === memberId)
       if (!member) return
@@ -500,7 +504,7 @@ const { setEditingMember, handleAddMember, handleUpdateMember, handleDeleteMembe
   .v-row .v-col-12:has(button) {
     padding: 16px !important;
   }
-  
+
   .mobile-responsive-table :deep(.v-data-table__wrapper) {
     overflow-x: hidden;
   }

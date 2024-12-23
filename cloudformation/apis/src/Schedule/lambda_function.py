@@ -60,14 +60,15 @@ def invoke_processing_lambda(organization_id):
             'organizationId': organization_id
         }
     })
-    logger.info(f"Invoking Lambda with payload: {payload}")
+    logger.info(f"Invoking Lambda with organizationId: {organization_id}")
+
     try:
         response = lambda_client.invoke(
             FunctionName=f'{stage}-send-request',
             InvocationType='Event',
             Payload=payload
         )
-        logger.info(f"Lambda invocation response: {response}")
+        #logger.info(f"Lambda invocation response: {response}")
         
         # レスポンスのステータスコードを確認
         if response['StatusCode'] != 202:

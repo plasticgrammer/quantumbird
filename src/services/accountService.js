@@ -10,8 +10,8 @@ export const updateAccount = async (account) => {
   return apiClient.put(BASE_PATH, account)
 }
 
-export const deleteAccount = async (organizationId) => {
-  return apiClient.delete(BASE_PATH, { organizationId })
+export const deleteAccount = async (organizationId, email) => {
+  return apiClient.delete(BASE_PATH, { organizationId, email })
 }
 
 export const getAccount = async (organizationId) => {

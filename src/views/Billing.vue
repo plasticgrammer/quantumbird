@@ -51,7 +51,7 @@
                 ※ {{ formatDate(currentSubscription.currentPeriodEnd) }}まで現在のプランが有効です
               </p>
             </v-col>
-            <v-col>
+            <v-col cols="12" md="auto">
               <v-btn color="primary" @click="handleShowPlanSelector">
                 プランを変更
               </v-btn>

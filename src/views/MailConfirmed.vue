@@ -15,7 +15,7 @@
             </p>
             <v-img
               src="@/assets/images/advisor_mental.png"
-              max-width="240"
+              max-width="200"
               class="mx-auto mt-0 mb-5"
               :aspect-ratio="1"
             ></v-img>

@@ -103,12 +103,13 @@ def send_request_mail(organization, week_string):
     members_without_report = get_members_without_report(organization_id, week_string, members)
 
     if not members_without_report:
-        logger.info(f"No members without report for week {week_string}")
+        logger.info(f"No members without report for organization {organization_id} for week {week_string}")
         return
 
     sendFrom = common.publisher.get_from_address(organization)
     subject = "【週次報告システム】週次報告をお願いします"
 
+    sent_count = 0
     for member in members_without_report:
         sendTo = [member.get("email")]
         bodyText = f"組織名：{organization['name']}\n"
@@ -118,6 +119,9 @@ def send_request_mail(organization, week_string):
         logger.info(f"Send mail from: {sendFrom}, to: {sendTo}")
         
         common.publisher.send_mail(sendFrom, sendTo, subject, bodyText + link)
+        sent_count += 1
+
+    logger.info(f"Sent reminder emails to {sent_count} members for organization {organization_id} for week {week_string}")
 
 def get_members_without_report(organization_id, week_string, members):
     # 指定された組織と週のすべてのレポートを取得

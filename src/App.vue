@@ -329,13 +329,13 @@ const closeNotification = () => {
   notification.show = false
 }
 
-const showConfirmDialogGlobal = async (title, message) => {
+const showConfirmDialogGlobal = async (title, message, color = 'primary') => {
   if (!confirmDialog.value) {
     console.error('Confirmation dialog component not found')
     return false
   }
   try {
-    return await confirmDialog.value.open(title, message)
+    return await confirmDialog.value.open(title, message, color)
   } catch (error) {
     console.error('Error showing confirmation dialog:', error)
     return false
