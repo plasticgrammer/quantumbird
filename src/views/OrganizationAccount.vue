@@ -147,7 +147,7 @@
 
         <!-- アカウント編集/作成フォーム -->
         <v-row class="mt-4">
-          <v-col cols="12" sm="2">
+          <v-col cols="12" sm="3">
             <v-text-field
               v-model="organizationId"
               label="組織ID"
@@ -169,7 +169,7 @@
               @input="validateForm"
             />
           </v-col>
-          <v-col cols="12" sm="5">
+          <v-col cols="12" sm="4">
             <v-text-field
               v-model="account.email"
               label="メールアドレス"

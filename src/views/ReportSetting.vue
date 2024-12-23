@@ -345,7 +345,7 @@ import PushNortification from '../components/PushNortification.vue'
 import { getOrganization, updateOrganization, updateOrganizationFeatures } from '../services/organizationService'
 import { checkEmailVerification, verifyEmailAddress } from '../services/sesService'
 import { advisorRoles, defaultAdvisors } from '../services/bedrockService'
-import { isValidEmail } from '../utils/string-utils'
+import { isValidEmail, validateSenderName } from '../utils/string-utils'
 import { getCurrentPlan } from '../config/plans'
 import { useResponsive } from '../composables/useResponsive'
 
@@ -452,7 +452,11 @@ const emailRules = [
 
 const senderNameRules = [
   v => !!v || '送信者名は必須です',
-  v => (v && v.length <= 50) || '送信者名は50文字以内で入力してください'
+  v => {
+    if (!v) return true
+    const result = validateSenderName(v)
+    return result.message || true
+  }
 ]
 
 const daysOfWeek = [

@@ -37,8 +37,12 @@ const props = defineProps({
   organization: {
     type: Object,
     required: true
+  },
+  members: {
+    type: Array,
+    required: true
   }
 })
 
-const memberCount = computed(() => props.organization?.members?.length || 0)
+const memberCount = computed(() => props.members.length)
 </script>

@@ -389,7 +389,10 @@ const getWidgetProps = (id) => {
     stress: () => createChartProps('stress', stressData.value, isStressDataReady.value),
     disability: () => createChartProps('disability', disabilityData.value, isDisabilityDataReady.value),
     achievement: () => createChartProps('achievement', achievementData.value, isAchievementDataReady.value),
-    organization: () => ({ organization: organization.value }),
+    organization: () => ({ 
+      organization: organization.value,
+      members: members.value
+    }),
     reportRequest: () => ({
       organization: organization.value,
       nextRequestDateTime: nextRequestDateTime.value,
