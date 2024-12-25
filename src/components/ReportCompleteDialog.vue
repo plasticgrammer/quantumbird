@@ -66,19 +66,21 @@
             </v-sheet>
  
             <!-- 別のアドバイザーに相談するオプション -->
-            <div v-if="advisorState.remainingTickets > 0" class="my-4">
-              <v-btn
-                variant="outlined"
-                color="grey-darken-2"
-                @click="resetState"
-              >
-                <v-icon icon="mdi-swap-horizontal-bold" class="mr-1" />
-                別のアドバイザーに相談する
-              </v-btn>
+            <div v-if="Object.keys(availableAdvisors).length > 1">
+              <div v-if="advisorState.remainingTickets > 0" class="my-4">
+                <v-btn
+                  variant="outlined"
+                  color="grey-darken-2"
+                  @click="resetState"
+                >
+                  <v-icon icon="mdi-swap-horizontal-bold" class="mr-1" />
+                  別のアドバイザーに相談する
+                </v-btn>
+              </div>
+              <p v-else class="text-caption my-2">
+                アドバイスチケットを使い切りました。新しい週次報告時に再度利用可能になります。
+              </p>
             </div>
-            <p v-else class="text-caption my-2">
-              アドバイスチケットを使い切りました。新しい週次報告時に再度利用可能になります。
-            </p>
           </div>
           
           <!-- アドバイザー選択 -->
@@ -86,7 +88,11 @@
             <v-sheet class="mx-3 py-3 rounded-lg advisor-container">
               <p class="text-body-1">アドバイザーを選んでください</p>
  
-              <v-window v-model="advisorState.selectedRole" show-arrows continuous>
+              <v-window 
+                v-model="advisorState.selectedRole" 
+                :show-arrows="Object.keys(availableAdvisors).length > 1"
+                continuous
+              >
                 <v-window-item
                   v-for="(advisor, key) in availableAdvisors"
                   :key="key"
