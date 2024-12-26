@@ -211,17 +211,10 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useStore } from 'vuex'
-import { termsOfServiceUrl, privacyPolicyUrl, termsOfServiceVersion, privacyPolicyVersion } from '../config/environment'
-import { 
-  signIn, 
-  signUp, 
-  confirmSignUp, 
-  resendSignUpCode,
-  confirmSignIn,
-  signOut
-} from '@aws-amplify/auth'
-import { getOrganization, submitOrganization } from '../services/publicService'
-import { validateOrganizationId } from '../utils/string-utils'
+import { signIn, signUp, confirmSignUp, resendSignUpCode, confirmSignIn, signOut } from '@aws-amplify/auth'
+import { termsOfServiceUrl, privacyPolicyUrl, termsOfServiceVersion, privacyPolicyVersion } from '@/config/environment'
+import { getOrganization, submitOrganization } from '@/services/publicService'
+import { validateOrganizationId } from '@/utils/string-utils'
 
 const router = useRouter()
 const store = useStore()
@@ -285,8 +278,6 @@ const handleSignIn = async () => {
       username: signInEmail.value, 
       password: signInPassword.value 
     })
-    
-    console.log('SignIn result:', signInResult) // デバッグログ
 
     // 仮パスワードでのサインインの場合
     if (signInResult.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
@@ -374,6 +365,8 @@ const confirmSignUpUser = async () => {
   errorMessage.value = ''
   try {
     await confirmSignUp({ username: confirmEmail.value, confirmationCode: confirmCode.value })
+
+    // 組織情報を登録
     const organization = { 
       organizationId: organizationId.value, 
       name: organizationName.value, 

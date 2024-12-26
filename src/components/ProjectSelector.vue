@@ -45,7 +45,7 @@
 
 <script setup>
 import { ref, computed, inject } from 'vue'
-import { updateMemberProjects } from '../services/publicService'
+import { updateMemberProjects } from '@/services/publicService'
 
 const props = defineProps({
   modelValue: {

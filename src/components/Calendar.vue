@@ -60,7 +60,7 @@
 
 <script setup>
 import { ref, toRefs, onMounted, onUnmounted, computed } from 'vue'
-import { useCalendar } from '../composables/useCalendar'
+import { useCalendar } from '@/composables/useCalendar'
 
 const props = defineProps({
   calendarWeeks: {

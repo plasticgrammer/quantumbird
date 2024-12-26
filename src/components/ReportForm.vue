@@ -456,12 +456,12 @@
 <script setup>
 import { ref, computed, nextTick, reactive, inject, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getReport, submitReport, updateReport, getMemberProjects } from '../services/publicService'
-import { useCalendar } from '../composables/useCalendar'
-import { useReport } from '../composables/useReport'
-import { useResponsive } from '../composables/useResponsive'
-import ProjectSelector from '../components/ProjectSelector.vue'
-import RatingItem from '../components/RatingItem.vue'
+import { useCalendar } from '@/composables/useCalendar'
+import { useReport } from '@/composables/useReport'
+import { useResponsive } from '@/composables/useResponsive'
+import { getReport, submitReport, updateReport, getMemberProjects } from '@/services/publicService'
+import ProjectSelector from './ProjectSelector.vue'
+import RatingItem from './RatingItem.vue'
 
 const route = useRoute()
 const { isMobile } = useResponsive()

@@ -341,13 +341,13 @@
 import { ref, reactive, computed, watch, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import PushNortification from '../components/PushNortification.vue'
-import { getOrganization, updateOrganization, updateOrganizationFeatures } from '../services/organizationService'
-import { checkEmailVerification, verifyEmailAddress } from '../services/sesService'
-import { advisorRoles, defaultAdvisors } from '../services/bedrockService'
-import { isValidEmail, validateSenderName } from '../utils/string-utils'
-import { getCurrentPlan } from '../config/plans'
-import { useResponsive } from '../composables/useResponsive'
+import { useResponsive } from '@/composables/useResponsive'
+import { getOrganization, updateOrganization, updateOrganizationFeatures } from '@/services/organizationService'
+import { checkEmailVerification, verifyEmailAddress } from '@/services/sesService'
+import { advisorRoles, defaultAdvisors } from '@/services/bedrockService'
+import { isValidEmail, validateSenderName } from '@/utils/string-utils'
+import { getCurrentPlan } from '@/config/plans'
+import PushNortification from '@/components/PushNortification.vue'
 
 const router = useRouter()
 const store = useStore()

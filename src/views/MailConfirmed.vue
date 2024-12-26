@@ -36,7 +36,7 @@
 
 <script setup>
 import { ref, inject, onMounted } from 'vue'
-import { verifyEmail } from '../services/memberService'
+import { verifyEmail } from '@/services/memberService'
 
 const props = defineProps({
   memberUuid: {

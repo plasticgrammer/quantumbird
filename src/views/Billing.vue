@@ -123,11 +123,11 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useStore } from 'vuex'
-import { useStripe } from '../composables/useStripe'
-import { getInvoices } from '../services/paymentService'
-import { updateOrganizationFeatures } from '../services/organizationService'
-import PaymentDialog from '../components/PaymentDialog.vue'
-import { getCurrentPlan, getCurrentSubscription } from '../config/plans'
+import { useStripe } from '@/composables/useStripe'
+import { getInvoices } from '@/services/paymentService'
+import { updateOrganizationFeatures } from '@/services/organizationService'
+import { getCurrentPlan, getCurrentSubscription } from '@/config/plans'
+import PaymentDialog from '@/components/PaymentDialog.vue'
 
 const store = useStore()
 const { plans } = useStripe()

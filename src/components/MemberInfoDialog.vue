@@ -72,7 +72,7 @@
 
 <script setup>
 import { ref, inject } from 'vue'
-import { updateMemberExtraInfo } from '../services/publicService'
+import { updateMemberExtraInfo } from '@/services/publicService'
 
 const props = defineProps({
   member: {

@@ -371,19 +371,18 @@
 </template>
 
 <script setup>
-import { ref, computed, watchEffect, onMounted, inject, defineAsyncComponent, watch, nextTick } from 'vue'
-import { useCalendar } from '../composables/useCalendar'
-import { useReport } from '../composables/useReport'
-import { listReports, listMembers } from '../services/publicService'
-import { updateReport, submitFeedback } from '../services/reportService'
-import { generateToken } from '../services/secureParameterService'
-import { sendRequest } from '../services/sendRequestService'
-import { rootUrl } from '../config/environment'
-
-import OvertimeDisplay from '../components/OvertimeDisplay.vue'
+import { computed, defineAsyncComponent, inject, nextTick, onMounted, ref, watch, watchEffect } from 'vue'
+import { listReports, listMembers } from '@/services/publicService'
+import { rootUrl } from '@/config/environment'
+import { generateToken } from '@/services/secureParameterService'
+import { sendRequest } from '@/services/sendRequestService'
+import { submitFeedback, updateReport } from '@/services/reportService'
+import { useCalendar } from '@/composables/useCalendar'
+import { useReport } from '@/composables/useReport'
+import OvertimeDisplay from './OvertimeDisplay.vue'
+import RatingItem from './RatingItem.vue'
 import ReviewCompleteDialog from './ReviewCompleteDialog.vue'
-const RatingItem = defineAsyncComponent(() => import('../components/RatingItem.vue'))
-const ScrollNavigation = defineAsyncComponent(() => import('../components/ScrollNavigation.vue'))
+const ScrollNavigation = defineAsyncComponent(() => import('./ScrollNavigation.vue'))
 
 const { formatDateTimeJp, formatDateJp, getPreviousWeekString } = useCalendar()
 const { statusOptions, getStatusText, getStatusColor, ratingItems } = useReport()

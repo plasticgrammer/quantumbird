@@ -48,6 +48,11 @@ module.exports = defineConfig({
   },
   transpileDependencies: ['vuetify'],
   configureWebpack: {
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'src')
+      }
+    },
     optimization: {
       usedExports: true,
       sideEffects: false,

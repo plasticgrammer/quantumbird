@@ -294,10 +294,10 @@
 import { ref, inject, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
-import { exportReports } from '../services/reportService'
-import { deleteOrganization, deleteOrganizationCompletely } from '../services/organizationService'
-import { useStripe } from '../composables/useStripe'
-import { cancelSubscription } from '../services/paymentService'
+import { exportReports } from '@/services/reportService'
+import { deleteOrganization, deleteOrganizationCompletely } from '@/services/organizationService'
+import { useStripe } from '@/composables/useStripe'
+import { cancelSubscription } from '@/services/paymentService'
 
 const store = useStore()
 const router = useRouter()

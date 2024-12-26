@@ -57,7 +57,7 @@ import { computed, inject } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { feedbackUrl, termsOfServiceUrl, privacyPolicyUrl, specifiedCommercialTransactionsUrl } from '@/config/environment'
-import { getCurrentPlan } from '../config/plans'
+import { getCurrentPlan } from '@/config/plans'
 
 const props = defineProps({
   modelValue: Boolean

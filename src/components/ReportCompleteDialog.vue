@@ -195,9 +195,9 @@
 
 <script setup>
 import { reactive, watch, onMounted, onUnmounted, computed } from 'vue'
-import { useResponsive } from '../composables/useResponsive'
-import { advisorRoles, getWeeklyReportAdvice } from '../services/bedrockService'
-import { getMember } from '../services/publicService'
+import { useResponsive } from '@/composables/useResponsive'
+import { advisorRoles, getWeeklyReportAdvice } from '@/services/bedrockService'
+import { getMember } from '@/services/publicService'
 
 const { isMobile } = useResponsive()
 

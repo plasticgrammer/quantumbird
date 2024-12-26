@@ -100,12 +100,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useStore } from 'vuex'
-import { useCalendar } from '../composables/useCalendar'
-import { useResponsive } from '../composables/useResponsive'
-import { getOrganization } from '../services/organizationService'
-import { getReportStatus } from '../services/reportService'
-import { listOrganizationMembers } from '../services/memberService'
-import StarBackground from '../components/StarBackground.vue'
+import { useCalendar } from '@/composables/useCalendar'
+import { useResponsive } from '@/composables/useResponsive'
+import { getOrganization } from '@/services/organizationService'
+import { getReportStatus } from '@/services/reportService'
+import { listOrganizationMembers } from '@/services/memberService'
+import StarBackground from '@/components/StarBackground.vue'
 
 const store = useStore()
 const organizationId = store.getters['auth/organizationId']

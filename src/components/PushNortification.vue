@@ -92,10 +92,10 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useStore } from 'vuex'
-import { app } from '../config/firebase-config'
-import { contextPath } from '../config/environment'
 import { getMessaging, getToken } from 'firebase/messaging'
-import { registerPushSubscription, removePushSubscription, getPushSubscription } from '../services/organizationService'
+import { app } from '@/config/firebase-config'
+import { contextPath } from '@/config/environment'
+import { registerPushSubscription, removePushSubscription, getPushSubscription } from '@/services/organizationService'
 
 const store = useStore()
 const isSubscribed = ref(false)

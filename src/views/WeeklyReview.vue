@@ -27,11 +27,11 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
-import WeekSelector from '../components/WeekSelector.vue'
-import ReviewForm from '../components/ReviewForm.vue'
-import { useCalendar } from '../composables/useCalendar'
+import { useStore } from 'vuex'
+import { useCalendar } from '@/composables/useCalendar'
+import ReviewForm from '@/components/ReviewForm.vue'
+import WeekSelector from '@/components/WeekSelector.vue'
 
 const props = defineProps({
   weekString: {

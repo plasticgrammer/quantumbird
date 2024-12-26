@@ -108,16 +108,16 @@
 <script setup>
 import { ref, watch, computed, onMounted, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
-import WeekSelector from '../components/WeekSelector.vue'
-import ReportForm from '../components/ReportForm.vue'
-import { useCalendar } from '../composables/useCalendar'
+import { useCalendar } from '@/composables/useCalendar'
+import { getOrganization, getMember } from '@/services/publicService'
+import { defaultAdvisors } from '@/services/bedrockService'
 import { feedbackUrl, termsOfServiceUrl, privacyPolicyUrl } from '@/config/environment'
-import { getOrganization, getMember } from '../services/publicService'
-import { defaultAdvisors } from '../services/bedrockService'
+import WeekSelector from '@/components/WeekSelector.vue'
+import ReportForm from '@/components/ReportForm.vue'
 
-const MemberInfoDialog = defineAsyncComponent(() => import('../components/MemberInfoDialog.vue'))
-const StressCheckDialog = defineAsyncComponent(() => import('../components/StressCheckDialog.vue'))
-const ReportCompleteDialog = defineAsyncComponent(() => import('../components/ReportCompleteDialog.vue'))
+const MemberInfoDialog = defineAsyncComponent(() => import('@/components/MemberInfoDialog.vue'))
+const StressCheckDialog = defineAsyncComponent(() => import('@/components/StressCheckDialog.vue'))
+const ReportCompleteDialog = defineAsyncComponent(() => import('@/components/ReportCompleteDialog.vue'))
 
 const props = defineProps({
   organizationId: {

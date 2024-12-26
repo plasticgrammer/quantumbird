@@ -125,17 +125,17 @@ import { ref, computed, watch, onMounted, defineAsyncComponent, nextTick } from 
 import { markRaw } from 'vue'
 import VueDraggable from 'vuedraggable'
 import { useStore } from 'vuex'
-import { useCalendar } from '../composables/useCalendar'
-import { useReport } from '../composables/useReport'
-import { useWidgets } from '../composables/useWidgets'
-import { getOrganization } from '../services/organizationService'
-import { getReportStatus, getStatsData } from '../services/reportService'
-import CalendarWidget from '../components/widget/CalendarWidget.vue'
-import OrganizationWidget from '../components/widget/OrganizationWidget.vue'
-import ReportRequestWidget from '../components/widget/ReportRequestWidget.vue'
-import WeeklyReportWidget from '../components/widget/WeeklyReportWidget.vue'
-import { useResponsive } from '../composables/useResponsive'
-import { listOrganizationMembers } from '../services/memberService'
+import { useCalendar } from '@/composables/useCalendar'
+import { useReport } from '@/composables/useReport'
+import { useWidgets } from '@/composables/useWidgets'
+import { useResponsive } from '@/composables/useResponsive'
+import { getOrganization } from '@/services/organizationService'
+import { getReportStatus, getStatsData } from '@/services/reportService'
+import { listOrganizationMembers } from '@/services/memberService'
+import CalendarWidget from '@/components/widget/CalendarWidget.vue'
+import OrganizationWidget from '@/components/widget/OrganizationWidget.vue'
+import ReportRequestWidget from '@/components/widget/ReportRequestWidget.vue'
+import WeeklyReportWidget from '@/components/widget/WeeklyReportWidget.vue'
 
 const components = {
   CalendarWidget: markRaw(CalendarWidget),
@@ -143,19 +143,19 @@ const components = {
   ReportRequestWidget: markRaw(ReportRequestWidget),
   WeeklyReportWidget: markRaw(WeeklyReportWidget),
   OvertimeChart: defineAsyncComponent(() => 
-    import('../components/chart/OvertimeChart.vue').then(m => markRaw(m.default))
+    import('@/components/chart/OvertimeChart.vue').then(m => markRaw(m.default))
   ),
   StressChart: defineAsyncComponent(() => 
-    import('../components/chart/StressChart.vue').then(m => markRaw(m.default))
+    import('@/components/chart/StressChart.vue').then(m => markRaw(m.default))
   ),
   DisabilityChart: defineAsyncComponent(() => 
-    import('../components/chart/DisabilityChart.vue').then(m => markRaw(m.default))
+    import('@/components/chart/DisabilityChart.vue').then(m => markRaw(m.default))
   ),
   AchievementChart: defineAsyncComponent(() => 
-    import('../components/chart/AchievementChart.vue').then(m => markRaw(m.default))
+    import('@/components/chart/AchievementChart.vue').then(m => markRaw(m.default))
   ),
   TodoListWidget: defineAsyncComponent(() => 
-    import('../components/widget/TodoListWidget.vue').then(m => markRaw(m.default))
+    import('@/components/widget/TodoListWidget.vue').then(m => markRaw(m.default))
   )
 }
 

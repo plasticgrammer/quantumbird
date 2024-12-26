@@ -223,10 +223,10 @@
 <script setup>
 import { reactive, toRefs, ref, onMounted, inject, computed } from 'vue'
 import { useStore } from 'vuex'
-import { updateOrganization, getOrganization } from '../services/organizationService'
-import { createMember, updateMember, deleteMember, listOrganizationMembers } from '../services/memberService'
-import { isValidEmail } from '../utils/string-utils'
-import { getCurrentPlan } from '../config/plans'
+import { updateOrganization, getOrganization } from '@/services/organizationService'
+import { createMember, updateMember, deleteMember, listOrganizationMembers } from '@/services/memberService'
+import { isValidEmail } from '@/utils/string-utils'
+import { getCurrentPlan } from '@/config/plans'
 
 const store = useStore()
 const form = ref(null)

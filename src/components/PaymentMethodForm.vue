@@ -45,7 +45,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
-import { useStripe } from '../composables/useStripe'
+import { useStripe } from '@/composables/useStripe'
 
 const props = defineProps({
   elementId: {

@@ -34,10 +34,10 @@
 
 <script setup>
 import { ref, inject, onMounted } from 'vue'
-import { useCalendar } from '../composables/useCalendar'
-import { getOrganization } from '../services/publicService'
-import { verifyToken } from '../services/secureParameterService'
-import ReviewForm from '../components/ReviewForm.vue'
+import { useCalendar } from '@/composables/useCalendar'
+import { getOrganization } from '@/services/publicService'
+import { verifyToken } from '@/services/secureParameterService'
+import ReviewForm from '@/components/ReviewForm.vue'
 
 const props = defineProps({
   token: {

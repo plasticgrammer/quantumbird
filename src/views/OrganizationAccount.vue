@@ -206,10 +206,10 @@
 <script setup>
 import { ref, inject, onMounted, computed } from 'vue'
 import { useStore } from 'vuex'
-import { getCurrentPlan } from '../config/plans'
-import { isValidEmail, validateOrganizationId } from '../utils/string-utils'
-import { createAccount, getAccounts, deleteAccount, resendInvitation, updateAccount } from '../services/accountService'
-import { deleteOrganizationCompletely } from '../services/organizationService'
+import { createAccount, getAccounts, deleteAccount, resendInvitation, updateAccount } from '@/services/accountService'
+import { deleteOrganizationCompletely } from '@/services/organizationService'
+import { isValidEmail, validateOrganizationId } from '@/utils/string-utils'
+import { getCurrentPlan } from '@/config/plans'
 
 const store = useStore()
 const form = ref(null)

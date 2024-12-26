@@ -80,7 +80,7 @@
 </template>
 
 <script setup>
-import { useWidgets } from '../../composables/useWidgets'
+import { useWidgets } from '@/composables/useWidgets'
 import Calendar from '../Calendar.vue'
 import BaseWidget from './BaseWidget.vue'
 

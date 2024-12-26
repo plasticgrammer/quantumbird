@@ -361,13 +361,13 @@
 <script setup>
 import { ref, inject, nextTick, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { useStore } from 'vuex'
-import { useStripe } from '../composables/useStripe'
-import { specifiedCommercialTransactionsUrl } from '../config/environment'
-import { getCurrentPlan, getCurrentSubscription } from '../config/plans'
-import { createSubscription, getPaymentMethods, changePlan, updatePaymentMethod } from '../services/paymentService'
-import { getAccounts } from '../services/accountService'
-import { getOrganization } from '../services/organizationService'
-import PaymentMethodForm from '../components/PaymentMethodForm.vue'
+import { useStripe } from '@/composables/useStripe'
+import { specifiedCommercialTransactionsUrl } from '@/config/environment'
+import { getCurrentPlan, getCurrentSubscription } from '@/config/plans'
+import { createSubscription, getPaymentMethods, changePlan, updatePaymentMethod } from '@/services/paymentService'
+import { getAccounts } from '@/services/accountService'
+import { getOrganization } from '@/services/organizationService'
+import PaymentMethodForm from './PaymentMethodForm.vue'
 
 const props = defineProps({
   modelValue: {

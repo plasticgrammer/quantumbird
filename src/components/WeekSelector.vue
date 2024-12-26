@@ -30,8 +30,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useCalendar } from '../composables/useCalendar'
+import { computed, ref, watch } from 'vue'
+import { useCalendar } from '@/composables/useCalendar'
 import Calendar from './Calendar.vue'
 
 const props = defineProps({
