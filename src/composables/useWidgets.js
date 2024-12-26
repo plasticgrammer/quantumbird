@@ -1,11 +1,11 @@
 import { computed } from 'vue'
 import { useStore } from 'vuex'
-import { WIDGET_DEFINITIONS } from '../store/modules/widget'
+import { WIDGET_DEFINITIONS } from '@/store/modules/widget'
 
 export const useWidgets = () => {
   const store = useStore()
 
-  const visibleWidgets = computed(() => 
+  const visibleWidgets = computed(() =>
     store.state.widget.widgetOrder
       .filter(id => store.state.widget.widgetVisibility[id])
   )
@@ -20,7 +20,7 @@ export const useWidgets = () => {
       if (Array.isArray(newOrder) && newOrder.length > 0) {
         const currentVisible = visibleWidgets.value
         if (newOrder.length === currentVisible.length &&
-            newOrder.every(id => currentVisible.includes(id))) {
+          newOrder.every(id => currentVisible.includes(id))) {
           store.dispatch('widget/updateWidgetOrder', newOrder)
         }
       }

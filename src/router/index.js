@@ -1,15 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { contextPath } from '../config/environment'
-import store from '../store'
-import SignIn from '../views/SignIn.vue'
-import Overview from '../views/Overview.vue'
-import Dashboard from '../views/Dashboard.vue'
-import WeeklyReport from '../views/WeeklyReport.vue'
-import WeeklyReview from '../views/WeeklyReview.vue'
-import WeeklyReportSummary from '../views/WeeklyReportSummary.vue'
-import OrganizationManagement from '../views/OrganizationManagement.vue'
-import OrganizationAccount from '../views/OrganizationAccount.vue'
-import ReportSetting from '../views/ReportSetting.vue'
+import { contextPath } from '@/config/environment'
+import store from '@/store'
+import SignIn from '@/views/SignIn.vue'
+import Overview from '@/views/Overview.vue'
+import Dashboard from '@/views/Dashboard.vue'
+import WeeklyReport from '@/views/WeeklyReport.vue'
+import WeeklyReview from '@/views/WeeklyReview.vue'
+import WeeklyReportSummary from '@/views/WeeklyReportSummary.vue'
+import OrganizationManagement from '@/views/OrganizationManagement.vue'
+import OrganizationAccount from '@/views/OrganizationAccount.vue'
+import ReportSetting from '@/views/ReportSetting.vue'
 
 const routes = [
   {
@@ -116,31 +116,31 @@ const routes = [
   {
     path: '/account-setting',
     name: 'AccountSetting',
-    component: () => import('../views/AccountSetting.vue')
+    component: () => import('@/views/AccountSetting.vue')
   },
   {
     path: '/billing',
     name: 'Billing',
-    component: () => import('../views/Billing.vue'),
+    component: () => import('@/views/Billing.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/member/mail/:memberUuid',
     name: 'MailConfirmed',
-    component: () => import('../views/MailConfirmed.vue'),
+    component: () => import('@/views/MailConfirmed.vue'),
     props: true,
     meta: { hideNavigation: true, hideAnimation: true }
   },
   {
     path: '/about',
     name: 'About',
-    component: () => import('../views/About.vue'),
+    component: () => import('@/views/About.vue'),
     meta: { hideNavigation: true, hideMascot: true, fullWidth: true }
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    component: () => import('../views/NotFound.vue'),
+    component: () => import('@/views/NotFound.vue'),
     meta: { hideNavigation: true, hideAnimation: true }
   }
 ]
