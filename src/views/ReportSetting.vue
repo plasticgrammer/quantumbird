@@ -582,6 +582,8 @@ const saveAdvisorSettings = async () => {
     const organizationId = store.getters['auth/organizationId']
     await updateOrganizationFeatures(organizationId, { advisors: selectedAdvisors.value })
 
+    // 更新成功後に比較元の値を更新
+    originalAdvisors.value = [...selectedAdvisors.value]
     showNotification('アドバイザー設定を保存しました')
   } catch (error) {
     showError('アドバイザー設定の保存に失敗しました', error)

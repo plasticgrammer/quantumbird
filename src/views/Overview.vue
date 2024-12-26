@@ -47,9 +47,9 @@
             class="mt-3"
           >
             <v-icon class="mr-1" small>
-              mdi-mail
+              mdi-calendar-clock
             </v-icon>
-            報告依頼設定
+            週次報告設定
           </v-btn>
         </p>
         <p v-else-if="reportStatus['pending'].count">
@@ -113,7 +113,6 @@ const { getPreviousWeekString } = useCalendar()
 const { isMobile } = useResponsive()
 
 const isLoading = ref(true)
-const error = ref(null)
 const organization = ref({})
 const members = ref([])
 const reportStatus = ref('')
@@ -129,7 +128,6 @@ const fetchOrganizationInfo = async () => {
     members.value = memberList
   } catch (err) {
     console.error('Failed to fetch organization info:', err)
-    error.value = '組織情報の取得に失敗しました'
   }
 }
 
@@ -143,7 +141,6 @@ const fetchReportStatus = async () => {
     }
   } catch (err) {
     console.error('Failed to fetch report status:', err)
-    error.value = '報告状況の取得に失敗しました: ' + err.message
     throw err
   }
 }
@@ -155,10 +152,8 @@ const fetchAll = async () => {
       fetchOrganizationInfo(),
       fetchReportStatus()
     ])
-    // initChart の呼び出しを削除
   } catch (err) {
     console.error('Error initializing dashboard:', err)
-    error.value = '初期化に失敗しました'
   } finally {
     isLoading.value = false
   }

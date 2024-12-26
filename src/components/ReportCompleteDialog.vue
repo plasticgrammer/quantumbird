@@ -43,15 +43,15 @@
       </div>
       
       <!-- アドバイス機能が有効な場合 -->
-      <v-card-text class="py-1 flex-grow-1" style="max-height: 80vh; overflow-y: auto;">
+      <v-card-text class="py-1 flex-grow-1 scrollable-content">
         <template v-if="isAdviceEnabled">
           <!-- アドバイス表示 -->
           <div v-if="advisorState.isAdviceAvailable">
             <v-sheet class="text-left pa-4 pt-1 mx-3 rounded-lg advisor-container">
               <v-img
                 :src="advisorRoles[advisorState.selectedRole].image"
-                max-width="120"
-                class="mx-auto mt-0 mb-3"
+                max-width="100"
+                class="mx-auto mt-0 mb-2"
                 :aspect-ratio="1"
               ></v-img>
               <p class="text-caption text-grey-darken-1 mb-2">
@@ -115,7 +115,7 @@
                         class="mt-n1 me-2"
                       />
                       {{ advisor.title }}
-                      <div class="text-body-2 py-2">
+                      <div class="text-button">
                         {{ advisor.description }}
                       </div>
                     </v-card-title>
@@ -377,7 +377,7 @@ watch(() => props.reportContent,
 }
 
 .scale-up {
-  transform: scale(1.15);
+  transform: scale(1.1);
 }
 
 .advisor-image :deep(.v-img__img) {
@@ -445,5 +445,10 @@ watch(() => props.reportContent,
 .v-card-text::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
+}
+
+.scrollable-content {
+  max-height: 80vh;
+  overflow-y: auto;
 }
 </style>

@@ -122,7 +122,6 @@ const statusText = computed(() => {
 })
 
 watch(isServiceWorkerReady, async (newValue) => {
-  console.log('isServiceWorkerReady changed:', newValue)
   if (newValue) {
     await checkNotificationStatus()
     await checkSubscription()
@@ -137,8 +136,6 @@ onMounted(() => {
   nextTick(async () => {
     try {
       await initializeServiceWorker()
-      console.log('Service Worker initialization completed')
-      console.log('Final isServiceWorkerReady value:', isServiceWorkerReady.value)
     } catch (error) {
       console.error('Failed to initialize Service Worker:', error)
     }
@@ -155,7 +152,6 @@ onUnmounted(() => {
 
 const updateOnlineStatus = () => {
   isOnline.value = navigator.onLine
-  console.log('Online status updated:', isOnline.value)
 }
 
 const initializeServiceWorker = async () => {
@@ -171,11 +167,9 @@ const initializeServiceWorker = async () => {
       await waitForServiceWorkerReady(registration)
       
       isServiceWorkerReady.value = true
-      console.log('isServiceWorkerReady set to true')
       clearError()
       
       await nextTick()
-      console.log('After nextTick, isServiceWorkerReady:', isServiceWorkerReady.value)
       
     } catch (error) {
       console.error('Service Worker initialization failed:', error)
@@ -286,7 +280,6 @@ const subscribeToPush = async () => {
     if (fcmToken) {
       await saveSubscription(fcmToken)
       isSubscribed.value = true
-      console.log('Subscribed to push notifications')
     } else {
       setError('FCMトークンの取得に失敗しました。')
     }
@@ -302,7 +295,6 @@ const unsubscribeFromPush = async () => {
     try {
       await deleteSubscription()
       isSubscribed.value = false
-      console.log('Unsubscribed from push notifications')
     } catch (error) {
       console.error('Failed to unsubscribe from push notifications:', error)
       setError('プッシュ通知の購読解除に失敗しました。')
@@ -314,7 +306,6 @@ const saveSubscription = async (fcmToken) => {
   try {
     const response = await registerPushSubscription(fcmToken, organizationId, adminId)
     await storeEndpointArn(response.endpointArn)
-    console.log('FCM token saved on server:', response.endpointArn)
   } catch (error) {
     console.error('Failed to save FCM token on server:', error)
     throw error
@@ -346,13 +337,11 @@ const removeStoredEndpointArn = async () => {
 const setError = (message) => {
   hasError.value = true
   errorMessage.value = message
-  console.error('Error set:', message)
 }
 
 const clearError = () => {
   hasError.value = false
   errorMessage.value = ''
-  console.log('Error cleared')
 }
 
 const showInstructions = () => {
@@ -379,7 +368,6 @@ const resetServiceWorker = async () => {
       await registration.unregister()
     }
     await clearServiceWorkerCache()
-    console.log('Service Worker reset complete')
     window.location.reload()
   }
 }

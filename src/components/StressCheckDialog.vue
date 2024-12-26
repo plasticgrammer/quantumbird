@@ -1,10 +1,10 @@
 <template>
   <v-dialog v-model="dialog" max-width="600px">
-    <v-card color="blue-lighten-5" min-height="470px">
+    <v-card color="blue-lighten-5" min-height="430px" rounded="lg">
       <v-card-text class="pt-0">
         <v-img
           src="@/assets/images/advisor_mental.png"
-          max-width="240"
+          max-width="200"
           class="mx-auto my-0"
           :aspect-ratio="1"
         ></v-img>
