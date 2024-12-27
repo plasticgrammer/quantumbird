@@ -88,11 +88,6 @@ export function validateSenderName(name) {
   return { isValid: true, message: '' }
 }
 
-// 下位互換性のために維持
-export function isValidSenderName(name) {
-  return validateSenderName(name).isValid
-}
-
 export const isValidOrganizationId = (value) => {
   if (!value) return false
   if (value.length < 3 || value.length > 20) return false

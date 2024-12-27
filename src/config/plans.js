@@ -1,5 +1,5 @@
 import store from '@/store'
-import { defaultAdvisors } from '../services/bedrockService'
+import { defaultAdvisors } from '@/services/bedrockService'
 
 // 環境変数からpriceIdを取得（未設定の場合は開発環境用のIDを使用）
 const STRIPE_PRO_PRICE_ID = process.env.VUE_APP_STRIPE_PRO_PRICE_ID || 'price_1QJSigJlLYAT4bpznFUNs5eg'
