@@ -272,8 +272,6 @@ Resources:
       Environment:
         Variables:
           STAGE: !Ref Stage
-          BASE_URL:
-            !If [IsProd, "https://fluxweek.com/", "http://localhost:3000"]
       Layers:
         - !Ref CommonLayer
       Events:

@@ -56,7 +56,7 @@
             >
               並び替えするには
               <v-icon
-                class="ml-2"
+                class="ml-1"
                 icon="mdi-help-circle-outline"
               ></v-icon>
             </v-list-subheader>
@@ -68,7 +68,7 @@
             >
               サイズ変更するには
               <v-icon
-                class="ml-2"
+                class="ml-1"
                 icon="mdi-help-circle-outline"
               ></v-icon>
             </v-list-subheader>

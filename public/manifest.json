@@ -1,0 +1,21 @@
+{
+  "name": "fluxweek",
+  "short_name": "fluxweek",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#82b1ff",
+  "background_color": "#f6fbff",
+  "display": "standalone",
+  "description": "ストレスフリーな管理で組織の成果をサポートする週次報告サービスです。"
+}

@@ -15,7 +15,7 @@
             </p>
             <v-img
               src="@/assets/images/advisor_mental.png"
-              max-width="200"
+              max-width="160"
               class="mx-auto mt-0 mb-5"
               :aspect-ratio="1"
             ></v-img>
@@ -47,8 +47,8 @@ const props = defineProps({
 
 const loading = ref(false)
 const email = ref('')
-const showError = inject('showError')
 const canClose = ref(false)
+const showError = inject('showError')
 
 const handleClose = () => {
   window.close()
