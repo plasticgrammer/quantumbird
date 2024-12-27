@@ -112,7 +112,11 @@
                           class="mr-4"
                         >
                           <v-radio-group v-model="reportSettings.reportWeek" row dense hide-details>
-                            <v-radio :label="option.text" :value="option.value"></v-radio>
+                            <v-radio 
+                              :label="option.text" 
+                              :value="option.value"
+                              :color="reportSettings.reportWeek === option.value ? 'primary' : 'grey'"
+                            ></v-radio>
                           </v-radio-group>
                         </span>
                       </v-col>

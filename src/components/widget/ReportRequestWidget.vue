@@ -31,9 +31,9 @@
           aria-label="報告依頼設定ページへ移動"
         >
           <v-icon class="mr-1" small aria-hidden="true">
-            mdi-mail
+            mdi-calendar-clock
           </v-icon>
-          報告依頼設定
+          週次報告設定
         </v-btn>
       </div>
     </v-container>

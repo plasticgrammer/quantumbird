@@ -4,12 +4,12 @@
       <v-col cols="12">
         <v-switch
           v-if="notificationStatus === 'default' || notificationStatus === 'granted'"
-          v-model="isSubscribed"
+          :model-value="effectiveSubscriptionState"
           color="primary"
           hide-details
           inset
           :disabled="!isServiceWorkerReady"
-          @click="togglePushNotification"
+          @update:model-value="togglePushNotification"
         >
           <template #prepend>
             <v-icon
@@ -110,15 +110,19 @@ const organizationId = store.getters['auth/organizationId']
 const adminId = store.getters['auth/cognitoUserSub']
 
 const iconName = computed(() => {
-  return isServiceWorkerReady.value ? (isSubscribed.value ? 'mdi-bell-outline' : 'mdi-bell-off-outline') : 'mdi-progress-clock'
+  return isServiceWorkerReady.value ? (effectiveSubscriptionState.value ? 'mdi-bell-outline' : 'mdi-bell-off-outline') : 'mdi-progress-clock'
 })
 
 const iconColor = computed(() => {
-  return isServiceWorkerReady.value ? (isSubscribed.value ? 'success' : 'grey') : 'grey'
+  return isServiceWorkerReady.value ? (effectiveSubscriptionState.value ? 'success' : 'grey') : 'grey'
 })
 
 const statusText = computed(() => {
-  return isServiceWorkerReady.value ? (isSubscribed.value ? 'プッシュ通知: 有効' : 'プッシュ通知: 無効') : 'Service Worker初期化中'
+  return isServiceWorkerReady.value ? (effectiveSubscriptionState.value ? 'プッシュ通知: 有効' : 'プッシュ通知: 無効') : 'Service Worker初期化中'
+})
+
+const effectiveSubscriptionState = computed(() => {
+  return notificationStatus.value === 'granted' && isSubscribed.value
 })
 
 watch(isServiceWorkerReady, async (newValue) => {
@@ -346,11 +350,11 @@ const clearError = () => {
 
 const showInstructions = () => {
   alert(`ブラウザの通知設定を変更する方法:
-    1. ブラウザの設定/環境設定を開きます。
-    2. プライバシーとセキュリティ（または類似の項目）を探します。
-    3. サイトの設定（または権限）を見つけます。
-    4. 通知の設定を探し、このサイトの権限を「許可」に変更します。
-    5. ページを再読み込みしてください。`)
+  1. ブラウザの設定/環境設定を開きます。
+  2. プライバシーとセキュリティ（または類似の項目）を探します。
+  3. サイトの設定（または権限）を見つけます。
+  4. 通知の設定を探し、このサイトの権限を「許可」に変更します。
+  5. ページを再読み込みしてください。`)
 }
 
 const clearServiceWorkerCache = async () => {
