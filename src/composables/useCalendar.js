@@ -44,12 +44,25 @@ export function useCalendar() {
   })()
 
   const isWeekInRange = (week) => {
-    if (!week) return false
-    const weeks = calendarWeeks.value
-    const start = weeks[0].startDate
-    const end = weeks[weeks.length - 1].endDate
-    if (!start || !end) return false
-    return week.startDate >= start && week.endDate <= end
+    if (!week?.startDate || !week?.endDate) return false
+    
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    // 過去5週間前の月曜日を取得
+    const minDate = new Date(today)
+    minDate.setDate(today.getDate() - (5 * 7))
+    const minMonday = new Date(minDate)
+    minMonday.setDate(minDate.getDate() - minDate.getDay() + (minDate.getDay() === 0 ? -6 : 1))
+    minMonday.setHours(0, 0, 0, 0)
+  
+    // 今週の日曜日を取得（現在の週の最終日）
+    const currentWeekEnd = new Date(today)
+    const daysUntilSunday = 7 - today.getDay()
+    currentWeekEnd.setDate(today.getDate() + daysUntilSunday)
+    currentWeekEnd.setHours(23, 59, 59, 999)
+  
+    return week.startDate >= minMonday && week.endDate <= currentWeekEnd
   }
 
   const getWeekNumber = (date) => {
