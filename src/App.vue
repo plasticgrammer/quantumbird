@@ -165,7 +165,7 @@
     </template>
 
     <!-- Main content area -->
-    <v-main :class="{ 'noshift': isRailModeActive }" :style="appStyle" role="main">
+    <v-main id="main-content" :class="{ 'noshift': isRailModeActive }" :style="appStyle" role="main">
       <div v-if="!isFullWidthPage" class="content-wrapper">
         <router-view />
       </div>

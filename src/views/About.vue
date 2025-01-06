@@ -29,7 +29,7 @@
             :key="i"
             cols="12" md="4" 
           >
-            <v-card elevation="2" height="100%">
+            <v-card elevation="2" height="100%" rounded="lg">
               <v-card-text class="pa-6">
                 <h3 class="text-h6 font-weight-bold primary--text mb-4">{{ problem.title }}</h3>
                 <p class="text-body-1">{{ problem.description }}</p>
@@ -37,6 +37,36 @@
             </v-card>
           </v-col>
         </v-row>
+      </v-container>
+
+      <!-- 画面イメージセクション -->
+      <v-container class="py-16">
+        <h2 class="text-h4 font-weight-bold text-center mb-12">主な機能と画面</h2>
+        <v-carousel
+          hide-delimiter-background
+          show-arrows="hover"
+          height="840"
+        >
+          <v-carousel-item
+            v-for="(screen, i) in screenImages"
+            :key="i"
+            rounded="lg"
+          >
+            <v-sheet class="d-flex align-center justify-center" height="100%">
+              <div class="text-center" style="width: 100%;">
+                <v-img
+                  :src="screen.image"
+                  :alt="screen.title"
+                  class="mx-auto mb-4"
+                  max-height="700"
+                  contain
+                ></v-img>
+                <h3 class="text-h5 font-weight-bold mb-2">{{ screen.title }}</h3>
+                <p class="text-body-1">{{ screen.description }}</p>
+              </div>
+            </v-sheet>
+          </v-carousel-item>
+        </v-carousel>
       </v-container>
 
       <!-- 特徴セクション -->
@@ -48,7 +78,7 @@
             :key="i"
             cols="12" md="4" 
           >
-            <v-card elevation="2" height="100%">
+            <v-card elevation="2" height="100%" rounded="lg">
               <v-card-text class="pa-6">
                 <h3 class="text-h6 font-weight-bold primary--text mb-4">{{ feature.title }}</h3>
                 <p class="text-body-1">{{ feature.description }}</p>
@@ -67,7 +97,7 @@
             :key="plan.name"
             cols="12" md="4"
           >
-            <v-card elevation="2" height="100%" class="price-card">
+            <v-card elevation="2" height="100%" rounded="lg" class="price-card">
               <v-card-text class="pa-6 text-center">
                 <h3 class="text-h5 font-weight-bold mb-4">{{ plan.name }}</h3>
                 <p class="text-h4 font-weight-bold primary--text mb-6">
@@ -182,7 +212,41 @@ const footerLinks = [
   { text: 'プライバシーポリシー', url: '/legal/privacy-policy' },
   { text: '特定商取引法に基づく表記', url: '/legal/specified-commercial-transactions' }
 ]
+
+const screenImages = [
+  {
+    image: require('@/assets/images/screenshot/a1_dashborad.png'),
+    title: 'ダッシュボード',
+    description: 'チームの状況を一目で把握できるダッシュボード画面'
+  },
+  {
+    image: require('@/assets/images/screenshot/a2_organization.png'),
+    title: '組織情報管理',
+    description: 'メンバーと組織の情報をシンプルに管理'
+  },
+  {
+    image: require('@/assets/images/screenshot/a3_request.png'),
+    title: '週次報告設定',
+    description: '組織に合わせた週次報告の設定が可能'
+  },
+  {
+    image: require('@/assets/images/screenshot/a4_review.png'),
+    title: '週次報告レビュー',
+    description: 'メンバーの週次報告を効率的にレビュー'
+  },
+  {
+    image: require('@/assets/images/screenshot/b1_report.png'),
+    title: '組織メンバーの週次報告',
+    description: 'シンプルで使いやすい週次報告入力フォーム'
+  }
+]
 </script>
+
+<style>
+#main-content {
+  padding-bottom: 0px !important;
+}
+</style>
 
 <style scoped>
 .price-card :deep(.v-list-item) {
@@ -192,12 +256,6 @@ const footerLinks = [
   background-color: transparent;
 }
 
-/* シンプル化したスタイル */
-.about-page {
-  background-color: transparent;
-}
-
-/* セクション内のコンテナ幅を制御 */
 :deep(.v-container:not(.fluid)) {
   margin: 0 auto;
   padding: 0 24px;
@@ -218,5 +276,12 @@ const footerLinks = [
 
 .features-list :deep(.v-list-item) {
   padding: 0;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 600px) {
+  :deep(.v-carousel) {
+    height: 460px !important;
+  }
 }
 </style>
