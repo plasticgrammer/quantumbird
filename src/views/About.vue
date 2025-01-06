@@ -2,39 +2,42 @@
   <!-- 固定ヘッダー -->
   <v-app-bar 
     color="menu" 
-    elevation="1" 
+    scroll-behavior="hide"
+    elevation="4" 
     class="px-4"
     height="64"
   >
-    <div class="logo-font text-h4">fluxweek</div>
-    <v-spacer></v-spacer>
-    <v-btn
-      class="mr-2"
-      to="/signin"
-    >
-      サインイン
-    </v-btn>
-    <v-btn
-      variant="outlined"
-      class="px-6"
-      rounded="pill"
-      to="/signup"
-    >
-      無料で始める
-    </v-btn>
+    <v-app-bar-title class="logo-font text-h4">fluxweek</v-app-bar-title>
+
+    <template #append>
+      <v-btn
+        class="mr-2"
+        to="/signin"
+      >
+        サインイン
+      </v-btn>
+      <v-btn
+        variant="outlined"
+        class="px-6"
+        rounded="pill"
+        to="/signup"
+      >
+        無料で始める
+      </v-btn>
+    </template>
   </v-app-bar>
 
   <div class="about-page">
     <v-container class="pa-0" fluid>
       <!-- ヘッダーセクション -->
-      <v-container class="hero-section text-center py-12">
+      <v-container class="hero-section text-center py-16">
         <p class="text-h4 font-weight-bold text-indigo-darken-2 slide-up-delay hero-text">
           ストレスフリーな管理で<br>組織の成果をサポートする週次報告サービス<br>
-          <span class="logo-font text-h3">fluxweek</span>
+          <span class="logo-font text-h2 my-5">fluxweek</span>
         </p>
         <v-img
           src="@/assets/images/rakko.webp"
-          class="mx-auto my-4 hero-image"
+          class="mx-auto my-4 slide-up-delay hero-image"
         ></v-img>
         <v-btn
           color="primary"
