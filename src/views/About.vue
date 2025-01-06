@@ -1,38 +1,68 @@
 <template>
-  <!-- v-mainを使用せず、直接コンテンツを配置 -->
   <div class="about-page">
     <v-container class="pa-0" fluid>
       <!-- ヘッダーセクション -->
-      <v-sheet color="menu" class="py-10">
+      <v-sheet color="menu" class="hero-section py-16">
         <v-container class="text-center">
-          <div class="logo-font text-h1 pb-10">fluxweek</div>
-          <p class="text-h5 font-weight-regular mb-8 text-white">
+          <div class="logo-font text-h1 pb-10 slide-up">fluxweek</div>
+          <p class="text-h5 font-weight-regular mb-8 text-white slide-up-delay">
             ストレスフリーな管理で組織の成果をサポートする週次報告サービス
           </p>
           <v-btn
             color="primary"
             size="x-large"
             to="/signup"
-            class="px-8"
+            class="px-8 slide-up-delay-2 elevation-4"
+            rounded="pill"
           >
             無料で始める
+            <v-icon end>mdi-arrow-right</v-icon>
           </v-btn>
         </v-container>
       </v-sheet>
 
       <!-- 課題セクション -->
       <v-container class="py-16">
-        <h2 class="text-h4 font-weight-bold text-center mb-12">こんな課題はありませんか？</h2>
+        <h2 class="text-h4 font-weight-bold text-center mb-16 gradient-text">こんな課題はありませんか？</h2>
         <v-row>
           <v-col 
             v-for="(problem, i) in problems" 
             :key="i"
             cols="12" md="4" 
+            class="slide-up"
+            :style="{ animationDelay: `${i * 0.2}s` }"
           >
-            <v-card elevation="2" height="100%" rounded="lg">
-              <v-card-text class="pa-6">
-                <h3 class="text-h6 font-weight-bold primary--text mb-4">{{ problem.title }}</h3>
+            <v-card elevation="4" height="100%" rounded="lg" hover>
+              <v-card-text class="pa-8">
+                <div class="d-flex align-center mb-4">
+                  <v-icon size="32" color="primary" class="mr-4">{{ problem.icon }}</v-icon>
+                  <h3 class="text-h6 font-weight-bold">{{ problem.title }}</h3>
+                </div>
                 <p class="text-body-1">{{ problem.description }}</p>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-container>
+
+      <!-- 特徴セクション -->
+      <v-container class="py-16">
+        <h2 class="text-h4 font-weight-bold text-center mb-16 gradient-text">fluxweekの特徴</h2>
+        <v-row>
+          <v-col 
+            v-for="(feature, i) in features" 
+            :key="i"
+            cols="12" md="4" 
+            class="slide-up"
+            :style="{ animationDelay: `${i * 0.2}s` }"
+          >
+            <v-card elevation="2" height="100%" rounded="lg" hover class="feature-card">
+              <v-card-text class="pa-8">
+                <div class="feature-icon mb-6">
+                  <v-icon size="36" color="primary">{{ feature.icon }}</v-icon>
+                </div>
+                <h3 class="text-h6 font-weight-bold mb-4">{{ feature.title }}</h3>
+                <p class="text-body-1">{{ feature.description }}</p>
               </v-card-text>
             </v-card>
           </v-col>
@@ -41,16 +71,16 @@
 
       <!-- 画面イメージセクション -->
       <v-container class="py-16">
-        <h2 class="text-h4 font-weight-bold text-center mb-12">主な機能と画面</h2>
+        <h2 class="text-h4 font-weight-bold text-center mb-16 gradient-text">主な機能と画面</h2>
         <v-carousel
           hide-delimiter-background
           show-arrows="hover"
           height="840"
+          class="elevation-4 rounded-lg"
         >
           <v-carousel-item
             v-for="(screen, i) in screenImages"
             :key="i"
-            rounded="lg"
           >
             <v-sheet class="d-flex align-center justify-center" height="100%">
               <div class="text-center" style="width: 100%;">
@@ -68,29 +98,10 @@
           </v-carousel-item>
         </v-carousel>
       </v-container>
-
-      <!-- 特徴セクション -->
-      <v-container class="py-16">
-        <h2 class="text-h4 font-weight-bold text-center mb-12">fluxweekの特徴</h2>
-        <v-row>
-          <v-col 
-            v-for="(feature, i) in features" 
-            :key="i"
-            cols="12" md="4" 
-          >
-            <v-card elevation="2" height="100%" rounded="lg">
-              <v-card-text class="pa-6">
-                <h3 class="text-h6 font-weight-bold primary--text mb-4">{{ feature.title }}</h3>
-                <p class="text-body-1">{{ feature.description }}</p>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-container>
-
+      
       <!-- 料金プランセクション -->
       <v-container class="py-16">
-        <h2 class="text-h4 font-weight-bold text-center mb-12">料金プラン</h2>
+        <h2 class="text-h4 font-weight-bold text-center mb-16 gradient-text">料金プラン</h2>
         <v-row>
           <v-col 
             v-for="plan in pricingPlans" 
@@ -172,30 +183,36 @@ import { plans } from '@/config/plans'
 const problems = [
   {
     title: 'メンバーの状況が見えない',
-    description: '週報を受け取っても、本当の課題が把握できない'
+    description: '週報を受け取っても、本当の課題が把握できない',
+    icon: 'mdi-eye-off'
   },
   {
     title: '報告が形骸化している',
-    description: '形式的な報告で終わり、成長機会を逃している'
+    description: '形式的な報告で終わり、成長機会を逃している',
+    icon: 'mdi-format-list-checks'
   },
   {
     title: 'フィードバックが難しい',
-    description: '適切なアドバイスやサポートのタイミングを逃してしまう'
+    description: '適切なアドバイスやサポートのタイミングを逃してしまう',
+    icon: 'mdi-message-alert'
   }
 ]
 
 const features = [
   {
     title: 'シンプルな入力で自己評価を可視化',
-    description: 'ストレス度、タスク難易度、タスク達成度を可視化し、メンバーの状況を素早く把握できます。'
+    description: 'ストレス度、タスク難易度、タスク達成度を可視化し、メンバーの状況を素早く把握できます。',
+    icon: 'mdi-chart-line'
   },
   {
     title: '一元管理と共有機能',
-    description: '週次報告とフィードバックを一元管理。Webリンクでの共有も可能です。'
+    description: '週次報告とフィードバックを一元管理。Webリンクでの共有も可能です。',
+    icon: 'mdi-share-variant'
   },
   {
     title: 'AIアドバイザーによる成長支援',
-    description: '週次報告の内容を分析し、メンバーの成長をサポートする具体的なアドバイスを提供します。'
+    description: '週次報告の内容を分析し、メンバーの成長をサポートする具体的なアドバイスを提供します。',
+    icon: 'mdi-robot'
   }
 ]
 
@@ -238,6 +255,11 @@ const screenImages = [
     image: require('@/assets/images/screenshot/b1_report.png'),
     title: '組織メンバーの週次報告',
     description: 'シンプルで使いやすい週次報告入力フォーム'
+  },
+  {
+    image: require('@/assets/images/screenshot/b2_advice.png'),
+    title: 'AIアドバイザー機能',
+    description: '週次報告の内容を分析し、複数の視点から具体的なアドバイスを提供'
   }
 ]
 </script>
@@ -283,5 +305,86 @@ const screenImages = [
   :deep(.v-carousel) {
     height: 460px !important;
   }
+}
+
+/* アニメーション */
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.6s ease-out forwards;
+}
+
+.slide-up-delay {
+  animation: slideUp 0.6s ease-out 0.2s forwards;
+  opacity: 0;
+}
+
+.slide-up-delay-2 {
+  animation: slideUp 0.6s ease-out 0.4s forwards;
+  opacity: 0;
+}
+
+/* ヒーローセクション */
+.hero-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    rgba(13, 71, 161, 0.7),     /* より暗い青 (Blue 900) */
+    rgba(105, 128, 181, 0.5)    /* #6980B5 */
+  );
+  z-index: 1;
+}
+
+.hero-section > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* グラデーションテキスト */
+.gradient-text {
+  background: linear-gradient(45deg, rgb(25, 118, 210), rgb(41, 182, 246));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  width: 100%;
+  text-align: center;
+}
+
+/* 特徴カード */
+.feature-card {
+  transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+}
+
+.feature-icon {
+  background: linear-gradient(45deg, var(--v-primary-lighten-4), var(--v-primary-lighten-5));
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
