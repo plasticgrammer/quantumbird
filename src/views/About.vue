@@ -1,25 +1,52 @@
 <template>
+  <!-- 固定ヘッダー -->
+  <v-app-bar 
+    color="menu" 
+    elevation="1" 
+    class="px-4"
+    height="64"
+  >
+    <div class="logo-font text-h4">fluxweek</div>
+    <v-spacer></v-spacer>
+    <v-btn
+      class="mr-2"
+      to="/signin"
+    >
+      サインイン
+    </v-btn>
+    <v-btn
+      variant="outlined"
+      class="px-6"
+      rounded="pill"
+      to="/signup"
+    >
+      無料で始める
+    </v-btn>
+  </v-app-bar>
+
   <div class="about-page">
     <v-container class="pa-0" fluid>
       <!-- ヘッダーセクション -->
-      <v-sheet color="menu" class="hero-section py-16">
-        <v-container class="text-center">
-          <div class="logo-font text-h1 pb-10 slide-up">fluxweek</div>
-          <p class="text-h5 font-weight-regular mb-8 text-white slide-up-delay">
-            ストレスフリーな管理で組織の成果をサポートする週次報告サービス
-          </p>
-          <v-btn
-            color="primary"
-            size="x-large"
-            to="/signup"
-            class="px-8 slide-up-delay-2 elevation-4"
-            rounded="pill"
-          >
-            無料で始める
-            <v-icon end>mdi-arrow-right</v-icon>
-          </v-btn>
-        </v-container>
-      </v-sheet>
+      <v-container class="hero-section text-center py-12">
+        <p class="text-h4 font-weight-bold text-indigo-darken-2 slide-up-delay hero-text">
+          ストレスフリーな管理で<br>組織の成果をサポートする週次報告サービス<br>
+          <span class="logo-font text-h3">fluxweek</span>
+        </p>
+        <v-img
+          src="@/assets/images/rakko.webp"
+          class="mx-auto my-4 hero-image"
+        ></v-img>
+        <v-btn
+          color="primary"
+          size="x-large"
+          to="/signup"
+          class="px-8 elevation-4"
+          rounded="pill"
+        >
+          無料で始める
+          <v-icon end>mdi-arrow-right</v-icon>
+        </v-btn>
+      </v-container>
 
       <!-- 課題セクション -->
       <v-container class="py-16">
@@ -149,9 +176,11 @@
             color="primary"
             size="x-large"
             to="/signup"
-            class="px-8"
+            class="px-8 elevation-4"
+            rounded="pill"
           >
             無料で始める
+            <v-icon end>mdi-arrow-right</v-icon>
           </v-btn>
         </v-container>
       </v-sheet>
@@ -337,20 +366,8 @@ const screenImages = [
 .hero-section {
   position: relative;
   overflow: hidden;
-}
-
-.hero-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, 
-    rgba(13, 71, 161, 0.7),     /* より暗い青 (Blue 900) */
-    rgba(105, 128, 181, 0.5)    /* #6980B5 */
-  );
-  z-index: 1;
+  margin-top: -64px; /* ヘッダーの高さ分を相殺 */
+  padding-top: 64px;
 }
 
 .hero-section > * {
@@ -386,5 +403,26 @@ const screenImages = [
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* ヘッダースタイル */
+:deep(.v-app-bar) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.logo-font {
+  transform: translateY(-4px);
+  display: inline-block;
+  line-height: 1;
+}
+
+/* ヒーローセクションのテキストとイメージ */
+.hero-text {
+  line-height: 1.5;
+  letter-spacing: 0.08em !important;
+}
+
+.hero-image {
+  width: 300px;
 }
 </style>
