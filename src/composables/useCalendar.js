@@ -98,19 +98,40 @@ export function useCalendar() {
 
   const getWeekFromString = (weekString) => {
     const [year, weekNumber] = weekString.split('-W').map(Number)
-    const firstThursday = new Date(year, 0, 4)
+    
+    // 1月1日を基準に計算
+    const jan1st = new Date(year, 0, 1)
+    // 1月1日の曜日を取得（0=日曜, 1=月曜, ..., 6=土曜）
+    const jan1stDay = jan1st.getDay()
+    
+    // 年の最初の木曜日がある週を第1週とする
+    const firstThursday = new Date(year, 0, 1 + ((11 - jan1stDay) % 7))
     const targetThursday = new Date(firstThursday.getTime() + (weekNumber - 1) * 7 * MILLISECONDS_PER_DAY)
-    const weekStart = new Date(targetThursday.getTime() - 3 * MILLISECONDS_PER_DAY)
+    
+    // その週の月曜日を取得
+    const weekStart = new Date(targetThursday)
+    weekStart.setDate(targetThursday.getDate() - ((targetThursday.getDay() + 6) % 7))
     weekStart.setHours(0, 0, 0, 0)
+    
     return createWeekItem(weekStart, getWeekOffset(weekStart))
   }
 
   const getPreviousWeekString = (weekString) => {
-    if (weekString) {
-      const [year, week] = weekString.split('-W').map(Number)
-      return week === 1 ? `${year - 1}-W52` : `${year}-W${(week - 1).toString().padStart(2, '0')}`
+    if (!weekString) {
+      return getStringFromWeek(calendarWeeks.value[calendarWeeks.value.length - 2])
     }
-    return getStringFromWeek(calendarWeeks.value[calendarWeeks.value.length - 2])
+    
+    const [year, week] = weekString.split('-W').map(Number)
+    
+    // 年の最初の週かどうかを判定
+    if (week <= 1) {
+      // 前年の最後の週を取得
+      const lastDayOfPrevYear = new Date(year - 1, 11, 31)
+      const prevYearLastWeek = getWeekNumber(lastDayOfPrevYear)
+      return `${year - 1}-W${prevYearLastWeek.toString().padStart(2, '0')}`
+    }
+    
+    return `${year}-W${(week - 1).toString().padStart(2, '0')}`
   }
 
   const getCurrentWeekString = () => getStringFromWeek(calendarWeeks.value[calendarWeeks.value.length - 1])
