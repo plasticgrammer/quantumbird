@@ -99,18 +99,17 @@ export function useCalendar() {
   const getWeekFromString = (weekString) => {
     const [year, weekNumber] = weekString.split('-W').map(Number)
     
-    // 1月1日を基準に計算
-    const jan1st = new Date(year, 0, 1)
-    // 1月1日の曜日を取得（0=日曜, 1=月曜, ..., 6=土曜）
-    const jan1stDay = jan1st.getDay()
+    // ISO 8601 週番号の計算
+    // 1月4日が含まれる週を第1週とする
+    const jan4th = new Date(year, 0, 4)
+    const startOfYear = new Date(jan4th)
+    startOfYear.setDate(jan4th.getDate() - jan4th.getDay() + (jan4th.getDay() === 0 ? -6 : 1))
     
-    // 年の最初の木曜日がある週を第1週とする
-    const firstThursday = new Date(year, 0, 1 + ((11 - jan1stDay) % 7))
-    const targetThursday = new Date(firstThursday.getTime() + (weekNumber - 1) * 7 * MILLISECONDS_PER_DAY)
+    const targetDate = new Date(startOfYear)
+    targetDate.setDate(startOfYear.getDate() + (weekNumber - 1) * 7)
     
     // その週の月曜日を取得
-    const weekStart = new Date(targetThursday)
-    weekStart.setDate(targetThursday.getDate() - ((targetThursday.getDay() + 6) % 7))
+    const weekStart = new Date(targetDate)
     weekStart.setHours(0, 0, 0, 0)
     
     return createWeekItem(weekStart, getWeekOffset(weekStart))
@@ -122,16 +121,15 @@ export function useCalendar() {
     }
     
     const [year, week] = weekString.split('-W').map(Number)
+    const date = new Date(year, 0, 4) // 1月4日から計算開始
+    date.setDate(date.getDate() + (week - 1) * 7) // 指定週の木曜日付近に移動
+    date.setDate(date.getDate() - 7) // 1週前に移動
     
-    // 年の最初の週かどうかを判定
-    if (week <= 1) {
-      // 前年の最後の週を取得
-      const lastDayOfPrevYear = new Date(year - 1, 11, 31)
-      const prevYearLastWeek = getWeekNumber(lastDayOfPrevYear)
-      return `${year - 1}-W${prevYearLastWeek.toString().padStart(2, '0')}`
-    }
+    // 前週の年と週番号を取得
+    const prevYear = date.getFullYear()
+    const prevWeek = getWeekNumber(date)
     
-    return `${year}-W${(week - 1).toString().padStart(2, '0')}`
+    return `${prevYear}-W${prevWeek.toString().padStart(2, '0')}`
   }
 
   const getCurrentWeekString = () => getStringFromWeek(calendarWeeks.value[calendarWeeks.value.length - 1])

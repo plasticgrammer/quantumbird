@@ -224,15 +224,26 @@ def get_member_names(member_uuids):
     return member_info
 
 def get_last_5_weeks():
+    """5週前から先週までの週番号を取得（今週は含まない）
+    Returns:
+        list: ['YYYY-WNN'形式の週番号文字列のリスト（古い順）]
+    """
     today = datetime.now(TIMEZONE)
-    last_week = today - timedelta(days=today.weekday() + 7)  # 先週の月曜日
+    
+    def get_iso_week(date):
+        return date.isocalendar()[:2]  # (year, week)を返す
+    
+    # 先週の月曜日を取得
+    last_monday = today - timedelta(days=today.weekday() + 7)
     weeks = []
-    for i in range(5):
-        week = last_week - timedelta(weeks=i)
-        year = week.year
-        week_number = week.isocalendar()[1]
-        weeks.append(f"{year}-W{week_number:02d}")
-    return list(reversed(weeks))
+    
+    # 5週前から先週までの週番号を取得
+    for i in range(4, -1, -1):  # 4,3,2,1,0 の順で処理（新しい順）
+        target_date = last_monday - timedelta(weeks=i)
+        year, week = get_iso_week(target_date)
+        weeks.append(f"{year}-W{week:02d}")
+    
+    return weeks  # 古い順に自然と並ぶ
 
 def handle_get_stats_data(event):
     params = event.get('queryStringParameters', {}) or {}
