@@ -140,13 +140,13 @@
       </v-container>
 
       <!-- CTAセクション -->
-      <v-sheet color="menu" class="py-10">
+      <v-sheet color="menu" class="py-10 mt-16">
         <v-container class="text-center">
-          <h2 class="text-h4 font-weight-bold text-white mb-4">
+          <h2 class="text-h5 font-weight-bold text-white mb-4">
             メンバーの成長をサポートする新しい週次報告を始めましょう
           </h2>
           <p class="text-h6 font-weight-regular text-white mb-8">
-            フリープランで、fluxweekの価値を体験してください
+            フリープランで fluxweek の価値を体験してください
           </p>
           <v-btn
             color="primary"
