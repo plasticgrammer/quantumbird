@@ -113,3 +113,29 @@ h3 {
 .form-disabled {
   pointer-events: none;
 }
+
+/* アニメーション */
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.6s ease-out forwards;
+}
+
+.slide-up-delay {
+  animation: slideUp 0.6s ease-out 0.2s forwards;
+  opacity: 0;
+}
+
+.slide-up-delay-2 {
+  animation: slideUp 0.6s ease-out 0.4s forwards;
+  opacity: 0;
+}

@@ -15,24 +15,18 @@ const routes = [
   {
     path: '/',
     name: 'Root',
-    component: SignIn,
+    component: () => import('@/views/About.vue'),
+    meta: { hideNavigation: true, hideMascot: true, fullWidth: true },
     beforeEnter: async (to, from, next) => {
       try {
         const token = await store.dispatch('auth/fetchAuthToken')
         if (token) {
           next('/admin')
         } else {
-          next({
-            name: 'SignIn',
-            query: { redirect: to.fullPath }
-          })
+          next()
         }
       } catch (error) {
-        console.error('認証チェックエラー:', error)
-        next({
-          name: 'SignIn',
-          query: { redirect: to.fullPath }
-        })
+        next()
       }
     }
   },
@@ -130,12 +124,6 @@ const routes = [
     component: () => import('@/views/MailConfirmed.vue'),
     props: true,
     meta: { hideNavigation: true, hideAnimation: true }
-  },
-  {
-    path: '/about',
-    name: 'About',
-    component: () => import('@/views/About.vue'),
-    meta: { hideNavigation: true, hideMascot: true, fullWidth: true }
   },
   {
     path: '/:pathMatch(.*)*',

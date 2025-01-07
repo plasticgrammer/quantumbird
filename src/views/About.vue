@@ -1,36 +1,8 @@
 <template>
-  <!-- 固定ヘッダー -->
-  <v-app-bar 
-    color="menu" 
-    scroll-behavior="hide"
-    elevation="4" 
-    class="px-4"
-    height="64"
-  >
-    <v-app-bar-title class="logo-font text-h4">fluxweek</v-app-bar-title>
-
-    <template #append>
-      <v-btn
-        class="mr-2"
-        to="/signin"
-      >
-        サインイン
-      </v-btn>
-      <v-btn
-        variant="outlined"
-        class="px-6"
-        rounded="pill"
-        to="/signup"
-      >
-        無料で始める
-      </v-btn>
-    </template>
-  </v-app-bar>
-
   <div class="about-page">
     <v-container class="pa-0" fluid>
       <!-- ヘッダーセクション -->
-      <v-container class="hero-section text-center py-16">
+      <v-container class="hero-section text-center py-13">
         <p class="text-h4 font-weight-bold text-indigo-darken-2 slide-up-delay hero-text">
           ストレスフリーな管理で<br>組織の成果をサポートする週次報告サービス<br>
           <span class="logo-font text-h2 my-5">fluxweek</span>
@@ -49,6 +21,10 @@
           無料で始める
           <v-icon end>mdi-arrow-right</v-icon>
         </v-btn>
+        <div class="mt-6">
+          アカウントをお持ちの方はこちらから
+          <router-link to="/signin">サインイン</router-link>
+        </div>
       </v-container>
 
       <!-- 課題セクション -->
@@ -77,7 +53,7 @@
 
       <!-- 特徴セクション -->
       <v-container class="py-16">
-        <h2 class="text-h4 font-weight-bold text-center mb-16 gradient-text">fluxweekの特徴</h2>
+        <h2 class="text-h4 font-weight-bold text-center mb-16 gradient-text">サービスの特徴</h2>
         <v-row>
           <v-col 
             v-for="(feature, i) in features" 
@@ -103,7 +79,8 @@
       <v-container class="py-16">
         <h2 class="text-h4 font-weight-bold text-center mb-16 gradient-text">主な機能と画面</h2>
         <v-carousel
-          hide-delimiter-background
+          cycle
+          progress="primary"
           show-arrows="hover"
           height="840"
           class="elevation-4 rounded-lg"
@@ -112,13 +89,13 @@
             v-for="(screen, i) in screenImages"
             :key="i"
           >
-            <v-sheet class="d-flex align-center justify-center" height="100%">
+            <v-sheet class="d-flex align-center justify-center pb-8" height="100%">
               <div class="text-center" style="width: 100%;">
                 <v-img
                   :src="screen.image"
                   :alt="screen.title"
                   class="mx-auto mb-4"
-                  max-height="700"
+                  max-height="680"
                   contain
                 ></v-img>
                 <h3 class="text-h5 font-weight-bold mb-2">{{ screen.title }}</h3>
@@ -185,6 +162,10 @@
             無料で始める
             <v-icon end>mdi-arrow-right</v-icon>
           </v-btn>
+          <div class="mt-6">
+            アカウントをお持ちの方はこちらから
+            <router-link to="/signin">サインイン</router-link>
+          </div>
         </v-container>
       </v-sheet>
 
@@ -210,6 +191,7 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import { plans } from '@/config/plans'
 
 const problems = [
@@ -269,6 +251,16 @@ const screenImages = [
     description: 'チームの状況を一目で把握できるダッシュボード画面'
   },
   {
+    image: require('@/assets/images/screenshot/b1_report.png'),
+    title: '組織メンバーの週次報告',
+    description: 'シンプルで使いやすい週次報告入力フォーム'
+  },
+  {
+    image: require('@/assets/images/screenshot/b2_advice.png'),
+    title: 'AIアドバイザー機能',
+    description: '週次報告の内容を分析し、複数の視点から具体的なアドバイスを提供'
+  },
+  {
     image: require('@/assets/images/screenshot/a2_organization.png'),
     title: '組織情報管理',
     description: 'メンバーと組織の情報をシンプルに管理'
@@ -283,17 +275,32 @@ const screenImages = [
     title: '週次報告レビュー',
     description: 'メンバーの週次報告を効率的にレビュー'
   },
-  {
-    image: require('@/assets/images/screenshot/b1_report.png'),
-    title: '組織メンバーの週次報告',
-    description: 'シンプルで使いやすい週次報告入力フォーム'
-  },
-  {
-    image: require('@/assets/images/screenshot/b2_advice.png'),
-    title: 'AIアドバイザー機能',
-    description: '週次報告の内容を分析し、複数の視点から具体的なアドバイスを提供'
-  }
 ]
+
+// プリロード用のユーティリティ関数
+const preloadImage = (src) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = src
+  })
+}
+
+// 画像のプリロード処理
+const preloadScreenshots = async () => {
+  try {
+    await Promise.all(screenImages.map(screen => preloadImage(screen.image)))
+    console.log('All screenshots preloaded successfully')
+  } catch (error) {
+    console.error('Error preloading screenshots:', error)
+  }
+}
+
+// コンポーネントマウント時にプリロード開始
+onMounted(() => {
+  preloadScreenshots()
+})
 </script>
 
 <style>
@@ -303,6 +310,28 @@ const screenImages = [
 </style>
 
 <style scoped>
+/* ヒーローセクション */
+.hero-section {
+  position: relative;
+  overflow: hidden;
+  margin-top: -64px; /* ヘッダーの高さ分を相殺 */
+  padding-top: 64px;
+}
+
+.hero-section > * {
+  position: relative;
+  z-index: 2;
+}
+
+.hero-text {
+  line-height: 1.5;
+  letter-spacing: 0.1em !important;
+}
+
+.hero-image {
+  width: 300px;
+}
+
 .price-card :deep(.v-list-item) {
   min-height: 36px;
 }
@@ -339,45 +368,6 @@ const screenImages = [
   }
 }
 
-/* アニメーション */
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.slide-up {
-  animation: slideUp 0.6s ease-out forwards;
-}
-
-.slide-up-delay {
-  animation: slideUp 0.6s ease-out 0.2s forwards;
-  opacity: 0;
-}
-
-.slide-up-delay-2 {
-  animation: slideUp 0.6s ease-out 0.4s forwards;
-  opacity: 0;
-}
-
-/* ヒーローセクション */
-.hero-section {
-  position: relative;
-  overflow: hidden;
-  margin-top: -64px; /* ヘッダーの高さ分を相殺 */
-  padding-top: 64px;
-}
-
-.hero-section > * {
-  position: relative;
-  z-index: 2;
-}
-
 /* グラデーションテキスト */
 .gradient-text {
   background: linear-gradient(45deg, rgb(25, 118, 210), rgb(41, 182, 246));
@@ -406,26 +396,5 @@ const screenImages = [
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-/* ヘッダースタイル */
-:deep(.v-app-bar) {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-.logo-font {
-  transform: translateY(-4px);
-  display: inline-block;
-  line-height: 1;
-}
-
-/* ヒーローセクションのテキストとイメージ */
-.hero-text {
-  line-height: 1.5;
-  letter-spacing: 0.08em !important;
-}
-
-.hero-image {
-  width: 300px;
 }
 </style>
