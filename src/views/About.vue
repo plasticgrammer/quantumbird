@@ -9,7 +9,7 @@
         </p>
         <v-img
           src="@/assets/images/rakko.webp"
-          class="mx-auto my-4 slide-up-delay hero-image"
+          class="mx-auto my-4 hero-image"
         ></v-img>
         <v-btn
           color="primary"
@@ -35,8 +35,6 @@
             v-for="(problem, i) in problems" 
             :key="i"
             cols="12" md="4" 
-            class="slide-up"
-            :style="{ animationDelay: `${i * 0.2}s` }"
           >
             <v-card elevation="4" height="100%" rounded="lg" hover>
               <v-card-text class="pa-8">
@@ -59,8 +57,6 @@
             v-for="(feature, i) in features" 
             :key="i"
             cols="12" md="4" 
-            class="slide-up"
-            :style="{ animationDelay: `${i * 0.2}s` }"
           >
             <v-card elevation="2" height="100%" rounded="lg" hover class="feature-card">
               <v-card-text class="pa-8">
@@ -164,7 +160,7 @@
           </v-btn>
           <div class="mt-6">
             アカウントをお持ちの方はこちらから
-            <router-link to="/signin">サインイン</router-link>
+            <router-link to="/signin" class="text-white">サインイン</router-link>
           </div>
         </v-container>
       </v-sheet>
@@ -329,7 +325,7 @@ onMounted(() => {
 }
 
 .hero-image {
-  width: 300px;
+  height: 230px;
 }
 
 .price-card :deep(.v-list-item) {

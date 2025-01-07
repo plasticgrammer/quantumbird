@@ -3,7 +3,9 @@
     <v-card max-width="500" class="mx-auto mt-6 px-4 rounded-lg">
       <v-card-title class="mt-1 mb-4">
         <div class="text-center mb-5">
-          <h1 class="logo-font">fluxweek</h1>
+          <router-link to="/" class="text-indigo-darken-2 text-decoration-none">
+            <h1 class="logo-font">fluxweek</h1>
+          </router-link>
         </div>
         <v-icon size="large" class="mr-1">mdi-bird</v-icon>
         {{ title }}
@@ -514,5 +516,9 @@ const openPrivacyPolicy = () => {
 <style>
 .resultMessage {
   white-space: pre-line;
+}
+
+.logo-font {
+  color: inherit;
 }
 </style>
