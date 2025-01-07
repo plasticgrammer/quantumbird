@@ -4,7 +4,7 @@
       <!-- ヘッダーセクション -->
       <v-container class="hero-section text-center py-13">
         <p class="text-h4 font-weight-bold text-indigo-darken-2 slide-up-delay hero-text">
-          ストレスフリーな管理で<br>組織の成果をサポートする週次報告サービス<br>
+          ストレスフリーな管理で<br>組織の成果をサポートする週次報告システム<br>
           <span class="logo-font text-h2 my-5">fluxweek</span>
         </p>
         <v-img
@@ -36,7 +36,7 @@
             :key="i"
             cols="12" md="4" 
           >
-            <v-card elevation="4" height="100%" rounded="lg" hover>
+            <v-card elevation="4" height="100%" rounded="lg" hover class="problem-card">
               <v-card-text class="pa-8">
                 <div class="d-flex align-center mb-4">
                   <v-icon size="32" color="primary" class="mr-4">{{ problem.icon }}</v-icon>
@@ -51,7 +51,7 @@
 
       <!-- 特徴セクション -->
       <v-container class="py-16">
-        <h2 class="text-h4 font-weight-bold text-center mb-16 gradient-text">サービスの特徴</h2>
+        <h2 class="text-h4 font-weight-bold text-center mb-16 gradient-text">システムの特徴</h2>
         <v-row>
           <v-col 
             v-for="(feature, i) in features" 
@@ -310,8 +310,6 @@ onMounted(() => {
 .hero-section {
   position: relative;
   overflow: hidden;
-  margin-top: -64px; /* ヘッダーの高さ分を相殺 */
-  padding-top: 64px;
 }
 
 .hero-section > * {
@@ -375,11 +373,12 @@ onMounted(() => {
   text-align: center;
 }
 
-/* 特徴カード */
+.problem-card,
 .feature-card {
   transition: transform 0.3s ease;
 }
 
+.problem-card:hover,
 .feature-card:hover {
   transform: translateY(-5px);
 }
