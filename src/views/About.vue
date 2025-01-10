@@ -172,7 +172,7 @@
             <v-btn
               v-for="link in footerLinks"
               :key="link.url"
-              :to="link.url"
+              :href="link.url"
               variant="text"
               class="text-white mx-2"
             >
@@ -189,6 +189,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import { plans } from '@/config/plans'
+import { termsOfServiceUrl, privacyPolicyUrl, specifiedCommercialTransactionsUrl } from '@/config/environment'
 
 const problems = [
   {
@@ -235,9 +236,9 @@ const pricingPlans = plans.map(plan => ({
 }))
 
 const footerLinks = [
-  { text: '利用規約', url: '/legal/terms-of-service' },
-  { text: 'プライバシーポリシー', url: '/legal/privacy-policy' },
-  { text: '特定商取引法に基づく表記', url: '/legal/specified-commercial-transactions' }
+  { text: '利用規約', url: termsOfServiceUrl },
+  { text: 'プライバシーポリシー', url: privacyPolicyUrl },
+  { text: '特定商取引法に基づく表記', url: specifiedCommercialTransactionsUrl }
 ]
 
 const screenImages = [
