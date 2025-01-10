@@ -114,10 +114,15 @@
             <v-card elevation="2" height="100%" rounded="lg" class="price-card">
               <v-card-text class="pa-6 text-center">
                 <h3 class="text-h5 font-weight-bold mb-4">{{ plan.name }}</h3>
-                <p class="text-h4 font-weight-bold primary--text mb-6">
+                <div class="text-h4 font-weight-bold primary--text mb-4">
                   {{ plan.price }}
                   <span v-if="plan.priceUnit" class="text-body-1">/月</span>
-                </p>
+                  <p v-if="plan.priceDescription" class="text-body-2 mt-1">
+                    <span v-for="(desc, i) in plan.priceDescription" :key="i">
+                      {{ desc }}<br>
+                    </span>
+                  </p>
+                </div>
                 <div class="d-flex justify-center">
                   <v-list density="compact" class="features-list text-left">
                     <v-list-item
@@ -232,7 +237,8 @@ const pricingPlans = plans.map(plan => ({
   name: plan.name,
   price: plan.planId === 'free' ? '無料' : `${plan.price.toLocaleString()}円`,
   priceUnit: plan.planId !== 'free',
-  features: plan.features
+  features: plan.features,
+  priceDescription: plan.priceDescription // 追加
 }))
 
 const footerLinks = [
