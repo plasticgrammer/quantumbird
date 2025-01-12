@@ -17,14 +17,14 @@ class PaymentConfig:
     # 環境別のStripe ID設定
     STRIPE_IDS = {
         'development': {
-            'pro_price': 'price_1QJSigJlLYAT4bpznFUNs5eg',
-            'business_price': 'price_1QJSmjJlLYAT4bpzzPjAgcJj',
-            'business_product': 'prod_RBqT2Wa1VvXK56'
+            'pro_price': 'price_1QfZi4LTUjsrHeIRRxB9l122',
+            'business_price': 'price_1QfZmFLTUjsrHeIRcjb6Ghyw',
+            'business_product': 'prod_RYhAFARRl7RGaB'
         },
         'production': {
-            'pro_price': 'price_1QUmzCJlLYAT4bpzvRYS5Aap',
-            'business_price': 'price_1QUn2BJlLYAT4bpz5fglOFwG',
-            'business_product': 'prod_RNY8yjbNfu8MgM'
+            'pro_price': 'price_1QfbHxLTUjsrHeIRh22xGDtJ',
+            'business_price': 'price_1QfbJALTUjsrHeIRCQ8ll7nd',
+            'business_product': 'prod_RYikjB8getMLbp'
         }
     }
 
