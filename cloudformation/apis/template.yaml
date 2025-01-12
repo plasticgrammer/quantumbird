@@ -324,6 +324,14 @@ Resources:
             Method: ANY
             Auth:
               Authorizer: CognitoAuthorizer
+        GetMemberReports: # 追加
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /weekly-report/member/{memberUuid}
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
         GetReportStatus:
           Type: Api
           Properties:

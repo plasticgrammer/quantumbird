@@ -30,7 +30,7 @@ export const createBaseOptions = (config = {}) => ({
       ...config.title
     }
   },
-  scales: {
+  scales: config.scales || {
     y: {
       beginAtZero: config.beginAtZero ?? true,
       ...config.yAxis

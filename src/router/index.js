@@ -108,6 +108,13 @@ const routes = [
     meta: { hideNavigation: true, hideAnimation: true }
   },
   {
+    path: '/admin/member-reports/:memberUuid',
+    name: 'MemberReports',
+    component: () => import('@/views/MemberReports.vue'),
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/account-setting',
     name: 'AccountSetting',
     component: () => import('@/views/AccountSetting.vue')

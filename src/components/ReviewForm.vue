@@ -82,10 +82,25 @@
         > 
           <v-card-title class="d-flex justify-space-between align-center py-2">
             <span class="text-h6 font-weight-bold">
-              <v-icon size="x-large" class="mr-1">
-                mdi-account-box-outline
-              </v-icon>
-              {{ report.name }}
+              <template v-if="!readonly">
+                <router-link 
+                  :to="{ name: 'MemberReports', params: { memberUuid: report.memberUuid }}"
+                  class="text-decoration-none d-inline-flex align-center"
+                >
+                  <v-icon size="x-large" class="mr-2">
+                    mdi-account-box-outline
+                  </v-icon>
+                  {{ report.name }}
+                </router-link>
+              </template>
+              <template v-else>
+                <div class="d-inline-flex align-center">
+                  <v-icon size="x-large" class="mr-2">
+                    mdi-account-box-outline
+                  </v-icon>
+                  {{ report.name }}
+                </div>
+              </template>
             </span>
             <v-tooltip
               :disabled="report.status !== 'approved'"
@@ -800,9 +815,9 @@ watch(isAllCompleted, (currentlyComplete) => {
   .review-form-container {
     padding: 8px 0 16px;
   }
-  
+
   .default-card + .default-card {
-    margin-top: 16px !important;
+    margin-top: 16px !重要;
   }
 }
 </style>
