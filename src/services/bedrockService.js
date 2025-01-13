@@ -81,8 +81,6 @@ export const getWeeklyReportSummary = async (reports) => {
     }))
 
     const result = await apiClient.post(`${BASE_PATH}/summary`, { reports: validReports })
-    console.log('Summary API response:', result)
-
     if (!result?.data) {
       throw new Error('無効なレスポンス形式です')
     }

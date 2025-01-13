@@ -17,9 +17,47 @@
           </h3>
         </div>
 
+        <v-card class="mb-4" rounded="lg">
+          <v-card-title>
+            <v-icon icon="mdi-calendar-range" class="mr-1"></v-icon>
+            期間の概要
+          </v-card-title>
+          <v-card-text v-if="totalWeeks" class="px-6">
+            <v-row>
+              <v-col cols="12" sm="6" md="3">
+                <div class="text-subtitle-2 mb-1">対象期間</div>
+                <div class="text-h6">
+                  {{ formatWeekLabel(firstWeek) }} 〜 {{ formatWeekLabel(lastWeek) }}
+                </div>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <div class="text-subtitle-2 mb-1">報告提出率</div>
+                <div class="text-h6">
+                  {{ Math.round((submittedReports / totalWeeks) * 100) }}%
+                  <span class="text-body-2 text-medium-emphasis">
+                    ({{ submittedReports }}/{{ totalWeeks }}週)
+                  </span>
+                </div>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <div class="text-subtitle-2 mb-1">平均残業時間</div>
+                <div class="text-h6">
+                  {{ averageOvertime.toFixed(1) }}
+                  <span class="text-body-2">時間/週</span>
+                </div>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <div class="text-subtitle-2 mb-1">最多プロジェクト</div>
+                <div class="text-body-1">{{ mostFrequentProject || '該当なし' }}</div>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+
         <ReportSummary
           v-if="weekReports.length > 0"
           :reports="weekReports"
+          :format-week-label="formatWeekLabel"
           class="mb-4"
         />
 
@@ -28,7 +66,7 @@
           rounded="lg"
         >
           <v-card-title>
-            <v-icon icon="mdi-equalizer" class="mr-2"></v-icon>
+            <v-icon icon="mdi-equalizer" class="mr-1"></v-icon>
             評価・残業時間推移
           </v-card-title>
           <v-card-text>
@@ -233,6 +271,32 @@ const chartData = computed(() => {
       }
     ]
   }
+})
+
+// 統計情報の計算
+const firstWeek = computed(() => weekReports.value[0]?.weekString)
+const lastWeek = computed(() => weekReports.value[weekReports.value.length - 1]?.weekString)
+const totalWeeks = computed(() => weekReports.value.length)
+const submittedReports = computed(() => 
+  weekReports.value.filter(w => w.report?.status !== 'none').length
+)
+const averageOvertime = computed(() => {
+  const reports = weekReports.value.filter(w => 
+    w.report?.status !== 'none' && 
+    typeof w.report.overtimeHours === 'number'
+  )
+  if (!reports.length) return 0
+  return reports.reduce((sum, w) => sum + w.report.overtimeHours, 0) / reports.length
+})
+const mostFrequentProject = computed(() => {
+  const projectCounts = {}
+  weekReports.value.forEach(week => {
+    week.report?.projects?.forEach(project => {
+      projectCounts[project.name] = (projectCounts[project.name] || 0) + 1
+    })
+  })
+  return Object.entries(projectCounts)
+    .sort(([, a], [, b]) => b - a)[0]?.[0]
 })
 
 onMounted(fetchReports)

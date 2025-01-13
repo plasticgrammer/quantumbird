@@ -1,5 +1,5 @@
 <template>
-  <v-card rounded="lg" class="mb-4">
+  <v-card rounded="lg">
     <v-card-title class="d-flex align-center justify-space-between">
       <div class="d-flex align-center">
         <v-icon icon="mdi-magnify-scan" class="mr-2"></v-icon>
@@ -89,6 +89,10 @@ const props = defineProps({
   reports: {
     type: Array,
     required: true
+  },
+  formatWeekLabel: {
+    type: Function,
+    required: true
   }
 })
 
@@ -116,7 +120,13 @@ const generateSummary = async () => {
   error.value = null
   
   try {
-    const result = await getWeeklyReportSummary(props.reports)
+    // 送信前にweekStringを変換
+    const reportsWithFormattedWeeks = props.reports.map(report => ({
+      ...report,
+      weekString: props.formatWeekLabel(report.weekString)
+    }))
+
+    const result = await getWeeklyReportSummary(reportsWithFormattedWeeks)
     summary.value = result.summary
     insights.value = result.insights
     
