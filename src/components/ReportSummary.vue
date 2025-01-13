@@ -3,7 +3,7 @@
     <v-card-title class="d-flex align-center justify-space-between">
       <div class="d-flex align-center">
         <v-icon icon="mdi-magnify-scan" class="mr-2"></v-icon>
-        インサイト
+        活動分析
       </div>
       <v-btn
         :loading="loading"
@@ -29,15 +29,15 @@
           {{ error }}
         </div>
         <div v-else-if="!summary && !insights.length" class="text-subtitle-1 text-medium-emphasis text-center py-4">
-          ボタンをクリックしてインサイトを生成してください
+          ボタンをクリックして分析レポートを生成してください
         </div>
-        <div v-else>
-          <div class="text-h6 mb-2">活動の要点</div>
+        <div v-else class="px-4">
+          <div class="text-h6 mb-2">全体の要約</div>
           <p class="text-body-1 px-1">{{ summary }}</p>
           
           <v-divider class="my-4"></v-divider>
           
-          <div class="text-h6 mb-2">インサイト分析</div>
+          <div class="text-h6 mb-2">詳細分析</div>
           <template v-if="insights.positive.length">
             <div class="text-subtitle-1 font-weight-medium mt-2 mb-1">
               <v-icon color="success" class="mr-1">mdi-trending-up</v-icon>
@@ -59,7 +59,7 @@
           
           <template v-if="insights.negative.length">
             <div class="text-subtitle-1 font-weight-medium mt-3 mb-1">
-              <v-icon color="warning" class="mr-1">mdi-flag</v-icon>
+              <v-icon color="warning" class="mr-1">mdi-trending-down</v-icon>
               注意点・課題
             </div>
             <v-list>
@@ -69,7 +69,7 @@
                 class="px-0 py-1"
               >
                 <template #prepend>
-                  <v-icon color="warning" size="small">mdi-bookmark-minus</v-icon>
+                  <v-icon color="warning" size="small">mdi-alert</v-icon>
                 </template>
                 <v-list-item-title class="text-wrap">{{ insight }}</v-list-item-title>
               </v-list-item>
