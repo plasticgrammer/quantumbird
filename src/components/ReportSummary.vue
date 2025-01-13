@@ -2,8 +2,8 @@
   <v-card rounded="lg" class="mb-4">
     <v-card-title class="d-flex align-center justify-space-between">
       <div class="d-flex align-center">
-        <v-icon icon="mdi-lightbulb" class="mr-2"></v-icon>
-        サマリー
+        <v-icon icon="mdi-magnify-scan" class="mr-2"></v-icon>
+        インサイト
       </div>
       <v-btn
         :loading="loading"
@@ -22,36 +22,59 @@
     </v-card-title>
     <v-card-text>
       <div v-if="loading" class="d-flex align-center justify-center py-4">
-        <v-progress-circular indeterminate></v-progress-circular>
+        <v-progress-circular indeterminate size="42" width="8" color="secondary"></v-progress-circular>
       </div>
       <template v-else>
         <div v-if="error" class="text-error">
           {{ error }}
         </div>
         <div v-else-if="!summary && !insights.length" class="text-subtitle-1 text-medium-emphasis text-center py-4">
-          ボタンをクリックしてサマリーを生成してください
+          ボタンをクリックしてインサイトを生成してください
         </div>
         <div v-else>
-          <div class="text-h6 mb-2">活動の概要</div>
-          <p class="text-body-1">{{ summary }}</p>
+          <div class="text-h6 mb-2">活動の要点</div>
+          <p class="text-body-1 px-1">{{ summary }}</p>
           
           <v-divider class="my-4"></v-divider>
           
-          <div class="text-h6 mb-2">主要なインサイト</div>
-          <v-list>
-            <v-list-item
-              v-for="(insight, index) in insights"
-              :key="index"
-              class="px-0 py-2"
-            >
-              <template #prepend>
-                <v-icon color="primary" class="mt-1">mdi-chart-line</v-icon>
-              </template>
-              <v-list-item-title class="text-wrap">
-                {{ insight }}
-              </v-list-item-title>
-            </v-list-item>
-          </v-list>
+          <div class="text-h6 mb-2">インサイト分析</div>
+          <template v-if="insights.positive.length">
+            <div class="text-subtitle-1 font-weight-medium mt-2 mb-1">
+              <v-icon color="success" class="mr-1">mdi-trending-up</v-icon>
+              良好な点
+            </div>
+            <v-list>
+              <v-list-item
+                v-for="(insight, index) in insights.positive"
+                :key="'p'+index"
+                class="px-0 py-1"
+              >
+                <template #prepend>
+                  <v-icon color="success" size="small">mdi-check-circle</v-icon>
+                </template>
+                <v-list-item-title class="text-wrap">{{ insight }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </template>
+          
+          <template v-if="insights.negative.length">
+            <div class="text-subtitle-1 font-weight-medium mt-3 mb-1">
+              <v-icon color="warning" class="mr-1">mdi-flag</v-icon>
+              注意点・課題
+            </div>
+            <v-list>
+              <v-list-item
+                v-for="(insight, index) in insights.negative"
+                :key="'n'+index"
+                class="px-0 py-1"
+              >
+                <template #prepend>
+                  <v-icon color="warning" size="small">mdi-bookmark-minus</v-icon>
+                </template>
+                <v-list-item-title class="text-wrap">{{ insight }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </template>
         </div>
       </template>
     </v-card-text>
@@ -93,11 +116,11 @@ const generateSummary = async () => {
   error.value = null
   
   try {
-    const { summary: summaryText, insights: insightsList } = await getWeeklyReportSummary(props.reports)
-    summary.value = summaryText
-    insights.value = insightsList
+    const result = await getWeeklyReportSummary(props.reports)
+    summary.value = result.summary
+    insights.value = result.insights
     
-    if (!summary.value && !insights.value.length) {
+    if (!summary.value && !insights.value?.positive?.length && !insights.value?.negative?.length) {
       error.value = 'サマリーの生成に失敗しました'
     }
   } catch (err) {

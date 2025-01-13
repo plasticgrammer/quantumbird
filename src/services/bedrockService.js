@@ -75,22 +75,24 @@ export const getWeeklyReportAdvice = async (report, advisorRole) => {
 
 export const getWeeklyReportSummary = async (reports) => {
   try {
-    // 送信データを適切な形式に整形
     const validReports = reports.map(report => ({
       weekString: report.weekString,
       report: report.report
     }))
 
     const result = await apiClient.post(`${BASE_PATH}/summary`, { reports: validReports })
-    const responseData = result?.data
-    if (!responseData?.summary && !responseData?.insights) {
-      console.error('Invalid response structure:', result)
+    console.log('Summary API response:', result)
+
+    if (!result?.data) {
       throw new Error('無効なレスポンス形式です')
     }
 
     return {
-      summary: responseData.summary,
-      insights: responseData.insights || []
+      summary: result.data.summary || '',
+      insights: {
+        positive: result.data.insights?.positive || [],
+        negative: result.data.insights?.negative || []
+      }
     }
   } catch (error) {
     console.error('Error getting weekly report summary:', error)
