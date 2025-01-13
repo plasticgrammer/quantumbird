@@ -4,7 +4,7 @@ import boto3
 import logging
 import html
 import re
-from typing import Dict, Any
+from typing import Dict, Any, List
 from botocore.exceptions import ClientError
 from decimal import Decimal
 from advisor_roles import ADVISOR_ROLES
@@ -149,6 +149,65 @@ Assistant:"""
 
     return prompt
 
+def create_summary_prompt(reports: List[Dict[str, Any]]) -> str:
+    """週次報告のリストからサマリープロンプトを生成する"""
+    # 有効な報告のみを抽出
+    valid_reports = [r for r in reports if r['report'] and r['report']['status'] != 'none']
+    
+    if not valid_reports:
+        return ""
+
+    # 各週のデータを整形
+    report_texts = []
+    for week in valid_reports:
+        report = week['report']
+        rating = report.get('rating', {})
+        
+        # プロジェクト作業の整形
+        projects_str = format_projects(report.get('projects', []))
+        
+        week_text = f"""
+【{week['weekString']}の報告】
+作業内容：
+{projects_str}
+
+振り返り：{report.get('issues', '記載なし')}
+
+改善施策：{report.get('improvements', '記載なし')}
+
+指標：
+- ストレス度: {rating.get('stress', 0)}/5
+- タスク達成度: {rating.get('achievement', 0)}/5
+- タスク難易度: {rating.get('disability', 0)}/5
+- 残業時間: {report.get('overtimeHours', 0)}時間/週
+"""
+        report_texts.append(week_text)
+
+    all_reports = "\n".join(report_texts)
+    
+    prompt = f"""Human: あなたはデータアナリストです。
+以下の週次報告データを分析し、以下の2点を提供してください：
+
+1. 活動の全体的な要約（200文字程度）
+2. データから読み取れる重要なインサイト（箇条書きで3-5項目）
+
+特に以下の点に注目してください：
+- 作業内容の傾向
+- パフォーマンスとストレスの関係
+- 時間管理の状況
+- 課題と改善の一貫性
+
+報告データ：
+{all_reports}
+
+出力は以下のJSON形式で提供してください：
+{{
+    "summary": "要約文",
+    "insights": ["インサイト1", "インサイト2", "インサイト3"]
+}}
+"""
+    return prompt
+
 def invoke_claude(prompt: str) -> str:
     """Claude (Anthropic Claude) を呼び出してアドバイスを生成
     温度: 出力のランダム性を制御。低温(0に近い)だと安全で一貫性のある出力が得られるが、単調になることが多い。高温(1以上)だとクリエイティブな応答が期待できる。
@@ -197,7 +256,7 @@ def check_and_update_advice_tickets(member: Dict[str, Any], member_uuid: str) ->
         current_tickets = member.get('adviceTickets', 0)
         
         # チケットが0枚の場合は利用不可
-        if current_tickets <= 0:
+        if (current_tickets <= 0):
             return False, current_tickets
             
         # チケットを1枚消費
@@ -221,7 +280,6 @@ def check_and_update_advice_tickets(member: Dict[str, Any], member_uuid: str) ->
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """Lambda関数のメインハンドラー"""
-    remaining_tickets = 0  # Initialize at the start
     try:
         if 'body' not in event:
             return {
@@ -230,8 +288,32 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
             
         body = json.loads(event['body'])
+        path = event.get('path', '')
+
+        if path.endswith('/advice'):
+            return handle_advice_request(body)
+        elif path.endswith('/summary'):
+            return handle_summary_request(body)
+        else:
+            return {
+                'statusCode': 404,
+                'body': json.dumps({'error': '無効なエンドポイントです。'}, cls=DecimalEncoder)
+            }
+
+    except Exception as e:
+        logger.error(f"Error processing request: {str(e)}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'error': 'リクエストの処理中にエラーが発生しました。'
+            }, ensure_ascii=False, cls=DecimalEncoder)
+        }
+
+def handle_advice_request(body: Dict[str, Any]) -> Dict[str, Any]:
+    """アドバイス生成リクエストを処理"""
+    remaining_tickets = 0
+    try:
         report_content = body.get('report')
-        
         if not report_content:
             return {
                 'statusCode': 400,
@@ -291,11 +373,96 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
         
     except Exception as e:
-        logger.error(f"Error processing request: {str(e)}")
+        logger.error(f"Error processing advice request: {str(e)}")
         return {
             'statusCode': 500,
             'body': json.dumps({
                 'error': 'アドバイスの生成中にエラーが発生しました。',
-                'remainingTickets': remaining_tickets  # エラー時もチケット数を返す
-            }, ensure_ascii=False, cls=DecimalEncoder)  # DecimalEncoderを追加
+                'remainingTickets': remaining_tickets
+            }, ensure_ascii=False, cls=DecimalEncoder)
+        }
+
+def handle_summary_request(body: Dict[str, Any]) -> Dict[str, Any]:
+    """サマリー生成リクエストを処理"""
+    try:
+        # リクエストボディのログ出力
+        logger.info(f"Summary request body: {json.dumps(body, cls=DecimalEncoder)}")
+        
+        reports = body.get('reports', [])
+        if not reports:
+            logger.error("No reports data found in request")
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+                    'Access-Control-Allow-Methods': 'OPTIONS,POST'
+                },
+                'body': json.dumps({'error': '週次報告データが必要です。'}, cls=DecimalEncoder)
+            }
+
+        # プロンプトの生成
+        prompt = create_summary_prompt(reports)
+        if not prompt:
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+                    'Access-Control-Allow-Methods': 'OPTIONS,POST'
+                },
+                'body': json.dumps({'error': '有効な週次報告がありません。'}, cls=DecimalEncoder)
+            }
+
+        # Claudeの呼び出し
+        claude_response = invoke_claude(prompt)
+        
+        # JSONレスポンスのパース
+        try:
+            result = json.loads(claude_response)
+            if not isinstance(result, dict) or 'summary' not in result or 'insights' not in result:
+                logger.error(f"Invalid Claude response format: {claude_response}")
+                result = {
+                    'summary': '申し訳ありません。サマリーの生成に失敗しました。',
+                    'insights': ['データの分析に失敗しました。']
+                }
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse Claude response: {e}\nResponse: {claude_response}")
+            result = {
+                'summary': '申し訳ありません。サマリーの生成に失敗しました。',
+                'insights': ['データの分析に失敗しました。']
+            }
+
+        # 結果を返す
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+                'Access-Control-Allow-Methods': 'OPTIONS,POST'
+            },
+            'body': json.dumps({
+                'data': result,
+                'error': None
+            }, ensure_ascii=False, cls=DecimalEncoder)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error processing summary request: {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+                'Access-Control-Allow-Methods': 'OPTIONS,POST'
+            },
+            'body': json.dumps({
+                'data': None,
+                'error': 'サマリーの生成中にエラーが発生しました。',
+                'details': str(e)
+            }, ensure_ascii=False, cls=DecimalEncoder)
         }

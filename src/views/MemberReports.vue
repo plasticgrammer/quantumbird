@@ -13,9 +13,15 @@
             <v-icon size="large" class="mr-1">
               mdi-calendar-account
             </v-icon>
-            週次報告履歴（{{ memberName }}さん）
+            週次報告履歴<span v-if="memberName">（{{ memberName }}さん）</span>
           </h3>
         </div>
+
+        <ReportSummary
+          v-if="weekReports.length > 0"
+          :reports="weekReports"
+          class="mb-4"
+        />
 
         <v-card 
           class="my-4"
@@ -136,6 +142,7 @@ import { listMemberReports } from '@/services/reportService'
 import { getMember } from '@/services/memberService'
 import OvertimeDisplay from '@/components/OvertimeDisplay.vue'
 import RatingLineChart from '@/components/chart/RatingLineChart.vue'
+import ReportSummary from '@/components/ReportSummary.vue'
 
 const props = defineProps({
   memberUuid: {
@@ -158,13 +165,15 @@ const formatWeekLabel = (weekString) => {
 
 const fetchReports = async () => {
   try {
-    // メンバー情報を先に取得
-    const memberData = await getMember(props.memberUuid)
+    const [memberData, reports] = await Promise.all([
+      getMember(props.memberUuid),
+      listMemberReports(props.memberUuid)
+    ])
+
     if (memberData) {
       memberName.value = memberData.name
     }
 
-    const reports = await listMemberReports(props.memberUuid)
     weekReports.value = reports.map(report => ({
       weekString: report.weekString,
       report: report

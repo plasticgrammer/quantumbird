@@ -88,19 +88,6 @@
               <span class="text-h6 font-weight-bold">{{ report.name }}</span>
             </div>
             <div class="d-flex align-center">
-              <v-btn
-                v-if="!readonly"
-                variant="text"
-                icon
-                color="secondary"
-                class="mr-2"
-                :to="{ name: 'MemberReports', params: { memberUuid: report.memberUuid }}"
-              >
-                <v-icon size="30">mdi-history</v-icon>
-                <v-tooltip activator="parent" location="top">
-                  履歴を表示
-                </v-tooltip>
-              </v-btn>
               <v-tooltip
                 :disabled="report.status !== 'approved'"
                 location="bottom"
@@ -125,6 +112,19 @@
                 </template>
                 <span>確認日時：{{ formatDateTimeJp(new Date(report.approvedAt)) }}</span>
               </v-tooltip>
+              <v-btn
+                v-if="!readonly"
+                variant="tonal"
+                icon
+                color="secondary"
+                class="ml-2"
+                :to="{ name: 'MemberReports', params: { memberUuid: report.memberUuid }}"
+              >
+                <v-icon size="26" class="opacity-60">mdi-calendar-text</v-icon>
+                <v-tooltip activator="parent" location="top">
+                  履歴を表示
+                </v-tooltip>
+              </v-btn>
             </div>
           </v-card-title>
 
