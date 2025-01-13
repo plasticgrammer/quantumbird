@@ -169,7 +169,7 @@ const fetchReports = async () => {
       weekString: report.weekString,
       report: report
     }))
-    selectedWeekTab.value = reports[0].weekString
+    selectedWeekTab.value = reports[reports.length - 1].weekString // 最新の週を選択
   } catch (error) {
     console.error('Failed to fetch reports:', error)
   }
@@ -177,7 +177,6 @@ const fetchReports = async () => {
 
 const chartData = computed(() => {
   const labels = weekReports.value.map((week, index) => {
-    // 0が5週前、4が先週となるように計算
     return calendar.getWeekJpText(-(5 - index))
   })
   return {
@@ -185,7 +184,9 @@ const chartData = computed(() => {
     datasets: [
       {
         label: 'ストレス度',
-        data: weekReports.value.map(week => week.report?.rating?.stress || 0),
+        data: weekReports.value.map(week => 
+          week.report?.status === 'none' ? null : week.report?.rating?.stress || null
+        ),
         borderColor: 'rgb(192, 75, 192)',
         backgroundColor: 'rgba(192, 75, 192, 0.2)',
         fill: true,
@@ -193,7 +194,9 @@ const chartData = computed(() => {
       },
       {
         label: 'タスク達成度',
-        data: weekReports.value.map(week => week.report?.rating?.achievement || 0),
+        data: weekReports.value.map(week => 
+          week.report?.status === 'none' ? null : week.report?.rating?.achievement || null
+        ),
         borderColor: 'rgb(75, 192, 192)',
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
         fill: true,
@@ -201,7 +204,9 @@ const chartData = computed(() => {
       },
       {
         label: 'タスク難易度',
-        data: weekReports.value.map(week => week.report?.rating?.disability || 0),
+        data: weekReports.value.map(week => 
+          week.report?.status === 'none' ? null : week.report?.rating?.disability || null
+        ),
         borderColor: 'rgb(255, 99, 132)',
         backgroundColor: 'rgba(255, 99, 132, 0.2)',
         fill: true,
@@ -209,7 +214,9 @@ const chartData = computed(() => {
       },
       {
         label: '残業時間',
-        data: weekReports.value.map(week => week.report?.overtimeHours || 0),
+        data: weekReports.value.map(week => 
+          week.report?.status === 'none' ? null : week.report?.overtimeHours ?? null
+        ),
         borderColor: 'rgb(54, 162, 235)',
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
         fill: true,

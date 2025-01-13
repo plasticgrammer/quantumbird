@@ -21,9 +21,9 @@ let chartInstance = null
 
 const getMaxOvertimeHours = (datasets) => {
   const overtimeDataset = datasets.find(d => d.yAxisID === 'y1')
-  if (!overtimeDataset) return 8
+  if (!overtimeDataset) return 5
   const maxHours = Math.max(...overtimeDataset.data)
-  return Math.max(8, Math.ceil(maxHours / 4) * 4)
+  return Math.max(5, Math.ceil(maxHours / 4) * 4)
 }
 
 const chartOptions = {
