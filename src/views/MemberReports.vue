@@ -48,7 +48,7 @@
               </v-col>
               <v-col cols="12" sm="6" md="3">
                 <div class="text-subtitle-2 mb-1">最多プロジェクト</div>
-                <div class="text-body-1">{{ mostFrequentProject || '該当なし' }}</div>
+                <div class="text-h6">{{ mostFrequentProject || '該当なし' }}</div>
               </v-col>
             </v-row>
           </v-card-text>
@@ -65,7 +65,7 @@
           rounded="lg"
         >
           <v-card-title>
-            <v-icon icon="mdi-equalizer" class="mr-1"></v-icon>
+            <v-icon icon="mdi-chart-line" class="mr-1"></v-icon>
             評価・残業時間推移
           </v-card-title>
           <v-card-text>

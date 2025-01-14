@@ -3,7 +3,7 @@
     <v-container class="pa-0" fluid>
       <!-- ヘッダーセクション -->
       <v-container class="hero-section text-center py-13">
-        <p class="text-h4 font-weight-bold text-indigo-darken-2 slide-up-delay hero-text">
+        <p class="text-h4 text-sm-h5 font-weight-bold text-indigo-darken-2 slide-up-delay hero-text">
           ストレスフリーな管理で<br>組織の成果をサポートする週次報告システム<br>
           <span class="logo-font text-h2 my-5">fluxweek</span>
         </p>
@@ -29,7 +29,7 @@
 
       <!-- 課題セクション -->
       <v-container class="py-16">
-        <h2 class="text-h4 font-weight-bold text-center mb-16 gradient-text">こんな課題はありませんか？</h2>
+        <h2 class="text-h4 text-sm-h5 font-weight-bold text-center mb-16 gradient-text">こんな課題はありませんか？</h2>
         <v-row>
           <v-col 
             v-for="(problem, i) in problems" 
@@ -51,7 +51,7 @@
 
       <!-- 特徴セクション -->
       <v-container class="py-16">
-        <h2 class="text-h4 font-weight-bold text-center mb-16 gradient-text">システムの特徴</h2>
+        <h2 class="text-h4 text-sm-h5 font-weight-bold text-center mb-16 gradient-text">システムの特徴</h2>
         <v-row>
           <v-col 
             v-for="(feature, i) in features" 
@@ -73,7 +73,7 @@
 
       <!-- 画面イメージセクション -->
       <v-container class="py-16">
-        <h2 class="text-h4 font-weight-bold text-center mb-16 gradient-text">主な機能と画面</h2>
+        <h2 class="text-h4 text-sm-h5 font-weight-bold text-center mb-16 gradient-text">主な機能と画面</h2>
         <v-carousel
           cycle
           progress="primary"
@@ -104,7 +104,7 @@
       
       <!-- 料金プランセクション -->
       <v-container class="py-16">
-        <h2 class="text-h4 font-weight-bold text-center mb-16 gradient-text">料金プラン</h2>
+        <h2 class="text-h4 text-sm-h5 font-weight-bold text-center mb-16 gradient-text">料金プラン</h2>
         <v-row>
           <v-col 
             v-for="plan in pricingPlans" 

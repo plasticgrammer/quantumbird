@@ -39,38 +39,38 @@
           <div class="text-h6 mb-2">詳細分析</div>
           <template v-if="insights.positive.length">
             <div class="text-subtitle-1 font-weight-medium mt-2 mb-1">
-              <v-icon color="success" class="mr-1">mdi-trending-up</v-icon>
+              <v-icon color="success" class="mr-1">mdi-check-circle</v-icon>
               良好な点
             </div>
-            <v-list>
+            <v-list density="compact" class="pt-0">
               <v-list-item
                 v-for="(insight, index) in insights.positive"
                 :key="'p'+index"
-                class="px-0 py-1"
+                class="px-2 py-1"
               >
-                <template #prepend>
-                  <v-icon color="success" size="small">mdi-check-circle</v-icon>
-                </template>
-                <v-list-item-title class="text-wrap">{{ insight }}</v-list-item-title>
+                <v-list-item-title class="text-wrap">
+                  <v-icon icon="mdi-circle-small"></v-icon>
+                  {{ insight }}
+                </v-list-item-title>
               </v-list-item>
             </v-list>
           </template>
           
           <template v-if="insights.negative.length">
             <div class="text-subtitle-1 font-weight-medium mt-3 mb-1">
-              <v-icon color="warning" class="mr-1">mdi-trending-down</v-icon>
+              <v-icon color="warning" class="mr-1">mdi-alert</v-icon>
               注意点・課題
             </div>
-            <v-list>
+            <v-list density="compact" class="pt-0">
               <v-list-item
                 v-for="(insight, index) in insights.negative"
                 :key="'n'+index"
-                class="px-0 py-1"
+                class="px-2 py-1"
               >
-                <template #prepend>
-                  <v-icon color="warning" size="small">mdi-alert</v-icon>
-                </template>
-                <v-list-item-title class="text-wrap">{{ insight }}</v-list-item-title>
+                <v-list-item-title class="text-wrap">
+                  <v-icon icon="mdi-circle-small"></v-icon>
+                  {{ insight }}
+                </v-list-item-title>
               </v-list-item>
             </v-list>
           </template>

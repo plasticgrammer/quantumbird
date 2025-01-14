@@ -42,14 +42,24 @@ function getMaxValue(datasets) {
     .filter(v => v !== null && v !== undefined)
     .map(v => Number(v))
     .filter(v => !isNaN(v))
-  return allValues.length > 0 ? Math.max(...allValues) : 3.0
+  if (allValues.length === 0) return 3.0
+  return Math.max(3.0, Math.ceil(Math.max(...allValues)))
 }
 
 const currentMaxValue = computed(() => getMaxValue(props.chartData.datasets))
 const currentStepSize = computed(() => Math.max(1, Math.ceil(currentMaxValue.value / 5)))
 
 const yAxisConfig = computed(() => ({
-  ticks: { stepSize: currentStepSize.value },
-  title: { display: true, text: props.yAxisTitle }
+  ticks: { 
+    stepSize: currentStepSize.value,
+    precision: 0,
+    callback: function(value) {
+      return value + 'h'
+    } 
+  },
+  title: { display: true, text: props.yAxisTitle },
+  afterDataLimits: (scale) => {
+    scale.max = getMaxValue(props.chartData.datasets)
+  }
 }))
 </script>

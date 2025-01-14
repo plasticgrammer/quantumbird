@@ -9,6 +9,30 @@ export const createBaseOptions = (config = {}) => ({
   plugins: {
     legend: {
       position: 'bottom',
+      onClick: (event, legendItem, legend) => {
+        const chart = legend.chart
+        const index = legendItem.datasetIndex
+        
+        // 現在の表示状態を確認
+        const isOnlyThisVisible = chart.data.datasets.every((dataset, i) => 
+          i === index ? chart.isDatasetVisible(i) : !chart.isDatasetVisible(i)
+        )
+        
+        if (isOnlyThisVisible) {
+          // 既に対象系列のみが表示されている場合は全て表示
+          chart.data.datasets.forEach((dataset, i) => {
+            chart.setDatasetVisibility(i, true)
+          })
+        } else {
+          // それ以外の場合は対象系列のみ表示
+          chart.data.datasets.forEach((dataset, i) => {
+            chart.setDatasetVisibility(i, i === index)
+          })
+        }
+        
+        chart.update()
+      },
+      /*
       onHover: (event, legendItem, legend) => {
         const chart = legend.chart
         chart.data.datasets.forEach((dataset, index) => {
@@ -24,6 +48,7 @@ export const createBaseOptions = (config = {}) => ({
         })
         chart.update()
       }
+      */
     },
     title: {
       display: false,

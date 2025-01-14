@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
+import { ref, onMounted, watch, computed, onBeforeUnmount } from 'vue'
 import { Chart } from 'chart.js'
 import { updateChartInstance } from './chartUtils'
 
@@ -21,10 +21,11 @@ let chartInstance = null
 
 const getMaxOvertimeHours = (datasets) => {
   const overtimeDataset = datasets.find(d => d.yAxisID === 'y1')
-  if (!overtimeDataset) return 5
-  const maxHours = Math.max(...overtimeDataset.data)
-  return Math.max(5, Math.ceil(maxHours / 4) * 4)
+  if (!overtimeDataset) return 3
+  const maxHours = Math.ceil(Math.max(...overtimeDataset.data))
+  return Math.max(3, maxHours)
 }
+const overtimeStepSize = computed(() => Math.max(1, Math.ceil(getMaxOvertimeHours.value / 5)))
 
 const chartOptions = {
   responsive: true,
@@ -60,7 +61,7 @@ const chartOptions = {
         drawOnChartArea: false
       },
       ticks: {
-        stepSize: 2,
+        stepSize: overtimeStepSize.value,
         precision: 0,
         callback: function(value) {
           return value + 'h'
