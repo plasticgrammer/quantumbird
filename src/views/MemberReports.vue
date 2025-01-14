@@ -30,7 +30,7 @@
                   {{ formatWeekLabel(firstWeek) }} 〜 {{ formatWeekLabel(lastWeek) }}
                 </div>
               </v-col>
-              <v-col cols="12" sm="6" md="3">
+              <v-col cols="12" sm="6" md="2">
                 <div class="text-subtitle-2 mb-1">報告提出率</div>
                 <div class="text-h6">
                   {{ Math.round((submittedReports / totalWeeks) * 100) }}%
@@ -39,15 +39,15 @@
                   </span>
                 </div>
               </v-col>
-              <v-col cols="12" sm="6" md="3">
+              <v-col cols="12" sm="6" md="2">
                 <div class="text-subtitle-2 mb-1">平均残業時間</div>
                 <div class="text-h6">
                   {{ averageOvertime.toFixed(1) }}
                   <span class="text-body-2">時間/週</span>
                 </div>
               </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <div class="text-subtitle-2 mb-1">最多プロジェクト</div>
+              <v-col cols="12" sm="6" md="5">
+                <div class="text-subtitle-2 mb-1">最頻プロジェクト</div>
                 <div class="text-h6">{{ mostFrequentProject || '該当なし' }}</div>
               </v-col>
             </v-row>
@@ -222,9 +222,11 @@ const fetchReports = async () => {
 }
 
 const formattedReports = computed(() => {
-  return weekReports.value.map(report => ({
-    ...report,
-    weekString: formatWeekLabel(report.weekString)
+  return weekReports.value.map(item => ({
+    report: {
+      ...item.report,
+      weekString: formatWeekLabel(item.report.weekString)
+    },
   }))
 })
 

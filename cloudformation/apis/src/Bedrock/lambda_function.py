@@ -8,6 +8,7 @@ from typing import Dict, Any, List
 from botocore.exceptions import ClientError
 from decimal import Decimal
 from advisor_roles import ADVISOR_ROLES
+from common.utils import create_response, handle_lambda_errors, parse_request_body
 
 # ロガーの設定
 logger = logging.getLogger()
@@ -157,9 +158,16 @@ def create_summary_prompt(reports: List[Dict[str, Any]]) -> str:
 以下の週次報告データを分析し、以下の2点を提供してください：
 
 1. 活動の要点（200文字程度でまとめた1つの文章。文末は「。」で終わる）
-2. データから読み取れる重要なインサイト（合計4-6項目）
-   - ポジティブな観点（成果、向上点、良好な状態など）：2-3項目
-   - 要注意な観点（課題、リスク、改善が必要な点など）：2-3項目
+2. データから読み取れる重要なインサイト（合計3-5項目）
+   - ポジティブな観点（成果、向上点、良好な状態など）：1-3項目
+   - 要注意な観点（課題、リスク、改善が必要な点など）：1-3項目
+
+各インサイトには重要度を示すスコア（0-100）を付与してください。
+スコアは以下の基準で評価してください：
+- 90-100: 即座に対応が必要な重要事項
+- 70-89: 近いうちに対応が必要な事項
+- 50-69: 継続的な監視が必要な事項
+- 0-49: 参考情報として留意する事項
 
 特に以下の点に注目してください：
 - 作業内容の傾向
@@ -172,20 +180,20 @@ def create_summary_prompt(reports: List[Dict[str, Any]]) -> str:
 
 出力は以下のJSON形式で提供してください：
 {{
-    "summary": "100文字程度の要約文（文末は「。」で終わる）",
+    "summary": "200文字程度の要約文（文末は「。」で終わる）",
     "insights": {{
         "positive": [
-            "ポジティブな観点1",
-            "ポジティブな観点2"
+            {{"text": "ポジティブな観点1", "score": 95}},
+            {{"text": "ポジティブな観点2", "score": 80}}
         ],
         "negative": [
-            "要注意な観点1",
-            "要注意な観点2"
+            {{"text": "要注意な観点1", "score": 90}},
+            {{"text": "要注意な観点2", "score": 70}}
         ]
     }}
 }}
 
-※インサイトは具体的かつ簡潔に記述してください。
+※インサイトは重要な点のみとし、具体的かつ簡潔に記述してください。
 """
     return prompt
 
@@ -263,17 +271,11 @@ def handle_summary_request(body: Dict[str, Any]) -> Dict[str, Any]:
     """サマリー生成リクエストを処理"""
     try:
         if 'reports' not in body:
-            return {
-                'statusCode': 400,
-                'body': json.dumps({'error': '週次報告のリストが必要です。'}, cls=DecimalEncoder)
-            }
+            return create_response(400, {'error': '週次報告のリストが必要です。'})
         
         reports = body['reports']
         if not isinstance(reports, list) or not reports:
-            return {
-                'statusCode': 400,
-                'body': json.dumps({'error': '有効な週次報告のリストが必要です。'}, cls=DecimalEncoder)
-            }
+            return create_response(400, {'error': '有効な週次報告のリストが必要です。'})
         
         # プロンプトの生成
         prompt = create_summary_prompt(reports)
@@ -303,73 +305,55 @@ def handle_summary_request(body: Dict[str, Any]) -> Dict[str, Any]:
                 }
             }
             
-        # 結果の検証
-        if not isinstance(result.get('insights'), dict) or \
-           not isinstance(result.get('insights', {}).get('positive'), list) or \
-           not isinstance(result.get('insights', {}).get('negative'), list):
-            logger.error(f"Invalid insights format in response: {result}")
-            result['insights'] = {
-                'positive': ['データの形式が不正です。'],
-                'negative': ['データの形式が不正です。']
-            }
+        # 結果の検証とソート処理
+        insights = result.get('insights', {})
+        if isinstance(insights, dict):
+            # positiveインサイトのソート
+            if isinstance(insights.get('positive'), list):
+                insights['positive'] = sorted(
+                    insights['positive'],
+                    key=lambda x: float(x.get('score', 0)),
+                    reverse=True
+                )
+            # negativeインサイトのソート
+            if isinstance(insights.get('negative'), list):
+                insights['negative'] = sorted(
+                    insights['negative'],
+                    key=lambda x: float(x.get('score', 0)),
+                    reverse=True
+                )
 
         # 結果を返す
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-                'Access-Control-Allow-Methods': 'OPTIONS,POST'
+        return create_response(200, {
+            'data': {
+                'summary': result.get('summary', ''),
+                'insights': insights
             },
-            'body': json.dumps({
-                'data': {
-                    'summary': result.get('summary', ''),
-                    'insights': result.get('insights', {
-                        'positive': [],
-                        'negative': []
-                    })
-                },
-                'error': None
-            }, ensure_ascii=False, cls=DecimalEncoder)
-        }
+            'error': None
+        })
         
     except Exception as e:
         logger.error(f"Error processing summary request: {str(e)}")
-        return {
-            'statusCode': 500,
-            'body': json.dumps({
-                'error': 'サマリーの生成中にエラーが発生しました。'
-            }, ensure_ascii=False, cls=DecimalEncoder)
-        }
+        return create_response(500, {'error': 'サマリーの生成中にエラーが発生しました。'})
 
+@handle_lambda_errors
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """Lambda関数のメインハンドラー"""
-    remaining_tickets = 0  # Initialize at the start
+    remaining_tickets = 0
     try:
-        if 'body' not in event:
-            return {
-                'statusCode': 400,
-                'body': json.dumps({'error': 'リクエストボディが必要です。'}, cls=DecimalEncoder)
-            }
+        body = parse_request_body(event)
+        if not body:
+            return create_response(400, {'error': 'リクエストボディが必要です。'})
             
-        body = json.loads(event['body'])
-        
         if 'report' in body:
             report_content = body.get('report')
             
             if not report_content:
-                return {
-                    'statusCode': 400,
-                    'body': json.dumps({'error': '週次報告の内容が必要です。'}, cls=DecimalEncoder)
-                }
+                return create_response(400, {'error': '週次報告の内容が必要です。'})
                 
             member_uuid = report_content.get('memberUuid')
             if not member_uuid:
-                return {
-                    'statusCode': 400,
-                    'body': json.dumps({'error': 'memberUuidが必要です。'}, cls=DecimalEncoder)
-                }
+                return create_response(400, {'error': 'memberUuidが必要です。'})
 
             # メンバー情報を取得
             response = members_table.get_item(
@@ -385,14 +369,11 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             # チケットのチェックと消費
             is_available, remaining_tickets = check_and_update_advice_tickets(member, member_uuid)
             if not is_available:
-                return {
-                    'statusCode': 403,
-                    'body': json.dumps({
-                        'error': 'アドバイスチケットが不足しています。',
-                        'code': 'INSUFFICIENT_TICKETS',
-                        'remainingTickets': remaining_tickets
-                    }, ensure_ascii=False, cls=DecimalEncoder)
-                }
+                return create_response(403, {
+                    'error': 'アドバイスチケットが不足しています。',
+                    'code': 'INSUFFICIENT_TICKETS',
+                    'remainingTickets': remaining_tickets
+                })
             
             # プロンプトの生成
             prompt = create_prompt(report_content, member)
@@ -402,35 +383,22 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             formatted_advice = claude_response.strip()
 
             # 結果を返す
-            return {
-                'statusCode': 200,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({
-                    'advice': formatted_advice,
-                    'weekString': report_content.get('weekString'),
-                    'memberUuid': member_uuid,
-                    'remainingTickets': remaining_tickets
-                }, ensure_ascii=False, cls=DecimalEncoder)
-            }
+            return create_response(200, {
+                'advice': formatted_advice,
+                'weekString': report_content.get('weekString'),
+                'memberUuid': member_uuid,
+                'remainingTickets': remaining_tickets
+            })
         
         elif 'reports' in body:
             return handle_summary_request(body)
         
         else:
-            return {
-                'statusCode': 400,
-                'body': json.dumps({'error': '無効なリクエストです。'}, cls=DecimalEncoder)
-            }
+            return create_response(400, {'error': '無効なリクエストです。'})
         
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")
-        return {
-            'statusCode': 500,
-            'body': json.dumps({
-                'error': 'アドバイスの生成中にエラーが発生しました。',
-                'remainingTickets': remaining_tickets  # エラー時もチケット数を返す
-            }, ensure_ascii=False, cls=DecimalEncoder)  # DecimalEncoderを追加
-        }
+        return create_response(500, {
+            'error': 'アドバイスの生成中にエラーが発生しました。',
+            'remainingTickets': remaining_tickets
+        })

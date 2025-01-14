@@ -36,7 +36,6 @@
           
           <v-divider class="my-4"></v-divider>
           
-          <div class="text-h6 mb-2">詳細分析</div>
           <template v-if="insights.positive.length">
             <div class="text-subtitle-1 font-weight-medium mt-2 mb-1">
               <v-icon color="success" class="mr-1">mdi-check-circle</v-icon>
@@ -48,9 +47,16 @@
                 :key="'p'+index"
                 class="px-2 py-1"
               >
-                <v-list-item-title class="text-wrap">
+                <v-list-item-title class="text-wrap d-flex align-center">
                   <v-icon icon="mdi-circle-small"></v-icon>
-                  {{ insight }}
+                  <span class="flex-grow-1">{{ insight.text }}</span>
+                  <v-chip
+                    size="small"
+                    :color="getScoreColor(insight.score)"
+                    class="ml-2"
+                  >
+                    {{ formatScore(insight.score) }}
+                  </v-chip>
                 </v-list-item-title>
               </v-list-item>
             </v-list>
@@ -67,9 +73,16 @@
                 :key="'n'+index"
                 class="px-2 py-1"
               >
-                <v-list-item-title class="text-wrap">
+                <v-list-item-title class="text-wrap d-flex align-center">
                   <v-icon icon="mdi-circle-small"></v-icon>
-                  {{ insight }}
+                  <span class="flex-grow-1">{{ insight.text }}</span>
+                  <v-chip
+                    size="small"
+                    :color="getScoreColor(insight.score)"
+                    class="ml-2"
+                  >
+                    {{ formatScore(insight.score) }}
+                  </v-chip>
                 </v-list-item-title>
               </v-list-item>
             </v-list>
@@ -128,6 +141,20 @@ const generateSummary = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const formatScore = (score) => {
+  return score ? score.toFixed(0) : '0'
+}
+
+const getScoreColor = (score) => {
+  if (score >= 90) return 'error'
+  /*
+  if (score >= 70) return 'warning'
+  if (score >= 50) return 'info'
+  return 'success'
+  */
+  return 'grey'
 }
 </script>
 
