@@ -81,7 +81,7 @@
           outlined
         > 
           <v-card-title class="d-flex justify-space-between align-center py-2">
-            <div class="d-flex align-center">
+            <div class="member-name d-flex align-center">
               <v-icon size="x-large" class="mr-2">
                 mdi-account-box-outline
               </v-icon>
@@ -112,15 +112,18 @@
                 </template>
                 <span>確認日時：{{ formatDateTimeJp(new Date(report.approvedAt)) }}</span>
               </v-tooltip>
+
               <v-btn
                 v-if="!readonly"
-                variant="tonal"
                 icon
+                size="small"
                 color="secondary"
-                class="ml-2"
+                variant="tonal"
+                elevation="2"
+                class="ml-6"
                 :to="{ name: 'MemberReports', params: { memberUuid: report.memberUuid }}"
               >
-                <v-icon size="26" class="opacity-60">mdi-calendar-text</v-icon>
+                <v-icon size="24" class="opacity-80">mdi-calendar-range</v-icon>
                 <v-tooltip activator="parent" location="top">
                   履歴を表示
                 </v-tooltip>
@@ -775,7 +778,7 @@ watch(isAllCompleted, (currentlyComplete) => {
   padding: 16px 0 24px;
 }
 
-.none-card {
+.none-card .member-name {
   color: #757575;
 }
 
@@ -817,7 +820,7 @@ watch(isAllCompleted, (currentlyComplete) => {
   }
 
   .default-card + .default-card {
-    margin-top: 16px !重要;
+    margin-top: 16px !important;
   }
 }
 

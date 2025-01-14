@@ -11,7 +11,7 @@
           ></v-btn>
           <h3>
             <v-icon size="large" class="mr-1">
-              mdi-calendar-account
+              mdi-calendar-range
             </v-icon>
             週次報告履歴<span v-if="memberName">（{{ memberName }}さん）</span>
           </h3>
@@ -19,7 +19,7 @@
 
         <v-card class="mb-4" rounded="lg">
           <v-card-title>
-            <v-icon icon="mdi-calendar-range" class="mr-1"></v-icon>
+            <v-icon icon="mdi-calendar-text-outline" class="mr-1"></v-icon>
             期間の概要
           </v-card-title>
           <v-card-text v-if="totalWeeks" class="px-6">
@@ -56,8 +56,7 @@
 
         <ReportSummary
           v-if="weekReports.length > 0"
-          :reports="weekReports"
-          :format-week-label="formatWeekLabel"
+          :reports="formattedReports"
           class="mb-4"
         />
 
@@ -221,6 +220,13 @@ const fetchReports = async () => {
     console.error('Failed to fetch reports:', error)
   }
 }
+
+const formattedReports = computed(() => {
+  return weekReports.value.map(report => ({
+    ...report,
+    weekString: formatWeekLabel(report.weekString)
+  }))
+})
 
 const chartData = computed(() => {
   const labels = weekReports.value.map((week, index) => {

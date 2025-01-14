@@ -6,7 +6,6 @@
         活動分析
       </div>
       <v-btn
-        :loading="loading"
         :disabled="!hasValidReports || loading"
         color="secondary"
         variant="tonal"
@@ -89,10 +88,6 @@ const props = defineProps({
   reports: {
     type: Array,
     required: true
-  },
-  formatWeekLabel: {
-    type: Function,
-    required: true
   }
 })
 
@@ -120,13 +115,7 @@ const generateSummary = async () => {
   error.value = null
   
   try {
-    // 送信前にweekStringを変換
-    const reportsWithFormattedWeeks = props.reports.map(report => ({
-      ...report,
-      weekString: props.formatWeekLabel(report.weekString)
-    }))
-
-    const result = await getWeeklyReportSummary(reportsWithFormattedWeeks)
+    const result = await getWeeklyReportSummary(props.reports)
     summary.value = result.summary
     insights.value = result.insights
     
