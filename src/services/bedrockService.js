@@ -72,3 +72,28 @@ export const getWeeklyReportAdvice = async (report, advisorRole) => {
     throw new Error('週次報告のアドバイス取得に失敗しました。')
   }
 }
+
+export const getWeeklyReportSummary = async (reports) => {
+  try {
+    const validReports = reports.map(report => ({
+      weekString: report.weekString,
+      report: report.report
+    }))
+
+    const result = await apiClient.post(`${BASE_PATH}/summary`, { reports: validReports })
+    if (!result?.data) {
+      throw new Error('無効なレスポンス形式です')
+    }
+
+    return {
+      summary: result.data.summary || '',
+      insights: {
+        positive: result.data.insights?.positive || [],
+        negative: result.data.insights?.negative || []
+      }
+    }
+  } catch (error) {
+    console.error('Error getting weekly report summary:', error)
+    throw error instanceof Error ? error : new Error('週次報告のサマリー生成に失敗しました。')
+  }
+}

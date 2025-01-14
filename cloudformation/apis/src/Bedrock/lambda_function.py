@@ -4,7 +4,7 @@ import boto3
 import logging
 import html
 import re
-from typing import Dict, Any
+from typing import Dict, Any, List
 from botocore.exceptions import ClientError
 from decimal import Decimal
 from advisor_roles import ADVISOR_ROLES
@@ -149,6 +149,46 @@ Assistant:"""
 
     return prompt
 
+def create_summary_prompt(reports: List[Dict[str, Any]]) -> str:
+    """週次報告のリストからサマリープロンプトを生成する"""
+    all_reports = "\n\n".join([json.dumps(report, ensure_ascii=False) for report in reports])
+    
+    prompt = f"""Human: あなたはデータアナリストです。
+以下の週次報告データを分析し、以下の2点を提供してください：
+
+1. 活動の要点（200文字程度でまとめた1つの文章。文末は「。」で終わる）
+2. データから読み取れる重要なインサイト（合計4-6項目）
+   - ポジティブな観点（成果、向上点、良好な状態など）：2-3項目
+   - 要注意な観点（課題、リスク、改善が必要な点など）：2-3項目
+
+特に以下の点に注目してください：
+- 作業内容の傾向
+- パフォーマンスとストレスの関係
+- 時間管理の状況
+- 課題と改善の一貫性
+
+報告データ：
+{all_reports}
+
+出力は以下のJSON形式で提供してください：
+{{
+    "summary": "100文字程度の要約文（文末は「。」で終わる）",
+    "insights": {{
+        "positive": [
+            "ポジティブな観点1",
+            "ポジティブな観点2"
+        ],
+        "negative": [
+            "要注意な観点1",
+            "要注意な観点2"
+        ]
+    }}
+}}
+
+※インサイトは具体的かつ簡潔に記述してください。
+"""
+    return prompt
+
 def invoke_claude(prompt: str) -> str:
     """Claude (Anthropic Claude) を呼び出してアドバイスを生成
     温度: 出力のランダム性を制御。低温(0に近い)だと安全で一貫性のある出力が得られるが、単調になることが多い。高温(1以上)だとクリエイティブな応答が期待できる。
@@ -219,6 +259,90 @@ def check_and_update_advice_tickets(member: Dict[str, Any], member_uuid: str) ->
             return False, 0
         raise e
 
+def handle_summary_request(body: Dict[str, Any]) -> Dict[str, Any]:
+    """サマリー生成リクエストを処理"""
+    try:
+        if 'reports' not in body:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': '週次報告のリストが必要です。'}, cls=DecimalEncoder)
+            }
+        
+        reports = body['reports']
+        if not isinstance(reports, list) or not reports:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': '有効な週次報告のリストが必要です。'}, cls=DecimalEncoder)
+            }
+        
+        # プロンプトの生成
+        prompt = create_summary_prompt(reports)
+        
+        # Claudeの呼び出し
+        claude_response = invoke_claude(prompt)
+        
+        # JSONレスポンスのパース
+        try:
+            result = json.loads(claude_response)
+            if not isinstance(result, dict) or 'summary' not in result or 'insights' not in result:
+                logger.error(f"Invalid Claude response format: {claude_response}")
+                result = {
+                    'summary': 'サマリーの生成に失敗しました。',
+                    'insights': {
+                        'positive': ['データの分析に失敗しました。'],
+                        'negative': ['データの分析に失敗しました。']
+                    }
+                }
+        except json.JSONDecodeError as e:
+            logger.error(f"Error decoding Claude response: {str(e)}")
+            result = {
+                'summary': 'サマリーの生成に失敗しました。',
+                'insights': {
+                    'positive': ['データの分析に失敗しました。'],
+                    'negative': ['データの分析に失敗しました。']
+                }
+            }
+            
+        # 結果の検証
+        if not isinstance(result.get('insights'), dict) or \
+           not isinstance(result.get('insights', {}).get('positive'), list) or \
+           not isinstance(result.get('insights', {}).get('negative'), list):
+            logger.error(f"Invalid insights format in response: {result}")
+            result['insights'] = {
+                'positive': ['データの形式が不正です。'],
+                'negative': ['データの形式が不正です。']
+            }
+
+        # 結果を返す
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+                'Access-Control-Allow-Methods': 'OPTIONS,POST'
+            },
+            'body': json.dumps({
+                'data': {
+                    'summary': result.get('summary', ''),
+                    'insights': result.get('insights', {
+                        'positive': [],
+                        'negative': []
+                    })
+                },
+                'error': None
+            }, ensure_ascii=False, cls=DecimalEncoder)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error processing summary request: {str(e)}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'error': 'サマリーの生成中にエラーが発生しました。'
+            }, ensure_ascii=False, cls=DecimalEncoder)
+        }
+
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """Lambda関数のメインハンドラー"""
     remaining_tickets = 0  # Initialize at the start
@@ -230,65 +354,76 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
             
         body = json.loads(event['body'])
-        report_content = body.get('report')
         
-        if not report_content:
-            return {
-                'statusCode': 400,
-                'body': json.dumps({'error': '週次報告の内容が必要です。'}, cls=DecimalEncoder)
-            }
+        if 'report' in body:
+            report_content = body.get('report')
             
-        member_uuid = report_content.get('memberUuid')
-        if not member_uuid:
-            return {
-                'statusCode': 400,
-                'body': json.dumps({'error': 'memberUuidが必要です。'}, cls=DecimalEncoder)
-            }
+            if not report_content:
+                return {
+                    'statusCode': 400,
+                    'body': json.dumps({'error': '週次報告の内容が必要です。'}, cls=DecimalEncoder)
+                }
+                
+            member_uuid = report_content.get('memberUuid')
+            if not member_uuid:
+                return {
+                    'statusCode': 400,
+                    'body': json.dumps({'error': 'memberUuidが必要です。'}, cls=DecimalEncoder)
+                }
 
-        # メンバー情報を取得
-        response = members_table.get_item(
-            Key={'memberUuid': member_uuid}
-        )
-        member = response.get('Item')
-        if not member:
-            raise Exception('Member not found')
-        
-        advisor_role = report_content.get('advisorRole', 'default')  # デフォルト値を設定
-        logger.info(f"Execute advice: organization={member.get('organizationId')}, member={member.get('id')}, advisor={advisor_role}")
-                    
-        # チケットのチェックと消費
-        is_available, remaining_tickets = check_and_update_advice_tickets(member, member_uuid)
-        if not is_available:
+            # メンバー情報を取得
+            response = members_table.get_item(
+                Key={'memberUuid': member_uuid}
+            )
+            member = response.get('Item')
+            if not member:
+                raise Exception('Member not found')
+            
+            advisor_role = report_content.get('advisorRole', 'default')  # デフォルト値を設定
+            logger.info(f"Execute advice: organization={member.get('organizationId')}, member={member.get('id')}, advisor={advisor_role}")
+                        
+            # チケットのチェックと消費
+            is_available, remaining_tickets = check_and_update_advice_tickets(member, member_uuid)
+            if not is_available:
+                return {
+                    'statusCode': 403,
+                    'body': json.dumps({
+                        'error': 'アドバイスチケットが不足しています。',
+                        'code': 'INSUFFICIENT_TICKETS',
+                        'remainingTickets': remaining_tickets
+                    }, ensure_ascii=False, cls=DecimalEncoder)
+                }
+            
+            # プロンプトの生成
+            prompt = create_prompt(report_content, member)
+            
+            # Claudeの呼び出し
+            claude_response = invoke_claude(prompt)
+            formatted_advice = claude_response.strip()
+
+            # 結果を返す
             return {
-                'statusCode': 403,
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
                 'body': json.dumps({
-                    'error': 'アドバイスチケットが不足しています。',
-                    'code': 'INSUFFICIENT_TICKETS',
+                    'advice': formatted_advice,
+                    'weekString': report_content.get('weekString'),
+                    'memberUuid': member_uuid,
                     'remainingTickets': remaining_tickets
                 }, ensure_ascii=False, cls=DecimalEncoder)
             }
         
-        # プロンプトの生成
-        prompt = create_prompt(report_content, member)
+        elif 'reports' in body:
+            return handle_summary_request(body)
         
-        # Claudeの呼び出し
-        claude_response = invoke_claude(prompt)
-        formatted_advice = claude_response.strip()
-
-        # 結果を返す
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({
-                'advice': formatted_advice,
-                'weekString': report_content.get('weekString'),
-                'memberUuid': member_uuid,
-                'remainingTickets': remaining_tickets
-            }, ensure_ascii=False, cls=DecimalEncoder)
-        }
+        else:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': '無効なリクエストです。'}, cls=DecimalEncoder)
+            }
         
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")

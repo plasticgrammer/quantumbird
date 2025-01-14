@@ -40,6 +40,8 @@ def lambda_handler(event, context):
         if http_method == 'GET':
             if resource == '/weekly-report':
                 return handle_get(event)
+            elif resource == '/weekly-report/member/{memberUuid}':
+                return handle_get_member_reports(event)
             elif resource == '/weekly-report/status':
                 return handle_get_report_status(event)
             elif resource == '/weekly-report/stats':
@@ -577,3 +579,25 @@ def format_timestamp(timestamp):
     except Exception as e:
         logger.error(f"Error formatting timestamp {timestamp}: {str(e)}")
         return None
+
+def handle_get_member_reports(event):
+    member_uuid = event['pathParameters']['memberUuid']
+    try:
+        weeks = get_last_5_weeks()
+        reports = []
+        
+        for week in weeks:
+            report = get_report(member_uuid, week)
+            if report:
+                reports.append(report)
+            else:
+                reports.append({
+                    'memberUuid': member_uuid,
+                    'weekString': week,
+                    'status': 'none'
+                })
+        
+        return create_response(200, reports)
+    except Exception as e:
+        logger.error(f"Error getting member reports: {str(e)}", exc_info=True)
+        return create_response(500, f'Failed to get member reports: {str(e)}')

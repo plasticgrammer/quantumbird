@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 
-export function useCalendar() {
+export const useCalendar = () => {
   const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
   const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土']
 
@@ -45,23 +45,23 @@ export function useCalendar() {
 
   const isWeekInRange = (week) => {
     if (!week?.startDate || !week?.endDate) return false
-    
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
+
     // 過去5週間前の月曜日を取得
     const minDate = new Date(today)
     minDate.setDate(today.getDate() - (5 * 7))
     const minMonday = new Date(minDate)
     minMonday.setDate(minDate.getDate() - minDate.getDay() + (minDate.getDay() === 0 ? -6 : 1))
     minMonday.setHours(0, 0, 0, 0)
-  
+
     // 今週の日曜日を取得（現在の週の最終日）
     const currentWeekEnd = new Date(today)
     const daysUntilSunday = 7 - today.getDay()
     currentWeekEnd.setDate(today.getDate() + daysUntilSunday)
     currentWeekEnd.setHours(23, 59, 59, 999)
-  
+
     return week.startDate >= minMonday && week.endDate <= currentWeekEnd
   }
 
@@ -98,20 +98,20 @@ export function useCalendar() {
 
   const getWeekFromString = (weekString) => {
     const [year, weekNumber] = weekString.split('-W').map(Number)
-    
+
     // ISO 8601 週番号の計算
     // 1月4日が含まれる週を第1週とする
     const jan4th = new Date(year, 0, 4)
     const startOfYear = new Date(jan4th)
     startOfYear.setDate(jan4th.getDate() - jan4th.getDay() + (jan4th.getDay() === 0 ? -6 : 1))
-    
+
     const targetDate = new Date(startOfYear)
     targetDate.setDate(startOfYear.getDate() + (weekNumber - 1) * 7)
-    
+
     // その週の月曜日を取得
     const weekStart = new Date(targetDate)
     weekStart.setHours(0, 0, 0, 0)
-    
+
     return createWeekItem(weekStart, getWeekOffset(weekStart))
   }
 
@@ -119,16 +119,16 @@ export function useCalendar() {
     if (!weekString) {
       return getStringFromWeek(calendarWeeks.value[calendarWeeks.value.length - 2])
     }
-    
+
     const [year, week] = weekString.split('-W').map(Number)
     const date = new Date(year, 0, 4) // 1月4日から計算開始
     date.setDate(date.getDate() + (week - 1) * 7) // 指定週の木曜日付近に移動
     date.setDate(date.getDate() - 7) // 1週前に移動
-    
+
     // 前週の年と週番号を取得
     const prevYear = date.getFullYear()
     const prevWeek = getWeekNumber(date)
-    
+
     return `${prevYear}-W${prevWeek.toString().padStart(2, '0')}`
   }
 
@@ -170,6 +170,13 @@ export function useCalendar() {
     return `${week.startDate.toLocaleDateString('ja-JP', options)} - ${week.endDate.toLocaleDateString('ja-JP', options)}`
   }
 
+  const formatWeekLabel = (weekString) => {
+    if (!weekString) return ''
+
+    const [year, week] = weekString.split('-W')
+    return `${year}年${week}週`
+  }
+
   return {
     calendarWeeks,
     createWeeks,
@@ -188,6 +195,7 @@ export function useCalendar() {
     formatDateJp,
     formatDateTimeJp,
     formatFullDateTimeJp,
-    formatDateRange
+    formatDateRange,
+    formatWeekLabel
   }
 }

@@ -202,6 +202,16 @@ Resources:
             RestApiId: !Ref ApiGatewayApi
             Path: /bedrock/advice
             Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+        WeeklyReportSummary:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /bedrock/summary
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   OrganizationFunction:
     Type: AWS::Serverless::Function
@@ -322,6 +332,14 @@ Resources:
             RestApiId: !Ref ApiGatewayApi
             Path: /weekly-report
             Method: ANY
+            Auth:
+              Authorizer: CognitoAuthorizer
+        GetMemberReports: # 追加
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /weekly-report/member/{memberUuid}
+            Method: get
             Auth:
               Authorizer: CognitoAuthorizer
         GetReportStatus:

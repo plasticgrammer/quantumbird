@@ -18,8 +18,12 @@ export const getReport = async (memberUuid, weekString) => {
   return apiClient.get(BASE_PATH, { memberUuid, weekString })
 }
 
-export const listReports = async (organizationId, weekString) => {
-  return apiClient.get(BASE_PATH, { organizationId, weekString })
+export const listReports = async (params) => {
+  return apiClient.get(BASE_PATH, params)
+}
+
+export const listMemberReports = async (memberUuid) => {
+  return apiClient.get(`${BASE_PATH}/member/${memberUuid}`)
 }
 
 export const exportReports = async (organizationId) => {

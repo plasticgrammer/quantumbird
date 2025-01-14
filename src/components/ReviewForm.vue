@@ -81,36 +81,51 @@
           outlined
         > 
           <v-card-title class="d-flex justify-space-between align-center py-2">
-            <span class="text-h6 font-weight-bold">
-              <v-icon size="x-large" class="mr-1">
+            <div class="d-flex align-center">
+              <v-icon size="x-large" class="mr-2">
                 mdi-account-box-outline
               </v-icon>
-              {{ report.name }}
-            </span>
-            <v-tooltip
-              :disabled="report.status !== 'approved'"
-              location="bottom"
-              :close-delay="1500"
-            >
-              <template #activator="{ props: tooltipProps }">
-                <v-chip
-                  v-bind="tooltipProps"
-                  :color="getStatusColor(report.status)"
-                  label
-                  x-small
-                  class="status-chip ml-2"
-                >
-                  <v-icon
-                    v-if="report.status === 'approved'"
-                    class="mr-1"
+              <span class="text-h6 font-weight-bold">{{ report.name }}</span>
+            </div>
+            <div class="d-flex align-center">
+              <v-tooltip
+                :disabled="report.status !== 'approved'"
+                location="bottom"
+                :close-delay="1500"
+              >
+                <template #activator="{ props: tooltipProps }">
+                  <v-chip
+                    v-bind="tooltipProps"
+                    :color="getStatusColor(report.status)"
+                    label
+                    x-small
+                    class="status-chip ml-2"
                   >
-                    mdi-check-circle-outline
-                  </v-icon>
-                  {{ getStatusText(report.status) }}
-                </v-chip>
-              </template>
-              <span>確認日時：{{ formatDateTimeJp(new Date(report.approvedAt)) }}</span>
-            </v-tooltip>
+                    <v-icon
+                      v-if="report.status === 'approved'"
+                      class="mr-1"
+                    >
+                      mdi-check-circle-outline
+                    </v-icon>
+                    {{ getStatusText(report.status) }}
+                  </v-chip>
+                </template>
+                <span>確認日時：{{ formatDateTimeJp(new Date(report.approvedAt)) }}</span>
+              </v-tooltip>
+              <v-btn
+                v-if="!readonly"
+                variant="tonal"
+                icon
+                color="secondary"
+                class="ml-2"
+                :to="{ name: 'MemberReports', params: { memberUuid: report.memberUuid }}"
+              >
+                <v-icon size="26" class="opacity-60">mdi-calendar-text</v-icon>
+                <v-tooltip activator="parent" location="top">
+                  履歴を表示
+                </v-tooltip>
+              </v-btn>
+            </div>
           </v-card-title>
 
           <v-card-text
@@ -800,9 +815,19 @@ watch(isAllCompleted, (currentlyComplete) => {
   .review-form-container {
     padding: 8px 0 16px;
   }
-  
+
   .default-card + .default-card {
-    margin-top: 16px !important;
+    margin-top: 16px !重要;
   }
+}
+
+.v-btn--icon.v-btn--density-comfortable {
+  width: 36px;
+  height: 36px;
+  margin-right: 8px;
+}
+
+.v-btn--icon.v-btn--density-comfortable .v-icon {
+  font-size: 20px;
 }
 </style>

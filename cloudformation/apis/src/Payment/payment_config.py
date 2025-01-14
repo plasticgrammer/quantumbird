@@ -24,7 +24,11 @@ class PaymentConfig:
         'production': {
             'pro_price': 'price_1QfbHxLTUjsrHeIRh22xGDtJ',
             'business_price': 'price_1QfbJALTUjsrHeIRCQ8ll7nd',
+<<<<<<< HEAD
             'business_product': 'prod_RYijnwpMJlZH7n'
+=======
+            'business_product': 'prod_RYikjB8getMLbp'
+>>>>>>> c6ab7804d6aab61f95be304a2c60f8ab5c9a6854
         }
     }
 
