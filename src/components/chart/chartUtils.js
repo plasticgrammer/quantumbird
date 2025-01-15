@@ -2,6 +2,7 @@ import { Chart, registerables } from 'chart.js'
 
 Chart.register(...registerables)
 Chart.defaults.datasets.line.tension = 0.3
+Chart.defaults.datasets.line.spanGaps = true // 欠損値をスキップして線を繋ぐ
 
 export const createBaseOptions = (config = {}) => ({
   responsive: true,
