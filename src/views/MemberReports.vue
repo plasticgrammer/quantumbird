@@ -274,7 +274,7 @@ const chartData = computed(() => {
           week.report?.status === 'none' ? null : week.report?.overtimeHours ?? null
         ),
         borderColor: 'rgb(54, 162, 235)',
-        borderDash: [2, 2],
+        borderDash: [5, 3],
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
         fill: false,
         yAxisID: 'y1'

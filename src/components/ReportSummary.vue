@@ -51,7 +51,7 @@
                   <v-icon icon="mdi-circle-small"></v-icon>
                   <span class="flex-grow-1">{{ insight.text }}</span>
                   <v-chip
-                    size="small"
+                    v-tooltip:top="getScoreDescription(insight.score, true)"
                     :color="getScoreColor(insight.score)"
                     class="ml-2"
                   >
@@ -77,7 +77,7 @@
                   <v-icon icon="mdi-circle-small"></v-icon>
                   <span class="flex-grow-1">{{ insight.text }}</span>
                   <v-chip
-                    size="small"
+                    v-tooltip:top="getScoreDescription(insight.score, false)"
                     :color="getScoreColor(insight.score)"
                     class="ml-2"
                   >
@@ -149,12 +149,21 @@ const formatScore = (score) => {
 
 const getScoreColor = (score) => {
   if (score >= 90) return 'error'
-  /*
-  if (score >= 70) return 'warning'
-  if (score >= 50) return 'info'
-  return 'success'
-  */
   return 'grey'
+}
+
+const getScoreDescription = (score, isPositive = false) => {
+  if (isPositive) {
+    if (score >= 90) return '非常に優れた成果です。継続して維持してください。'
+    if (score >= 70) return '良好な成果が出ています。さらなる向上が期待できます。'
+    if (score >= 50) return '一定の成果が出ています。'
+    return '小さな前進が見られます。'
+  } else {
+    if (score >= 90) return '非常に重要な課題です。早急な対応が推奨されます。'
+    if (score >= 70) return '重要な課題です。計画的な対応を検討してください。'
+    if (score >= 50) return '要注意の課題です。状況を監視してください。'
+    return '参考程度の課題です。余裕があれば検討してください。'
+  }
 }
 </script>
 

@@ -141,7 +141,7 @@ def create_prompt(report: Dict[str, Any], member: Dict[str, Any]) -> str:
     # プロンプト
     prompt = f"""Human: あなたは{adviser_role}です。
 週次報告へのアドバイスを提供してください。
-アドバイスは重要度の高いポイントに絞って、最大500文字程度としてください。
+アドバイスは重要度の高いポイントに絞って、最大420文字程度としてください。
 以下が報告の内容です：
 {report_content}
 

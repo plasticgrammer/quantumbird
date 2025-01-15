@@ -396,7 +396,7 @@ watch(() => props.reportContent,
 }
 
 .text-advice {
-  font-size: 0.925em !important;
+  font-size: 1em !important;
   white-space: pre-wrap;
   line-height: 1.8;
   letter-spacing: 0.03em;
