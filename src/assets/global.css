@@ -105,6 +105,9 @@ h3 {
   min-height: 56px;
   */
 }
+.small-text-area .v-field__outline div {
+  border-color: #666;
+}
 
 .status-chip {
   border: solid 1px;

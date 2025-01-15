@@ -130,7 +130,7 @@
                   </v-col>
 
                   <v-col cols="12" md="7">
-                    <div class="text-subtitle-1 font-weight-medium mb-2">
+                    <div class="text-subtitle-1 font-weight-medium mb-1">
                       振り返り（成果と課題）
                     </div>
                     <v-textarea
@@ -140,10 +140,10 @@
                       rows="2"
                       hide-details
                       variant="outlined"
-                      class="mb-4"
+                      class="small-text-area mb-4"
                     />
 
-                    <div class="text-subtitle-1 font-weight-medium mb-2">
+                    <div class="text-subtitle-1 font-weight-medium mb-1">
                       次の目標、改善施策
                     </div>
                     <v-textarea
@@ -153,6 +153,7 @@
                       rows="2"
                       hide-details
                       variant="outlined"
+                      class="small-text-area mb-2"
                     />
                   </v-col>
                 </v-row>

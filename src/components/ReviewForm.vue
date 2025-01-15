@@ -181,11 +181,11 @@
                 </div>
                 <v-textarea
                   v-model="report.issues"
-                  outlined
                   readonly
                   auto-grow
                   rows="2"
                   hide-details
+                  variant="outlined"
                   class="small-text-area mb-2"
                 />
 
@@ -194,11 +194,11 @@
                 </div>
                 <v-textarea
                   v-model="report.improvements"
-                  outlined
                   readonly
                   auto-grow
                   rows="1"
                   hide-details
+                  variant="outlined"
                   class="small-text-area"
                 />
               </v-col>
@@ -307,7 +307,7 @@
 
                       <div 
                         v-if="!readonly"
-                        class="mt-2 px-1"
+                        class="mt-4 px-1"
                       >
                         <v-textarea
                           v-model="newFeedbacks[report.memberUuid]"
@@ -813,7 +813,6 @@ watch(isAllCompleted, (currentlyComplete) => {
   display: none;
 }
 
-/* 5. レスポンシブ対応の改善 */
 @media (max-width: 600px) {
   .review-form-container {
     padding: 8px 0 16px;
