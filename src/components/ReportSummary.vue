@@ -6,7 +6,7 @@
         活動分析
       </div>
       <v-btn
-        :disabled="!hasValidReports || loading"
+        :disabled="loading"
         color="secondary"
         variant="tonal"
         @click="generateSummary"
@@ -94,12 +94,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { getWeeklyReportSummary } from '@/services/bedrockService'
 
 const props = defineProps({
-  reports: {
-    type: Array,
+  memberUuid: {
+    type: String,
     required: true
   }
 })
@@ -109,26 +109,12 @@ const error = ref(null)
 const summary = ref('')
 const insights = ref([])
 
-// 有効なレポートがあるかチェック
-const hasValidReports = computed(() => {
-  return props.reports.some(report => 
-    report.report && 
-    report.report.status !== 'none' &&
-    report.report.projects?.length > 0
-  )
-})
-
 const generateSummary = async () => {
-  if (!hasValidReports.value) {
-    error.value = '有効な週次報告がありません'
-    return
-  }
-  
   loading.value = true
   error.value = null
   
   try {
-    const result = await getWeeklyReportSummary(props.reports)
+    const result = await getWeeklyReportSummary(props.memberUuid)
     summary.value = result.summary
     insights.value = result.insights
     

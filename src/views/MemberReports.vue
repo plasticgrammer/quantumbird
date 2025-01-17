@@ -56,7 +56,7 @@
 
         <ReportSummary
           v-if="weekReports.length > 0"
-          :reports="formattedReports"
+          :member-uuid="props.memberUuid"
           class="mb-4"
         />
 
@@ -221,15 +221,6 @@ const fetchReports = async () => {
     console.error('Failed to fetch reports:', error)
   }
 }
-
-const formattedReports = computed(() => {
-  return weekReports.value.map(item => ({
-    report: {
-      ...item.report,
-      weekString: formatWeekLabel(item.report.weekString)
-    },
-  }))
-})
 
 const chartData = computed(() => {
   const labels = weekReports.value.map((week, index) => {

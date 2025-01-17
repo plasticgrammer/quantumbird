@@ -288,10 +288,11 @@ const handleGenerateAdvice = async () => {
 
   try {
     advisorState.isLoading = true
-    const response = await getWeeklyReportAdvice({
-      ...props.reportContent,
-      advisorRole: advisorState.selectedRole
-    })
+    const response = await getWeeklyReportAdvice(
+      props.reportContent.memberUuid,
+      props.reportContent.weekString,
+      advisorState.selectedRole
+    )
     
     Object.assign(advisorState, {
       advice: response.advice,

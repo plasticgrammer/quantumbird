@@ -58,9 +58,9 @@ export const advisorRoles = {
   },
 }
 
-export const getWeeklyReportAdvice = async (report, advisorRole) => {
+export const getWeeklyReportAdvice = async (memberUuid, weekString, advisorRole) => {
   try {
-    const result = await apiClient.post(`${BASE_PATH}/advice`, { report, advisorRole })
+    const result = await apiClient.post(`${BASE_PATH}/advice`, { memberUuid, weekString, advisorRole })
     return {
       advice: result.advice || '',
       weekString: result.weekString,
@@ -73,18 +73,9 @@ export const getWeeklyReportAdvice = async (report, advisorRole) => {
   }
 }
 
-export const getWeeklyReportSummary = async (reports) => {
+export const getWeeklyReportSummary = async (memberUuid) => {
   try {
-    const validReports = reports.map(report => ({
-      weekString: report.weekString,
-      report: report.report
-    }))
-
-    const result = await apiClient.post(`${BASE_PATH}/summary`, { reports: validReports })
-    if (!result?.data) {
-      throw new Error('無効なレスポンス形式です')
-    }
-
+    const result = await apiClient.post(`${BASE_PATH}/summary`, { memberUuid })
     return {
       summary: result.data.summary || '',
       insights: {
