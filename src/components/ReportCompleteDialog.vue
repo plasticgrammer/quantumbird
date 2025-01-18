@@ -250,8 +250,11 @@ const availableAdvisors = computed(() => {
 })
 
 const resetState = () => {
+  // アドバイザーを最初の選択肢にリセット
+  const firstAdvisor = Object.keys(availableAdvisors.value)[0] || 'manager'
+  
   Object.assign(advisorState, {
-    selectedRole: Object.keys(availableAdvisors.value)[0] || 'manager',
+    selectedRole: firstAdvisor,
     isButtonHovering: false,
     isLoading: false,
     isAdviceAvailable: false,

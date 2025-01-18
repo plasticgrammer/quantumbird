@@ -53,7 +53,7 @@ def handle_advice_request(event: Dict[str, Any]) -> Dict[str, Any]:
         body = parse_request_body(event)
         member_uuid = body.get('memberUuid')
         week_string = body.get('weekString')
-        advisor_role = body.get('advisorRole', 'manager')
+        advisor_role = body.get('advisorRole', 'manager')  # デフォルトは'manager'
 
         if not member_uuid:
             return create_response(400, {'error': 'memberUuidが必要です。'})
@@ -79,16 +79,33 @@ def handle_advice_request(event: Dict[str, Any]) -> Dict[str, Any]:
                 'remainingTickets': remaining_tickets
             })
 
-        report_content = get_report(member_uuid, week_string)
+        # 全レポートを取得し、指定週より前のものを過去レポートとして扱う
+        all_reports = get_member_reports(member_uuid)
+        current_report = None
+        past_reports = []
+        
+        for report in all_reports:
+            if report.get('weekString') == week_string:
+                current_report = report
+            elif report.get('weekString') < week_string and report.get('status') != 'none':  # 存在するレポートのみ
+                past_reports.append(report)
+
+        if not current_report:
+            raise Exception('Report not found')
+
+        # 現在のレポートにアドバイザーロールを設定
+        current_report['advisorRole'] = advisor_role
 
         # プロンプトの生成と実行
-        prompt = create_prompt(report_content, member)
+        prompt = create_prompt(current_report, member, past_reports=past_reports)
         claude_response = invoke_claude(prompt)
         formatted_advice = claude_response.strip()
 
+        logger.info(f"Generated advice with advisor role: {advisor_role}")  # ログ出力を追加
+
         return create_response(200, {
             'advice': formatted_advice,
-            'weekString': report_content.get('weekString'),
+            'weekString': current_report.get('weekString'),
             'memberUuid': member_uuid,
             'remainingTickets': remaining_tickets
         })
@@ -177,7 +194,7 @@ def get_report(member_uuid, week_string):
         return None
 
 def get_member_reports(member_uuid):
-    weeks = get_last_5_weeks()
+    weeks = get_last_6_weeks()
     reports = []
     
     for week in weeks:
@@ -192,8 +209,8 @@ def get_member_reports(member_uuid):
             })
     return reports
 
-def get_last_5_weeks():
-    """5週前から先週までの週番号を取得（今週は含まない）
+def get_last_6_weeks():
+    """5週前から今週までの週番号を取得
     Returns:
         list: ['YYYY-WNN'形式の週番号文字列のリスト（古い順）]
     """
@@ -202,13 +219,13 @@ def get_last_5_weeks():
     def get_iso_week(date):
         return date.isocalendar()[:2]  # (year, week)を返す
     
-    # 先週の月曜日を取得
-    last_monday = today - timedelta(days=today.weekday() + 7)
+    # 今週の月曜日を取得
+    this_monday = today - timedelta(days=today.weekday())
     weeks = []
     
-    # 5週前から先週までの週番号を取得
-    for i in range(4, -1, -1):  # 4,3,2,1,0 の順で処理（新しい順）
-        target_date = last_monday - timedelta(weeks=i)
+    # 5週前から今週までの週番号を取得
+    for i in range(5, -1, -1):  # 5,4,3,2,1,0 の順で処理（新しい順）
+        target_date = this_monday - timedelta(weeks=i)
         year, week = get_iso_week(target_date)
         weeks.append(f"{year}-W{week:02d}")
     

@@ -49,9 +49,10 @@ def format_projects(projects: list) -> str:
     
     return '\n\n'.join(formatted) if formatted else "記載なし"
 
-def create_prompt(report: Dict[str, Any], member: Dict[str, Any]) -> str:
+def create_prompt(report: Dict[str, Any], member: Dict[str, Any], past_reports: List[Dict[str, Any]] = None) -> str:
     """週次報告の内容からプロンプトを生成する"""
-    role_id = report.get('advisorRole')
+    # レポートから直接アドバイザーロールを取得
+    role_id = report.get('advisorRole', 'manager')
     role_config = get_advisor_role_config(role_id)
     
     adviser_role = sanitize_input(role_config['role'])
@@ -76,6 +77,19 @@ def create_prompt(report: Dict[str, Any], member: Dict[str, Any]) -> str:
         if goal:
             member_info += f"\n・目標: {goal}"
 
+    past_reports_info = ""
+    if past_reports:
+        past_reports_info = "\n\n【過去の報告】"
+        for past_report in reversed(past_reports[-2:]):  # 直近2週分のみ使用
+            past_rating = past_report.get('rating', {})
+            past_reports_info += f"\n[{past_report.get('weekString', '')}]"
+            past_reports_info += f"\n・ストレス度: {parse_rating_level(past_rating.get('stress', 0))} ({past_rating.get('stress', 0)}/5)"
+            past_reports_info += f"\n・タスク目標の達成度: {parse_rating_level(past_rating.get('achievement', 0))} ({past_rating.get('achievement', 0)}/5)"
+            past_reports_info += f"\n・残業時間: {past_report.get('overtimeHours', 0)}時間/週"
+            improvements = past_report.get('improvements', '')
+            if improvements:
+                past_reports_info += f"\n・改善施策: {improvements}"
+
     report_content = f"""
 【実施した作業】
 {projects_str}{member_info}
@@ -90,7 +104,7 @@ def create_prompt(report: Dict[str, Any], member: Dict[str, Any]) -> str:
 ・ストレス度: {stress_level} ({rating.get('stress', 0)}/5)
 ・タスク目標の達成度: {achievement_level} ({rating.get('achievement', 0)}/5)
 ・タスク遂行の難易度: {disability_level} ({rating.get('disability', 0)}/5)
-・残業時間: {overtime}時間/週"""
+・残業時間: {overtime}時間/週{past_reports_info}"""
 
     prompt = f"""Human: あなたは{adviser_role}です。
 週次報告へのアドバイスを提供してください。

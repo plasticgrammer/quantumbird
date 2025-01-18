@@ -55,12 +55,13 @@
         </v-card>
 
         <ReportSummary
-          v-if="weekReports.length > 0"
+          v-if="dataSize > 0"
           :member-uuid="props.memberUuid"
           class="mb-4"
         />
 
         <v-card 
+          v-if="dataSize > 0"
           class="my-4"
           rounded="lg"
         >
@@ -176,7 +177,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useCalendar } from '@/composables/useCalendar'
-import { listMemberReports } from '@/services/reportService'
+import { listMemberReports, getReport } from '@/services/reportService'
 import { getMember } from '@/services/memberService'
 import OvertimeDisplay from '@/components/OvertimeDisplay.vue'
 import RatingLineChart from '@/components/chart/RatingLineChart.vue'
@@ -189,7 +190,7 @@ const props = defineProps({
   }
 })
 
-const calendar = useCalendar()
+const { getWeekJpText, getCurrentWeekString } = useCalendar()
 
 const memberName = ref('')
 const weekReports = ref([])
@@ -198,14 +199,15 @@ const selectedWeekTab = ref(null)
 const formatWeekLabel = (weekString) => {
   // 古い週から新しい週の順なので、0が5週前、4が先週となる
   const index = weekReports.value.findIndex(report => report.weekString === weekString)
-  return calendar.getWeekJpText(-(5 - index))
+  return getWeekJpText(-(5 - index))
 }
 
 const fetchReports = async () => {
   try {
-    const [memberData, reports] = await Promise.all([
+    const [memberData, reports, currReport] = await Promise.all([
       getMember(props.memberUuid),
-      listMemberReports(props.memberUuid)
+      listMemberReports(props.memberUuid),
+      getReport(props.memberUuid, getCurrentWeekString())
     ])
 
     if (memberData) {
@@ -216,15 +218,24 @@ const fetchReports = async () => {
       weekString: report.weekString,
       report: report
     }))
-    selectedWeekTab.value = reports[reports.length - 1].weekString // 最新の週を選択
+    if (currReport) {
+      weekReports.value.push({
+        weekString: currReport.weekString,
+        report: currReport
+      })
+    }
+
+    selectedWeekTab.value = weekReports.value[weekReports.value.length - 1].weekString // 最新の週を選択
   } catch (error) {
     console.error('Failed to fetch reports:', error)
   }
 }
 
+const dataSize = computed(() => weekReports.value.filter(w => w.report?.status !== 'none').length)
+
 const chartData = computed(() => {
   const labels = weekReports.value.map((week, index) => {
-    return calendar.getWeekJpText(-(5 - index))
+    return getWeekJpText(-(5 - index))
   })
   return {
     labels,
