@@ -25,7 +25,7 @@
             <v-icon
               v-for="i in 3"
               :key="i"
-              :color="i <= advisorState.remainingTickets ? 'indigo' : 'grey-lighten-1'"
+              :color="i <= advisorState.remainingTickets ? 'primary' : 'grey-lighten-1'"
               class="ticket-icon"
               size="small" 
             >
@@ -126,12 +126,11 @@
               <div class="d-flex justify-center mb-2">
                 <v-btn
                   v-if="advisorState.remainingTickets > 0"
-                  class="px-8 border-thin"
-                  style="--v-border-color: auto"
+                  class="px-8 border-thin" 
                   min-width="50%"
                   height="60px"
-                  variant="tonal"
-                  color="indigo"
+                  variant="outlined"
+                  style="--v-border-color: auto" 
                   :disabled="advisorState.remainingTickets === 0"
                   @mouseenter="handleButtonHover(true)"
                   @mouseleave="handleButtonHover(false)"
@@ -178,12 +177,12 @@
       <v-card-actions class="pt-4 pb-4 flex-shrink-0">
         <v-row justify="center" no-gutters>
           <v-col cols="auto" class="mx-2">
-            <v-btn color="primary" prepend-icon="mdi-chevron-left" variant="elevated" @click="$emit('back')">
+            <v-btn color="primary" prepend-icon="mdi-chevron-left" variant="tonal" class="border-thin" style="--v-border-color: auto" @click="$emit('back')">
               週次報告に戻る
             </v-btn>
           </v-col>
           <v-col cols="auto" class="mx-2">
-            <v-btn color="grey-darken-1" prepend-icon="mdi-close" variant="elevated" @click="$emit('close')">
+            <v-btn color="grey-darken-1" prepend-icon="mdi-close" variant="tonal" class="border-thin" style="--v-border-color: auto" @click="$emit('close')">
               終了する
             </v-btn>
           </v-col>
